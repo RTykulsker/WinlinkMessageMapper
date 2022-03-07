@@ -1,0 +1,109 @@
+/**
+
+The MIT License (MIT)
+
+Copyright (c) 2022, Robert Tykulsker
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+*/
+
+package com.surftools.winlinkMessageMapper.processor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.surftools.winlinkMessageMapper.dto.CheckInMessage;
+import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
+import com.surftools.winlinkMessageMapper.dto.LatLongPair;
+import com.surftools.winlinkMessageMapper.reject.MessageOrRejectionResult;
+import com.surftools.winlinkMessageMapper.reject.RejectType;
+
+public class EtoCheckInProcessor extends AbstractBaseProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(EtoCheckInProcessor.class);
+
+  @Override
+  public MessageOrRejectionResult process(ExportedMessage message) {
+    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
+      logger.info("exportedMessage: " + message);
+    }
+
+    String[] mimeLines = message.mime.split("\\n");
+    var latLongString = getStringFromFormLines(mimeLines, ":", "GPS Coordinates");
+    LatLongPair latLong = null;
+    if (latLongString != null) {
+      String[] fields = latLongString.split(" ");
+      if (fields.length >= 6) {
+        latLong = new LatLongPair(fields[2], fields[5]);
+        if (!latLong.isValid()) {
+          return new MessageOrRejectionResult(message, RejectType.CANT_PARSE_LATLONG, latLongString);
+        }
+      }
+    } else {
+      return new MessageOrRejectionResult(message, RejectType.CANT_PARSE_LATLONG, message.mime);
+    }
+
+    var status = getStringFromFormLines(mimeLines, ":", "Status");
+    var band = getStringFromFormLines(mimeLines, ":", "Band Used");
+    var mode = getStringFromFormLines(mimeLines, ":", "Session Type");
+    var comments = getComments(mimeLines);
+    if (comments.endsWith("\n")) {
+      comments = comments.substring(0, comments.length() - 1);
+    }
+    var versionString = getStringFromFormLines(mimeLines, ":", "Version");
+    var fields = versionString.split(" ");
+    var version = fields[fields.length - 1];
+
+    CheckInMessage m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), "", //
+        comments, status, band, mode, version);
+    return new MessageOrRejectionResult(m, null);
+  }
+
+  private String getComments(String[] mimeLines) {
+    final var boundary = "----------";
+    boolean inComment = false;
+    StringBuilder sb = new StringBuilder();
+    for (String line : mimeLines) {
+      if (line.startsWith("Comments:")) {
+        inComment = true;
+        continue;
+      }
+
+      if (inComment) {
+        if (line.startsWith(boundary)) {
+          break;
+        }
+        line = line.trim();
+        if (line.length() > 0) {
+          int index = line.lastIndexOf("=20");
+          if (index >= 0) {
+            if (index == line.length() - 3) {
+              line = line.substring(0, index);
+            }
+          }
+          sb.append(line);
+          sb.append("\n");
+        }
+      }
+    }
+    return sb.toString();
+  }
+
+}
