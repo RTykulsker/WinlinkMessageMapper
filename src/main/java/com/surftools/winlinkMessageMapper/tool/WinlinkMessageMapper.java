@@ -414,7 +414,8 @@ public class WinlinkMessageMapper {
        */
     } else if (subject.equals("ETO Position")) {
       return MessageType.ETO_POSITION;
-    } else if (subject.startsWith("Winlink Thursday Net Check-In")) {
+    } else if (subject.startsWith("Winlink Thursday Net Check-In")
+        || subject.startsWith("Re: Winlink Thursday Net Check-In")) {
       return MessageType.ETO_CHECK_IN;
     } else if (subject.equals("Position Report")) {
       return MessageType.POSITION;

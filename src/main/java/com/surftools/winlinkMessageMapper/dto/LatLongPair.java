@@ -27,6 +27,9 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * record DTO for latitude/longitude pair
  *
@@ -34,6 +37,7 @@ package com.surftools.winlinkMessageMapper.dto;
  *
  */
 public record LatLongPair(String latitude, String longitude) {
+  private static final Logger logger = LoggerFactory.getLogger(LatLongPair.class);
 
   public boolean isValid() {
     if (latitude == null || longitude == null) {
@@ -41,6 +45,20 @@ public record LatLongPair(String latitude, String longitude) {
     }
 
     if (latitude.length() == 0 || longitude.length() == 0) {
+      return false;
+    }
+
+    try {
+      Double.parseDouble(latitude);
+    } catch (Exception e) {
+      logger.error("could not parse latitude from: " + latitude);
+      return false;
+    }
+
+    try {
+      Double.parseDouble(longitude);
+    } catch (Exception e) {
+      logger.error("could not parse longitude from: " + longitude);
       return false;
     }
 

@@ -245,6 +245,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
   public String getStringFromFormLines(String[] formLines, String delimiter, String tagName) {
     for (String line : formLines) {
+      line = line.trim();
       if (line.startsWith(tagName)) {
         int index = line.indexOf(delimiter);
         if (index == -1) {

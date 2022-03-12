@@ -263,7 +263,8 @@ public class Deduplicator {
               Double.parseDouble(to.longitude)));
       return d;
     } catch (Exception e) {
-      logger.error("could not compute distance: " + e.getLocalizedMessage());
+      String prefix = "Call: " + from.from + ", from: " + from.messageId + ", to: " + to.messageId;
+      logger.error(prefix + ", " + "could not compute distance: " + e.getLocalizedMessage());
       return 0;
     }
   }

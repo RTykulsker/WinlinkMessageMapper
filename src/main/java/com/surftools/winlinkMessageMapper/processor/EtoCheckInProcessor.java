@@ -45,16 +45,15 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
       logger.info("exportedMessage: " + message);
     }
 
-    String[] mimeLines = message.mime.split("\\n");
+    String[] mimeLines = message.mime.replaceAll("=0A", "\n").split("\\n");
     var latLongString = getStringFromFormLines(mimeLines, ":", "GPS Coordinates");
     LatLongPair latLong = null;
     if (latLongString != null) {
+      latLongString = latLongString.replaceAll("=A0", " ");
       String[] fields = latLongString.split(" ");
-      if (fields.length >= 6) {
-        latLong = new LatLongPair(fields[2], fields[5]);
-        if (!latLong.isValid()) {
-          return new MessageOrRejectionResult(message, RejectType.CANT_PARSE_LATLONG, latLongString);
-        }
+      latLong = new LatLongPair(findLatLong("LAT", fields), findLatLong("LON", fields));
+      if (latLong == null || !latLong.isValid()) {
+        return new MessageOrRejectionResult(message, RejectType.CANT_PARSE_LATLONG, latLongString);
       }
     } else {
       return new MessageOrRejectionResult(message, RejectType.CANT_PARSE_LATLONG, message.mime);
@@ -67,13 +66,59 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
     if (comments.endsWith("\n")) {
       comments = comments.substring(0, comments.length() - 1);
     }
+
+    var version = "";
     var versionString = getStringFromFormLines(mimeLines, ":", "Version");
-    var fields = versionString.split(" ");
-    var version = fields[fields.length - 1];
+    if (versionString != null) {
+      var fields = versionString.split(" ");
+      version = fields[fields.length - 1];
+    }
 
     CheckInMessage m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), "", //
         comments, status, band, mode, version);
     return new MessageOrRejectionResult(m, null);
+  }
+
+  /**
+   * return first non-empty String after key
+   *
+   * @param key
+   * @param fields
+   * @return
+   */
+  private String findLatLong(String key, String[] fields) {
+    int n = fields.length;
+    boolean isKeyFound = false;
+    for (int i = 0; i < n; ++i) {
+      String field = fields[i];
+
+      if (field.equals(key)) {
+        isKeyFound = true;
+        continue;
+      }
+
+      if (!isKeyFound) {
+        continue;
+      }
+
+      field = field.trim();
+      if (field.isEmpty()) {
+        continue;
+      }
+
+      if (field.endsWith(",")) {
+        field = field.substring(0, field.length() - 1);
+      }
+
+      int index = field.indexOf(".");
+      if (index == -1) {
+        field = field.replaceAll(",", ".");
+        field = field.replaceAll("'", ".");
+      }
+
+      return field;
+    }
+    return null;
   }
 
   private String getComments(String[] mimeLines) {
