@@ -37,8 +37,10 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -96,15 +98,43 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return "";
   }
 
-  protected MimeMessageParser makeMimeMessageParser(String mimeContent) throws Exception {
-    InputStream inputStream = new ByteArrayInputStream(mimeContent.getBytes());
-    Session session = Session.getDefaultInstance(new Properties(), null);
-    MimeMessage mimeMessage = new MimeMessage(session, inputStream);
+  public static MimeMessageParser makeMimeMessageParser(String mimeContent) {
+    try {
+      InputStream inputStream = new ByteArrayInputStream(mimeContent.getBytes());
+      Session session = Session.getDefaultInstance(new Properties(), null);
+      MimeMessage mimeMessage = new MimeMessage(session, inputStream);
 
-    MimeMessageParser parser = new MimeMessageParser(mimeMessage);
-    parser.parse();
+      MimeMessageParser parser = new MimeMessageParser(mimeMessage);
+      parser.parse();
 
-    return parser;
+      return parser;
+    } catch (Exception e) {
+      logger.error("could not parse mime: " + e.getLocalizedMessage());
+      return null;
+    }
+  }
+
+  public static Map<String, byte[]> getAttachments(MimeMessageParser parser) {
+    Map<String, byte[]> attachments = new HashMap<>();
+    List<DataSource> dataSources = parser.getAttachmentList();
+    int attachmentIndex = -1;
+    for (DataSource ds : dataSources) {
+      ++attachmentIndex;
+      var bads = (ByteArrayDataSource) ds;
+      var attachmentName = bads.getName();
+      if (attachmentName == null || attachmentName.length() == 0) {
+        attachmentName = "attachment-" + attachmentIndex;
+      }
+      try {
+        var bytes = bads.getInputStream().readAllBytes();
+        attachments.put(attachmentName, bytes);
+      } catch (Exception e) {
+        logger
+            .error("could not read attachment #: " + attachmentIndex + ", name: " + attachmentName + ", "
+                + e.getLocalizedMessage());
+      }
+    }
+    return attachments;
   }
 
   /**
@@ -134,72 +164,20 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       File outputDirectory = new File(outputPath.toString());
       outputDirectory.mkdirs();
 
-      // write message body to outputDir
-      var parser = makeMimeMessageParser(message.mime);
-      var plainContent = parser.getPlainContent();
       var mimePath = Path.of(outputPath.toString(), call + "-plainContent.txt");
       var out = new PrintWriter(mimePath.toString());
-      out.println(plainContent);
+      out.println(message.plainContent);
       out.close();
 
-      // write all attachments to outputDir
-      List<DataSource> attachments = parser.getAttachmentList();
-      int attachmentIndex = -1;
-      for (DataSource ds : attachments) {
-        ++attachmentIndex;
-        var bads = (ByteArrayDataSource) ds;
-        var attachmentName = bads.getName();
-        if (attachmentName == null) {
-          mimePath = Path.of(outputPath.toString(), call + "-attachment-" + attachmentIndex);
-        } else {
-          mimePath = Path.of(outputPath.toString(), call + "-" + attachmentName.toLowerCase());
-        }
+      for (String attachmentName : message.attachments.keySet()) {
+        mimePath = Path.of(outputPath.toString(), call + "-" + attachmentName.toLowerCase());
         FileOutputStream fos = new FileOutputStream(mimePath.toString());
-        fos.write(bads.getInputStream().readAllBytes());
+        fos.write(message.attachments.get(attachmentName));
         fos.close();
       } // end for over attachments
-    } catch (
-
-    Exception e) {
+    } catch (Exception e) {
       logger.error("Exception saving attachments for messageId: " + messageId + ", " + e.getLocalizedMessage());
     }
-  }
-
-  /**
-   * find base64-encoded attachment, if any, decode
-   *
-   * @param mime
-   * @return
-   */
-  public String decodeAttachment(String mime, String key, String from) {
-    if (dumpIds.contains(from)) {
-      logger.info("decodeAttachment: " + from);
-    }
-
-    String s = null;
-    try {
-      Properties props = new Properties();
-      InputStream inputStream = new ByteArrayInputStream(mime.getBytes());
-      Session session = Session.getDefaultInstance(props, null);
-      MimeMessage mimeMessage = new MimeMessage(session, inputStream);
-
-      // apache
-      MimeMessageParser parser = new MimeMessageParser(mimeMessage);
-      parser.parse();
-      List<DataSource> attachments = parser.getAttachmentList();
-
-      for (DataSource ds : attachments) {
-        ByteArrayDataSource bads = (ByteArrayDataSource) ds;
-        var attachmentName = bads.getName();
-        if (attachmentName != null && attachmentName.contains(key)) {
-          s = new String(bads.getInputStream().readAllBytes());
-          break;
-        }
-      }
-    } catch (Exception e) {
-      logger.error("could not base64 decode string from: " + from + ", " + e.getLocalizedMessage());
-    }
-    return s;
   }
 
   public LatLongPair getLatLongFromXml(String xmlString, String[] overrideTags) {

@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto;
 
+import java.util.Map;
+
 public class ExportedMessage implements IMessage {
   public final String messageId;
   public final String from;
@@ -36,8 +38,11 @@ public class ExportedMessage implements IMessage {
   public final String time;
   public final String mime;
 
+  public final String plainContent;
+  public final Map<String, byte[]> attachments;
+
   public ExportedMessage(String messageId, String from, String to, String subject, String date, String time,
-      String mime) {
+      String mime, String plainContent, Map<String, byte[]> attachments) {
     this.messageId = messageId;
     this.from = from;
     this.to = to;
@@ -45,22 +50,30 @@ public class ExportedMessage implements IMessage {
     this.date = date;
     this.time = time;
     this.mime = mime;
+
+    this.plainContent = plainContent;
+    this.attachments = attachments;
   }
 
   @Override
   public String toString() {
+    String attachmentsString = "\n" + attachments.size() + " attachments(" + String.join(",", attachments.keySet())
+        + ")\n";
     return "ExportedMessage {messageId: " + messageId + ", from: " + from + ", to: " + to + ", subject: " + subject
-        + ", date: " + date + ", time: " + time + ", mime: " + mime + "}";
+        + ", date: " + date + ", time: " + time + ", plainContent: \n" + plainContent + attachmentsString + "}";
   }
 
-  public ExportedMessage(ExportedMessage xmlMessage) {
-    this.messageId = xmlMessage.messageId;
-    this.from = xmlMessage.from;
-    this.to = xmlMessage.to;
-    this.subject = xmlMessage.subject;
-    this.date = xmlMessage.date;
-    this.time = xmlMessage.time;
-    this.mime = xmlMessage.mime;
+  public ExportedMessage(ExportedMessage exportedMessage) {
+    this.messageId = exportedMessage.messageId;
+    this.from = exportedMessage.from;
+    this.to = exportedMessage.to;
+    this.subject = exportedMessage.subject;
+    this.date = exportedMessage.date;
+    this.time = exportedMessage.time;
+    this.mime = exportedMessage.mime;
+
+    this.plainContent = exportedMessage.plainContent;
+    this.attachments = exportedMessage.attachments;
   }
 
   public String[] getMimeLines() {

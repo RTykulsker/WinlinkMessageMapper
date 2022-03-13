@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.HospitalBedMessage;
+import com.surftools.winlinkMessageMapper.dto.MessageType;
 import com.surftools.winlinkMessageMapper.reject.MessageOrRejectionResult;
 import com.surftools.winlinkMessageMapper.reject.RejectType;
 
@@ -53,18 +54,12 @@ public class HospitalBedProcessor extends AbstractBaseProcessor {
 
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
-    var mime = message.mime;
-
     if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
       logger.info("exportedMessage: " + message);
     }
 
-    if (!mime.contains("RMS_Express_Form_Hospital_Bed")) {
-      return new MessageOrRejectionResult(message, RejectType.WRONG_MESSAGE_TYPE, message.subject);
-    }
-
     try {
-      String xmlString = decodeAttachment(mime, "Hospital_Bed", message.from);
+      String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_BED.attachmentName()));
 
       var latLong = getLatLongFromXml(xmlString, null);
       if (latLong == null) {

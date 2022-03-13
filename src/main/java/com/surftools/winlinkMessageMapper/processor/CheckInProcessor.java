@@ -66,8 +66,7 @@ public class CheckInProcessor extends AbstractBaseProcessor {
         saveAttachments(message);
       }
 
-      var mime = message.mime;
-      String xmlString = decodeAttachment(mime, "RMS_Express_Form", message.from);
+      String xmlString = new String(message.attachments.get(messageType.attachmentName()));
 
       if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
         logger.info("exportedMessage: " + message);
@@ -94,9 +93,16 @@ public class CheckInProcessor extends AbstractBaseProcessor {
         version = fields[fields.length - 1]; // last field
       }
 
-      CheckInMessage m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), organization, comments,
-          status, band, mode, version);
-
+      ExportedMessage m = null;
+      if (messageType == MessageType.CHECK_IN) {
+        m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
+            mode, version);
+      } else if (messageType == MessageType.CHECK_OUT) {
+        m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
+            mode, version);
+      } else {
+        return new MessageOrRejectionResult(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
+      }
       return new MessageOrRejectionResult(m, null);
     } catch (Exception e) {
       return new MessageOrRejectionResult(message, RejectType.PROCESSING_ERROR, e.getMessage());

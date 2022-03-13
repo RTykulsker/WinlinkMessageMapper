@@ -31,22 +31,20 @@ import java.util.ArrayList;
 
 public enum MessageType {
 
-  CHECK_IN("check_in", true), //
-  CHECK_OUT("check_out", true), //
-  SPOTREP("spotrep", true), //
+  CHECK_IN("check_in", true, "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //
+  CHECK_OUT("check_out", true, "RMS_Express_Form_Winlink_Check_out_Viewer.xml"), //
+  SPOTREP("spotrep", true, "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
   DYFI("dyfi", true), //
 
-  WX_LOCAL("wx_local", true), //
-  WX_SEVERE("wx_severe", true), //
+  WX_LOCAL("wx_local", true, "RMS_Express_Form_Local Weather Report Viewer.xml"), //
+  WX_SEVERE("wx_severe", true, "RMS_Express_Form_Severe WX Report viewer.xml"), //
   WX_HURRICANE("wx_hurricane", true), //
 
-  LAX_HOSPITAL_BED("lax_hospital_bed", true), //
-  HOSPITAL_BED("hospital_bed", true), //
+  HOSPITAL_BED("hospital_bed", true, "RMS_Express_Form_Hospital_Bed_Report_Viewer.xml"), //
 
   POSITION("position", true), //
-  ETO_POSITION("eto_position", true), //
 
-  ICS_213("ics_213", false), //
+  ICS_213("ics_213", false, "RMS_Express_Form_ICS213_Initial_Viewer.xml"), //
   GIS_ICS_213("gis_ics_213", true), //
   ETO_CHECK_IN("eto_check_in", true), //
 
@@ -56,10 +54,16 @@ public enum MessageType {
 
   private final String key;
   private final boolean isGis;
+  private final String attachmentName;
 
-  private MessageType(String key, boolean isGis) {
+  private MessageType(String key, boolean isGis, String attachmentName) {
     this.key = key;
     this.isGis = isGis;
+    this.attachmentName = attachmentName;
+  }
+
+  private MessageType(String key, boolean isGis) {
+    this(key, isGis, null);
   }
 
   public static final String getAllNames() {
@@ -86,5 +90,9 @@ public enum MessageType {
 
   public boolean isGisType() {
     return isGis;
+  }
+
+  public String attachmentName() {
+    return attachmentName;
   }
 }

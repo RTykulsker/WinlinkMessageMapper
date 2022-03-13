@@ -50,10 +50,8 @@ public class WxHurricaneProcessor extends AbstractBaseProcessor {
 
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
-    var mime = message.mime;
-
     try {
-      String formData = decodeAttachment(mime, "FormData.txt", message.from);
+      String formData = new String(message.attachments.get("FormData.txt"));
       String[] formLines = formData.split("\r\n");
       String latitude = getStringFromFormLines(formLines, "Latitude");
       String longitude = getStringFromFormLines(formLines, "Longitude");

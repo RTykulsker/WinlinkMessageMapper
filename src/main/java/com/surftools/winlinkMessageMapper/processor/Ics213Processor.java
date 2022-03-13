@@ -50,13 +50,13 @@ public class Ics213Processor extends AbstractBaseProcessor {
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
     try {
-      var mime = message.mime;
 
       if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
         logger.info("exportedMessage: " + message);
       }
 
-      String xmlString = decodeAttachment(mime, "RMS_Express_Form_ICS213_Initial_Viewer.xml", message.from);
+      String xmlString = new String(message.attachments.get(messageType.attachmentName()));
+
       String organization = getStringFromXml(xmlString, "formtitle");
 
       // we want the value of the <message> element

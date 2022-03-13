@@ -28,9 +28,8 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.reject;
 
 import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.IMessage;
 
-public record MessageOrRejectionResult(IMessage message, Rejection rejection) {
+public record MessageOrRejectionResult(ExportedMessage message, Rejection rejection) {
   public MessageOrRejectionResult(ExportedMessage m, RejectType reason, String context) {
     this(null, new Rejection(m, reason, context));
   }

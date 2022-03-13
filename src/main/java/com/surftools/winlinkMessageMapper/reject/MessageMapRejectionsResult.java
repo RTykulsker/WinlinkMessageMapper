@@ -30,8 +30,9 @@ package com.surftools.winlinkMessageMapper.reject;
 import java.util.List;
 import java.util.Map;
 
-import com.surftools.winlinkMessageMapper.dto.IMessage;
+import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.MessageType;
 
-public record MessageMapRejectionsResult(Map<MessageType, List<IMessage>> messageMap, List<Rejection> rejections) {
+public record MessageMapRejectionsResult(Map<MessageType, List<ExportedMessage>> messageMap,
+    List<Rejection> rejections) {
 };

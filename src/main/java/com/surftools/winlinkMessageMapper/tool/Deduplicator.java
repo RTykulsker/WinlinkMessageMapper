@@ -74,7 +74,7 @@ public class Deduplicator {
     this.deduplicateNonGisByCall = deduplicateNonGisByCall;
   }
 
-  public MessagesRejectionsResult deduplicate(MessageType messageType, List<IMessage> messages) {
+  public MessagesRejectionsResult deduplicate(MessageType messageType, List<ExportedMessage> messages) {
     if (messageType.isGisType()) {
       return deduplicateGIS(messages);
     } else {
@@ -87,8 +87,8 @@ public class Deduplicator {
     }
   }
 
-  private MessagesRejectionsResult deduplicateNonGis(List<IMessage> inputMessages) {
-    List<IMessage> outputMessages = new ArrayList<IMessage>(inputMessages.size());
+  private MessagesRejectionsResult deduplicateNonGis(List<ExportedMessage> inputMessages) {
+    List<ExportedMessage> outputMessages = new ArrayList<ExportedMessage>(inputMessages.size());
     List<Rejection> rejections = new ArrayList<>();
 
     // call -> latest IMessage
@@ -126,7 +126,7 @@ public class Deduplicator {
     return new MessagesRejectionsResult(outputMessages, rejections);
   }
 
-  private MessagesRejectionsResult deduplicateGIS(List<IMessage> inputMessages) {
+  private MessagesRejectionsResult deduplicateGIS(List<ExportedMessage> inputMessages) {
     if (thresholdDistanceMeters < 0) {
       logger
           .info("threshold negative: deduplication skipped: returning: " + inputMessages.size()
@@ -134,18 +134,18 @@ public class Deduplicator {
       return new MessagesRejectionsResult(inputMessages, new ArrayList<Rejection>());
     }
 
-    List<IMessage> outputMessages = new ArrayList<IMessage>(inputMessages.size());
+    List<ExportedMessage> outputMessages = new ArrayList<ExportedMessage>(inputMessages.size());
     List<Rejection> rejections = new ArrayList<>();
 
     // call -> list of IMessage
-    Map<String, List<IMessage>> map = new HashMap<>(inputMessages.size());
+    Map<String, List<ExportedMessage>> map = new HashMap<>(inputMessages.size());
 
-    for (IMessage iThisMessage : inputMessages) {
+    for (ExportedMessage iThisMessage : inputMessages) {
       GisMessage thisMessage = (GisMessage) iThisMessage;
       String call = thisMessage.from;
-      List<IMessage> mapList = map.get(call);
-      List<IMessage> removeList = new ArrayList<>();
-      List<IMessage> addList = new ArrayList<>();
+      List<ExportedMessage> mapList = map.get(call);
+      List<ExportedMessage> removeList = new ArrayList<>();
+      List<ExportedMessage> addList = new ArrayList<>();
       if (mapList == null) {
         mapList = new ArrayList<>();
         addList.add(thisMessage);
@@ -200,9 +200,9 @@ public class Deduplicator {
 
     } // end loop of input messages
 
-    for (Map.Entry<String, List<IMessage>> entry : map.entrySet()) {
+    for (Map.Entry<String, List<ExportedMessage>> entry : map.entrySet()) {
       String call = entry.getKey();
-      List<IMessage> list = entry.getValue();
+      List<ExportedMessage> list = entry.getValue();
       if (list.size() > 1) {
         logger.debug("adding " + list.size() + " entries for call: " + call);
       }

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.XMLConstants;
@@ -49,7 +50,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
+import com.surftools.winlinkMessageMapper.processor.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.CharacterAssassinator;
+import com.surftools.winlinkMessageMapper.reject.MessageOrRejectionResult;
+import com.surftools.winlinkMessageMapper.reject.MessagesRejectionsResult;
+import com.surftools.winlinkMessageMapper.reject.RejectType;
+import com.surftools.winlinkMessageMapper.reject.Rejection;
 
 public class ExportedMessageReader {
   private static final Logger logger = LoggerFactory.getLogger(ExportedMessageReader.class);
@@ -81,9 +87,10 @@ public class ExportedMessageReader {
     return new ByteArrayInputStream(content.getBytes());
   }
 
-  public List<ExportedMessage> extractAll(Path filePath) {
+  public MessagesRejectionsResult extractAll(Path filePath) {
     logger.info("Processing file: " + filePath.getFileName());
     List<ExportedMessage> messages = new ArrayList<>();
+    List<Rejection> rejections = new ArrayList<>();
 
     try {
       DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -97,9 +104,11 @@ public class ExportedMessageReader {
         Node node = nodeList.item(i);
         if (node.getNodeType() == Node.ELEMENT_NODE) {
           Element element = (Element) node;
-          ExportedMessage exportedMessage = extractMessage(element);
-          if (exportedMessage != null) {
-            messages.add(exportedMessage);
+          MessageOrRejectionResult result = extractMessage(element);
+          if (result.message() != null) {
+            messages.add(result.message());
+          } else {
+            rejections.add(result.rejection());
           }
         } // end if XML Message Node
       } // end for over messages
@@ -110,10 +119,13 @@ public class ExportedMessageReader {
     }
 
     logger.info("extracted " + messages.size() + " exported messages from file: " + filePath.getFileName());
-    return messages;
+    if (rejections.size() > 0) {
+      logger.info("rejected " + rejections.size() + " exported messages from file: " + filePath.getFileName());
+    }
+    return new MessagesRejectionsResult(messages, rejections);
   }
 
-  private ExportedMessage extractMessage(Element element) {
+  private MessageOrRejectionResult extractMessage(Element element) {
     var messageId = element.getElementsByTagName("id").item(0).getTextContent();
     var subject = element.getElementsByTagName("subject").item(0).getTextContent();
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
@@ -131,8 +143,23 @@ public class ExportedMessageReader {
 
     String recipient = getRecipient(mimeLines);
 
-    ExportedMessage message = new ExportedMessage(messageId, sender, recipient, subject, dateString, timeString, mime);
-    return message;
+    ExportedMessage message = null;
+    String plainContent = null;
+    Map<String, byte[]> attachments = null;
+
+    var parser = AbstractBaseProcessor.makeMimeMessageParser(mime);
+    if (parser == null) {
+      message = new ExportedMessage(messageId, sender, recipient, subject, dateString, timeString, mime, plainContent,
+          attachments);
+      return new MessageOrRejectionResult(message, RejectType.CANT_PARSE_MIME, message.mime);
+    }
+
+    plainContent = parser.getPlainContent();
+    attachments = AbstractBaseProcessor.getAttachments(parser);
+
+    message = new ExportedMessage(messageId, sender, recipient, subject, dateString, timeString, mime, plainContent,
+        attachments);
+    return new MessageOrRejectionResult(message, null);
   }
 
   // Subject: DYFI Automatic Entry - Winlink EXERCISE

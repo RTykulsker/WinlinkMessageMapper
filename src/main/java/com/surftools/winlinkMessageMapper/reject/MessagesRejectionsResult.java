@@ -29,7 +29,7 @@ package com.surftools.winlinkMessageMapper.reject;
 
 import java.util.List;
 
-import com.surftools.winlinkMessageMapper.dto.IMessage;
+import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
 
-public record MessagesRejectionsResult(List<IMessage> messages, List<Rejection> rejections) {
+public record MessagesRejectionsResult(List<ExportedMessage> messages, List<Rejection> rejections) {
 };

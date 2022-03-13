@@ -54,11 +54,9 @@ import com.surftools.winlinkMessageMapper.processor.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.EtoCheckInProcessor;
-import com.surftools.winlinkMessageMapper.processor.EtoPositionProcessor;
 import com.surftools.winlinkMessageMapper.processor.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.Ics213Processor;
-import com.surftools.winlinkMessageMapper.processor.LAXHospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.PositionProcessor;
 import com.surftools.winlinkMessageMapper.processor.SpotRepProcessor;
 import com.surftools.winlinkMessageMapper.processor.WxHurricaneProcessor;
@@ -86,6 +84,10 @@ public class WinlinkMessageMapper {
 
   @Option(name = "--path", usage = "path to message files", required = true)
   private String pathName = null;
+
+  @Option(name = "--requiredMessageType", usage = "to ONLY process messages of a given type", required = false)
+  private String requiredMessageTypeString = null;
+  private MessageType requiredMessageType = null;
 
   @Option(name = "--dumpIds", usage = "comma-delimited list of messageIds or call signs to dump message contents for", required = false)
   private String dumpIdsString = null;
@@ -132,14 +134,28 @@ public class WinlinkMessageMapper {
         logger.debug("path: " + path);
       }
 
+      if (requiredMessageTypeString != null) {
+        requiredMessageType = MessageType.valueOf(requiredMessageTypeString);
+        if (requiredMessageType == null) {
+          logger.error("requireMessageType: " + requiredMessageTypeString + " does not exist");
+          System.exit(1);
+        } else {
+          logger.info("requireMessageType: " + requiredMessageType.toString());
+        }
+      }
+
       logger.info("WinlinkMessageMapper, starting with input path: " + path);
 
+      if (requiredMessageTypeString != null) {
+        requiredMessageType = MessageType.valueOf(requiredMessageTypeString);
+      }
+
       // extract all ExportedMessages from the files
-      var exportedMessages = extractAllExportedMessages(path, preferredPrefixes, preferredSuffixes,
-          notPreferredPrefixes, notPreferredSuffixes);
+      var lists = extractAllExportedMessages(path, preferredPrefixes, preferredSuffixes, notPreferredPrefixes,
+          notPreferredSuffixes);
 
       // transform ExportedMessages into type-specific messages
-      var processResults = processAllExportedMessages(exportedMessages);
+      var processResults = processAllExportedMessages(lists);
 
       // explicitly reject, deduplicate and out the results
       outputResults(path, processResults);
@@ -157,23 +173,25 @@ public class WinlinkMessageMapper {
    * @param exportedMessages
    * @return
    */
-  private MessageMapRejectionsResult processAllExportedMessages(List<ExportedMessage> exportedMessages) {
-
+  private MessageMapRejectionsResult processAllExportedMessages(MessagesRejectionsResult lists) {
+    // private MessageMapRejectionsResult processAllExportedMessages(List<ExportedMessage> exportedMessages) {
     var processorMap = makeProcessorMap();
 
-    Map<MessageType, List<IMessage>> messageMap = new HashMap<>();
-    List<Rejection> rejections = new ArrayList<>();
+    Map<MessageType, List<ExportedMessage>> messageMap = new HashMap<>();
+    List<Rejection> rejections = lists.rejections();
 
-    for (ExportedMessage exportedMessage : exportedMessages) {
+    for (ExportedMessage exportedMessage : lists.messages()) {
       var messageType = getMessageType(exportedMessage);
       var processor = processorMap.get(messageType);
 
-      if (messageType == MessageType.UNKNOWN || processor == null) {
+      if (requiredMessageType != null && messageType != requiredMessageType) {
+        rejections.add(new Rejection(exportedMessage, RejectType.WRONG_MESSAGE_TYPE, messageType.toString()));
+      } else if (messageType == MessageType.UNKNOWN || processor == null) {
         rejections.add(new Rejection(exportedMessage, RejectType.UNSUPPORTED_TYPE, exportedMessage.subject));
       } else {
         var result = processor.process(exportedMessage);
         if (result.message() != null) {
-          List<IMessage> list = messageMap.getOrDefault(messageType, new ArrayList<IMessage>());
+          List<ExportedMessage> list = messageMap.getOrDefault(messageType, new ArrayList<ExportedMessage>());
           list.add(result.message());
           messageMap.put(messageType, list);
         } else {
@@ -194,7 +212,7 @@ public class WinlinkMessageMapper {
    * @param notPreferredSuffixes
    * @return
    */
-  private List<ExportedMessage> extractAllExportedMessages(Path path, String preferredPrefixes,
+  private MessagesRejectionsResult extractAllExportedMessages(Path path, String preferredPrefixes,
       String preferredSuffixes, String notPreferredPrefixes, String notPreferredSuffixes) {
 
     ExportedMessageReader reader = new ExportedMessageReader();
@@ -210,18 +228,23 @@ public class WinlinkMessageMapper {
     }
 
     // extract all Exported Messages from files
+    List<Rejection> rejections = new ArrayList<>();
     List<ExportedMessage> exportedMessages = new ArrayList<>();
     for (File file : path.toFile().listFiles()) {
       if (file.isFile()) {
         if (!file.getName().toLowerCase().endsWith(".xml")) {
           continue;
         }
-        List<ExportedMessage> messages = reader.extractAll(file.toPath());
-        exportedMessages.addAll(messages);
+        var lists = reader.extractAll(file.toPath());
+        exportedMessages.addAll(lists.messages());
+        rejections.addAll(lists.rejections());
       }
     }
     logger.info("extracted " + exportedMessages.size() + " exported messages from all files");
-    return exportedMessages;
+    if (rejections.size() > 0) {
+      logger.info("rejected " + rejections.size() + " exported messages from all files");
+    }
+    return new MessagesRejectionsResult(exportedMessages, rejections);
   }
 
   /**
@@ -236,7 +259,7 @@ public class WinlinkMessageMapper {
     var messageMap = processResults.messageMap();
     var rejections = processResults.rejections();
     for (MessageType messageType : messageMap.keySet()) {
-      List<IMessage> messages = messageMap.getOrDefault(messageType, new ArrayList<IMessage>());
+      List<ExportedMessage> messages = messageMap.getOrDefault(messageType, new ArrayList<ExportedMessage>());
 
       // explicit rejections; can't really do until after location has been resolved
       var result = processExplicitRejections(messageType, messages, rejectMap);
@@ -268,7 +291,7 @@ public class WinlinkMessageMapper {
    * @param pathName
    * @param messageType
    */
-  private void writeOutput(List<IMessage> messages, String pathName, MessageType messageType) {
+  private void writeOutput(List<ExportedMessage> messages, String pathName, MessageType messageType) {
     Path outputPath = Path.of(pathName, "output", messageType.toString() + ".csv");
 
     try {
@@ -337,15 +360,21 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.DYFI, new DyfiProcessor());
     processorMap.put(MessageType.POSITION, new PositionProcessor());
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
-    processorMap.put(MessageType.ETO_POSITION, new EtoPositionProcessor());
     processorMap.put(MessageType.ICS_213, new Ics213Processor(MessageType.ICS_213));
     processorMap.put(MessageType.GIS_ICS_213, new Ics213Processor(MessageType.GIS_ICS_213));
     processorMap.put(MessageType.WX_LOCAL, new WxLocalProcessor());
     processorMap.put(MessageType.WX_SEVERE, new WxSevereProcessor());
     processorMap.put(MessageType.WX_HURRICANE, new WxHurricaneProcessor());
     processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
-    processorMap.put(MessageType.LAX_HOSPITAL_BED, new LAXHospitalBedProcessor());
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
+
+    if (requiredMessageType != null) {
+      for (MessageType messageType : processorMap.keySet()) {
+        if (messageType != requiredMessageType) {
+          processorMap.remove(messageType);
+        } // end if not required type
+      } // end for over types in map
+    } // end if requiredMessageType != null
 
     if (dumpIdsSet == null) {
       dumpIdsSet = makeDumpIds(dumpIdsString);
@@ -377,7 +406,6 @@ public class WinlinkMessageMapper {
    * @return
    */
   public MessageType getMessageType(ExportedMessage message) {
-    var mime = message.mime;
     var subject = message.subject;
 
     if (dumpIdsSet.contains(message.messageId) || dumpIdsSet.contains(message.from)) {
@@ -387,33 +415,30 @@ public class WinlinkMessageMapper {
     /**
      * mime based
      */
-    if (mime.contains("RMS_Express_Form_ICS213_Initial_Viewer.xml")) {
+    var attachments = message.attachments;
+    var attachmentNames = attachments.keySet();
+
+    if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
       return MessageType.ICS_213;
-    } else if (mime.contains("RMS_Express_Form_Winlink_Check_In_Viewer.xml")) {
+    } else if (attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
       return MessageType.CHECK_IN;
-    } else if (mime.contains("RMS_Express_Form_Winlink_Check_out_Viewer.xml")) {
+    } else if (attachmentNames.contains(MessageType.CHECK_OUT.attachmentName())) {
       return MessageType.CHECK_OUT;
-    } else if (mime.contains("RMS_Express_Form_ICS213_Initial_Viewer.xml")) {
-      return MessageType.ICS_213;
-    } else if (mime.contains("DYFI Winlink form")) {
-      return MessageType.DYFI;
-    } else if (mime.contains("RMS_Express_Form_Hospital_Bed")) {
+    } else if (attachmentNames.contains(MessageType.HOSPITAL_BED.attachmentName())) {
       return MessageType.HOSPITAL_BED;
-    } else if (mime.contains("RMS_Express_Form_LAX")) {
-      return MessageType.LAX_HOSPITAL_BED;
-    } else if (mime.contains("RMS_Express_Form_Shares_Spotrep-2")) {
+    } else if (attachmentNames.contains(MessageType.SPOTREP.attachmentName())) {
       return MessageType.SPOTREP;
-    } else if (mime.contains("Hurricane Report")) {
-      return MessageType.WX_HURRICANE;
-    } else if (mime.contains("RMS_Express_Form_Local Weather")) {
+    } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
       return MessageType.WX_LOCAL;
-    } else if (mime.contains("RMS_Express_Form_Severe WX")) {
+    } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {
       return MessageType.WX_SEVERE;
       /**
        * subject-based
        */
-    } else if (subject.equals("ETO Position")) {
-      return MessageType.ETO_POSITION;
+    } else if (subject.startsWith("DYFI Automatic Entry")) {
+      return MessageType.DYFI;
+    } else if (subject.startsWith("Hurricane Report")) {
+      return MessageType.WX_HURRICANE;
     } else if (subject.startsWith("Winlink Thursday Net Check-In")
         || subject.startsWith("Re: Winlink Thursday Net Check-In")) {
       return MessageType.ETO_CHECK_IN;
@@ -482,10 +507,10 @@ public class WinlinkMessageMapper {
    * @param rejectMap
    * @return
    */
-  private MessagesRejectionsResult processExplicitRejections(MessageType messageType, List<IMessage> inputMessages,
-      Map<String, RejectTypeContextPair> rejectMap) {
+  private MessagesRejectionsResult processExplicitRejections(MessageType messageType,
+      List<ExportedMessage> inputMessages, Map<String, RejectTypeContextPair> rejectMap) {
 
-    List<IMessage> outputMessages = new ArrayList<>(inputMessages.size());
+    List<ExportedMessage> outputMessages = new ArrayList<>(inputMessages.size());
     List<Rejection> rejections = new ArrayList<>();
 
     int rejectCount = 0;

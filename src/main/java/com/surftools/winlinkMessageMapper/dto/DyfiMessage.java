@@ -33,28 +33,30 @@ public class DyfiMessage extends GisMessage {
   public final boolean isFelt;
   public final String comments;
   public final String intensity;
+  public final String formVersion;
 
   public DyfiMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization, //
-      String location, boolean isRealEvent, boolean isFelt, String comments, String intensity) {
+      String location, boolean isRealEvent, boolean isFelt, String comments, String intensity, String formVersion) {
     super(xmlMessage, latitude, longitude, organization);
     this.location = location;
     this.isRealEvent = isRealEvent;
     this.isFelt = isFelt;
     this.comments = comments;
     this.intensity = intensity;
+    this.formVersion = formVersion;
   }
 
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", "ExerciseId", //
-        "Location", "IsRealEvent", "IsFelt", "Comments", "Intensity" };
+        "Location", "IsRealEvent", "IsFelt", "Comments", "Intensity", "FormVersion" };
   }
 
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, //
         latitude, longitude, organization, location, //
-        Boolean.toString(isRealEvent), Boolean.toString(isFelt), comments, intensity };
+        Boolean.toString(isRealEvent), Boolean.toString(isFelt), comments, intensity, formVersion };
   }
 }

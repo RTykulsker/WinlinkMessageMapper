@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 
 import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
+import com.surftools.winlinkMessageMapper.dto.MessageType;
 import com.surftools.winlinkMessageMapper.dto.WxSevereMessage;
 import com.surftools.winlinkMessageMapper.reject.MessageOrRejectionResult;
 import com.surftools.winlinkMessageMapper.reject.RejectType;
@@ -49,10 +50,8 @@ public class WxSevereProcessor extends AbstractBaseProcessor {
 
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
-    var mime = message.mime;
-
     try {
-      String xmlString = decodeAttachment(mime, "Severe WX", message.from);
+      String xmlString = new String(message.attachments.get(MessageType.WX_SEVERE.attachmentName()));
 
       var latLong = getLatLongFromXml(xmlString, null);
       if (latLong == null) {

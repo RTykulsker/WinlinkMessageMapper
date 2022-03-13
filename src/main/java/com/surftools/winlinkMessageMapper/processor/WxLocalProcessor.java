@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
+import com.surftools.winlinkMessageMapper.dto.MessageType;
 import com.surftools.winlinkMessageMapper.dto.Units;
 import com.surftools.winlinkMessageMapper.dto.WxLocalMessage;
 import com.surftools.winlinkMessageMapper.reject.MessageOrRejectionResult;
@@ -59,10 +60,8 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
 
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
-    var mime = message.mime;
-
     try {
-      String xmlString = decodeAttachment(mime, "Local Weather", message.from);
+      String xmlString = new String(message.attachments.get(MessageType.WX_LOCAL.attachmentName()));
 
       var latLong = getLatLongFromXml(xmlString, OVERRIDE_LAT_LON_TAG_NAMES);
       if (latLong == null) {

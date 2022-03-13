@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 
 import com.surftools.winlinkMessageMapper.dto.ExportedMessage;
+import com.surftools.winlinkMessageMapper.dto.MessageType;
 import com.surftools.winlinkMessageMapper.dto.SpotRepMessage;
 import com.surftools.winlinkMessageMapper.reject.MessageOrRejectionResult;
 import com.surftools.winlinkMessageMapper.reject.RejectType;
@@ -48,14 +49,9 @@ public class SpotRepProcessor extends AbstractBaseProcessor {
 
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
-    var mime = message.mime;
-
-    if (!mime.contains("RMS_Express_Form_Shares_Spotrep-2")) {
-      return new MessageOrRejectionResult(message, RejectType.WRONG_MESSAGE_TYPE, message.subject);
-    }
 
     try {
-      String xmlString = decodeAttachment(mime, "Shares_Spotrep-2_Viewer", message.from);
+      String xmlString = new String(message.attachments.get(MessageType.SPOTREP.attachmentName()));
 
       var latLong = getLatLongFromXml(xmlString, null);
       if (latLong == null) {

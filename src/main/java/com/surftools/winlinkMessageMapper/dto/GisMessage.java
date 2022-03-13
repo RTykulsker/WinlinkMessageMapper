@@ -55,10 +55,6 @@ public class GisMessage extends ExportedMessage {
     return !latitude.equals("") && !longitude.equals("");
   }
 
-  public ExportedMessage getXmlMessage() {
-    return new ExportedMessage(messageId, from, to, subject, date, time, mime);
-  }
-
   public void replaceLocation(LatLongPair pair) {
     this.latitude = pair.latitude();
     this.longitude = pair.longitude();

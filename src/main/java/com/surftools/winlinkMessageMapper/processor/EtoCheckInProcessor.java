@@ -45,11 +45,10 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
       logger.info("exportedMessage: " + message);
     }
 
-    String[] mimeLines = message.mime.replaceAll("=0A", "\n").split("\\n");
+    String[] mimeLines = message.plainContent.split("\\n");
     var latLongString = getStringFromFormLines(mimeLines, ":", "GPS Coordinates");
     LatLongPair latLong = null;
     if (latLongString != null) {
-      latLongString = latLongString.replaceAll("=A0", " ");
       String[] fields = latLongString.split(" ");
       latLong = new LatLongPair(findLatLong("LAT", fields), findLatLong("LON", fields));
       if (latLong == null || !latLong.isValid()) {
@@ -90,7 +89,14 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
     int n = fields.length;
     boolean isKeyFound = false;
     for (int i = 0; i < n; ++i) {
-      String field = fields[i];
+      String field = fields[i].trim();
+
+      if (field.length() > 0) {
+        char c = field.charAt(0);
+        if (!Character.isLetterOrDigit(c) && c != '-') {
+          field = field.substring(1);
+        }
+      }
 
       if (field.equals(key)) {
         isKeyFound = true;
@@ -137,12 +143,6 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
         }
         line = line.trim();
         if (line.length() > 0) {
-          int index = line.lastIndexOf("=20");
-          if (index >= 0) {
-            if (index == line.length() - 3) {
-              line = line.substring(0, index);
-            }
-          }
           sb.append(line);
           sb.append("\n");
         }

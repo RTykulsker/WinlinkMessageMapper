@@ -36,7 +36,7 @@ public class PositionProcessor extends AbstractBaseProcessor {
 
   @Override
   public MessageOrRejectionResult process(ExportedMessage message) {
-    var mime = message.mime;
+    var mime = message.plainContent;
     String[] mimeLines = mime.split("\\n");
 
     var latitude = convertToDecimalDegrees(getStringFromMime("Latitude: ", mimeLines));
