@@ -68,37 +68,8 @@ public class ExportedMessageWriter {
         outputDirectory.mkdir();
       }
 
-      Comparator<ExportedMessage> comparator = new Comparator<ExportedMessage>() {
-
-        @Override
-        public int compare(ExportedMessage o1, ExportedMessage o2) {
-          return o1.from.compareTo(o2.from);
-        }
-
-      };
-
-      if (messageType == MessageType.REJECTIONS) {
-        comparator = new Comparator<ExportedMessage>() {
-
-          @Override
-          public int compare(ExportedMessage o1, ExportedMessage o2) {
-            RejectionMessage r1 = (RejectionMessage) o1;
-            RejectionMessage r2 = (RejectionMessage) o2;
-
-            int compare = r1.reason.id() - r2.reason.id();
-            if (compare != 0) {
-              return compare;
-            }
-
-            compare = r1.from.compareTo(r2.from);
-            if (compare != 0) {
-              return compare;
-            }
-
-            return r1.dateTime.compareTo(r2.dateTime);
-          }
-        };
-      }
+      var comparator = (messageType == MessageType.REJECTIONS) ? new RejectionMessageComparator()
+          : new DefaultMessasgeComparator();
       Collections.sort(messages, comparator);
 
       CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
@@ -116,6 +87,35 @@ public class ExportedMessageWriter {
       logger.info("wrote " + messages.size() + " messages to file: " + outputPath);
     } catch (Exception e) {
       logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  static class DefaultMessasgeComparator implements Comparator<ExportedMessage> {
+
+    @Override
+    public int compare(ExportedMessage o1, ExportedMessage o2) {
+      return o1.from.compareTo(o2.from);
+    }
+
+  }
+
+  static class RejectionMessageComparator implements Comparator<ExportedMessage> {
+    @Override
+    public int compare(ExportedMessage o1, ExportedMessage o2) {
+      RejectionMessage r1 = (RejectionMessage) o1;
+      RejectionMessage r2 = (RejectionMessage) o2;
+
+      int compare = r1.reason.id() - r2.reason.id();
+      if (compare != 0) {
+        return compare;
+      }
+
+      compare = r1.from.compareTo(r2.from);
+      if (compare != 0) {
+        return compare;
+      }
+
+      return r1.dateTime.compareTo(r2.dateTime);
     }
   }
 }
