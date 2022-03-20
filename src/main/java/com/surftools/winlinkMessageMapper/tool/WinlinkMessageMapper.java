@@ -161,13 +161,9 @@ public class WinlinkMessageMapper {
       var deduplicator = new Deduplicator(deduplicationThresholdMeters);
       deduplicator.deduplicate(messageMap);
 
+      // output
       var writer = new ExportedMessageWriter(pathName);
-      for (MessageType messageType : messageMap.keySet()) {
-        List<ExportedMessage> messages = messageMap.get(messageType);
-        if (messages != null) {
-          writer.writeOutput(messages, messageType);
-        }
-      }
+      writer.writeAll(messageMap);
 
       logger.info("exiting");
     } catch (Exception e) {
@@ -208,8 +204,19 @@ public class WinlinkMessageMapper {
       List<ExportedMessage> list = messageMap.getOrDefault(messageType, new ArrayList<ExportedMessage>());
       list.add(processedMessage);
       messageMap.put(messageType, list);
-
     }
+
+    // integrity check
+    var mapMessageCount = 0;
+    for (MessageType messageType : messageMap.keySet()) {
+      var list = messageMap.get(messageType);
+      mapMessageCount += list.size();
+    }
+
+    if (mapMessageCount != exportedMessages.size()) {
+      logger.warn("Exported messages: " + exportedMessages.size() + " != mapMessageCount: " + mapMessageCount);
+    }
+
     return messageMap;
   }
 

@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,20 @@ public class ExportedMessageWriter {
 
   public ExportedMessageWriter(String pathName) {
     this.pathName = pathName;
+  }
+
+  /**
+   * write all the processed messages
+   *
+   * @param messageMap
+   */
+  public void writeAll(Map<MessageType, List<ExportedMessage>> messageMap) {
+    for (MessageType messageType : messageMap.keySet()) {
+      List<ExportedMessage> messages = messageMap.get(messageType);
+      if (messages != null) {
+        writeOutput(messages, messageType);
+      }
+    }
   }
 
   /**
@@ -118,4 +133,5 @@ public class ExportedMessageWriter {
       return r1.dateTime.compareTo(r2.dateTime);
     }
   }
+
 }

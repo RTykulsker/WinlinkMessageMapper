@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
+import com.surftools.winlinkMessageMapper.dto.message.CheckOutMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
@@ -97,7 +98,7 @@ public class CheckInProcessor extends AbstractBaseProcessor {
         m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
             mode, version, messageType);
       } else if (messageType == MessageType.CHECK_OUT) {
-        m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
+        m = new CheckOutMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
             mode, version, messageType);
       } else {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());

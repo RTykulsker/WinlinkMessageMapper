@@ -27,23 +27,13 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
-public class GisIcs213Message extends GisMessage {
-  public final String message;
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
-  public GisIcs213Message(ExportedMessage xmlMessage, String latitude, String longitude, String organization,
-      String message) {
-    super(xmlMessage, latitude, longitude, organization);
-    this.message = message;
+public class CheckOutMessage extends CheckInMessage {
+
+  public CheckOutMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization,
+      String comments, String status, String band, String mode, String version, MessageType messageType) {
+    super(xmlMessage, latitude, longitude, organization, comments, status, band, mode, version, messageType);
   }
 
-  @Override
-  public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization",
-        "Message", };
-  }
-
-  @Override
-  public String[] getValues() {
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, message };
-  }
 }
