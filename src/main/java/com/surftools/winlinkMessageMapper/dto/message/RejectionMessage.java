@@ -29,7 +29,7 @@ package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
-public class RejectionMessage extends ExportedMessage implements Comparable<RejectionMessage> {
+public class RejectionMessage extends ExportedMessage {
   public final RejectType reason;
   public final String context;
 
@@ -47,15 +47,6 @@ public class RejectionMessage extends ExportedMessage implements Comparable<Reje
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, date, time, reason.toString(), context };
-  }
-
-  @Override
-  public int compareTo(RejectionMessage o) {
-    int compare = reason.id() - o.reason.id();
-    if (compare != 0) {
-      return compare;
-    }
-    return dateTime.compareTo(o.dateTime);
   }
 
 }

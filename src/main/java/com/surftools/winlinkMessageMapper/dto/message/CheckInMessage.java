@@ -35,7 +35,6 @@ public class CheckInMessage extends GisMessage {
   public final String band;
   public final String mode;
   public final String version;
-  private final MessageType messageType;
 
   public CheckInMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization, //
       String comments, String status, String band, String mode, String version, MessageType messageType) {
@@ -45,7 +44,6 @@ public class CheckInMessage extends GisMessage {
     this.band = band;
     this.mode = mode;
     this.version = version;
-    this.messageType = messageType;
   }
 
   @Override

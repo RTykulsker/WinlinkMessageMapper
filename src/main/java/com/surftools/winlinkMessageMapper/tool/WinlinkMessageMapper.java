@@ -28,7 +28,6 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.tool;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,15 +43,12 @@ import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.opencsv.CSVWriter;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageReader;
+import com.surftools.winlinkMessageMapper.dao.ExportedMessageWriter;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
-import com.surftools.winlinkMessageMapper.dto.message.IMessage;
 import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
-import com.surftools.winlinkMessageMapper.dto.other.RejectTypeContextPair;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
@@ -66,6 +62,7 @@ import com.surftools.winlinkMessageMapper.processor.message.WxHurricaneProcessor
 import com.surftools.winlinkMessageMapper.processor.message.WxLocalProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WxSevereProcessor;
 import com.surftools.winlinkMessageMapper.processor.other.Deduplicator;
+import com.surftools.winlinkMessageMapper.processor.other.ExplicitRejectionProcessor;
 
 /**
  * read a bunch of Winlink "Exported Message" files of messages, output single CSV message file
@@ -154,20 +151,29 @@ public class WinlinkMessageMapper {
           notPreferredSuffixes);
 
       // transform ExportedMessages into type-specific messages
-      var processResults = processAllExportedMessages(exportedMessages);
+      var messageMap = processAllExportedMessages(exportedMessages);
 
-      // explicitly reject, deduplicate and out the results
-      outputResults(path, processResults);
+      // explicit rejections
+      var rejectionProcessor = new ExplicitRejectionProcessor(path);
+      rejectionProcessor.processExplicitRejections(messageMap);
+
+      // deduplication
+      var deduplicator = new Deduplicator(deduplicationThresholdMeters);
+      deduplicator.deduplicate(messageMap);
+
+      var writer = new ExportedMessageWriter(pathName);
+      for (MessageType messageType : messageMap.keySet()) {
+        List<ExportedMessage> messages = messageMap.get(messageType);
+        if (messages != null) {
+          writer.writeOutput(messages, messageType);
+        }
+      }
 
       logger.info("exiting");
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
       System.exit(1);
     }
-  }
-
-  protected ExportedMessage reject(ExportedMessage message, RejectType reason, String context) {
-    return new RejectionMessage(message, reason, context);
   }
 
   /**
@@ -177,7 +183,6 @@ public class WinlinkMessageMapper {
    * @return
    */
   private Map<MessageType, List<ExportedMessage>> processAllExportedMessages(List<ExportedMessage> exportedMessages) {
-    // private MessageMapRejectionsResult processAllExportedMessages(List<ExportedMessage> exportedMessages) {
     var processorMap = makeProcessorMap();
 
     Map<MessageType, List<ExportedMessage>> messageMap = new HashMap<>();
@@ -188,10 +193,10 @@ public class WinlinkMessageMapper {
       ExportedMessage processedMessage = null;
 
       if (requiredMessageType != null && messageType != requiredMessageType) {
-        processedMessage = reject(exportedMessage, RejectType.WRONG_MESSAGE_TYPE, messageType.toString());
+        processedMessage = new RejectionMessage(exportedMessage, RejectType.WRONG_MESSAGE_TYPE, messageType.toString());
         messageType = MessageType.REJECTIONS;
       } else if (messageType == MessageType.UNKNOWN || processor == null) {
-        processedMessage = reject(exportedMessage, RejectType.UNSUPPORTED_TYPE, exportedMessage.subject);
+        processedMessage = new RejectionMessage(exportedMessage, RejectType.UNSUPPORTED_TYPE, exportedMessage.subject);
         messageType = MessageType.REJECTIONS;
       } else {
         processedMessage = processor.process(exportedMessage);
@@ -247,64 +252,6 @@ public class WinlinkMessageMapper {
     logger.info("read " + exportedMessages.size() + " exported messages from all files");
 
     return exportedMessages;
-  }
-
-  /**
-   * output all processed messages, along with rejections
-   *
-   * @param path
-   * @param processResults
-   */
-  private void outputResults(Path path, Map<MessageType, List<ExportedMessage>> messageMap) {
-
-    // explicit rejections
-    processExplicitRejections(path, messageMap);
-
-    // deduplication
-    var deduplicator = new Deduplicator(deduplicationThresholdMeters);
-    deduplicator.deduplicate(messageMap);
-
-    for (MessageType messageType : messageMap.keySet()) {
-      List<ExportedMessage> messages = messageMap.getOrDefault(messageType, new ArrayList<ExportedMessage>());
-
-      if (messages.size() > 0) {
-        writeOutput(messages, pathName, messageType);
-      }
-    }
-  }
-
-  /**
-   * write out the type-specific messages
-   *
-   * @param messages
-   * @param pathName
-   * @param messageType
-   */
-  private void writeOutput(List<ExportedMessage> messages, String pathName, MessageType messageType) {
-    Path outputPath = Path.of(pathName, "output", messageType.toString() + ".csv");
-
-    try {
-      File outputDirectory = new File(outputPath.toFile().getParent());
-      if (!outputDirectory.exists()) {
-        outputDirectory.mkdir();
-      }
-
-      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
-      if (messages.size() > 0) {
-        IMessage aMessage = messages.get(0);
-        writer.writeNext(aMessage.getHeaders());
-        for (IMessage m : messages) {
-          writer.writeNext(m.getValues());
-        }
-      } else {
-        writer.writeNext(new String[] { "MessageId" });
-      }
-
-      writer.close();
-      logger.info("wrote " + messages.size() + " messages to file: " + outputPath);
-    } catch (Exception e) {
-      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
-    }
   }
 
   /**
@@ -367,10 +314,6 @@ public class WinlinkMessageMapper {
   public MessageType getMessageType(ExportedMessage message) {
     var subject = message.subject;
 
-    // if (dumpIdsSet.contains(message.messageId) || dumpIdsSet.contains(message.from)) {
-    // logger.info("getMessageType: " + message);
-    // }
-
     /**
      * mime based
      */
@@ -407,107 +350,4 @@ public class WinlinkMessageMapper {
       return MessageType.UNKNOWN;
     }
   }
-
-  /**
-   * read explicit rejection messageIds
-   *
-   * @param path
-   * @return
-   */
-  protected Map<String, RejectTypeContextPair> makeExplicitRejectMap(Path path) {
-    Map<String, RejectTypeContextPair> map = new HashMap<>();
-    Path rejectsPath = Path.of(path.toString(), "rejects.txt");
-    List<String> lines = new ArrayList<>();
-    try {
-      lines = Files.readAllLines(rejectsPath);
-      for (String line : lines) {
-        String[] fields = line.split("\t");
-        String messageId = null;
-        int id = -1;
-        RejectType reason = RejectType.EXPLICIT_LOCATION;
-        String context = "";
-        int nFields = fields.length;
-
-        if (nFields >= 1) {
-          messageId = fields[0];
-        }
-
-        if (nFields >= 2) {
-          try {
-            id = Integer.parseInt(fields[1]);
-            reason = RejectType.fromId(id);
-            if (reason == null) {
-              reason = RejectType.EXPLICIT_OTHER;
-            }
-          } catch (Exception e) {
-            logger.warn("couldn't find ReasonType: " + line);
-            reason = RejectType.EXPLICIT_OTHER;
-          }
-        }
-
-        if (nFields >= 3) {
-          context = fields[2];
-        }
-        map.put(messageId, new RejectTypeContextPair(reason, context));
-      } // end for over lines
-    } catch (Exception e) {
-      logger.info("couldn't read rejection file: " + rejectsPath + ", " + e.getLocalizedMessage());
-    }
-    logger.info("read: " + map.size() + " rejects from file: " + rejectsPath);
-
-    return map;
-  }
-
-  /**
-   * explicitly reject messages
-   *
-   * @param path
-   * @param messageMap
-   */
-  private void processExplicitRejections(Path path, Map<MessageType, List<ExportedMessage>> messageMap) {
-
-    Map<String, RejectTypeContextPair> rejectMap = makeExplicitRejectMap(path);
-    var explicitRejections = new ArrayList<RejectionMessage>();
-
-    for (MessageType messageType : messageMap.keySet()) {
-      var inputMessages = messageMap.get(messageType);
-      if (inputMessages == null) {
-        continue;
-      }
-      var outputMessages = new ArrayList<ExportedMessage>(inputMessages.size());
-
-      int rejectCount = 0;
-      for (ExportedMessage message : inputMessages) {
-        var pair = rejectMap.get(message.messageId);
-        if (pair == null) {
-          outputMessages.add(message);
-        } else {
-          ++rejectCount;
-          var rejectType = pair.reason();
-          var context = pair.context();
-          if (rejectType == RejectType.EXPLICIT_LOCATION) {
-            GisMessage gisMessage = (GisMessage) message;
-            context = "{latitude: " + gisMessage.latitude + ", longitude: " + gisMessage.longitude + "}";
-          }
-          RejectionMessage rejection = new RejectionMessage(message, rejectType, context);
-          explicitRejections.add(rejection);
-        } // end if rejecting
-      } // end loop over messages for type
-      logger
-          .info("messageType: " + messageType + ", in: " + inputMessages.size() + " messages, out: "
-              + outputMessages.size() + ", rejected: " + rejectCount);
-      messageMap.put(messageType, outputMessages);
-    } // end loop over type
-
-    // merge the explicit rejections with prior rejections
-    var implicitRejections = messageMap.getOrDefault(MessageType.REJECTIONS, new ArrayList<>());
-    var implicitRejectionCount = implicitRejections.size();
-    implicitRejections.addAll(explicitRejections);
-    messageMap.put(MessageType.REJECTIONS, implicitRejections);
-
-    logger
-        .info("implicit rejections: " + implicitRejectionCount + ", explicitRejections: " + explicitRejections.size());
-    return;
-  }
-
 }
