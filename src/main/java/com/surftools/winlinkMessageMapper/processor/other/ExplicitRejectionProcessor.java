@@ -143,10 +143,10 @@ public class ExplicitRejectionProcessor {
     } // end loop over type
 
     // merge the explicit rejections with prior rejections
-    var implicitRejections = messageMap.getOrDefault(MessageType.REJECTIONS, new ArrayList<>());
+    var implicitRejections = messageMap.getOrDefault(MessageType.REJECTS, new ArrayList<>());
     var implicitRejectionCount = implicitRejections.size();
     implicitRejections.addAll(explicitRejections);
-    messageMap.put(MessageType.REJECTIONS, implicitRejections);
+    messageMap.put(MessageType.REJECTS, implicitRejections);
 
     logger
         .info("implicit rejections: " + implicitRejectionCount + ", explicitRejections: " + explicitRejections.size());

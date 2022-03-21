@@ -31,6 +31,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class ExportedMessage implements IMessage {
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
@@ -98,6 +100,10 @@ public class ExportedMessage implements IMessage {
   @Override
   public String[] getValues() {
     throw new RuntimeException("ExportedMessage.getHeaders() not implemented");
+  }
+
+  public MessageType getMessageType() {
+    return MessageType.UNKNOWN;
   }
 
 }

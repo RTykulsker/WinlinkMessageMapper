@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class DyfiMessage extends GisMessage {
   public final String location;
   public final boolean isRealEvent;
@@ -58,5 +60,10 @@ public class DyfiMessage extends GisMessage {
     return new String[] { messageId, from, to, subject, date, time, //
         latitude, longitude, organization, location, //
         Boolean.toString(isRealEvent), Boolean.toString(isFelt), comments, intensity, formVersion };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.DYFI;
   }
 }

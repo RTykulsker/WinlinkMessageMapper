@@ -40,9 +40,13 @@ public enum RejectType {
   CANT_PARSE_MIME(8, "can't parse MIME"), //
   SAME_CALL(9, "same call, earlier time"), //
   UNSUPPORTED_TYPE(10, "unsupported type"), //
-  WRONG_EXERCISE(11, "wrong exercise"), //
   ;
 
+  /**
+   * id serves NO purpose other than to discourage re-ordering of values
+   *
+   * this will be needed when reading/writing counts by type
+   */
   private final int id;
   private final String text;
 

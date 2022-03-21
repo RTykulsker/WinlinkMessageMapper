@@ -64,25 +64,20 @@ public class Ics213Processor extends AbstractBaseProcessor {
         messageText = getStringFromXml(xmlString, "Message");
       }
 
-      // TODO consider deleting this
-      if (messageType == MessageType.GIS_ICS_213) {
-        LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);
-        if (latLongComment == null) {
-          // TODO try to parse some other way, maybe from MIME text
-        }
-
+      LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);
+      if (latLongComment == null) {
+        var m = new Ics213Message(message, organization, messageText);
+        return m;
+      } else {
         LatLongPair latLong = latLongComment.latLong;
-
-        if (latLong.latitude().equals("") || latLong.longitude().equals("")) {
-          return reject(message, RejectType.CANT_PARSE_LATLONG, latLongComment.latLongString);
+        if (!latLong.isValid()) {
+          var m = new Ics213Message(message, organization, messageText);
+          return m;
         } else {
           String restOfMessage = latLongComment.comment;
           var m = new GisIcs213Message(message, latLong.latitude(), latLong.longitude(), organization, restOfMessage);
           return m;
         }
-      } else {
-        var m = new Ics213Message(message, organization, messageText);
-        return m;
       }
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());

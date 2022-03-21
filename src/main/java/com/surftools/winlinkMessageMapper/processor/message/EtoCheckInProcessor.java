@@ -30,7 +30,7 @@ package com.surftools.winlinkMessageMapper.processor.message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
+import com.surftools.winlinkMessageMapper.dto.message.EtoCheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -73,7 +73,7 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
       version = fields[fields.length - 1];
     }
 
-    CheckInMessage m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), "", //
+    EtoCheckInMessage m = new EtoCheckInMessage(message, latLong.latitude(), latLong.longitude(), "", //
         comments, status, band, mode, version, MessageType.CHECK_IN);
     return m;
   }

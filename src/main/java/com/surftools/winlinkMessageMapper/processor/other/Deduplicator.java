@@ -86,7 +86,7 @@ public class Deduplicator {
       return;
     }
 
-    if (messageType == MessageType.REJECTIONS) {
+    if (messageType == MessageType.REJECTS) {
       logger.debug("no deduplication performed for type: " + messageType);
       return;
     }
@@ -125,9 +125,9 @@ public class Deduplicator {
     }
 
     // merge rejections
-    var existingRejections = messageMap.getOrDefault(MessageType.REJECTIONS, new ArrayList<>());
+    var existingRejections = messageMap.getOrDefault(MessageType.REJECTS, new ArrayList<>());
     rejections.addAll(existingRejections);
-    messageMap.put(MessageType.REJECTIONS, rejections);
+    messageMap.put(MessageType.REJECTS, rejections);
 
     messageMap.put(messageType, outputMessages);
 
@@ -150,7 +150,7 @@ public class Deduplicator {
       return;
     }
 
-    if (messageType == MessageType.REJECTIONS) {
+    if (messageType == MessageType.REJECTS) {
       logger.debug("no deduplication performed for type: " + messageType);
       return;
     }
@@ -231,9 +231,9 @@ public class Deduplicator {
     }
 
     // merge rejections
-    var existingRejections = messageMap.getOrDefault(MessageType.REJECTIONS, new ArrayList<>());
+    var existingRejections = messageMap.getOrDefault(MessageType.REJECTS, new ArrayList<>());
     rejections.addAll(existingRejections);
-    messageMap.put(MessageType.REJECTIONS, rejections);
+    messageMap.put(MessageType.REJECTS, rejections);
 
     messageMap.put(messageType, outputMessages);
 

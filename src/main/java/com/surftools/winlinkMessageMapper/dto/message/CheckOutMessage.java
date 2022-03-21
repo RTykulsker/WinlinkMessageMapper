@@ -36,4 +36,8 @@ public class CheckOutMessage extends CheckInMessage {
     super(xmlMessage, latitude, longitude, organization, comments, status, band, mode, version, messageType);
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.CHECK_OUT;
+  }
 }

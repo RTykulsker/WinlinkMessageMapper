@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class RejectionMessage extends ExportedMessage {
@@ -47,6 +48,11 @@ public class RejectionMessage extends ExportedMessage {
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, date, time, reason.toString(), context };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.REJECTS;
   }
 
 }

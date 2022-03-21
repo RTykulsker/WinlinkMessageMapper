@@ -31,45 +31,51 @@ import java.util.ArrayList;
 
 public enum MessageType {
 
-  CHECK_IN("check_in", true, "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //
-  CHECK_OUT("check_out", true, "RMS_Express_Form_Winlink_Check_out_Viewer.xml"), //
-  SPOTREP("spotrep", true, "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
-  DYFI("dyfi", true), //
+  CHECK_IN(0, "check_in", true, "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //
+  CHECK_OUT(1, "check_out", true, "RMS_Express_Form_Winlink_Check_out_Viewer.xml"), //
+  SPOTREP(2, "spotrep", true, "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
+  DYFI(3, "dyfi", true), //
 
-  WX_LOCAL("wx_local", true, "RMS_Express_Form_Local Weather Report Viewer.xml"), //
-  WX_SEVERE("wx_severe", true, "RMS_Express_Form_Severe WX Report viewer.xml"), //
-  WX_HURRICANE("wx_hurricane", true), //
+  WX_LOCAL(4, "wx_local", true, "RMS_Express_Form_Local Weather Report Viewer.xml"), //
+  WX_SEVERE(5, "wx_severe", true, "RMS_Express_Form_Severe WX Report viewer.xml"), //
+  WX_HURRICANE(6, "wx_hurricane", true), //
 
-  HOSPITAL_BED("hospital_bed", true, "RMS_Express_Form_Hospital_Bed_Report_Viewer.xml"), //
+  HOSPITAL_BED(7, "hospital_bed", true, "RMS_Express_Form_Hospital_Bed_Report_Viewer.xml"), //
 
-  POSITION("position", true), //
+  POSITION(8, "position", true), //
 
-  ICS_213("ics_213", false, "RMS_Express_Form_ICS213_Initial_Viewer.xml"), //
-  GIS_ICS_213("gis_ics_213", true), //
-  ETO_CHECK_IN("eto_check_in", true), //
+  ICS_213(9, "ics_213", false, "RMS_Express_Form_ICS213_Initial_Viewer.xml"), //
+  GIS_ICS_213(10, "gis_ics_213", true), //
+  ETO_CHECK_IN(11, "eto_check_in", true), //
 
-  REJECTIONS("rejects"), //
-  UNKNOWN("unknown"), // can't infer message type
-  UNDEFINED("undefined"), // not yet defined
+  REJECTS(12, "rejects"), //
+  UNKNOWN(13, "unknown"), // can't infer message type
 
   ;
 
+  /**
+   * id serves NO purpose other than to discourage re-ordering of values
+   *
+   * this will be needed when reading/writing counts by type
+   */
+  private final int id;
   private final String key;
   private final boolean isGis;
   private final String attachmentName;
 
-  private MessageType(String key, boolean isGis, String attachmentName) {
+  private MessageType(int id, String key, boolean isGis, String attachmentName) {
+    this.id = id;
     this.key = key;
     this.isGis = isGis;
     this.attachmentName = attachmentName;
   }
 
-  private MessageType(String key, boolean isGis) {
-    this(key, isGis, null);
+  private MessageType(int id, String key, boolean isGis) {
+    this(id, key, isGis, null);
   }
 
-  private MessageType(String key) {
-    this(key, false, null);
+  private MessageType(int id, String key) {
+    this(id, key, false, null);
   }
 
   public static final String getAllNames() {
@@ -100,5 +106,9 @@ public enum MessageType {
 
   public String attachmentName() {
     return attachmentName;
+  }
+
+  public int id() {
+    return id;
   }
 }

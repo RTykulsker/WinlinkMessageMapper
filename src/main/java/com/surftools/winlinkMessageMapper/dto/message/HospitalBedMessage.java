@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 // see https://protect-public.hhs.gov/pages/hospital-utilization for real-world data
 
 public class HospitalBedMessage extends GisMessage {
@@ -172,5 +174,10 @@ public class HospitalBedMessage extends GisMessage {
           totalBedCount, additionalComments//
       };
     }
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.HOSPITAL_BED;
   }
 }

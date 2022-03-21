@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class Ics213Message extends ExportedMessage {
   public final String organization;
   public final String message;
@@ -45,5 +47,10 @@ public class Ics213Message extends ExportedMessage {
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, organization, message };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ICS_213;
   }
 }

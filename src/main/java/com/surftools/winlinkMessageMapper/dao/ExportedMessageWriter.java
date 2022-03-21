@@ -83,7 +83,7 @@ public class ExportedMessageWriter {
         outputDirectory.mkdir();
       }
 
-      var comparator = (messageType == MessageType.REJECTIONS) ? new RejectionMessageComparator()
+      var comparator = (messageType == MessageType.REJECTS) ? new RejectionMessageComparator()
           : new DefaultMessasgeComparator();
       Collections.sort(messages, comparator);
 
@@ -120,7 +120,7 @@ public class ExportedMessageWriter {
       RejectionMessage r1 = (RejectionMessage) o1;
       RejectionMessage r2 = (RejectionMessage) o2;
 
-      int compare = r1.reason.id() - r2.reason.id();
+      int compare = r1.reason.ordinal() - r2.reason.ordinal();
       if (compare != 0) {
         return compare;
       }

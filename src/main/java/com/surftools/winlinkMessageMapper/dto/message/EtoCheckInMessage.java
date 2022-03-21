@@ -29,35 +29,15 @@ package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
-public class WxLocalMessage extends GisMessage {
-  public final String temperature;
-  public final String windspeed;
-  public final String range;
-  public final String comments;
+public class EtoCheckInMessage extends CheckInMessage {
 
-  public WxLocalMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
-      String organization, String temperature, String windspeed, String range, String comments) {
-    super(xmlMessage, latitude, longitude, organization);
-    this.temperature = temperature;
-    this.windspeed = windspeed;
-    this.range = range;
-    this.comments = comments;
-  }
-
-  @Override
-  public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization", //
-        "Temperature", "Windspeed", "Range", "Comments", };
-  }
-
-  @Override
-  public String[] getValues() {
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, //
-        temperature, windspeed, range, comments };
+  public EtoCheckInMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization,
+      String comments, String status, String band, String mode, String version, MessageType messageType) {
+    super(xmlMessage, latitude, longitude, organization, comments, status, band, mode, version, messageType);
   }
 
   @Override
   public MessageType getMessageType() {
-    return MessageType.WX_LOCAL;
+    return MessageType.ETO_CHECK_IN;
   }
 }

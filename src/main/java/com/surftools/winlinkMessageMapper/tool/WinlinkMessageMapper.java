@@ -63,6 +63,7 @@ import com.surftools.winlinkMessageMapper.processor.message.WxLocalProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WxSevereProcessor;
 import com.surftools.winlinkMessageMapper.processor.other.Deduplicator;
 import com.surftools.winlinkMessageMapper.processor.other.ExplicitRejectionProcessor;
+import com.surftools.winlinkMessageMapper.summary.Summarizer;
 
 /**
  * read a bunch of Winlink "Exported Message" files of messages, output single CSV message file
@@ -80,6 +81,9 @@ public class WinlinkMessageMapper {
 
   @Option(name = "--path", usage = "path to message files", required = true)
   private String pathName = null;
+
+  @Option(name = "--databasePath", usage = "path to input database summary files", required = false)
+  private String databasePathName = "/home/bobt/Documents/eto/database";
 
   @Option(name = "--requiredMessageType", usage = "to ONLY process messages of a given type", required = false)
   private String requiredMessageTypeString = null;
@@ -165,6 +169,9 @@ public class WinlinkMessageMapper {
       var writer = new ExportedMessageWriter(pathName);
       writer.writeAll(messageMap);
 
+      var summarizer = new Summarizer(databasePathName, pathName);
+      summarizer.summarize(messageMap);
+
       logger.info("exiting");
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
@@ -190,14 +197,14 @@ public class WinlinkMessageMapper {
 
       if (requiredMessageType != null && messageType != requiredMessageType) {
         processedMessage = new RejectionMessage(exportedMessage, RejectType.WRONG_MESSAGE_TYPE, messageType.toString());
-        messageType = MessageType.REJECTIONS;
+        messageType = MessageType.REJECTS;
       } else if (messageType == MessageType.UNKNOWN || processor == null) {
         processedMessage = new RejectionMessage(exportedMessage, RejectType.UNSUPPORTED_TYPE, exportedMessage.subject);
-        messageType = MessageType.REJECTIONS;
+        messageType = MessageType.REJECTS;
       } else {
         processedMessage = processor.process(exportedMessage);
         if (processedMessage instanceof RejectionMessage) {
-          messageType = MessageType.REJECTIONS;
+          messageType = MessageType.REJECTS;
         }
       }
 

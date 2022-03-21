@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class WxSevereMessage extends GisMessage {
   public final String type;
   public final String contactPerson;
@@ -97,5 +99,10 @@ public class WxSevereMessage extends GisMessage {
         windDamage, precipitation, snow, freezingRain, //
         rain, rainPeriod, //
         comments };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WX_SEVERE;
   }
 }

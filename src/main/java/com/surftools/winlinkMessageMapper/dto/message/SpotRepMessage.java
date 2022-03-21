@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class SpotRepMessage extends GisMessage {
   public final String location;
   public final String landlineStatus;
@@ -91,5 +93,10 @@ public class SpotRepMessage extends GisMessage {
         location, landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments,
         tvStatus, tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
         additionalComments, poc };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.SPOTREP;
   }
 }

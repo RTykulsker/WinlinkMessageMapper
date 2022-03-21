@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class WxHurricaneMessage extends GisMessage {
   String status;
   String isObserver;
@@ -89,5 +91,10 @@ public class WxHurricaneMessage extends GisMessage {
         city, county, state, country, //
         instrumentsUsed, windSpeed, gustSpeed, windDirection, barometricPressure, //
         comments };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WX_HURRICANE;
   }
 }

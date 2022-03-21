@@ -58,4 +58,9 @@ public class CheckInMessage extends GisMessage {
         band, mode, version };
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.CHECK_IN;
+  }
+
 }

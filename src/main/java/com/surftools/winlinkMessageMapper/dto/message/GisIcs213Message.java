@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public class GisIcs213Message extends GisMessage {
   public final String message;
 
@@ -45,5 +47,10 @@ public class GisIcs213Message extends GisMessage {
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, message };
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.GIS_ICS_213;
   }
 }
