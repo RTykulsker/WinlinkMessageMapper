@@ -32,8 +32,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.Reader;
 import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -51,7 +49,6 @@ import com.opencsv.CSVWriter;
 
 public class SummaryDao {
   private static final Logger logger = LoggerFactory.getLogger(Summarizer.class);
-  public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
   private final String inputPathName;
   private final String outputPathName;
@@ -98,14 +95,20 @@ public class SummaryDao {
       var call = current.getCall();
       var past = pastMap.get(call);
       if (past != null) {
-        LocalDate pastDate = LocalDate.parse(past.getLastDate(), FORMATTER);
-        LocalDate currentDate = LocalDate.parse(current.getLastDate(), FORMATTER);
-        if (pastDate.isAfter(currentDate)) {
+        // anytime is better than no time
+        if (current.getLastDate() == null || current.getLastDate() == "") {
           current.setLastDate(past.getLastDate());
+        }
+
+        // anyplace is better than no place
+        if (current.getLastLocation() == null || !current.getLastLocation().isValid()) {
           current.setLastLocation(past.getLastLocation());
         }
+
         current.setMessageCount(current.getMessageCount() + past.getMessageCount());
         current.setExerciseCount(current.getExerciseCount() + past.getExerciseCount());
+
+        // remove the past value, so it won't be there when we addAll(), below ...
         pastMap.remove(call);
       }
       mergedList.add(current);

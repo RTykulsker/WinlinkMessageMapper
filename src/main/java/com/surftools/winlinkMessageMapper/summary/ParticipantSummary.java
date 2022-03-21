@@ -45,7 +45,9 @@ public class ParticipantSummary {
   private String name;
   private String call;
   private LatLongPair lastLocation;
+  private int messageVersion;
   private MessageCounts messageCounts;
+  private int rejectsVersion;
   private RejectCounts rejectCounts;
 
   public ParticipantSummary(String call) {
@@ -55,7 +57,7 @@ public class ParticipantSummary {
   }
 
   public ParticipantSummary(String[] fields) {
-    final int requiredFieldCount = 3 + 2 + MessageType.values().length + RejectType.values().length;
+    final int requiredFieldCount = 3 + 2 + 2 + MessageType.values().length + RejectType.values().length;
     if (fields.length != requiredFieldCount) {
       throw new IllegalArgumentException("wrong field count: expected: " + requiredFieldCount + ", got: "
           + fields.length + ", " + String.join(",", fields));
@@ -65,8 +67,13 @@ public class ParticipantSummary {
     name = fields[1];
     call = fields[2];
     lastLocation = new LatLongPair(fields[3], fields[4]);
-    messageCounts = new MessageCounts(fields, 5);
-    rejectCounts = new RejectCounts(fields, 5 + MessageType.values().length);
+
+    messageVersion = Integer.parseInt(fields[5]);
+    messageCounts = new MessageCounts(fields, 6);
+
+    int index = 6 + MessageType.values().length;
+    rejectsVersion = Integer.parseInt(fields[index]);
+    rejectCounts = new RejectCounts(fields, index + 1);
   }
 
   @Override
@@ -107,12 +114,28 @@ public class ParticipantSummary {
     this.lastLocation = lastLocation;
   }
 
+  public int getMessageVersion() {
+    return messageVersion;
+  }
+
+  public void setMessageVersion(int messageVersion) {
+    this.messageVersion = messageVersion;
+  }
+
   public MessageCounts getMessageCounts() {
     return messageCounts;
   }
 
   public void setMessageCounts(MessageCounts messageCounts) {
     this.messageCounts = messageCounts;
+  }
+
+  public int getRejectsVersion() {
+    return rejectsVersion;
+  }
+
+  public void setRejectsVersion(int rejectsVersion) {
+    this.rejectsVersion = rejectsVersion;
   }
 
   public RejectCounts getRejectCounts() {
@@ -131,7 +154,11 @@ public class ParticipantSummary {
     list.add("Call");
     list.add("Last Latitude");
     list.add("Last Longitude");
+
+    list.add("Message Version");
     list.addAll(MessageCounts.getHeaders());
+
+    list.add("Rejects Version");
     list.addAll(RejectCounts.getHeaders());
 
     String[] array = new String[list.size()];
@@ -155,7 +182,10 @@ public class ParticipantSummary {
       list.add(lastLocation.longitude());
     }
 
+    list.add(String.valueOf(messageVersion));
     list.addAll(messageCounts.getValues());
+
+    list.add(String.valueOf(rejectsVersion));
     list.addAll(rejectCounts.getValues());
 
     String[] array = new String[list.size()];
