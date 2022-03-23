@@ -95,12 +95,12 @@ public class SummaryDao {
       var call = current.getCall();
       var past = pastMap.get(call);
       if (past != null) {
-        // anytime is better than no time
+        // any time is better than no time
         if (current.getLastDate() == null || current.getLastDate() == "") {
           current.setLastDate(past.getLastDate());
         }
 
-        // anyplace is better than no place
+        // any place is better than no place
         if (current.getLastLocation() == null || !current.getLastLocation().isValid()) {
           current.setLastLocation(past.getLastLocation());
         }

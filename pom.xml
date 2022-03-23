@@ -11,7 +11,7 @@
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<java.version>17</java.version>
+		<java.version>18</java.version>
 		<maven.compiler.plugin.version>3.3</maven.compiler.plugin.version>
 		<maven.appassembler.plugin.version>1.10</maven.appassembler.plugin.version>
 

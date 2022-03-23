@@ -49,14 +49,20 @@ public record LatLongPair(String latitude, String longitude) {
     }
 
     try {
-      Double.parseDouble(latitude);
+      double d = Double.parseDouble(latitude);
+      if (Math.abs(d) > 90d) {
+        return false;
+      }
     } catch (Exception e) {
       logger.error("could not parse latitude from: " + latitude);
       return false;
     }
 
     try {
-      Double.parseDouble(longitude);
+      double d = Double.parseDouble(longitude);
+      if (Math.abs(d) > 180d) {
+        return false;
+      }
     } catch (Exception e) {
       logger.error("could not parse longitude from: " + longitude);
       return false;

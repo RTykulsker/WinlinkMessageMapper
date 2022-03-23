@@ -129,13 +129,13 @@ public class Summarizer {
       logger.info("my history: " + callParticipantHistoryMap.get("KM6SO"));
     }
 
-    var summaryText = makeSummaryText(totalMessageCount, exerciseMessageCounts, exerciseRejectCounts);
-    logger.info(summaryText);
-
     var summaryDao = new SummaryDao(inputPathName, outputPathName);
     summaryDao.persistExerciseSummary(exerciseSummary);
     summaryDao.persistParticipantSummary(callPartipantSummaryMap);
     summaryDao.persistParticipantHistory(callParticipantHistoryMap);
+
+    var summaryText = makeSummaryText(totalMessageCount, exerciseMessageCounts, exerciseRejectCounts);
+    logger.info(summaryText);
   }
 
   /**
