@@ -46,10 +46,13 @@ public class ParticipantHistory {
   private int exerciseCount;
   private int messageCount;
 
+  // category not read but is written!
+  private String category;
+
   @Override
   public String toString() {
     return "{call: " + call + ", lastDate: " + lastDate + ", lastName: " + lastName + ", lastLocation: " + lastLocation
-        + ", exerciseCount: " + exerciseCount + ", messageCount: " + messageCount + "}";
+        + ", exerciseCount: " + exerciseCount + ", messageCount: " + messageCount + ", category: " + category + "}";
   }
 
   public ParticipantHistory(String call) {
@@ -120,6 +123,14 @@ public class ParticipantHistory {
     this.messageCount = messageCount;
   }
 
+  public String getCategory() {
+    return category;
+  }
+
+  public void setCategory(String category) {
+    this.category = category;
+  }
+
   public static String[] getHeaders() {
     var list = new ArrayList<String>();
 
@@ -132,6 +143,8 @@ public class ParticipantHistory {
 
     list.add("Exercise Count");
     list.add("Message Count");
+
+    list.add("Category");
 
     String[] array = new String[list.size()];
     list.toArray(array);
@@ -156,6 +169,8 @@ public class ParticipantHistory {
 
     list.add(String.valueOf(exerciseCount));
     list.add(String.valueOf(messageCount));
+
+    list.add(category);
 
     String[] array = new String[list.size()];
     list.toArray(array);

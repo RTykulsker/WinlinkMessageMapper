@@ -309,4 +309,9 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   public static void setPath(Path _path) {
     path = _path;
   }
+
+  @Override
+  public String getPostProcessReport() {
+    return null;
+  }
 }

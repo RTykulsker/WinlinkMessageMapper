@@ -27,52 +27,32 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.other;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * record DTO for latitude/longitude pair
+ * for various messages that can be graded
  *
  * @author bobt
  *
  */
-public record LatLongPair(String latitude, String longitude) {
+public enum Grade {
+  CORRECT("correct"), INCORRECT("incorrect"), UNGRADABLE("ungradable");
 
-  private static final Logger logger = LoggerFactory.getLogger(LatLongPair.class);
+  private final String key;
 
-  public LatLongPair(double lat, double lon) {
-    this(String.valueOf(lat), String.valueOf(lon));
+  private Grade(String key) {
+    this.key = key;
   }
 
-  public boolean isValid() {
-    if (latitude == null || longitude == null) {
-      return false;
-    }
-
-    if (latitude.length() == 0 || longitude.length() == 0) {
-      return false;
-    }
-
-    try {
-      double d = Double.parseDouble(latitude);
-      if (Math.abs(d) > 90d) {
-        return false;
+  public static Grade fromString(String string) {
+    for (Grade key : Grade.values()) {
+      if (key.toString().equals(string)) {
+        return key;
       }
-    } catch (Exception e) {
-      logger.error("could not parse latitude from: " + latitude);
-      return false;
     }
-
-    try {
-      double d = Double.parseDouble(longitude);
-      if (Math.abs(d) > 180d) {
-        return false;
-      }
-    } catch (Exception e) {
-      logger.error("could not parse longitude from: " + longitude);
-      return false;
-    }
-
-    return true;
+    return null;
   }
-};
+
+  @Override
+  public String toString() {
+    return key;
+  }
+}

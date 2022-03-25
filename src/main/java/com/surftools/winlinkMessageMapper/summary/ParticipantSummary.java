@@ -30,8 +30,6 @@ package com.surftools.winlinkMessageMapper.summary;
 import java.util.ArrayList;
 
 import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
-import com.surftools.winlinkMessageMapper.dto.other.MessageType;
-import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 /**
  * one record/row per participant, per exercise
@@ -57,12 +55,6 @@ public class ParticipantSummary {
   }
 
   public ParticipantSummary(String[] fields) {
-    final int requiredFieldCount = 3 + 2 + 2 + MessageType.values().length + RejectType.values().length;
-    if (fields.length != requiredFieldCount) {
-      throw new IllegalArgumentException("wrong field count: expected: " + requiredFieldCount + ", got: "
-          + fields.length + ", " + String.join(",", fields));
-    }
-
     date = fields[0];
     name = fields[1];
     call = fields[2];
@@ -71,7 +63,7 @@ public class ParticipantSummary {
     messageVersion = Integer.parseInt(fields[5]);
     messageCounts = new MessageCounts(fields, 6);
 
-    int index = 6 + MessageType.values().length;
+    int index = 6 + messageVersion;
     rejectsVersion = Integer.parseInt(fields[index]);
     rejectCounts = new RejectCounts(fields, index + 1);
   }

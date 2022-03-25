@@ -39,4 +39,11 @@ public interface IProcessor {
    */
   public ExportedMessage process(ExportedMessage message);
 
+  /**
+   * return a String that summarizes the processing, like grade totals:
+   *
+   * @return
+   */
+  public String getPostProcessReport();
+
 }

@@ -53,6 +53,7 @@ import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcesso
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.GradableCheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
@@ -78,6 +79,8 @@ public class WinlinkMessageMapper {
   }
 
   private static final Logger logger = LoggerFactory.getLogger(WinlinkMessageMapper.class);
+
+  private Map<MessageType, IProcessor> processorMap;
 
   @Option(name = "--path", usage = "path to message files", required = true)
   private String pathName = null;
@@ -110,6 +113,9 @@ public class WinlinkMessageMapper {
 
   @Option(name = "--saveAttachments", usage = "save ALL attachments in exported message")
   private boolean saveAttachments = false;
+
+  @Option(name = "--gradableResponses", usage = "list of comma-delimited k->v pairs, where v is a grade")
+  private String gradableResponses = null;
 
   public static void main(String[] args) {
     WinlinkMessageMapper app = new WinlinkMessageMapper();
@@ -172,11 +178,35 @@ public class WinlinkMessageMapper {
       var summarizer = new Summarizer(databasePathName, pathName);
       summarizer.summarize(messageMap);
 
+      writePostProcessorMessages();
+
       logger.info("exiting");
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
       System.exit(1);
     }
+  }
+
+  private void writePostProcessorMessages() {
+    StringBuilder sb = new StringBuilder();
+    for (MessageType messageType : processorMap.keySet()) {
+
+      IProcessor processor = processorMap.get(messageType);
+      if (processor == null) {
+        continue;
+      }
+
+      var report = processor.getPostProcessReport();
+      if (report == null) {
+        continue;
+      }
+
+      sb.append(report);
+    }
+    var totalReport = sb.toString();
+
+    logger.info("Post Processing Report:\n" + totalReport);
+
   }
 
   /**
@@ -287,6 +317,7 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.WX_HURRICANE, new WxHurricaneProcessor());
     processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
+    processorMap.put(MessageType.GRADABLE_CHECK_IN, new GradableCheckInProcessor(gradableResponses));
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -304,6 +335,7 @@ public class WinlinkMessageMapper {
     AbstractBaseProcessor.setPath(Paths.get(pathName));
     AbstractBaseProcessor.setSaveAttachments(saveAttachments);
 
+    this.processorMap = processorMap;
     return processorMap;
   }
 
@@ -336,6 +368,8 @@ public class WinlinkMessageMapper {
 
     if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
       return MessageType.ICS_213;
+    } else if (gradableResponses != null && attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
+      return MessageType.GRADABLE_CHECK_IN;
     } else if (attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
       return MessageType.CHECK_IN;
     } else if (attachmentNames.contains(MessageType.CHECK_OUT.attachmentName())) {

@@ -66,6 +66,11 @@ public class Summarizer {
     this.exerciseDescription = exerciseDescription;
   }
 
+  /**
+   * public entry point
+   *
+   * @param messageMap
+   */
   public void summarize(Map<MessageType, List<ExportedMessage>> messageMap) {
     var messages = flatten(messageMap);
     var exerciseMessageCounts = new MessageCounts();
@@ -130,9 +135,9 @@ public class Summarizer {
     }
 
     var summaryDao = new SummaryDao(inputPathName, outputPathName);
-    summaryDao.persistExerciseSummary(exerciseSummary);
+    var exerciseCount = summaryDao.persistExerciseSummary(exerciseSummary);
     summaryDao.persistParticipantSummary(callPartipantSummaryMap);
-    summaryDao.persistParticipantHistory(callParticipantHistoryMap);
+    summaryDao.persistParticipantHistory(callParticipantHistoryMap, exerciseCount, exerciseDate);
 
     var summaryText = makeSummaryText(totalMessageCount, exerciseMessageCounts, exerciseRejectCounts);
     logger.info(summaryText);
@@ -178,6 +183,11 @@ public class Summarizer {
         maxType = messageType;
       }
     }
+
+    if (maxType == null) {
+      maxType = MessageType.UNKNOWN;
+    }
+
     return maxType.toString();
   }
 
