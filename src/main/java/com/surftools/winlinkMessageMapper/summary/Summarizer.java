@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,16 +47,26 @@ import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 public class Summarizer {
   private static final Logger logger = LoggerFactory.getLogger(Summarizer.class);
 
-  private final String inputPathName;
-  private final String outputPathName;
-
   private String exerciseDate = null;
   private String exerciseName = null;
   private String exerciseDescription = null;
 
+  private ExerciseSummary exerciseSummary;
+  private List<ExerciseSummary> currentExerciseSummaryList;
+  private List<ExerciseSummary> pastExerciseSummaryList;
+
+  private HashMap<String, ParticipantSummary> callPartipantSummaryMap;
+  private List<ParticipantSummary> currentParticipantSummaryList;
+  private List<ParticipantSummary> pastParticipantSummaryList;
+
+  private HashMap<String, ParticipantHistory> callParticipantHistoryMap;
+  private List<ParticipantHistory> currentParticipantHistoryList;
+  private List<ParticipantHistory> pastParticipantHistoryList;
+
+  private SummaryDao summaryDao;
+
   public Summarizer(String inputPathName, String outputPathName) {
-    this.inputPathName = inputPathName;
-    this.outputPathName = outputPathName;
+    summaryDao = new SummaryDao(inputPathName, outputPathName);
   }
 
   public Summarizer(String inputPathName, String outputPathName, String exerciseDate, String exerciseName,
@@ -72,13 +83,124 @@ public class Summarizer {
    * @param messageMap
    */
   public void summarize(Map<MessageType, List<ExportedMessage>> messageMap) {
+
+    // compute the ExerciseSummary, ParticipantSummary and ParticipantHistory just for the current messages
+    computeCurrentValues(messageMap);
+
+    // persist the current values; not much use for them, but maybe for debug
+    persistCurrentValues();
+
+    // read past values from database
+    getPastValues();
+
+    // update (append/merge) current with past
+    updateCurrentWithPast();
+
+    // persist updated values; after review, move to database
+    persistUpdatedValues();
+  }
+
+  private void persistCurrentValues() {
+    currentExerciseSummaryList = new ArrayList<>();
+    currentExerciseSummaryList.add(exerciseSummary);
+    summaryDao.writeExerciseSummary(currentExerciseSummaryList, true);
+
+    currentParticipantSummaryList = new ArrayList<>();
+    currentParticipantSummaryList.addAll(callPartipantSummaryMap.values());
+    summaryDao.writeParticipantSummary(currentParticipantSummaryList, true);
+
+    currentParticipantHistoryList = new ArrayList<>();
+    currentParticipantHistoryList.addAll(callParticipantHistoryMap.values());
+    summaryDao.writeParticipantHistory(currentParticipantHistoryList, true);
+  }
+
+  private void getPastValues() {
+    pastExerciseSummaryList = summaryDao.readExerciseSummaries();
+    pastParticipantSummaryList = summaryDao.readParticipantSummaries();
+    pastParticipantHistoryList = summaryDao.readParticipantHistories();
+  }
+
+  private void updateCurrentWithPast() {
+    // ExerciseSummary is a simple append
+    currentExerciseSummaryList.addAll(pastExerciseSummaryList);
+
+    // ParticipantSummary is append all
+    currentParticipantSummaryList.addAll(pastParticipantSummaryList);
+
+    // ParticipantHistory is a bit more involved :)
+    var pastMap = new HashMap<String, ParticipantHistory>();
+    for (ParticipantHistory ph : pastParticipantHistoryList) {
+      pastMap.put(ph.getCall(), ph);
+    }
+
+    List<ParticipantHistory> mergedList = new ArrayList<>();
+    for (ParticipantHistory current : currentParticipantHistoryList) {
+      var call = current.getCall();
+      var past = pastMap.get(call);
+      if (past != null) {
+        // any time is better than no time
+        if (current.getLastDate() == null || current.getLastDate() == "") {
+          current.setLastDate(past.getLastDate());
+        }
+
+        // any place is better than no place
+        if (current.getLastLocation() == null || !current.getLastLocation().isValid()) {
+          current.setLastLocation(past.getLastLocation());
+        }
+
+        current.setMessageCount(current.getMessageCount() + past.getMessageCount());
+        current.setExerciseCount(current.getExerciseCount() + past.getExerciseCount());
+
+        // remove the past value, so it won't be there when we addAll(), below ...
+        pastMap.remove(call);
+      }
+      mergedList.add(current);
+    }
+    mergedList.addAll(pastMap.values());
+
+    // place the unmappables in a circle around "Zero Zero Island"
+    var goodList = mergedList
+        .stream()
+          .filter(p -> p.getLastLocation() != null && p.getLastLocation().isValid())
+          .collect(Collectors.toList());
+    var badList = mergedList
+        .stream()
+          .filter(p -> p.getLastLocation() == null || !p.getLastLocation().isValid())
+          .collect(Collectors.toList());
+    var n = badList.size();
+
+    for (int i = 0; i < n; ++i) {
+      double theta = 360d * i / n;
+      double radians = Math.toRadians(theta);
+      double r = 1_000_000d;
+      double x = Math.round(r * Math.cos(radians)) / r;
+      double y = Math.round(r * Math.sin(radians)) / r;
+      LatLongPair latLong = new LatLongPair(y, x);
+      var ph = badList.get(i);
+      ph.setLastLocation(latLong);
+    }
+    goodList.addAll(badList);
+    currentParticipantHistoryList = goodList;
+
+    setCategory(mergedList, currentExerciseSummaryList.size(), exerciseDate);
+  }
+
+  private void persistUpdatedValues() {
+    summaryDao.writeExerciseSummary(currentExerciseSummaryList, false);
+
+    summaryDao.writeParticipantSummary(currentParticipantSummaryList, false);
+
+    summaryDao.writeParticipantHistory(currentParticipantHistoryList, false);
+  }
+
+  private void computeCurrentValues(Map<MessageType, List<ExportedMessage>> messageMap) {
     var messages = flatten(messageMap);
     var exerciseMessageCounts = new MessageCounts();
     var exerciseRejectCounts = new RejectCounts();
 
     var totalMessageCount = messages.size();
     var dateCountMap = new HashMap<String, Integer>();
-    var callPartipantSummaryMap = new HashMap<String, ParticipantSummary>();
+    callPartipantSummaryMap = new HashMap<String, ParticipantSummary>();
 
     for (ExportedMessage message : messages) {
 
@@ -107,12 +229,13 @@ public class Summarizer {
     exerciseDate = makeExerciseDate(exerciseDate, dateCountMap);
     exerciseName = makeExerciseName(exerciseName, exerciseMessageCounts);
     exerciseDescription = makeExerciseDescription(exerciseDescription, exerciseDate, exerciseName);
-    var exerciseSummary = new ExerciseSummary(exerciseDate, exerciseName, exerciseDescription, //
+
+    exerciseSummary = new ExerciseSummary(exerciseDate, exerciseName, exerciseDescription, //
         totalMessageCount, callPartipantSummaryMap.keySet().size(), MessageType.values().length, exerciseMessageCounts,
         RejectType.values().length, exerciseRejectCounts);
 
     // fix up participantSummaries, now that exercise data and name are known
-    var callParticipantHistoryMap = new HashMap<String, ParticipantHistory>();
+    callParticipantHistoryMap = new HashMap<String, ParticipantHistory>();
     for (ParticipantSummary ps : callPartipantSummaryMap.values()) {
       ps.setDate(exerciseDate);
       ps.setName(exerciseName);
@@ -133,11 +256,6 @@ public class Summarizer {
       logger.info("my summary: " + my.toString());
       logger.info("my history: " + callParticipantHistoryMap.get("KM6SO"));
     }
-
-    var summaryDao = new SummaryDao(inputPathName, outputPathName);
-    var exerciseCount = summaryDao.persistExerciseSummary(exerciseSummary);
-    summaryDao.persistParticipantSummary(callPartipantSummaryMap);
-    summaryDao.persistParticipantHistory(callParticipantHistoryMap, exerciseCount, exerciseDate);
 
     var summaryText = makeSummaryText(totalMessageCount, exerciseMessageCounts, exerciseRejectCounts);
     logger.info(summaryText);
@@ -219,6 +337,36 @@ public class Summarizer {
     sb.append("----------------------------------------\n");
     var s = sb.toString();
     return s;
+  }
+
+  private void setCategory(List<ParticipantHistory> list, int totalExerciseCount, String exerciseDate) {
+    for (ParticipantHistory ph : list) {
+      var exerciseCount = ph.getExerciseCount();
+      if (exerciseCount == 1) {
+        if (ph.getLastDate().equals(exerciseDate)) {
+          ph.setCategory("first time, last time");
+        } else {
+          ph.setCategory("one and done");
+        }
+        continue;
+      }
+
+      double percent = Math.round(100d * exerciseCount / totalExerciseCount);
+      if (percent >= 99d) {
+        ph.setCategory("100%");
+        continue;
+      } else if (percent >= 90d) {
+        ph.setCategory("heavy hitter");
+        continue;
+      } else if (percent >= 50d) {
+        ph.setCategory("going strong");
+        continue;
+      } else {
+        ph.setCategory("needs encouragement");
+        continue;
+      }
+    }
+
   }
 
   /**

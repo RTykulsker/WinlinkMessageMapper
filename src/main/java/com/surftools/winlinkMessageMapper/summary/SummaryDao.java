@@ -35,9 +35,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +45,6 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 
 public class SummaryDao {
   private static final Logger logger = LoggerFactory.getLogger(Summarizer.class);
@@ -60,125 +57,7 @@ public class SummaryDao {
     this.outputPathName = outputPathName;
   }
 
-  public int persistExerciseSummary(ExerciseSummary exerciseSummary) {
-    List<ExerciseSummary> currentList = new ArrayList<>();
-    currentList.add(exerciseSummary);
-    writeExerciseSummary(currentList, true);
-
-    var pastList = readExerciseSummaries();
-    pastList.addAll(currentList);
-    writeExerciseSummary(pastList, false);
-
-    return pastList.size();
-  }
-
-  public void persistParticipantSummary(HashMap<String, ParticipantSummary> callPartipantSummaryMap) {
-    List<ParticipantSummary> currentList = new ArrayList<>();
-    currentList.addAll(callPartipantSummaryMap.values());
-    writeParticipantSummary(currentList, true);
-
-    var pastList = readParticipantSummaries();
-    pastList.addAll(currentList);
-    writeParticipantSummary(pastList, false);
-  }
-
-  public void persistParticipantHistory(HashMap<String, ParticipantHistory> callParticipantHistoryMap,
-      int exerciseCount, String exerciseDate) {
-    List<ParticipantHistory> currentList = new ArrayList<>();
-    currentList.addAll(callParticipantHistoryMap.values());
-    writeParticipantHistory(currentList, true);
-
-    // read, merge, write
-    var pastList = readParticipantHistories();
-    var pastMap = new HashMap<String, ParticipantHistory>();
-    for (ParticipantHistory ph : pastList) {
-      pastMap.put(ph.getCall(), ph);
-    }
-
-    List<ParticipantHistory> mergedList = new ArrayList<>();
-    for (ParticipantHistory current : currentList) {
-      var call = current.getCall();
-      var past = pastMap.get(call);
-      if (past != null) {
-        // any time is better than no time
-        if (current.getLastDate() == null || current.getLastDate() == "") {
-          current.setLastDate(past.getLastDate());
-        }
-
-        // any place is better than no place
-        if (current.getLastLocation() == null || !current.getLastLocation().isValid()) {
-          current.setLastLocation(past.getLastLocation());
-        }
-
-        current.setMessageCount(current.getMessageCount() + past.getMessageCount());
-        current.setExerciseCount(current.getExerciseCount() + past.getExerciseCount());
-
-        // remove the past value, so it won't be there when we addAll(), below ...
-        pastMap.remove(call);
-      }
-      mergedList.add(current);
-    }
-    mergedList.addAll(pastMap.values());
-
-    // place the unmappables in a circle around "Zero Zero Island"
-    var goodList = mergedList
-        .stream()
-          .filter(p -> p.getLastLocation() != null && p.getLastLocation().isValid())
-          .collect(Collectors.toList());
-    var badList = mergedList
-        .stream()
-          .filter(p -> p.getLastLocation() == null || !p.getLastLocation().isValid())
-          .collect(Collectors.toList());
-    var n = badList.size();
-    for (int i = 0; i < n; ++i) {
-      double theta = 360d * i / n;
-      double radians = Math.toRadians(theta);
-      double r = 1_000_000d;
-      double x = Math.round(r * Math.cos(radians)) / r;
-      double y = Math.round(r * Math.sin(radians)) / r;
-      LatLongPair latLong = new LatLongPair(y, x);
-      var ph = badList.get(i);
-      ph.setLastLocation(latLong);
-    }
-    goodList.addAll(badList);
-    mergedList = goodList;
-
-    setCategory(mergedList, exerciseCount, exerciseDate);
-
-    writeParticipantHistory(mergedList, false);
-  }
-
-  private void setCategory(List<ParticipantHistory> list, int totalExerciseCount, String exerciseDate) {
-    for (ParticipantHistory ph : list) {
-      var exerciseCount = ph.getExerciseCount();
-      if (exerciseCount == 1) {
-        if (ph.getLastDate().equals(exerciseDate)) {
-          ph.setCategory("first time, last time");
-        } else {
-          ph.setCategory("one and done");
-        }
-        continue;
-      }
-
-      double percent = Math.round(100d * exerciseCount / totalExerciseCount);
-      if (percent >= 99d) {
-        ph.setCategory("100%");
-        continue;
-      } else if (percent >= 90d) {
-        ph.setCategory("heavy hitter");
-        continue;
-      } else if (percent >= 50d) {
-        ph.setCategory("going strong");
-        continue;
-      } else {
-        ph.setCategory("needs encouragement");
-        continue;
-      }
-    }
-
-  }
-
-  private void writeExerciseSummary(List<ExerciseSummary> list, boolean isSnapshot) {
+  public void writeExerciseSummary(List<ExerciseSummary> list, boolean isSnapshot) {
     var type = (isSnapshot) ? "snapshots" : "database";
     Path outputPath = Path.of(outputPathName, "output", type, "exerciseSummary.csv");
 
@@ -205,7 +84,7 @@ public class SummaryDao {
     }
   }
 
-  private void writeParticipantSummary(List<ParticipantSummary> list, boolean isSnapshot) {
+  public void writeParticipantSummary(List<ParticipantSummary> list, boolean isSnapshot) {
     var type = (isSnapshot) ? "snapshots" : "database";
     Path outputPath = Path.of(outputPathName, "output", type, "participantSummary.csv");
 
@@ -230,7 +109,7 @@ public class SummaryDao {
     }
   }
 
-  private void writeParticipantHistory(List<ParticipantHistory> list, boolean isSnapshot) {
+  public void writeParticipantHistory(List<ParticipantHistory> list, boolean isSnapshot) {
     var type = (isSnapshot) ? "snapshots" : "database";
     Path outputPath = Path.of(outputPathName, "output", type, "participantHistory.csv");
 
@@ -255,7 +134,7 @@ public class SummaryDao {
     }
   }
 
-  private List<ExerciseSummary> readExerciseSummaries() {
+  public List<ExerciseSummary> readExerciseSummaries() {
     var list = new ArrayList<ExerciseSummary>();
     Path inputPath = Path.of(inputPathName, "exerciseSummary.csv");
 
@@ -283,7 +162,7 @@ public class SummaryDao {
     return list;
   }
 
-  private List<ParticipantSummary> readParticipantSummaries() {
+  public List<ParticipantSummary> readParticipantSummaries() {
     var list = new ArrayList<ParticipantSummary>();
     Path inputPath = Path.of(inputPathName, "participantSummary.csv");
 
@@ -311,7 +190,7 @@ public class SummaryDao {
     return list;
   }
 
-  private List<ParticipantHistory> readParticipantHistories() {
+  public List<ParticipantHistory> readParticipantHistories() {
     var list = new ArrayList<ParticipantHistory>();
     Path inputPath = Path.of(inputPathName, "participantHistory.csv");
 
