@@ -38,9 +38,11 @@ public class GradedCheckInMessage extends GisMessage {
   public final String version;
   public final String response;
   public final Grade grade;
+  public final String explanation;
 
   public GradedCheckInMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization, //
-      String comments, String status, String band, String mode, String version, String response, Grade grade) {
+      String comments, String status, String band, String mode, String version, String response, Grade grade,
+      String explanation) {
     super(xmlMessage, latitude, longitude, organization);
     this.comments = comments;
     this.status = status;
@@ -49,18 +51,19 @@ public class GradedCheckInMessage extends GisMessage {
     this.version = version;
     this.response = response;
     this.grade = grade;
+    this.explanation = explanation;
   }
 
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization",
-        "Comments", "Status", "Band", "Mode", "Version", "Response", "Grade" };
+        "Comments", "Status", "Band", "Mode", "Version", "Response", "Grade", "Explanation" };
   }
 
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, comments, status,
-        band, mode, version, response, grade.toString() };
+        band, mode, version, response, grade.toString().replaceAll("_", " "), explanation };
   }
 
   @Override

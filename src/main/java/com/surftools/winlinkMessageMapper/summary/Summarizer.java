@@ -344,25 +344,25 @@ public class Summarizer {
       var exerciseCount = ph.getExerciseCount();
       if (exerciseCount == 1) {
         if (ph.getLastDate().equals(exerciseDate)) {
-          ph.setCategory("first time, last time");
+          ph.setCategory(HistoryCategory.FIRST_TIME_LAST_TIME);
         } else {
-          ph.setCategory("one and done");
+          ph.setCategory(HistoryCategory.ONE_AND_DONE);
         }
         continue;
       }
 
       double percent = Math.round(100d * exerciseCount / totalExerciseCount);
       if (percent >= 99d) {
-        ph.setCategory("100%");
+        ph.setCategory(HistoryCategory.HUNDRED_PERCENT);
         continue;
       } else if (percent >= 90d) {
-        ph.setCategory("heavy hitter");
+        ph.setCategory(HistoryCategory.HEAVEY_HITTER);
         continue;
       } else if (percent >= 50d) {
-        ph.setCategory("going strong");
+        ph.setCategory(HistoryCategory.GOING_STRONG);
         continue;
       } else {
-        ph.setCategory("needs encouragement");
+        ph.setCategory(HistoryCategory.NEEDS_ENCOURAGEMENT);
         continue;
       }
     }

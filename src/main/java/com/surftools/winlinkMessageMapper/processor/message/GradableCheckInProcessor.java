@@ -28,9 +28,12 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.processor.message;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -59,10 +62,15 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
   private final Map<Grade, Integer> gradeCountMap;
   private int totalGraded;
 
+  private String CORRECT_RESPONSES;
+
+  private String VALID_RESPONSES;
+
   public GradableCheckInProcessor(String gradableResponses) {
     responseGradeMap = new HashMap<>();
     gradeCountMap = new HashMap<>();
     totalGraded = 0;
+    var correctResponsesList = new ArrayList<String>();
 
     if (gradableResponses != null) {
       String[] fields = gradableResponses.split(",");
@@ -72,14 +80,32 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
           throw new IllegalArgumentException("can't parse gradable: " + field);
         }
         String response = subfields[0];
+        response = response.trim().toLowerCase();
         String gradeString = subfields[1];
         Grade grade = Grade.fromString(gradeString);
         if (grade == null) {
           throw new IllegalArgumentException("can't parse grade: " + gradeString);
         }
-        responseGradeMap.put(response.trim().toLowerCase(), grade);
+        responseGradeMap.put(response, grade);
+
+        if (grade == Grade.CORRECT) {
+          correctResponsesList.add(response);
+        }
       } // for over fields
     } // end if not null gradableResponses
+
+    if (correctResponsesList.size() == 0) {
+      throw new IllegalArgumentException("no corect responses in input: " + gradableResponses);
+    } else if (correctResponsesList.size() == 1) {
+      CORRECT_RESPONSES = "Correct response is: " + correctResponsesList.get(0) + ".";
+    } else {
+      CORRECT_RESPONSES = "Correct responses are: " + String.join(", ", correctResponsesList) + ".";
+    }
+
+    List<String> responses = new ArrayList<>();
+    responses.addAll(responseGradeMap.keySet());
+    Collections.sort(responses);
+    VALID_RESPONSES = String.join(", ", responses);
   }
 
   @Override
@@ -119,11 +145,12 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
         version = fields[fields.length - 1]; // last field
       }
 
-      var response = getResponse(comments);
-      var grade = getGrade(response);
+      var response = makeResponse(comments);
+      var grade = makeGrade(response);
+      var explanation = makeExplanation(response, grade);
 
       ExportedMessage m = new GradedCheckInMessage(message, latLong.latitude(), latLong.longitude(), organization,
-          comments, status, band, mode, version, response, grade);
+          comments, status, band, mode, version, response, grade, explanation);
 
       return m;
     } catch (Exception e) {
@@ -138,7 +165,7 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
     return response;
   }
 
-  private String getResponse(String comments) {
+  private String makeResponse(String comments) {
     String[] fields = comments.trim().split("\n");
     if (fields == null || fields.length == 0) {
       return null;
@@ -147,14 +174,27 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
     return dequote(fields[0].trim().toLowerCase());
   }
 
-  private Grade getGrade(String response) {
-    Grade grade = responseGradeMap.getOrDefault(response, Grade.UNGRADABLE);
+  private Grade makeGrade(String response) {
+    Grade grade = responseGradeMap.getOrDefault(response, Grade.NOT_VALID);
 
     int count = gradeCountMap.getOrDefault(grade, Integer.valueOf(0));
     gradeCountMap.put(grade, count + 1);
     ++totalGraded;
 
     return grade;
+  }
+
+  private String makeExplanation(String response, Grade grade) {
+    String explanation = "";
+    if (grade == Grade.CORRECT) {
+      explanation = "Your response of " + response + " is correct.";
+    } else if (grade == Grade.INCORRECT) {
+      explanation = "Your response of " + response + " is incorrect. " + CORRECT_RESPONSES;
+    } else if (grade == Grade.NOT_VALID) {
+      explanation = "Your response of " + response + " is not valid, because it is not one of the valid responses: "
+          + VALID_RESPONSES + " that are defined for this exercise.";
+    }
+    return explanation;
   }
 
   @Override

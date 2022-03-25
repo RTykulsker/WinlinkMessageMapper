@@ -25,34 +25,45 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.dto.other;
+package com.surftools.winlinkMessageMapper.summary;
 
-/**
- * for various messages that can be graded
- *
- * @author bobt
- *
- */
-public enum Grade {
-  CORRECT("correct"), INCORRECT("incorrect"), NOT_VALID("not_valid");
+public enum HistoryCategory {
+  ONE_AND_DONE(0, "one and done"), //
+  FIRST_TIME_LAST_TIME(1, "first time, last time"), //
+  NEEDS_ENCOURAGEMENT(2, "needs encouragement"), //
+  GOING_STRONG(3, "going string"), //
+  HEAVEY_HITTER(4, "heavy hitter"), //
+  HUNDRED_PERCENT(5, "100%"), //
+  ;
 
-  private final String key;
+  /**
+   * id serves NO purpose other than to discourage re-ordering of values
+   *
+   * this will be needed when reading/writing counts by type
+   */
+  private final int id;
+  private final String text;
 
-  private Grade(String key) {
-    this.key = key;
+  private HistoryCategory(int id, String text) {
+    this.id = id;
+    this.text = text;
   }
 
-  public static Grade fromString(String string) {
-    for (Grade key : Grade.values()) {
-      if (key.toString().equals(string)) {
-        return key;
-      }
-    }
-    return null;
+  public int id() {
+    return id;
   }
 
   @Override
   public String toString() {
-    return key;
+    return text;
+  }
+
+  public static HistoryCategory fromId(int id) {
+    for (HistoryCategory type : HistoryCategory.values()) {
+      if (type.id == id) {
+        return type;
+      }
+    }
+    return null;
   }
 }
