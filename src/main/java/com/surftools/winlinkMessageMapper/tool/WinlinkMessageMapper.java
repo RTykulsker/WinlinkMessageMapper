@@ -176,6 +176,7 @@ public class WinlinkMessageMapper {
       writer.writeAll(messageMap);
 
       var summarizer = new Summarizer(databasePathName, pathName);
+      summarizer.setDumpIds(dumpIdsSet);
       summarizer.summarize(messageMap);
 
       writePostProcessorMessages();

@@ -58,6 +58,7 @@ public class ParticipantHistory {
 
   public ParticipantHistory(String call) {
     this.call = call;
+    this.category = HistoryCategory.UNDEFINED;
   }
 
   public ParticipantHistory(String[] fields) {
@@ -74,6 +75,7 @@ public class ParticipantHistory {
     exerciseCount = Integer.parseInt(fields[5]);
     messageCount = Integer.parseInt(fields[6]);
 
+    category = HistoryCategory.UNDEFINED;
   }
 
   public String getCall() {

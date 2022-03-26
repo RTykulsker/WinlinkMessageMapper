@@ -166,6 +166,10 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
   }
 
   private String makeResponse(String comments) {
+    if (comments == null) {
+      return null;
+    }
+
     String[] fields = comments.trim().split("\n");
     if (fields == null || fields.length == 0) {
       return null;

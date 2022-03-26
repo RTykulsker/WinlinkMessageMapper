@@ -28,12 +28,13 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.summary;
 
 public enum HistoryCategory {
-  ONE_AND_DONE(0, "one and done"), //
-  FIRST_TIME_LAST_TIME(1, "first time, last time"), //
-  NEEDS_ENCOURAGEMENT(2, "needs encouragement"), //
-  GOING_STRONG(3, "going string"), //
-  HEAVEY_HITTER(4, "heavy hitter"), //
-  HUNDRED_PERCENT(5, "100%"), //
+  UNDEFINED(0, "undefined"), //
+  ONE_AND_DONE(1, "one and done"), //
+  FIRST_TIME_LAST_TIME(2, "first time, last time"), //
+  NEEDS_ENCOURAGEMENT(3, "needs encouragement"), //
+  GOING_STRONG(4, "going strong"), //
+  HEAVEY_HITTER(5, "heavy hitter"), //
+  HUNDRED_PERCENT(6, "100%"), //
   ;
 
   /**

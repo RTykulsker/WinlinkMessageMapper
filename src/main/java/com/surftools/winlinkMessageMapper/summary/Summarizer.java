@@ -31,8 +31,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -62,6 +64,8 @@ public class Summarizer {
   private HashMap<String, ParticipantHistory> callParticipantHistoryMap;
   private List<ParticipantHistory> currentParticipantHistoryList;
   private List<ParticipantHistory> pastParticipantHistoryList;
+
+  protected Set<String> dumpIds = new HashSet<>();
 
   private SummaryDao summaryDao;
 
@@ -341,6 +345,10 @@ public class Summarizer {
 
   private void setCategory(List<ParticipantHistory> list, int totalExerciseCount, String exerciseDate) {
     for (ParticipantHistory ph : list) {
+      if (dumpIds.contains(ph.getCall())) {
+        logger.info("setCategory: " + ph);
+      }
+
       var exerciseCount = ph.getExerciseCount();
       if (exerciseCount == 1) {
         if (ph.getLastDate().equals(exerciseDate)) {
@@ -365,8 +373,12 @@ public class Summarizer {
         ph.setCategory(HistoryCategory.NEEDS_ENCOURAGEMENT);
         continue;
       }
-    }
+    } // end loop over ParticipantHistory
 
+  }
+
+  public void setDumpIds(Set<String> dumpIds) {
+    this.dumpIds = dumpIds;
   }
 
   /**
