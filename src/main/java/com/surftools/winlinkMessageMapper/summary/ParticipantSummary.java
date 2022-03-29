@@ -30,6 +30,8 @@ package com.surftools.winlinkMessageMapper.summary;
 import java.util.ArrayList;
 
 import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 /**
  * one record/row per participant, per exercise
@@ -52,6 +54,8 @@ public class ParticipantSummary {
     this.call = call;
     this.messageCounts = new MessageCounts();
     this.rejectCounts = new RejectCounts();
+    this.messageVersion = MessageType.values().length;
+    this.rejectsVersion = RejectType.values().length;
   }
 
   public ParticipantSummary(String[] fields) {

@@ -32,9 +32,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +52,9 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
 
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
+
+  private static final Character[] STOP_CHARS_ARRAY = new Character[] { '.', ',', ';', ':' };
+  private static final Set<Character> STOP_CHARS = new HashSet<Character>(Arrays.asList(STOP_CHARS_ARRAY));
 
   static {
     var set = new LinkedHashSet<String>();
@@ -175,7 +180,16 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
       return null;
     }
 
-    return dequote(fields[0].trim().toLowerCase());
+    String response = dequote(fields[0].trim().toLowerCase());
+
+    boolean doStopChars = false;
+    if (doStopChars) {
+      if ((response.length() == 2) && STOP_CHARS.contains(response.charAt(1))) {
+        response = response.substring(0, 1);
+      }
+    }
+
+    return response;
   }
 
   private Grade makeGrade(String response) {
