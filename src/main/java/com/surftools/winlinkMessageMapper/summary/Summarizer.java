@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -162,31 +163,139 @@ public class Summarizer {
     }
     mergedList.addAll(pastMap.values());
 
-    // place the unmappables in a circle around "Zero Zero Island"
-    var goodList = mergedList
-        .stream()
-          .filter(p -> p.getLastLocation() != null && p.getLastLocation().isValid())
-          .collect(Collectors.toList());
-    var badList = mergedList
-        .stream()
-          .filter(p -> p.getLastLocation() == null || !p.getLastLocation().isValid())
-          .collect(Collectors.toList());
-    var n = badList.size();
+    boolean doJitter = true;
+    if (doJitter) {
+      currentParticipantHistoryList = jitterParticipantHistory(mergedList);
+    } else {
 
-    for (int i = 0; i < n; ++i) {
-      double theta = 360d * i / n;
-      double radians = Math.toRadians(theta);
-      double r = 1_000_000d;
-      double x = Math.round(r * Math.cos(radians)) / r;
-      double y = Math.round(r * Math.sin(radians)) / r;
-      LatLongPair latLong = new LatLongPair(y, x);
-      var ph = badList.get(i);
-      ph.setLastLocation(latLong);
+      // place the unmappables in a circle around "Zero Zero Island"
+      var goodList = mergedList
+          .stream()
+            .filter(p -> p.getLastLocation() != null && p.getLastLocation().isValid())
+            .collect(Collectors.toList());
+      var badList = mergedList
+          .stream()
+            .filter(p -> p.getLastLocation() == null || !p.getLastLocation().isValid())
+            .collect(Collectors.toList());
+      var n = badList.size();
+
+      for (int i = 0; i < n; ++i) {
+        double theta = 360d * i / n;
+        double radians = Math.toRadians(theta);
+        double r = 1_000_000d;
+        double x = Math.round(r * Math.cos(radians)) / r;
+        double y = Math.round(r * Math.sin(radians)) / r;
+        LatLongPair latLong = new LatLongPair(y, x);
+        var ph = badList.get(i);
+        ph.setMapLocation(latLong);
+      }
+      goodList.addAll(badList);
+      currentParticipantHistoryList = goodList;
     }
-    goodList.addAll(badList);
-    currentParticipantHistoryList = goodList;
 
     setCategory(mergedList, currentExerciseSummaryList.size(), exerciseDate);
+  }
+
+  private List<ParticipantHistory> jitterParticipantHistory(List<ParticipantHistory> inList) {
+    var callHistoryMap = new HashMap<String, ParticipantHistory>();
+
+    // make sure every call has a valid location
+    for (ParticipantHistory ph : inList) {
+      callHistoryMap.put(ph.getCall(), ph);
+      if (ph.getLastLocation() == null || !ph.getLastLocation().isValid()) {
+        ph.setLastLocation(new LatLongPair("0.0", "0.0"));
+      }
+    }
+
+    // build map of call -> list of stations close to call
+    final var distanceThresholdMeters = 10d;
+    var callStationListMap = new HashMap<String, List<ParticipantHistory>>();
+    for (ParticipantHistory ph : inList) {
+      for (ParticipantHistory other : inList) {
+        String call = ph.getCall();
+        if (call.equals(other.getCall())) {
+          continue;
+        }
+        double distanceMeters = ph.getLastLocation().computeDistanceMeters(other.getLastLocation());
+        if (distanceMeters <= distanceThresholdMeters) {
+          var list = callStationListMap.getOrDefault(call, new ArrayList<>());
+          list.add(other);
+          callStationListMap.put(call, list);
+        } // end if within threshold
+      } // end loop over others
+    } // end loop over PH
+
+    var nextIndex = -1;
+    var neighborMap = new TreeMap<Integer, Set<ParticipantHistory>>();
+    for (String call : callStationListMap.keySet()) {
+      var ph = callHistoryMap.get(call);
+      var stationList = callStationListMap.get(call);
+      boolean isCallFound = false;
+      for (Set<ParticipantHistory> set : neighborMap.values()) {
+        if (set.contains(callHistoryMap.get(call))) {
+          isCallFound = true;
+          break;
+        } // end if call is found in set
+      } // end loop over all sets
+      if (!isCallFound) {
+        ++nextIndex;
+        var set = new HashSet<ParticipantHistory>();
+        set.add(ph);
+        set.addAll(stationList);
+        neighborMap.put(nextIndex, set);
+      } // end if call not found
+    } // end loop over calls
+
+    // finally can jitter!
+    for (Set<ParticipantHistory> set : neighborMap.values()) {
+      jitter(set);
+    }
+
+    return inList;
+  }
+
+  private void jitter(Set<ParticipantHistory> set) {
+    // find centroid;
+    var latitude = 0d;
+    var longitude = 0d;
+    var n = set.size();
+    for (ParticipantHistory ph : set) {
+      var loc = ph.getLastLocation();
+      latitude += loc.getLatitudeAsDouble();
+      longitude += loc.getLongitudeAsDouble();
+    }
+    latitude = latitude / n;
+    longitude = longitude / n;
+    var centroid = new LatLongPair(latitude, longitude);
+    var distanceFromZeroZeroIsland = centroid.computeDistanceMeters(new LatLongPair(0d, 0d));
+    var isZeroZeroIsland = (distanceFromZeroZeroIsland <= 10);
+    var radius = (isZeroZeroIsland) ? 1_000_000d : 0.0001d;
+
+    var list = new ArrayList<ParticipantHistory>(set);
+    Collections.sort(list, new ParticipantHistoryCallComparator());
+    for (int i = 0; i < n; ++i) {
+      ParticipantHistory ph = list.get(i);
+      double theta = 360d * i / n;
+      double radians = Math.toRadians(theta);
+
+      LatLongPair mapLocation = null;
+      if (isZeroZeroIsland) {
+        double newLongitude = longitude + (Math.round(radius * Math.cos(radians)) / radius);
+        double newLatitude = latitude + (Math.round(radius * Math.sin(radians)) / radius);
+        mapLocation = new LatLongPair(newLatitude, newLongitude);
+      } else {
+        double newLongitude = longitude + (radius * Math.cos(radians));
+        double newLatitude = latitude + (radius * Math.sin(radians));
+        mapLocation = new LatLongPair(newLatitude, newLongitude);
+      }
+
+      ph.setMapLocation(mapLocation);
+      double d = mapLocation.computeDistanceMeters(ph.getLastLocation());
+      logger
+          .debug("call: " + ph.getCall() + ", centroid: " + centroid + ", last: " + ph.getLastLocation() + ", map: "
+              + ph.getMapLocation() + ", dist: " + d + " meters");
+    }
+
   }
 
   private void persistUpdatedValues() {
@@ -400,5 +509,14 @@ public class Summarizer {
 
       return compare;
     }
+  }
+
+  static class ParticipantHistoryCallComparator implements Comparator<ParticipantHistory> {
+
+    @Override
+    public int compare(ParticipantHistory o1, ParticipantHistory o2) {
+      return o1.getCall().compareTo(o2.getCall());
+    }
+
   }
 }

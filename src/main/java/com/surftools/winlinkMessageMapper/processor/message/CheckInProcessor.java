@@ -95,11 +95,9 @@ public class CheckInProcessor extends AbstractBaseProcessor {
 
       ExportedMessage m = null;
       if (messageType == MessageType.CHECK_IN) {
-        m = new CheckInMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
-            mode, version, messageType);
+        m = new CheckInMessage(message, latLong, organization, comments, status, band, mode, version, messageType);
       } else if (messageType == MessageType.CHECK_OUT) {
-        m = new CheckOutMessage(message, latLong.latitude(), latLong.longitude(), organization, comments, status, band,
-            mode, version, messageType);
+        m = new CheckOutMessage(message, latLong, organization, comments, status, band, mode, version, messageType);
       } else {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
       }

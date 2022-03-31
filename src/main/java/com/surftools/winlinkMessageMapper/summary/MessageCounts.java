@@ -105,7 +105,8 @@ public class MessageCounts {
   }
 
   public String getText() {
-    List<MessageType> messageTypeList = new ArrayList<>(countMap.keySet());
+    List<MessageType> messageTypeList = new ArrayList<>(countMap.keySet().size());
+    messageTypeList.addAll(countMap.keySet());
     Collections.sort(messageTypeList, new MessageTypeComparator(countMap));
 
     StringBuilder sb = new StringBuilder();

@@ -77,7 +77,7 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
       String range = makeRange(temperature);
 
       String comments = getStringFromXml(xmlString, "comments");
-      WxLocalMessage m = new WxLocalMessage(message, latLong.latitude(), latLong.longitude(), //
+      WxLocalMessage m = new WxLocalMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           organization, temperature, windspeed, range, comments);
       return m;
     } catch (Exception e) {

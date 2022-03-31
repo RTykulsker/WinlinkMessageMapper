@@ -266,12 +266,12 @@ public class P2PMapper {
       TargetStation target = targetMap.get(call);
       distanceMeters = computeDistanceMeters(field, target);
       if (distanceMeters <= 1) {
-        Double longitude = Double.parseDouble(target.longitude) + 0.00001;
-        TargetStation newTarget = new TargetStation(target, target.latitude, String.valueOf(longitude));
+        Double longitude = Double.parseDouble(target.getLongitude()) + 0.00001;
+        TargetStation newTarget = new TargetStation(target, target.getLatitude(), String.valueOf(longitude));
         distanceMeters = computeDistanceMeters(field, newTarget);
         logger
-            .info("target: " + call + ", jittered from : {" + target.latitude + ", " + target.longitude + "}, to : {"
-                + newTarget.latitude + ", " + newTarget.longitude + "}, new distance: " + distanceMeters + "m");
+            .info("target: " + call + ", jittered from: " + target.getLatLongPair() + " to: "
+                + newTarget.getLatLongPair() + ", new distance: " + distanceMeters + "m");
         targetStations.remove(target);
         targetStations.add(newTarget);
       }
@@ -327,8 +327,8 @@ public class P2PMapper {
       sb.append("  <name>" + fieldStation.from + "-" + fieldStation.to + "</name>\n");
       sb.append("    <LineString>\n");
       sb
-          .append("    <coordinates>" + fieldStation.longitude + "," + fieldStation.latitude //
-              + " " + targetStation.longitude + "," + targetStation.latitude + "</coordinates>\n");
+          .append("    <coordinates>" + fieldStation.getLongitude() + "," + fieldStation.getLatitude() //
+              + " " + targetStation.getLongitude() + "," + targetStation.getLatitude() + "</coordinates>\n");
       sb.append("    </LineString>\n");
       sb.append("  </Placemark>\n");
     }
@@ -379,7 +379,7 @@ public class P2PMapper {
 
       sb.append("    </description>\n");
       sb.append("    <Point>\n");
-      sb.append("    <coordinates>" + station.longitude + "," + station.latitude + "</coordinates>\n");
+      sb.append("    <coordinates>" + station.getLongitude() + "," + station.getLatitude() + "</coordinates>\n");
       sb.append("    </Point>\n");
       sb.append("  </Placemark>\n");
     }
@@ -411,7 +411,7 @@ public class P2PMapper {
 
       sb.append("</description>\n");
       sb.append("    <Point>\n");
-      sb.append("    <coordinates>" + station.longitude + "," + station.latitude + "</coordinates>\n");
+      sb.append("    <coordinates>" + station.getLongitude() + "," + station.getLatitude() + "</coordinates>\n");
       sb.append("    </Point>\n");
       sb.append("  </Placemark>\n");
     }
@@ -436,27 +436,11 @@ public class P2PMapper {
     logger.info("wrote to: " + outputPath.toString());
   }
 
-  public int computeDistanceMiles(FieldStation fieldStation, TargetStation targetStation) {
-    final double MILES_PER_METER = 0.000621371;
-    double distanceMeters = computeDistanceMeters(fieldStation, targetStation);
-    double distanceMiles = distanceMeters * MILES_PER_METER;
-    return (int) Math.round(distanceMiles);
+  private int computeDistanceMiles(FieldStation fieldStation, TargetStation targetStation) {
+    return fieldStation.getLatLongPair().computeDistanceMiles(targetStation.getLatLongPair());
   }
 
-  public double computeDistanceMeters(FieldStation fieldStation, TargetStation targetStation) {
-    // https://gist.github.com/vananth22/888ed9a22105670e7a4092bdcf0d72e4
-    final double R_METERS = 6_371_000d;
-    double lat1 = (Math.PI / 180d) * Double.parseDouble(fieldStation.latitude);
-    double lon1 = (Math.PI / 180d) * Double.parseDouble(fieldStation.longitude);
-    double lat2 = (Math.PI / 180d) * Double.parseDouble(targetStation.latitude);
-    double lon2 = (Math.PI / 180d) * Double.parseDouble(targetStation.longitude);
-
-    double latDistance = lat2 - lat1;
-    double lonDistance = lon2 - lon1;
-    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-        + Math.cos(lat1) * Math.cos(lat2) * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R_METERS * c;
+  private double computeDistanceMeters(FieldStation field, TargetStation target) {
+    return field.getLatLongPair().computeDistanceMeters(target.getLatLongPair());
   }
-
 }

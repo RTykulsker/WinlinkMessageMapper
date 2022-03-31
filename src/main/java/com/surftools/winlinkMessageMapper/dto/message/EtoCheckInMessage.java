@@ -27,13 +27,14 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 public class EtoCheckInMessage extends CheckInMessage {
 
-  public EtoCheckInMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization,
-      String comments, String status, String band, String mode, String version, MessageType messageType) {
-    super(xmlMessage, latitude, longitude, organization, comments, status, band, mode, version, messageType);
+  public EtoCheckInMessage(ExportedMessage xmlMessage, LatLongPair latLong, String organization, String comments,
+      String status, String band, String mode, String version, MessageType messageType) {
+    super(xmlMessage, latLong, organization, comments, status, band, mode, version, messageType);
   }
 
   @Override

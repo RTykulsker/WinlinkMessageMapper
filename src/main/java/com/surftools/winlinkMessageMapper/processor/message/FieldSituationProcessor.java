@@ -31,11 +31,11 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.message.SpotRepMessage;
+import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
-public class SpotRepProcessor extends AbstractBaseProcessor {
+public class FieldSituationProcessor extends AbstractBaseProcessor {
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
@@ -50,14 +50,22 @@ public class SpotRepProcessor extends AbstractBaseProcessor {
   public ExportedMessage process(ExportedMessage message) {
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.SPOTREP.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT.attachmentName()));
 
       var latLong = getLatLongFromXml(xmlString, null);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      String location = getStringFromXml(xmlString, "city");
+      String organization = getStringFromXml(xmlString, "title");
+      String task = getStringFromXml(xmlString, "msgnr");
+      String isHelpNeeded = getStringFromXml(xmlString, "safetyneed");
+      String neededHelp = getStringFromXml(xmlString, "comm0");
+
+      String city = getStringFromXml(xmlString, "city");
+      String county = getStringFromXml(xmlString, "county");
+      String state = getStringFromXml(xmlString, "state");
+      String territory = getStringFromXml(xmlString, "territory");
 
       String landlineStatus = getStringFromXml(xmlString, "land");
       String landlineComments = getStringFromXml(xmlString, "comm1");
@@ -80,13 +88,19 @@ public class SpotRepProcessor extends AbstractBaseProcessor {
       String internetStatus = getStringFromXml(xmlString, "inter");
       String internetComments = getStringFromXml(xmlString, "comm7");
 
+      String noaaStatus = getStringFromXml(xmlString, "noaa");
+      String noaaComments = getStringFromXml(xmlString, "noaacom");
+
       String additionalComments = getStringFromXml(xmlString, "message");
       String poc = getStringFromXml(xmlString, "poc");
+      String formVersion = parseFormVersion(getStringFromXml(xmlString, "templateversion"));
 
-      SpotRepMessage m = new SpotRepMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
-          location, landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments,
-          tvStatus, tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus,
-          internetComments, additionalComments, poc);
+      FieldSituationMessage m = new FieldSituationMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
+          task, isHelpNeeded, neededHelp, //
+          organization, city, county, state, territory, //
+          landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
+          tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
+          noaaStatus, noaaComments, additionalComments, poc, formVersion);
 
       return m;
     } catch (Exception e) {
@@ -94,4 +108,16 @@ public class SpotRepProcessor extends AbstractBaseProcessor {
     }
   }
 
+  private String parseFormVersion(String string) {
+    if (string == null) {
+      return null;
+    }
+
+    String[] fields = string.split(" ");
+    if (fields.length == 5) {
+      return fields[4];
+    } else {
+      return string;
+    }
+  }
 }

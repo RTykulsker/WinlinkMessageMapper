@@ -101,7 +101,7 @@ public class HospitalBedProcessor extends AbstractBaseProcessor {
       var totalBedCount = getStringFromXml(xmlString, "totalbeds");
       var additionalComments = getStringFromXml(xmlString, "comments");
 
-      HospitalBedMessage m = new HospitalBedMessage(message, latLong.latitude(), latLong.longitude(), //
+      HospitalBedMessage m = new HospitalBedMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           organization, facility, contactPerson, contactPhone, contactEmail, //
           emergencyBedCount, emergencyBedNotes, //
           pediatricsBedCount, pediatricsBedNotes, //

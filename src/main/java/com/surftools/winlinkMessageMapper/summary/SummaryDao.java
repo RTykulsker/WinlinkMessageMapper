@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.summary;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -67,14 +68,18 @@ public class SummaryDao {
         outputDirectory.mkdir();
       }
 
-      var comparator = new ExerciseSummaryComparator();
-      Collections.sort(list, comparator);
-
       CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
       writer.writeNext(ExerciseSummary.getHeaders());
-      for (ExerciseSummary es : list) {
-        writer.writeNext(es.getValues());
+
+      if (list.size() > 0) {
+        var comparator = new ExerciseSummaryComparator();
+        Collections.sort(list, comparator);
+
+        for (ExerciseSummary es : list) {
+          writer.writeNext(es.getValues());
+        }
       }
+
       writer.close();
       logger.info("wrote " + list.size() + " exerciseSummaries to file: " + outputPath);
     } catch (
@@ -138,6 +143,11 @@ public class SummaryDao {
     var list = new ArrayList<ExerciseSummary>();
     Path inputPath = Path.of(inputPathName, "exerciseSummary.csv");
 
+    if (!inputPath.toFile().exists()) {
+      logger.warn("file: " + inputPath.toString() + " not found");
+      return list;
+    }
+
     try {
       Reader reader = new FileReader(inputPath.toString());
       CSVParser parser = new CSVParserBuilder() //
@@ -166,8 +176,13 @@ public class SummaryDao {
     var list = new ArrayList<ParticipantSummary>();
     Path inputPath = Path.of(inputPathName, "participantSummary.csv");
 
+    if (!inputPath.toFile().exists()) {
+      logger.warn("file: " + inputPath.toString() + " not found");
+      return list;
+    }
+
     try {
-      Reader reader = new FileReader(inputPath.toString());
+      Reader reader = new BufferedReader(new FileReader(inputPath.toString()));
       CSVParser parser = new CSVParserBuilder() //
           .withSeparator(',') //
             .withIgnoreQuotations(true) //
@@ -193,6 +208,11 @@ public class SummaryDao {
   public List<ParticipantHistory> readParticipantHistories() {
     var list = new ArrayList<ParticipantHistory>();
     Path inputPath = Path.of(inputPathName, "participantHistory.csv");
+
+    if (!inputPath.toFile().exists()) {
+      logger.warn("file: " + inputPath.toString() + " not found");
+      return list;
+    }
 
     try {
       Reader reader = new FileReader(inputPath.toString());
@@ -222,11 +242,18 @@ public class SummaryDao {
 
     @Override
     public int compare(ExerciseSummary o1, ExerciseSummary o2) {
+      if (o2.getDate() == null) {
+        return 1;
+      }
+
       int compare = o1.getDate().compareTo(o2.getDate());
       if (compare != 0) {
         return compare;
       }
 
+      if (o2.getName() == null) {
+        return 1;
+      }
       compare = o1.getName().compareTo(o2.getName());
       return compare;
     }

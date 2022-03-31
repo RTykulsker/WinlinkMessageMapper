@@ -43,6 +43,13 @@ public class GisMessage extends ExportedMessage {
     this.organization = organization;
   }
 
+  public GisMessage(ExportedMessage xmlMessage, LatLongPair latLong, String organization) {
+    super(xmlMessage);
+    this.latitude = latLong.getLatitude();
+    this.longitude = latLong.getLongitude();
+    this.organization = organization;
+  }
+
   @Override
   public String[] getHeaders() {
     throw new RuntimeException("GisMessage.getHeaders() not implemented");
@@ -58,7 +65,7 @@ public class GisMessage extends ExportedMessage {
   }
 
   public void replaceLocation(LatLongPair pair) {
-    this.latitude = pair.latitude();
-    this.longitude = pair.longitude();
+    this.latitude = pair.getLatitude();
+    this.longitude = pair.getLongitude();
   }
 }

@@ -73,7 +73,7 @@ public class EtoCheckInProcessor extends AbstractBaseProcessor {
       version = fields[fields.length - 1];
     }
 
-    EtoCheckInMessage m = new EtoCheckInMessage(message, latLong.latitude(), latLong.longitude(), "", //
+    EtoCheckInMessage m = new EtoCheckInMessage(message, latLong, "", //
         comments, status, band, mode, version, MessageType.CHECK_IN);
     return m;
   }

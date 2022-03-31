@@ -30,7 +30,7 @@ package com.surftools.winlinkMessageMapper.summary;
 public enum HistoryCategory {
   UNDEFINED(0, "undefined"), //
   ONE_AND_DONE(1, "one and done"), //
-  FIRST_TIME_LAST_TIME(2, "first time, last time"), //
+  FIRST_TIME_LAST_TIME(2, "first time - latest exercise"), //
   NEEDS_ENCOURAGEMENT(3, "needs encouragement"), //
   GOING_STRONG(4, "going strong"), //
   HEAVEY_HITTER(5, "heavy hitter"), //

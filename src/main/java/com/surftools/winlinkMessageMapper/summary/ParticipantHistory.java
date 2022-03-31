@@ -49,6 +49,9 @@ public class ParticipantHistory {
   // category not read but is written!
   private HistoryCategory category;
 
+  // mapLocation not read is is written
+  private LatLongPair mapLocation;
+
   @Override
   public String toString() {
     return "{call: " + call + ", lastDate: " + lastDate + ", lastName: " + lastName + ", lastLocation: " + lastLocation
@@ -62,12 +65,6 @@ public class ParticipantHistory {
   }
 
   public ParticipantHistory(String[] fields) {
-    final int requiredFieldCount = 7;
-    if (fields.length != requiredFieldCount) {
-      throw new IllegalArgumentException("wrong field count: expected: " + requiredFieldCount + ", got: "
-          + fields.length + ", " + String.join(",", fields));
-    }
-
     call = fields[0];
     lastDate = fields[1];
     lastName = fields[2];
@@ -76,6 +73,7 @@ public class ParticipantHistory {
     messageCount = Integer.parseInt(fields[6]);
 
     category = HistoryCategory.UNDEFINED;
+    mapLocation = new LatLongPair(lastLocation);
   }
 
   public String getCall() {
@@ -108,6 +106,7 @@ public class ParticipantHistory {
 
   public void setLastLocation(LatLongPair lastLocation) {
     this.lastLocation = lastLocation;
+    this.mapLocation = lastLocation;
   }
 
   public int getExerciseCount() {
@@ -134,6 +133,14 @@ public class ParticipantHistory {
     this.category = category;
   }
 
+  public LatLongPair getMapLocation() {
+    return mapLocation;
+  }
+
+  public void setMapLocation(LatLongPair latLong) {
+    this.mapLocation = latLong;
+  }
+
   public static String[] getHeaders() {
     var list = new ArrayList<String>();
 
@@ -149,6 +156,9 @@ public class ParticipantHistory {
 
     list.add("CategoryIndex");
     list.add("CategoryName");
+
+    list.add("Latitude");
+    list.add("Longitude");
 
     String[] array = new String[list.size()];
     list.toArray(array);
@@ -167,8 +177,8 @@ public class ParticipantHistory {
       list.add("");
       list.add("");
     } else {
-      list.add(lastLocation.latitude());
-      list.add(lastLocation.longitude());
+      list.add(lastLocation.getLatitude());
+      list.add(lastLocation.getLongitude());
     }
 
     list.add(String.valueOf(exerciseCount));
@@ -177,10 +187,48 @@ public class ParticipantHistory {
     list.add(String.valueOf(category.id()));
     list.add(category.toString());
 
+    if (mapLocation == null) {
+      list.add("");
+      list.add("");
+    } else {
+      list.add(mapLocation.getLatitude());
+      list.add(mapLocation.getLongitude());
+    }
+
     String[] array = new String[list.size()];
     list.toArray(array);
 
     return (array);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((call == null) ? 0 : call.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    ParticipantHistory other = (ParticipantHistory) obj;
+    if (call == null) {
+      if (other.call != null) {
+        return false;
+      }
+    } else if (!call.equals(other.call)) {
+      return false;
+    }
+    return true;
   }
 
 }

@@ -30,6 +30,8 @@ package com.surftools.winlinkMessageMapper.dto.p2p;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+
 public class FieldStation implements Comparable<FieldStation> {
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
@@ -39,8 +41,7 @@ public class FieldStation implements Comparable<FieldStation> {
   public final String subject;
   public final String date;
   public final String time;
-  public final String latitude;
-  public final String longitude;
+  public final LatLongPair latLong;
   public final String organization;
   public final String comments;
 
@@ -55,18 +56,32 @@ public class FieldStation implements Comparable<FieldStation> {
     subject = fields[index++].trim();
     date = fields[index++].trim();
     time = fields[index++].trim();
-    latitude = fields[index++].trim();
-    longitude = fields[index++].trim();
+    String latitude = fields[index++].trim();
+    String longitude = fields[index++].trim();
     organization = fields[index++].trim();
     comments = fields[index++].trim();
+
+    latLong = new LatLongPair(latitude, longitude);
 
     dateTime = LocalDateTime.parse(date + " " + time, FORMATTER);
   }
 
+  public LatLongPair getLatLongPair() {
+    return latLong;
+  }
+
+  public String getLatitude() {
+    return latLong.getLatitude();
+  }
+
+  public String getLongitude() {
+    return latLong.getLongitude();
+  }
+
   @Override
   public String toString() {
-    return "FieldStation {from: " + from + ", to: " + to + ", latitude: " + latitude + ", longitude: " + longitude
-        + "}";
+    return "FieldStation {from: " + from + ", to: " + to + ", latitude: " + latLong.getLatitude() + ", longitude: "
+        + latLong.getLongitude() + "}";
   }
 
   @Override

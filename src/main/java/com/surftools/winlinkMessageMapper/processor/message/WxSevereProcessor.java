@@ -83,7 +83,7 @@ public class WxSevereProcessor extends AbstractBaseProcessor {
 
       String comments = getStringFromXml(xmlString, "comments");
 
-      WxSevereMessage m = new WxSevereMessage(message, latLong.latitude(), latLong.longitude(), //
+      WxSevereMessage m = new WxSevereMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           type, contactPerson, contactPhone, contactEmail, //
           city, region, county, other, //
           flood, hailSize, windSpeed, tornado, //

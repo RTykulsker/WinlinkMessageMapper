@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
+import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 public class CheckInMessage extends GisMessage {
@@ -36,9 +37,9 @@ public class CheckInMessage extends GisMessage {
   public final String mode;
   public final String version;
 
-  public CheckInMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization, //
+  public CheckInMessage(ExportedMessage xmlMessage, LatLongPair latlong, String organization, //
       String comments, String status, String band, String mode, String version, MessageType messageType) {
-    super(xmlMessage, latitude, longitude, organization);
+    super(xmlMessage, latlong, organization);
     this.comments = comments;
     this.status = status;
     this.band = band;

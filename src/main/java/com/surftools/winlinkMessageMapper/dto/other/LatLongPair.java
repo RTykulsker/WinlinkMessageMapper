@@ -36,12 +36,50 @@ import org.slf4j.LoggerFactory;
  * @author bobt
  *
  */
-public record LatLongPair(String latitude, String longitude) {
-
+public class LatLongPair {
   private static final Logger logger = LoggerFactory.getLogger(LatLongPair.class);
+
+  private final String latitude;
+  private final String longitude;
+
+  private double dLatitude;
+  private double dLongitude;
+
+  public LatLongPair(String latitude, String longitude) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
 
   public LatLongPair(double lat, double lon) {
     this(String.valueOf(lat), String.valueOf(lon));
+  }
+
+  public LatLongPair(LatLongPair other) {
+    this.latitude = other.latitude;
+    this.longitude = other.longitude;
+  }
+
+  @Override
+  public String toString() {
+    return "{lat: " + latitude + ", lon:" + longitude + "}";
+  }
+
+  public String getLatitude() {
+    return latitude;
+  }
+
+  public String getLongitude() {
+    return longitude;
+  }
+
+  public double getLatitudeAsDouble() {
+    isValid();
+    return dLatitude;
+  }
+
+  public double getLongitudeAsDouble() {
+    isValid();
+    return dLongitude;
   }
 
   public boolean isValid() {
@@ -54,8 +92,8 @@ public record LatLongPair(String latitude, String longitude) {
     }
 
     try {
-      double d = Double.parseDouble(latitude);
-      if (Math.abs(d) > 90d) {
+      dLatitude = Double.parseDouble(latitude);
+      if (Math.abs(dLatitude) > 90d) {
         return false;
       }
     } catch (Exception e) {
@@ -64,8 +102,8 @@ public record LatLongPair(String latitude, String longitude) {
     }
 
     try {
-      double d = Double.parseDouble(longitude);
-      if (Math.abs(d) > 180d) {
+      dLongitude = Double.parseDouble(longitude);
+      if (Math.abs(dLongitude) > 180d) {
         return false;
       }
     } catch (Exception e) {
@@ -75,4 +113,28 @@ public record LatLongPair(String latitude, String longitude) {
 
     return true;
   }
+
+  public int computeDistanceMiles(LatLongPair other) {
+    final double MILES_PER_METER = 0.000621371;
+    double distanceMeters = computeDistanceMeters(other);
+    double distanceMiles = distanceMeters * MILES_PER_METER;
+    return (int) Math.round(distanceMiles);
+  }
+
+  public double computeDistanceMeters(LatLongPair other) {
+    // https://gist.github.com/vananth22/888ed9a22105670e7a4092bdcf0d72e4
+    final double R_METERS = 6_371_000d;
+    double lat1 = (Math.PI / 180d) * Double.parseDouble(this.latitude);
+    double lon1 = (Math.PI / 180d) * Double.parseDouble(this.longitude);
+    double lat2 = (Math.PI / 180d) * Double.parseDouble(other.latitude);
+    double lon2 = (Math.PI / 180d) * Double.parseDouble(other.longitude);
+
+    double latDistance = lat2 - lat1;
+    double lonDistance = lon2 - lon1;
+    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+        + Math.cos(lat1) * Math.cos(lat2) * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R_METERS * c;
+  }
+
 };

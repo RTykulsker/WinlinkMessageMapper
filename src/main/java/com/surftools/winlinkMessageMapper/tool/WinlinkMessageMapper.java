@@ -53,6 +53,7 @@ import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcesso
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.GradableCheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
@@ -175,6 +176,7 @@ public class WinlinkMessageMapper {
       var writer = new ExportedMessageWriter(pathName);
       writer.writeAll(messageMap);
 
+      // summary
       var summarizer = new Summarizer(databasePathName, pathName);
       summarizer.setDumpIds(dumpIdsSet);
       summarizer.summarize(messageMap);
@@ -319,6 +321,7 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
     processorMap.put(MessageType.GRADABLE_CHECK_IN, new GradableCheckInProcessor(gradableResponses));
+    processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -379,6 +382,8 @@ public class WinlinkMessageMapper {
       return MessageType.HOSPITAL_BED;
     } else if (attachmentNames.contains(MessageType.SPOTREP.attachmentName())) {
       return MessageType.SPOTREP;
+    } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
+      return MessageType.FIELD_SITUATION_REPORT;
     } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
       return MessageType.WX_LOCAL;
     } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {

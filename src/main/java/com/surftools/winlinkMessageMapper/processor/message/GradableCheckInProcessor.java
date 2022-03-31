@@ -100,7 +100,7 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
     } // end if not null gradableResponses
 
     if (correctResponsesList.size() == 0) {
-      throw new IllegalArgumentException("no corect responses in input: " + gradableResponses);
+      CORRECT_RESPONSES = "No correct responses defined";
     } else if (correctResponsesList.size() == 1) {
       CORRECT_RESPONSES = "Correct response is: " + correctResponsesList.get(0) + ".";
     } else {
@@ -111,6 +111,8 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
     responses.addAll(responseGradeMap.keySet());
     Collections.sort(responses);
     VALID_RESPONSES = String.join(", ", responses);
+    logger.debug(CORRECT_RESPONSES);
+    logger.debug("valid responses: " + VALID_RESPONSES);
   }
 
   @Override
@@ -154,7 +156,7 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
       var grade = makeGrade(response);
       var explanation = makeExplanation(response, grade);
 
-      ExportedMessage m = new GradedCheckInMessage(message, latLong.latitude(), latLong.longitude(), organization,
+      ExportedMessage m = new GradedCheckInMessage(message, latLong.getLatitude(), latLong.getLongitude(), organization,
           comments, status, band, mode, version, response, grade, explanation);
 
       return m;
@@ -217,6 +219,10 @@ public class GradableCheckInProcessor extends AbstractBaseProcessor {
 
   @Override
   public String getPostProcessReport() {
+    if (gradeCountMap.size() == 0) {
+      return "";
+    }
+
     final var INDENT = "   ";
     final var FORMAT = new DecimalFormat("0.00");
     StringBuilder sb = new StringBuilder();

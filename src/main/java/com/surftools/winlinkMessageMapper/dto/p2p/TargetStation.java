@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.p2p;
 
+import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+
 public class TargetStation {
 
   public final String band;
@@ -38,8 +40,7 @@ public class TargetStation {
   public final String city;
   public final String state;
   public final String grid;
-  public final String latitude;
-  public final String longitude;
+  public final LatLongPair latLong;
 
   public TargetStation(String[] fields) {
     int index = 0;
@@ -52,8 +53,9 @@ public class TargetStation {
     city = fields[index++].trim();
     state = fields[index++].trim();
     grid = fields[index++].trim();
-    latitude = fields[index++].trim();
-    longitude = fields[index++].trim();
+    String latitude = fields[index++].trim();
+    String longitude = fields[index++].trim();
+    latLong = new LatLongPair(latitude, longitude);
   }
 
   public TargetStation(TargetStation other, String latitude, String longitude) {
@@ -66,14 +68,25 @@ public class TargetStation {
     this.city = other.city;
     this.state = other.state;
     this.grid = other.grid;
-    this.latitude = latitude;
-    this.longitude = longitude;
+    latLong = new LatLongPair(latitude, longitude);
+  }
+
+  public LatLongPair getLatLongPair() {
+    return latLong;
+  }
+
+  public String getLatitude() {
+    return latLong.getLatitude();
+  }
+
+  public String getLongitude() {
+    return latLong.getLongitude();
   }
 
   @Override
   public String toString() {
-    return "TargetStation {call: " + call + ", city: " + city + ", state: " + state + ", latitude: " + latitude
-        + ", longitude: " + longitude + "}";
+    return "TargetStation {call: " + call + ", city: " + city + ", state: " + state + ", latitude: "
+        + latLong.getLatitude() + ", longitude: " + latLong.getLongitude() + "}";
   }
 
 }

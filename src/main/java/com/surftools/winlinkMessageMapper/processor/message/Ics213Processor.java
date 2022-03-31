@@ -75,7 +75,8 @@ public class Ics213Processor extends AbstractBaseProcessor {
           return m;
         } else {
           String restOfMessage = latLongComment.comment;
-          var m = new GisIcs213Message(message, latLong.latitude(), latLong.longitude(), organization, restOfMessage);
+          var m = new GisIcs213Message(message, latLong.getLatitude(), latLong.getLongitude(), organization,
+              restOfMessage);
           return m;
         }
       }
@@ -143,7 +144,7 @@ public class Ics213Processor extends AbstractBaseProcessor {
       }
     } else {
       // only one line, and we don't have complete lat/long, we are boned
-      if (latLong.latitude().equals("") || latLong.longitude().equals("")) {
+      if (latLong.getLatitude().equals("") || latLong.getLongitude().equals("")) {
         restOfMessage = messageText;
       }
     } // end if lines.length == 1

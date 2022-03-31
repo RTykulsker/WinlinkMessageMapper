@@ -174,8 +174,8 @@ public class ParticipantSummary {
       list.add("");
       list.add("");
     } else {
-      list.add(lastLocation.latitude());
-      list.add(lastLocation.longitude());
+      list.add(lastLocation.getLatitude());
+      list.add(lastLocation.getLongitude());
     }
 
     list.add(String.valueOf(messageVersion));

@@ -77,7 +77,7 @@ public class WxHurricaneProcessor extends AbstractBaseProcessor {
 
       String comments = getStringFromFormLines(formLines, "Event Comments");
 
-      WxHurricaneMessage m = new WxHurricaneMessage(message, latLong.latitude(), latLong.longitude(), //
+      WxHurricaneMessage m = new WxHurricaneMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           status, isObserver, observerPhone, observerEmail, //
           city, county, state, country, //
           instrumentsUsed, windSpeed, gustSpeed, windDirection, barometricPressure, //
