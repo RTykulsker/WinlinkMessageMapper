@@ -311,7 +311,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   }
 
   @Override
-  public String getPostProcessReport() {
+  public String getPostProcessReport(List<ExportedMessage> messages) {
     return null;
   }
 }

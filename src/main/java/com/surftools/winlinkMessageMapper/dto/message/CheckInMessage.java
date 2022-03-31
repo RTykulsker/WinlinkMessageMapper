@@ -29,13 +29,18 @@ package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 
-public class CheckInMessage extends GisMessage {
+public class CheckInMessage extends GisMessage implements GradableMessage {
   public final String comments;
   public final String status;
   public final String band;
   public final String mode;
   public final String version;
+
+  private boolean isGraded;
+  private String grade;
+  private String explanation;
 
   public CheckInMessage(ExportedMessage xmlMessage, LatLongPair latlong, String organization, //
       String comments, String status, String band, String mode, String version, MessageType messageType) {
@@ -49,19 +54,59 @@ public class CheckInMessage extends GisMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization",
-        "Comments", "Status", "Band", "Mode", "Version" };
+    if (isGraded) {
+      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude",
+          "Organization", "Comments", "Status", "Band", "Mode", "Grade", "Explanation", "Version" };
+    } else {
+      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude",
+          "Organization", "Comments", "Status", "Band", "Mode", "Version" };
+    }
   }
 
   @Override
   public String[] getValues() {
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, comments, status,
-        band, mode, version };
+    if (isGraded) {
+      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, comments,
+          status, band, mode, grade, explanation, version };
+    } else {
+      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, comments,
+          status, band, mode, version };
+    }
   }
 
   @Override
   public MessageType getMessageType() {
     return MessageType.CHECK_IN;
+  }
+
+  @Override
+  public boolean isGraded() {
+    return isGraded;
+  }
+
+  @Override
+  public void setIsGraded(boolean isGraded) {
+    this.isGraded = isGraded;
+  }
+
+  @Override
+  public String getGrade() {
+    return grade;
+  }
+
+  @Override
+  public void setGrade(String grade) {
+    this.grade = grade;
+  }
+
+  @Override
+  public String getExplanation() {
+    return explanation;
+  }
+
+  @Override
+  public void setExplanation(String explanation) {
+    this.explanation = explanation;
   }
 
 }

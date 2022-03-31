@@ -25,32 +25,18 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.processor.message;
+package com.surftools.winlinkMessageMapper.grade;
 
 import java.util.List;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 
-public interface IProcessor {
+public interface IGrader {
 
-  /**
-   * process the ExportedMessage
-   *
-   * @param message
-   * @return either a typed message or a rejections
-   */
-  public ExportedMessage process(ExportedMessage message);
+  public GradeResult grade(GradableMessage m);
 
-  /**
-   * return a String that summarizes the processing, like grade totals:
-   *
-   * NOTE WELL: the processor should NOT accumulate statistics during the initial processing. Messages may be dropped
-   * because of de-duplication or other explicit reasons
-   *
-   * @param messages
-   *
-   * @return
-   */
+  public GradeResult grade(String s);
+
   public String getPostProcessReport(List<ExportedMessage> messages);
 
 }

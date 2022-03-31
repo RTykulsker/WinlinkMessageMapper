@@ -25,34 +25,8 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.dto.other;
+package com.surftools.winlinkMessageMapper.grade;
 
-/**
- * for various messages that can be graded
- *
- * @author bobt
- *
- */
-public enum Grade {
-  CORRECT("correct"), INCORRECT("incorrect"), NOT_VALID("not_valid");
+public record GradeResult(String grade, String explanation) {
 
-  private final String key;
-
-  private Grade(String key) {
-    this.key = key;
-  }
-
-  public static Grade fromString(String string) {
-    for (Grade key : Grade.values()) {
-      if (key.toString().equals(string)) {
-        return key;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public String toString() {
-    return key;
-  }
 }

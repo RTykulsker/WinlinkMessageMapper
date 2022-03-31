@@ -28,7 +28,9 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.processor.message;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,10 @@ import com.surftools.winlinkMessageMapper.dto.message.CheckOutMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
+import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
+import com.surftools.winlinkMessageMapper.grade.GradeResult;
+import com.surftools.winlinkMessageMapper.grade.IGrader;
+import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
 
 public class CheckInProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CheckInProcessor.class);
@@ -54,8 +60,22 @@ public class CheckInProcessor extends AbstractBaseProcessor {
 
   private final MessageType messageType;
 
-  public CheckInProcessor(boolean isCheckIn) {
+  private final String gradeKey;
+  private IGrader grader = null;
+
+  public CheckInProcessor(boolean isCheckIn, String gradeKey) {
     messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
+    this.gradeKey = gradeKey;
+
+    if (gradeKey.equals("ETO-2022-03-24")) {
+      grader = new MultipleChoiceGrader(messageType);
+      MultipleChoiceGrader g = (MultipleChoiceGrader) grader;
+      g.setValidResponseString("A, B, C, or D");
+      g.setCorrectResponseSet(new HashSet<String>(Arrays.asList(new String[] { "B" })));
+      g.setIncorrectResponseSet(new HashSet<String>(Arrays.asList(new String[] { "A", "C", "D" })));
+    } else {
+      grader = new DefaultGrader(gradeKey);
+    }
   }
 
   @Override
@@ -93,7 +113,7 @@ public class CheckInProcessor extends AbstractBaseProcessor {
         version = fields[fields.length - 1]; // last field
       }
 
-      ExportedMessage m = null;
+      CheckInMessage m = null;
       if (messageType == MessageType.CHECK_IN) {
         m = new CheckInMessage(message, latLong, organization, comments, status, band, mode, version, messageType);
       } else if (messageType == MessageType.CHECK_OUT) {
@@ -101,9 +121,57 @@ public class CheckInProcessor extends AbstractBaseProcessor {
       } else {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
       }
+
+      if (grader != null) {
+        grade(m);
+      }
+
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
+    }
+  }
+
+  private void grade(CheckInMessage m) {
+    GradeResult result = null;
+    if (gradeKey.equals("ETO-2022-03-24")) {
+      result = grade_ETO_2022_03_24(m);
+    } else {
+      result = grader.grade(m);
+    }
+
+    if (result != null) {
+      m.setIsGraded(true);
+      m.setGrade(result.grade());
+      m.setExplanation(result.explanation());
+    }
+  }
+
+  /**
+   * response is first line, if any from comments valid responses are single letter, optionally quoted in {A,B,C,D}
+   * correct responses are {B}
+   *
+   * @param m
+   */
+  private GradeResult grade_ETO_2022_03_24(CheckInMessage m) {
+    var response = "";
+    if (m.comments != null) {
+      String[] commentsLines = m.comments.trim().split("\n");
+      if (commentsLines != null && commentsLines.length > 0) {
+        response = commentsLines[0].trim().toUpperCase();
+      }
+    }
+
+    var gradeResult = grader.grade(response);
+    return gradeResult;
+  }
+
+  @Override
+  public String getPostProcessReport(List<ExportedMessage> messages) {
+    if (grader != null) {
+      return grader.getPostProcessReport(messages);
+    } else {
+      return "";
     }
   }
 

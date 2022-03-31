@@ -51,8 +51,7 @@ public enum MessageType {
   REJECTS(12, "rejects"), //
   UNKNOWN(13, "unknown"), // can't infer message type
 
-  GRADABLE_CHECK_IN(14, "graded_check_in", true, "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //
-  FIELD_SITUATION_REPORT(15, "field_situation", true, "RMS_Express_Form_Field Situation Report_viewer.xml"), //
+  FIELD_SITUATION_REPORT(14, "field_situation", true, "RMS_Express_Form_Field Situation Report_viewer.xml"), //
 
   ;
 

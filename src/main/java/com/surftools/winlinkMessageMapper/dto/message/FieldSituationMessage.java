@@ -57,6 +57,10 @@ public class FieldSituationMessage extends GisMessage {
   public final String poc;
   public final String formVersion;
 
+  private boolean isGraded;
+  private String grade;
+  private String explanation;
+
   public FieldSituationMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
       String task, String isHelpNeeded, String neededHelp, //
       String organization, String city, String county, String state, String territory, //
@@ -100,21 +104,53 @@ public class FieldSituationMessage extends GisMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Task", "IsHelpNeeded", "NeededHelp", //
-        "Organization", "City", "County", "State", "Territory", //
-        "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
-        "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
-        "InternetComments", "NOAAStatus", "NOAAComments", "AdditionalComments", "POC", "FormVersion" };
+    if (isGraded) {
+      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+          "Task", "IsHelpNeeded", "NeededHelp", //
+          "Organization", "City", "County", "State", "Territory", //
+          "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
+          "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
+          "InternetComments", "NOAAStatus", "NOAAComments", "AdditionalComments", "POC", //
+          "Grade", "Explanation", "FormVersion" };
+    } else {
+      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+          "Task", "IsHelpNeeded", "NeededHelp", //
+          "Organization", "City", "County", "State", "Territory", //
+          "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
+          "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
+          "InternetComments", "NOAAStatus", "NOAAComments", "AdditionalComments", "POC", //
+          "FormVersion" };
+    }
   }
 
   @Override
   public String[] getValues() {
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
-        landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
-        tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
-        noaaStatus, noaaComments, additionalComments, poc, formVersion };
+    if (isGraded) {
+      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+          task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
+          landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
+          tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
+          noaaStatus, noaaComments, additionalComments, poc, //
+          grade, explanation, formVersion };
+    } else {
+      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+          task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
+          landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
+          tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
+          noaaStatus, noaaComments, additionalComments, poc, formVersion };
+    }
+  }
+
+  public void setIsGraded(boolean isGraded) {
+    this.isGraded = isGraded;
+  }
+
+  public void setGrade(String grade) {
+    this.grade = grade;
+  }
+
+  public void setExplanation(String explanation) {
+    this.explanation = explanation;
   }
 
   @Override

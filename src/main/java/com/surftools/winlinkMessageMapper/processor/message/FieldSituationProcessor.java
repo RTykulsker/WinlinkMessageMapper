@@ -46,6 +46,14 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
   }
 
+  private final String gradeKey;
+  private String grade;
+  private String explanation;
+
+  public FieldSituationProcessor(String gradeKey) {
+    this.gradeKey = gradeKey;
+  }
+
   @Override
   public ExportedMessage process(ExportedMessage message) {
 
@@ -102,10 +110,22 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, formVersion);
 
+      if (gradeKey != null) {
+        grade(m);
+        m.setIsGraded(true);
+        m.setGrade(grade);
+        m.setExplanation(explanation);
+      }
+
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
+  }
+
+  private void grade(FieldSituationMessage m) {
+    // TODO Auto-generated method stub
+
   }
 
   private String parseFormVersion(String string) {

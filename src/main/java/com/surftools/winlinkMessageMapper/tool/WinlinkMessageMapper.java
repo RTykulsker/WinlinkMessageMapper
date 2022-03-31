@@ -54,7 +54,6 @@ import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor;
-import com.surftools.winlinkMessageMapper.processor.message.GradableCheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
@@ -115,8 +114,8 @@ public class WinlinkMessageMapper {
   @Option(name = "--saveAttachments", usage = "save ALL attachments in exported message")
   private boolean saveAttachments = false;
 
-  @Option(name = "--gradableResponses", usage = "list of comma-delimited k->v pairs, where v is a grade")
-  private String gradableResponses = null;
+  @Option(name = "--gradeKey", usage = "exercise/processor-specific key to identify grading method, if any")
+  private String gradeKey = null;
 
   public static void main(String[] args) {
     WinlinkMessageMapper app = new WinlinkMessageMapper();
@@ -181,7 +180,7 @@ public class WinlinkMessageMapper {
       summarizer.setDumpIds(dumpIdsSet);
       summarizer.summarize(messageMap);
 
-      writePostProcessorMessages();
+      writePostProcessorMessages(messageMap);
 
       logger.info("exiting");
     } catch (Exception e) {
@@ -190,16 +189,17 @@ public class WinlinkMessageMapper {
     }
   }
 
-  private void writePostProcessorMessages() {
+  private void writePostProcessorMessages(Map<MessageType, List<ExportedMessage>> messageMap) {
     StringBuilder sb = new StringBuilder();
     for (MessageType messageType : processorMap.keySet()) {
+      var messages = messageMap.get(messageType);
 
       IProcessor processor = processorMap.get(messageType);
       if (processor == null) {
         continue;
       }
 
-      var report = processor.getPostProcessReport();
+      var report = processor.getPostProcessReport(messages);
       if (report == null) {
         continue;
       }
@@ -308,8 +308,8 @@ public class WinlinkMessageMapper {
    */
   private Map<MessageType, IProcessor> makeProcessorMap() {
     Map<MessageType, IProcessor> processorMap = new HashMap<>();
-    processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true));
-    processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false));
+    processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, gradeKey));
+    processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, gradeKey));
     processorMap.put(MessageType.DYFI, new DyfiProcessor());
     processorMap.put(MessageType.POSITION, new PositionProcessor());
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
@@ -320,8 +320,7 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.WX_HURRICANE, new WxHurricaneProcessor());
     processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
-    processorMap.put(MessageType.GRADABLE_CHECK_IN, new GradableCheckInProcessor(gradableResponses));
-    processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
+    processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(gradeKey));
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -372,8 +371,6 @@ public class WinlinkMessageMapper {
 
     if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
       return MessageType.ICS_213;
-    } else if (gradableResponses != null && attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
-      return MessageType.GRADABLE_CHECK_IN;
     } else if (attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
       return MessageType.CHECK_IN;
     } else if (attachmentNames.contains(MessageType.CHECK_OUT.attachmentName())) {
