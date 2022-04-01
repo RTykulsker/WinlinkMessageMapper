@@ -50,6 +50,7 @@ public class MultipleChoiceGrader implements IGrader {
   private String validResponseString;
   private boolean doDequote = true;
   private boolean doStopChars = false;
+  private boolean doToUpper = true;
 
   private String NOT_VALID_EXPLANATION = "Your response of %s is not valid, because it is not one of the valid responses: %s that are defined for this exercise.";
   private String INCORRECT_EXPLANATION = "Your response of %s is incorrect. %s";
@@ -81,6 +82,10 @@ public class MultipleChoiceGrader implements IGrader {
       }
     }
 
+    if (doToUpper) {
+      response = response.toUpperCase();
+    }
+
     if (correctResponseSet.contains(response)) {
       grade = CORRECT;
       explanation = String.format(CORRECT_EXPLANATION, response);
@@ -94,6 +99,63 @@ public class MultipleChoiceGrader implements IGrader {
 
     var gradeResult = new GradeResult(grade, explanation);
     return gradeResult;
+  }
+
+  /**
+   * parse something like this: --gradeKey="check_in:mc:correct:B:incorrect:A,C,D:doToUpper:true"
+   *
+   * @param gradeKey
+   */
+  public void parse(String gradeKey) {
+    var fields = gradeKey.split(":");
+
+    if (fields.length != 8) {
+      throw new IllegalArgumentException("can't parse: " + gradeKey + ", wrong number of fields");
+    }
+
+    if (!fields[1].equals("mc")) {
+      throw new IllegalArgumentException("can't parse: " + gradeKey + ", \"mc\" not found in field[1]");
+    }
+
+    if (!fields[2].equals("correct")) {
+      throw new IllegalArgumentException("can't parse: " + gradeKey + ", \"correct\" not found in field[2]");
+    }
+
+    if (!fields[4].equals("incorrect")) {
+      throw new IllegalArgumentException("can't parse: " + gradeKey + ", \"incorrect\" not found in field[4]");
+    }
+
+    if (!fields[6].equals("doToUpper")) {
+      throw new IllegalArgumentException("can't parse: " + gradeKey + ", \"doToUpper\" not found in field[6]");
+    }
+
+    var correctString = fields[3];
+    var incorrectString = fields[5];
+    var doToUpper = Boolean.parseBoolean(fields[7]);
+    setDoToUpper(doToUpper);
+
+    if (doToUpper) {
+      correctString = correctString.toUpperCase();
+      incorrectString = incorrectString.toUpperCase();
+    }
+
+    var correctFields = correctString.split(",");
+    var incorrectFields = incorrectString.split(",");
+
+    setCorrectResponseSet(new HashSet<String>(Arrays.asList(correctFields)));
+    setIncorrectResponseSet(new HashSet<String>(Arrays.asList(incorrectFields)));
+
+    var intersection = new HashSet<String>(correctResponseSet);
+    intersection.retainAll(incorrectResponseSet);
+
+    if (intersection.size() != 0) {
+      throw new IllegalArgumentException("can't parse: " + gradeKey + ", correct and incorrect intersect");
+    }
+
+    var list = new ArrayList<String>(correctResponseSet);
+    list.addAll(incorrectResponseSet);
+    Collections.sort(list);
+    setValidResponseString(String.join(",", list));
   }
 
   @Override
@@ -112,6 +174,10 @@ public class MultipleChoiceGrader implements IGrader {
 
   public void setDoStopChars(boolean b) {
     this.doStopChars = b;
+  }
+
+  public void setDoToUpper(boolean b) {
+    this.doToUpper = b;
   }
 
   public void setCorrectResponseSet(HashSet<String> hashSet) {
