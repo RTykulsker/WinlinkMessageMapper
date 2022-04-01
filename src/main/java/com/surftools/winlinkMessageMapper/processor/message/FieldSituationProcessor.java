@@ -29,11 +29,16 @@ package com.surftools.winlinkMessageMapper.processor.message;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
+import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
+import com.surftools.winlinkMessageMapper.grade.FieldSituationReportGrader;
+import com.surftools.winlinkMessageMapper.grade.GradeResult;
+import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class FieldSituationProcessor extends AbstractBaseProcessor {
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
@@ -47,11 +52,18 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
   }
 
   private final String gradeKey;
-  private String grade;
-  private String explanation;
+  private IGrader grader = null;
 
   public FieldSituationProcessor(String gradeKey) {
     this.gradeKey = gradeKey;
+
+    if (gradeKey != null) {
+      if (gradeKey.equals("ETO-2022-04-14")) {
+        grader = new FieldSituationReportGrader(gradeKey);
+      } else {
+        grader = new DefaultGrader(gradeKey);
+      }
+    }
   }
 
   @Override
@@ -66,6 +78,7 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       }
 
       String organization = getStringFromXml(xmlString, "title");
+      String precedence = getStringFromXml(xmlString, "precedence");
       String task = getStringFromXml(xmlString, "msgnr");
       String isHelpNeeded = getStringFromXml(xmlString, "safetyneed");
       String neededHelp = getStringFromXml(xmlString, "comm0");
@@ -104,17 +117,17 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       String formVersion = parseFormVersion(getStringFromXml(xmlString, "templateversion"));
 
       FieldSituationMessage m = new FieldSituationMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
-          task, isHelpNeeded, neededHelp, //
+          precedence, task, isHelpNeeded, neededHelp, //
           organization, city, county, state, territory, //
           landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, formVersion);
 
+      if (grader != null) {
+
+      }
       if (gradeKey != null) {
         grade(m);
-        m.setIsGraded(true);
-        m.setGrade(grade);
-        m.setExplanation(explanation);
       }
 
       return m;
@@ -124,8 +137,13 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
   }
 
   private void grade(FieldSituationMessage m) {
-    // TODO Auto-generated method stub
+    GradeResult result = grader.grade(m);
 
+    if (result != null) {
+      m.setIsGraded(true);
+      m.setGrade(result.grade());
+      m.setExplanation(result.explanation());
+    }
   }
 
   private String parseFormVersion(String string) {
@@ -138,6 +156,15 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       return fields[4];
     } else {
       return string;
+    }
+  }
+
+  @Override
+  public String getPostProcessReport(List<ExportedMessage> messages) {
+    if (grader != null) {
+      return grader.getPostProcessReport(messages);
+    } else {
+      return "";
     }
   }
 }

@@ -27,14 +27,11 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.grade;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
@@ -58,15 +55,11 @@ public class MultipleChoiceGrader implements IGrader {
   private String INCORRECT_EXPLANATION = "Your response of %s is incorrect. %s";
   private String CORRECT_EXPLANATION = "Your response of %s is correct.";
 
-  private final MessageType messageType;
-
   private Set<String> correctResponseSet;
   private String correctResponseString;
   private Set<String> incorrectResponseSet;
 
   public MultipleChoiceGrader(MessageType messageType) {
-    this.messageType = messageType;
-
     correctResponseSet = new HashSet<>();
     incorrectResponseSet = new HashSet<>();
   }
@@ -105,37 +98,7 @@ public class MultipleChoiceGrader implements IGrader {
 
   @Override
   public String getPostProcessReport(List<ExportedMessage> messages) {
-
-    Map<String, Integer> gradeCountMap = new HashMap<>();
-    int totalGraded = 0;
-    for (ExportedMessage message : messages) {
-      GradableMessage m = (GradableMessage) message;
-      if (m.isGraded()) {
-        String grade = m.getGrade();
-        int count = gradeCountMap.getOrDefault(grade, Integer.valueOf(0));
-        ++count;
-        ++totalGraded;
-        gradeCountMap.put(grade, count);
-      }
-    }
-
-    if (gradeCountMap.size() == 0) {
-      return "";
-    }
-
-    final var INDENT = "   ";
-    final var FORMAT = new DecimalFormat("0.00");
-    StringBuilder sb = new StringBuilder();
-    sb.append("\n");
-    sb.append(messageType.toString() + ": " + totalGraded + " messages" + "\n");
-    for (String grade : gradeCountMap.keySet()) {
-      int count = gradeCountMap.getOrDefault(grade, Integer.valueOf(0));
-      double percent = 100d * count / totalGraded;
-      var percentString = FORMAT.format(percent) + "%";
-      sb.append(INDENT + grade.toString() + ": " + count + " (" + percentString + ")\n");
-    }
-    var s = sb.toString();
-    return s;
+    return DefaultGrader.defaultPostProcessReport(messages);
   }
 
   @Override

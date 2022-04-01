@@ -67,14 +67,16 @@ public class CheckInProcessor extends AbstractBaseProcessor {
     messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
     this.gradeKey = gradeKey;
 
-    if (gradeKey.equals("ETO-2022-03-24")) {
-      grader = new MultipleChoiceGrader(messageType);
-      MultipleChoiceGrader g = (MultipleChoiceGrader) grader;
-      g.setValidResponseString("A, B, C, or D");
-      g.setCorrectResponseSet(new HashSet<String>(Arrays.asList(new String[] { "B" })));
-      g.setIncorrectResponseSet(new HashSet<String>(Arrays.asList(new String[] { "A", "C", "D" })));
-    } else {
-      grader = new DefaultGrader(gradeKey);
+    if (gradeKey != null) {
+      if (gradeKey.equals("ETO-2022-03-24")) {
+        grader = new MultipleChoiceGrader(messageType);
+        MultipleChoiceGrader g = (MultipleChoiceGrader) grader;
+        g.setValidResponseString("A, B, C, or D");
+        g.setCorrectResponseSet(new HashSet<String>(Arrays.asList(new String[] { "B" })));
+        g.setIncorrectResponseSet(new HashSet<String>(Arrays.asList(new String[] { "A", "C", "D" })));
+      } else {
+        grader = new DefaultGrader(gradeKey);
+      }
     }
   }
 

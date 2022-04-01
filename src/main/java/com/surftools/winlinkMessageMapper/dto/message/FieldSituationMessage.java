@@ -28,8 +28,10 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 
-public class FieldSituationMessage extends GisMessage {
+public class FieldSituationMessage extends GisMessage implements GradableMessage {
+  public final String precedence;
   public final String task;
   public final String isHelpNeeded;
   public final String neededHelp;
@@ -62,7 +64,7 @@ public class FieldSituationMessage extends GisMessage {
   private String explanation;
 
   public FieldSituationMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
-      String task, String isHelpNeeded, String neededHelp, //
+      String precedence, String task, String isHelpNeeded, String neededHelp, //
       String organization, String city, String county, String state, String territory, //
       String landlineStatus, String landlineComments, //
       String cellPhoneStatus, String cellPhoneComments, //
@@ -74,6 +76,7 @@ public class FieldSituationMessage extends GisMessage {
       String noaaStatus, String noaaComments, //
       String additionalComments, String poc, String formVersion) {
     super(xmlMessage, latitude, longitude, organization);
+    this.precedence = precedence;
     this.task = task;
     this.isHelpNeeded = isHelpNeeded;
     this.neededHelp = neededHelp;
@@ -106,7 +109,7 @@ public class FieldSituationMessage extends GisMessage {
   public String[] getHeaders() {
     if (isGraded) {
       return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-          "Task", "IsHelpNeeded", "NeededHelp", //
+          "Precedence", "Task", "IsHelpNeeded", "NeededHelp", //
           "Organization", "City", "County", "State", "Territory", //
           "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
           "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
@@ -114,7 +117,7 @@ public class FieldSituationMessage extends GisMessage {
           "Grade", "Explanation", "FormVersion" };
     } else {
       return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-          "Task", "IsHelpNeeded", "NeededHelp", //
+          "Precedence", "Task", "IsHelpNeeded", "NeededHelp", //
           "Organization", "City", "County", "State", "Territory", //
           "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
           "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
@@ -127,28 +130,31 @@ public class FieldSituationMessage extends GisMessage {
   public String[] getValues() {
     if (isGraded) {
       return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-          task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
+          precedence, task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
           landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, //
           grade, explanation, formVersion };
     } else {
       return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-          task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
+          precedence, task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
           landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, formVersion };
     }
   }
 
+  @Override
   public void setIsGraded(boolean isGraded) {
     this.isGraded = isGraded;
   }
 
+  @Override
   public void setGrade(String grade) {
     this.grade = grade;
   }
 
+  @Override
   public void setExplanation(String explanation) {
     this.explanation = explanation;
   }
@@ -156,5 +162,20 @@ public class FieldSituationMessage extends GisMessage {
   @Override
   public MessageType getMessageType() {
     return MessageType.FIELD_SITUATION_REPORT;
+  }
+
+  @Override
+  public boolean isGraded() {
+    return isGraded;
+  }
+
+  @Override
+  public String getGrade() {
+    return grade;
+  }
+
+  @Override
+  public String getExplanation() {
+    return explanation;
   }
 }
