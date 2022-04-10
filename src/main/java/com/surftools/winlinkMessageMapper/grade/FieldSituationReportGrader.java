@@ -145,5 +145,4 @@ public class FieldSituationReportGrader implements IGrader {
   public String getPostProcessReport(List<ExportedMessage> messages) {
     return DefaultGrader.defaultPostProcessReport(messages);
   }
-
 }

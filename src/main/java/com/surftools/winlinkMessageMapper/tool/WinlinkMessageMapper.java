@@ -59,6 +59,8 @@ import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
 import com.surftools.winlinkMessageMapper.processor.message.PositionProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.SpotRepProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.WaISnapProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.WaResourceRequestProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WxHurricaneProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WxLocalProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WxSevereProcessor;
@@ -321,6 +323,8 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
     processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(gradeKey));
+    processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor(gradeKey));
+    processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor(gradeKey));
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -385,6 +389,10 @@ public class WinlinkMessageMapper {
       return MessageType.WX_LOCAL;
     } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {
       return MessageType.WX_SEVERE;
+    } else if (attachmentNames.contains(MessageType.WA_RR.attachmentName())) {
+      return MessageType.WA_RR;
+    } else if (attachmentNames.contains(MessageType.WA_ISNAP.attachmentName())) {
+      return MessageType.WA_ISNAP;
       /**
        * subject-based
        */

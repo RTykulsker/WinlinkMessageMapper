@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.grade;
 
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+
 public interface GradableMessage {
   public boolean isGraded();
 
@@ -39,4 +41,6 @@ public interface GradableMessage {
   public String getExplanation();
 
   public void setExplanation(String explanation);
+
+  public MessageType getMessageType();
 }

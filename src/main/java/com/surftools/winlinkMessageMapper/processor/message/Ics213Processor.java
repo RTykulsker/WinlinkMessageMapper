@@ -38,7 +38,7 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class Ics213Processor extends AbstractBaseProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(CheckInProcessor.class);
+  private static final Logger logger = LoggerFactory.getLogger(Ics213Processor.class);
 
   private final MessageType messageType;
 

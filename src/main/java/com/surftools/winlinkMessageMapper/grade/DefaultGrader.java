@@ -62,6 +62,9 @@ public class DefaultGrader implements IGrader {
   }
 
   public static String defaultPostProcessReport(List<ExportedMessage> messages) {
+    if (messages == null) {
+      return "";
+    }
 
     Map<String, Integer> gradeCountMap = new HashMap<>();
     int totalGraded = 0;

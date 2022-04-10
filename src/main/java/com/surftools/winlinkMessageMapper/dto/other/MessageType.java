@@ -52,7 +52,8 @@ public enum MessageType {
   UNKNOWN(13, "unknown"), // can't infer message type
 
   FIELD_SITUATION_REPORT(14, "field_situation", true, "RMS_Express_Form_Field Situation Report_viewer.xml"), //
-
+  WA_RR(15, "wa_rr", false, "RMS_Express_Form_ICS213RR_WA_Viewer.xml"), //
+  WA_ISNAP(16, "wa_isnap", false, "RMS_Express_Form_ISNAP_WA_Viewer.xml"), //
   ;
 
   /**
