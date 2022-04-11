@@ -71,6 +71,9 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected static boolean saveAttachments = false;
   protected static Path path = null;
 
+  protected Document currentDocument = null;
+  protected String currentMessageId = null;
+
   /**
    * convenience method for handling rejections
    *
@@ -194,14 +197,14 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
   }
 
-  public LatLongPair getLatLongFromXml(String xmlString, String[] overrideTags) {
+  public LatLongPair getLatLongFromXml(String[] overrideTags) {
     for (String[] tags : new String[][] { DEFAULT_LATLON_TAGS, overrideTags }) {
       if (tags == null) {
         continue;
       }
 
       for (String tagName : tags) {
-        String s = getStringFromXml(xmlString, tagName);
+        String s = getStringFromXml(tagName);
         if (s == null || s.length() == 0) {
           continue;
         }
@@ -218,7 +221,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
           if (tagName.endsWith("lat")) {
             String latString = s;
             String newTagName = tagName.replaceAll("lat", "lon");
-            String lonString = getStringFromXml(xmlString, newTagName);
+            String lonString = getStringFromXml(newTagName);
             LatLongPair pair = new LatLongPair(latString, lonString);
             if (pair.isValid()) {
               return pair;
@@ -249,50 +252,49 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return null;
   }
 
-  public String getStringFromXml(String xmlString, String tagName) {
+  public void makeDocument(String messageId, String xmlString) {
     xmlString = xmlString.trim().replaceFirst("^([\\W]+)<", "<");
 
     if (!xmlString.endsWith(">")) {
       xmlString += ">";
     }
 
-    boolean doXmlProcessing = true;
-    String s = null;
-    if (doXmlProcessing) {
-      try {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        InputSource inputSource = new InputSource(new StringReader(xmlString));
-        Document doc = db.parse(inputSource);
-        doc.getDocumentElement().normalize();
-        NodeList list = doc.getElementsByTagName(tagName);
-        if (list != null && list.getLength() > 0) {
-          NodeList subList = list.item(0).getChildNodes();
-          if (subList != null && subList.getLength() > 0) {
-            s = subList.item(0).getNodeValue();
-          }
-        }
-      } catch (Exception e) {
-        logger.error("can't parse xml: " + xmlString + ", " + e.getLocalizedMessage());
-        return null;
-      }
-    } else {
-      String beginTag = "<" + tagName + ">";
-      int beginIndex = xmlString.indexOf(beginTag);
-      if (beginIndex == -1) {
-        throw new RuntimeException("couldn't find begin tag: " + beginTag);
-      }
-
-      String endTag = "</" + tagName + ">";
-      int endIndex = xmlString.indexOf(endTag);
-      if (endIndex == -1) {
-        throw new RuntimeException("couldn't find end tag: " + endTag);
-      }
-
-      s = xmlString.substring(beginIndex + beginTag.length(), endIndex);
-      s = s.replaceAll("\r", "");
+    try {
+      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+      dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      InputSource inputSource = new InputSource(new StringReader(xmlString));
+      Document doc = db.parse(inputSource);
+      doc.getDocumentElement().normalize();
+      currentDocument = doc;
+      currentMessageId = messageId;
+    } catch (Exception e) {
+      logger.error("can't parse xml: " + xmlString + ", " + e.getLocalizedMessage());
+      throw new RuntimeException("can't parse xml: " + e.getLocalizedMessage());
     }
+  }
+
+  public String getStringFromXml(String tagName) {
+    String s = null;
+    NodeList list = currentDocument.getElementsByTagName(tagName);
+    if (list != null && list.getLength() > 0) {
+      NodeList subList = list.item(0).getChildNodes();
+      if (subList != null && subList.getLength() > 0) {
+        s = subList.item(0).getNodeValue();
+      }
+    }
+
+    if (s == null && Character.isLowerCase(tagName.charAt(0))) {
+      tagName = tagName.substring(0, 1).toUpperCase() + tagName.substring(1);
+      list = currentDocument.getElementsByTagName(tagName);
+      if (list != null && list.getLength() > 0) {
+        NodeList subList = list.item(0).getChildNodes();
+        if (subList != null && subList.getLength() > 0) {
+          s = subList.item(0).getNodeValue();
+        }
+      }
+    }
+
     return s;
   }
 

@@ -72,49 +72,51 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
     try {
       String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT.attachmentName()));
 
-      var latLong = getLatLongFromXml(xmlString, null);
+      makeDocument(message.messageId, xmlString);
+
+      var latLong = getLatLongFromXml(null);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      String organization = getStringFromXml(xmlString, "title");
-      String precedence = getStringFromXml(xmlString, "precedence");
-      String task = getStringFromXml(xmlString, "msgnr");
-      String isHelpNeeded = getStringFromXml(xmlString, "safetyneed");
-      String neededHelp = getStringFromXml(xmlString, "comm0");
+      String organization = getStringFromXml("title");
+      String precedence = getStringFromXml("precedence");
+      String task = getStringFromXml("msgnr");
+      String isHelpNeeded = getStringFromXml("safetyneed");
+      String neededHelp = getStringFromXml("comm0");
 
-      String city = getStringFromXml(xmlString, "city");
-      String county = getStringFromXml(xmlString, "county");
-      String state = getStringFromXml(xmlString, "state");
-      String territory = getStringFromXml(xmlString, "territory");
+      String city = getStringFromXml("city");
+      String county = getStringFromXml("county");
+      String state = getStringFromXml("state");
+      String territory = getStringFromXml("territory");
 
-      String landlineStatus = getStringFromXml(xmlString, "land");
-      String landlineComments = getStringFromXml(xmlString, "comm1");
+      String landlineStatus = getStringFromXml("land");
+      String landlineComments = getStringFromXml("comm1");
 
-      String cellPhoneComments = getStringFromXml(xmlString, "cell");
-      String cellPhoneStatus = getStringFromXml(xmlString, "comm2");
+      String cellPhoneComments = getStringFromXml("cell");
+      String cellPhoneStatus = getStringFromXml("comm2");
 
-      String radioStatus = getStringFromXml(xmlString, "amfm");
-      String radioComments = getStringFromXml(xmlString, "comm3");
+      String radioStatus = getStringFromXml("amfm");
+      String radioComments = getStringFromXml("comm3");
 
-      String tvStatus = getStringFromXml(xmlString, "tvstatus");
-      String tvComments = getStringFromXml(xmlString, "comm4");
+      String tvStatus = getStringFromXml("tvstatus");
+      String tvComments = getStringFromXml("comm4");
 
-      String waterStatus = getStringFromXml(xmlString, "waterworks");
-      String waterComments = getStringFromXml(xmlString, "comm5");
+      String waterStatus = getStringFromXml("waterworks");
+      String waterComments = getStringFromXml("comm5");
 
-      String powerStatus = getStringFromXml(xmlString, "powerworks");
-      String powerComments = getStringFromXml(xmlString, "comm6");
+      String powerStatus = getStringFromXml("powerworks");
+      String powerComments = getStringFromXml("comm6");
 
-      String internetStatus = getStringFromXml(xmlString, "inter");
-      String internetComments = getStringFromXml(xmlString, "comm7");
+      String internetStatus = getStringFromXml("inter");
+      String internetComments = getStringFromXml("comm7");
 
-      String noaaStatus = getStringFromXml(xmlString, "noaa");
-      String noaaComments = getStringFromXml(xmlString, "noaacom");
+      String noaaStatus = getStringFromXml("noaa");
+      String noaaComments = getStringFromXml("noaacom");
 
-      String additionalComments = getStringFromXml(xmlString, "message");
-      String poc = getStringFromXml(xmlString, "poc");
-      String formVersion = parseFormVersion(getStringFromXml(xmlString, "templateversion"));
+      String additionalComments = getStringFromXml("message");
+      String poc = getStringFromXml("poc");
+      String formVersion = parseFormVersion(getStringFromXml("templateversion"));
 
       FieldSituationMessage m = new FieldSituationMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           precedence, task, isHelpNeeded, neededHelp, //

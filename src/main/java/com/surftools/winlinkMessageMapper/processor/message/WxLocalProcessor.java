@@ -61,22 +61,23 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
   public ExportedMessage process(ExportedMessage message) {
     try {
       String xmlString = new String(message.attachments.get(MessageType.WX_LOCAL.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
-      var latLong = getLatLongFromXml(xmlString, OVERRIDE_LAT_LON_TAG_NAMES);
+      var latLong = getLatLongFromXml(OVERRIDE_LAT_LON_TAG_NAMES);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      String organization = getStringFromXml(xmlString, "title");
-      String temperature = getStringFromXml(xmlString, "temp");
-      String windspeed = getStringFromXml(xmlString, "windspeed");
+      String organization = getStringFromXml("title");
+      String temperature = getStringFromXml("temp");
+      String windspeed = getStringFromXml("windspeed");
 
-      String unitsString = getStringFromXml(xmlString, "measurmentused");
+      String unitsString = getStringFromXml("measurmentused");
       temperature = formatTemperature(temperature, unitsString, message.from);
       windspeed = formatWindspeed(windspeed, unitsString, message.from);
       String range = makeRange(temperature);
 
-      String comments = getStringFromXml(xmlString, "comments");
+      String comments = getStringFromXml("comments");
       WxLocalMessage m = new WxLocalMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           organization, temperature, windspeed, range, comments);
       return m;

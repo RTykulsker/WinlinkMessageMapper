@@ -55,13 +55,14 @@ public class Ics213Processor extends AbstractBaseProcessor {
       }
 
       String xmlString = new String(message.attachments.get(messageType.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
-      String organization = getStringFromXml(xmlString, "formtitle");
+      String organization = getStringFromXml("formtitle");
 
       // we want the value of the <message> element
-      String messageText = getStringFromXml(xmlString, "message");
+      String messageText = getStringFromXml("message");
       if (messageText == null) {
-        messageText = getStringFromXml(xmlString, "Message");
+        messageText = getStringFromXml("Message");
       }
 
       LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);

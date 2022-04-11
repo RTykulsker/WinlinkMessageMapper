@@ -51,37 +51,38 @@ public class SpotRepProcessor extends AbstractBaseProcessor {
 
     try {
       String xmlString = new String(message.attachments.get(MessageType.SPOTREP.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
-      var latLong = getLatLongFromXml(xmlString, null);
+      var latLong = getLatLongFromXml(null);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      String location = getStringFromXml(xmlString, "city");
+      String location = getStringFromXml("city");
 
-      String landlineStatus = getStringFromXml(xmlString, "land");
-      String landlineComments = getStringFromXml(xmlString, "comm1");
+      String landlineStatus = getStringFromXml("land");
+      String landlineComments = getStringFromXml("comm1");
 
-      String cellPhoneComments = getStringFromXml(xmlString, "cell");
-      String cellPhoneStatus = getStringFromXml(xmlString, "comm2");
+      String cellPhoneComments = getStringFromXml("cell");
+      String cellPhoneStatus = getStringFromXml("comm2");
 
-      String radioStatus = getStringFromXml(xmlString, "amfm");
-      String radioComments = getStringFromXml(xmlString, "comm3");
+      String radioStatus = getStringFromXml("amfm");
+      String radioComments = getStringFromXml("comm3");
 
-      String tvStatus = getStringFromXml(xmlString, "tvstatus");
-      String tvComments = getStringFromXml(xmlString, "comm4");
+      String tvStatus = getStringFromXml("tvstatus");
+      String tvComments = getStringFromXml("comm4");
 
-      String waterStatus = getStringFromXml(xmlString, "waterworks");
-      String waterComments = getStringFromXml(xmlString, "comm5");
+      String waterStatus = getStringFromXml("waterworks");
+      String waterComments = getStringFromXml("comm5");
 
-      String powerStatus = getStringFromXml(xmlString, "powerworks");
-      String powerComments = getStringFromXml(xmlString, "comm6");
+      String powerStatus = getStringFromXml("powerworks");
+      String powerComments = getStringFromXml("comm6");
 
-      String internetStatus = getStringFromXml(xmlString, "inter");
-      String internetComments = getStringFromXml(xmlString, "comm7");
+      String internetStatus = getStringFromXml("inter");
+      String internetComments = getStringFromXml("comm7");
 
-      String additionalComments = getStringFromXml(xmlString, "message");
-      String poc = getStringFromXml(xmlString, "poc");
+      String additionalComments = getStringFromXml("message");
+      String poc = getStringFromXml("poc");
 
       SpotRepMessage m = new SpotRepMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           location, landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments,

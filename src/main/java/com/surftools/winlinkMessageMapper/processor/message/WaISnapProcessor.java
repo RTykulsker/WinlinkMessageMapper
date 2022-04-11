@@ -62,11 +62,12 @@ public class WaISnapProcessor extends AbstractBaseProcessor {
       }
 
       String xmlString = new String(message.attachments.get(MessageType.WA_ISNAP.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
       var map = new HashMap<String, String>();
 
       for (String key : WaISnapMessage.tags) {
-        String value = getStringFromXml(xmlString, key);
+        String value = getStringFromXml(key);
         map.put(key, value);
       }
 

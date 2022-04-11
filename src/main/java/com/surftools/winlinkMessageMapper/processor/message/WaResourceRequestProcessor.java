@@ -62,16 +62,17 @@ public class WaResourceRequestProcessor extends AbstractBaseProcessor {
       }
 
       String xmlString = new String(message.attachments.get(MessageType.WA_RR.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
       var map = new HashMap<String, String>();
 
       for (String key : WaResourceRequestMessage.requestorTags) {
-        String value = getStringFromXml(xmlString, key);
+        String value = getStringFromXml(key);
         map.put(key, value);
       }
 
       for (String key : WaResourceRequestMessage.otherTags) {
-        String value = getStringFromXml(xmlString, key);
+        String value = getStringFromXml(key);
         map.put(key, value);
       }
 

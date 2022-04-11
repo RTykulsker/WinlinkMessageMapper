@@ -63,8 +63,13 @@ public class CheckInProcessor extends AbstractBaseProcessor {
     messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
 
     if (gradeKey != null && gradeKey.startsWith(messageType.toString() + ":" + "mc")) {
-      grader = new MultipleChoiceGrader(messageType);
-      ((MultipleChoiceGrader) grader).parse(gradeKey);
+      MultipleChoiceGrader mcGrader = new MultipleChoiceGrader(messageType);
+      mcGrader.parse(gradeKey);
+      mcGrader.setDoDequote(true);
+      mcGrader.setDoStopChars(false);
+      mcGrader.setDoToUpper(true);
+      mcGrader.setDoTrim(true);
+      grader = mcGrader;
     }
   }
 
@@ -82,22 +87,22 @@ public class CheckInProcessor extends AbstractBaseProcessor {
         logger.info("exportedMessage: " + message);
       }
 
-      var latLong = getLatLongFromXml(xmlString, null);
+      makeDocument(message.messageId, xmlString);
+
+      var latLong = getLatLongFromXml(null);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      var organization = getStringFromXml(xmlString, "organization");
-      var band = getStringFromXml(xmlString, "band");
-      var status = getStringFromXml(xmlString, "status");
-      var mode = getStringFromXml(xmlString, "session");
-      var comments = getStringFromXml(xmlString, "comments");
+      var organization = getStringFromXml("organization");
+      var band = getStringFromXml("band");
+      var status = getStringFromXml("status");
+      var mode = getStringFromXml("session");
+      var comments = getStringFromXml("comments");
 
       var version = "";
-      var templateVersion = getStringFromXml(xmlString, "templateversion");
-      if (templateVersion == null) {
-        templateVersion = getStringFromXml(xmlString, "Templateversion");
-      }
+      var templateVersion = getStringFromXml("templateversion");
+
       if (templateVersion != null) {
         var fields = templateVersion.split(" ");
         version = fields[fields.length - 1]; // last field
@@ -143,7 +148,7 @@ public class CheckInProcessor extends AbstractBaseProcessor {
     if (m.comments != null) {
       String[] commentsLines = m.comments.trim().split("\n");
       if (commentsLines != null && commentsLines.length > 0) {
-        response = commentsLines[0].trim();
+        response = commentsLines[0];
       }
     }
 

@@ -51,37 +51,38 @@ public class WxSevereProcessor extends AbstractBaseProcessor {
   public ExportedMessage process(ExportedMessage message) {
     try {
       String xmlString = new String(message.attachments.get(MessageType.WX_SEVERE.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
-      var latLong = getLatLongFromXml(xmlString, null);
+      var latLong = getLatLongFromXml(null);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      String type = getStringFromXml(xmlString, "type");
+      String type = getStringFromXml("type");
 
-      String contactPerson = getStringFromXml(xmlString, "repname");
-      String contactPhone = getStringFromXml(xmlString, "phone");
-      String contactEmail = getStringFromXml(xmlString, "email");
+      String contactPerson = getStringFromXml("repname");
+      String contactPhone = getStringFromXml("phone");
+      String contactEmail = getStringFromXml("email");
 
-      String city = getStringFromXml(xmlString, "city");
-      String region = getStringFromXml(xmlString, "region");
-      String county = getStringFromXml(xmlString, "county");
-      String other = getStringFromXml(xmlString, "other");
+      String city = getStringFromXml("city");
+      String region = getStringFromXml("region");
+      String county = getStringFromXml("county");
+      String other = getStringFromXml("other");
 
-      String flood = getStringFromXml(xmlString, "flood");
-      String hailSize = getStringFromXml(xmlString, "hailsize");
-      String windSpeed = getStringFromXml(xmlString, "windspeed");
-      String tornado = getStringFromXml(xmlString, "tornado");
+      String flood = getStringFromXml("flood");
+      String hailSize = getStringFromXml("hailsize");
+      String windSpeed = getStringFromXml("windspeed");
+      String tornado = getStringFromXml("tornado");
 
-      String windDamage = getStringFromXml(xmlString, "winddamage");
-      String precipitation = getStringFromXml(xmlString, "precipitation");
-      String snow = getStringFromXml(xmlString, "snow");
-      String freezingRain = getStringFromXml(xmlString, "freezingrain");
+      String windDamage = getStringFromXml("winddamage");
+      String precipitation = getStringFromXml("precipitation");
+      String snow = getStringFromXml("snow");
+      String freezingRain = getStringFromXml("freezingrain");
 
-      String rain = getStringFromXml(xmlString, "rain");
-      String rainPeriod = getStringFromXml(xmlString, "rainperiod");
+      String rain = getStringFromXml("rain");
+      String rainPeriod = getStringFromXml("rainperiod");
 
-      String comments = getStringFromXml(xmlString, "comments");
+      String comments = getStringFromXml("comments");
 
       WxSevereMessage m = new WxSevereMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           type, contactPerson, contactPhone, contactEmail, //

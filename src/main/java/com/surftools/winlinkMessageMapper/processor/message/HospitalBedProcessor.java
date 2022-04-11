@@ -59,47 +59,48 @@ public class HospitalBedProcessor extends AbstractBaseProcessor {
 
     try {
       String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_BED.attachmentName()));
+      makeDocument(message.messageId, xmlString);
 
-      var latLong = getLatLongFromXml(xmlString, null);
+      var latLong = getLatLongFromXml(null);
       if (latLong == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      var organization = getStringFromXml(xmlString, "title");
-      var facility = getStringFromXml(xmlString, "facility");
+      var organization = getStringFromXml("title");
+      var facility = getStringFromXml("facility");
 
-      var contactPerson = getStringFromXml(xmlString, "contact");
-      var contactPhone = getStringFromXml(xmlString, "phone");
-      var contactEmail = getStringFromXml(xmlString, "email");
+      var contactPerson = getStringFromXml("contact");
+      var contactPhone = getStringFromXml("phone");
+      var contactEmail = getStringFromXml("email");
 
-      var emergencyBedCount = getStringFromXml(xmlString, "b1");
-      var emergencyBedNotes = getStringFromXml(xmlString, "note1");
+      var emergencyBedCount = getStringFromXml("b1");
+      var emergencyBedNotes = getStringFromXml("note1");
 
-      var pediatricsBedCount = getStringFromXml(xmlString, "b2");
-      var pediatricsBedNotes = getStringFromXml(xmlString, "note2");
+      var pediatricsBedCount = getStringFromXml("b2");
+      var pediatricsBedNotes = getStringFromXml("note2");
 
-      var medicalBedCount = getStringFromXml(xmlString, "b3");
-      var medicalBedNotes = getStringFromXml(xmlString, "note3");
+      var medicalBedCount = getStringFromXml("b3");
+      var medicalBedNotes = getStringFromXml("note3");
 
-      var psychiatryBedCount = getStringFromXml(xmlString, "b4");
-      var psychiatryBedNotes = getStringFromXml(xmlString, "note4");
+      var psychiatryBedCount = getStringFromXml("b4");
+      var psychiatryBedNotes = getStringFromXml("note4");
 
-      var burnBedCount = getStringFromXml(xmlString, "b5");
-      var burnBedNotes = getStringFromXml(xmlString, "note5");
+      var burnBedCount = getStringFromXml("b5");
+      var burnBedNotes = getStringFromXml("note5");
 
-      var criticalBedCount = getStringFromXml(xmlString, "b6");
-      var criticalBedNotes = getStringFromXml(xmlString, "note6");
+      var criticalBedCount = getStringFromXml("b6");
+      var criticalBedNotes = getStringFromXml("note6");
 
-      var other1Name = getStringFromXml(xmlString, "othertype2");
-      var other1BedCount = getStringFromXml(xmlString, "b7");
-      var other1BedNotes = getStringFromXml(xmlString, "note7");
+      var other1Name = getStringFromXml("othertype2");
+      var other1BedCount = getStringFromXml("b7");
+      var other1BedNotes = getStringFromXml("note7");
 
-      var other2Name = getStringFromXml(xmlString, "othertype3");
-      var other2BedCount = getStringFromXml(xmlString, "b8");
-      var other2BedNotes = getStringFromXml(xmlString, "note8");
+      var other2Name = getStringFromXml("othertype3");
+      var other2BedCount = getStringFromXml("b8");
+      var other2BedNotes = getStringFromXml("note8");
 
-      var totalBedCount = getStringFromXml(xmlString, "totalbeds");
-      var additionalComments = getStringFromXml(xmlString, "comments");
+      var totalBedCount = getStringFromXml("totalbeds");
+      var additionalComments = getStringFromXml("comments");
 
       HospitalBedMessage m = new HospitalBedMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
           organization, facility, contactPerson, contactPhone, contactEmail, //

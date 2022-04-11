@@ -51,6 +51,7 @@ public class MultipleChoiceGrader implements IGrader {
   private boolean doDequote = true;
   private boolean doStopChars = false;
   private boolean doToUpper = true;
+  private boolean doTrim = true;
 
   private String NOT_VALID_EXPLANATION = "Your response of %s is not valid, because it is not one of the valid responses: %s that are defined for this exercise.";
   private String INCORRECT_EXPLANATION = "Your response of %s is incorrect. %s";
@@ -84,6 +85,10 @@ public class MultipleChoiceGrader implements IGrader {
 
     if (doToUpper) {
       response = response.toUpperCase();
+    }
+
+    if (doTrim) {
+      response = response.trim();
     }
 
     if (correctResponseSet.contains(response)) {
@@ -178,6 +183,10 @@ public class MultipleChoiceGrader implements IGrader {
 
   public void setDoToUpper(boolean b) {
     this.doToUpper = b;
+  }
+
+  public void setDoTrim(boolean b) {
+    this.doTrim = b;
   }
 
   public void setCorrectResponseSet(HashSet<String> hashSet) {
