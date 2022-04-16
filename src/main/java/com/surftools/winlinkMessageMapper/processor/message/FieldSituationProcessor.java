@@ -31,6 +31,9 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -41,6 +44,8 @@ import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class FieldSituationProcessor extends AbstractBaseProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(FieldSituationProcessor.class);
+
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
@@ -73,6 +78,10 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT.attachmentName()));
 
       makeDocument(message.messageId, xmlString);
+
+      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
+        logger.info("exportedMessage: " + message);
+      }
 
       var latLong = getLatLongFromXml(null);
       if (latLong == null) {

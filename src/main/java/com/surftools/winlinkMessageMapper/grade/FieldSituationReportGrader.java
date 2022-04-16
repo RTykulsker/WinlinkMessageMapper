@@ -66,7 +66,7 @@ public class FieldSituationReportGrader implements IGrader {
 
     // require task == WLT-001
     var task = m.task;
-    if (!task.equals("WLT-001")) {
+    if (task != null && !task.equals("WLT-001")) {
       explanations.add("expected task: WLT-001, got: " + task);
     } else {
       points += 10;
@@ -119,14 +119,28 @@ public class FieldSituationReportGrader implements IGrader {
     }
 
     // loop through {tv,water,internet}Comments, expect all to be: "this is an exercise"
-    final var THIS_IS_AN_EXERCISE = "this is an exercise";
-    final var comments = Arrays.asList(m.tvComments, m.waterComments, m.internetComments);
-    for (int i = 0; i < comments.size(); ++i) {
-      var comment = comments.get(i);
-      if (comment != null && comment.equals(THIS_IS_AN_EXERCISE)) {
-        points += 10;
-      } else {
-        explanations.add("expected " + labels.get(i) + "Comments: " + THIS_IS_AN_EXERCISE + ", got: " + comment);
+    boolean isStrict = false;
+    if (isStrict) {
+      final var THIS_IS_AN_EXERCISE = "this is an exercise";
+      final var comments = Arrays.asList(m.tvComments, m.waterComments, m.internetComments);
+      for (int i = 0; i < comments.size(); ++i) {
+        var comment = comments.get(i);
+        if (comment != null && comment.equals(THIS_IS_AN_EXERCISE)) {
+          points += 10;
+        } else {
+          explanations.add("expected " + labels.get(i) + "Comments: " + THIS_IS_AN_EXERCISE + ", got: " + comment);
+        }
+      }
+    } else {
+      final var THIS_IS_AN_EXERCISE = "this is an exercise";
+      final var comments = Arrays.asList(m.tvComments, m.waterComments, m.internetComments);
+      for (int i = 0; i < comments.size(); ++i) {
+        var comment = comments.get(i);
+        if (comment != null && comment.toLowerCase().startsWith(THIS_IS_AN_EXERCISE)) {
+          points += 10;
+        } else {
+          explanations.add("expected " + labels.get(i) + "Comments: " + THIS_IS_AN_EXERCISE + ", got: " + comment);
+        }
       }
     }
 

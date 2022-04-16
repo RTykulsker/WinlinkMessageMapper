@@ -66,7 +66,7 @@ import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
   private static final Logger logger = LoggerFactory.getLogger(AbstractBaseProcessor.class);
-  public static final String[] DEFAULT_LATLON_TAGS = new String[] { "maplat", "gps2", "GPS2" };
+  public static final String[] DEFAULT_LATLON_TAGS = new String[] { "maplat", "gps2", "GPS2", "gpslat" };
   protected static Set<String> dumpIds = new HashSet<>();
   protected static boolean saveAttachments = false;
   protected static Path path = null;
