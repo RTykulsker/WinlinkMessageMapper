@@ -295,6 +295,10 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       }
     }
 
+    if (s != null) {
+      s = s.trim();
+    }
+
     return s;
   }
 

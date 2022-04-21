@@ -134,9 +134,6 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, formVersion);
 
-      if (grader != null) {
-
-      }
       if (gradeKey != null) {
         grade(m);
       }
