@@ -41,6 +41,7 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
+import com.surftools.winlinkMessageMapper.grade.WinlinkCheckInGrader;
 
 public class CheckInProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CheckInProcessor.class);
@@ -70,6 +71,8 @@ public class CheckInProcessor extends AbstractBaseProcessor {
       mcGrader.setDoToUpper(true);
       mcGrader.setDoTrim(true);
       grader = mcGrader;
+    } else if (gradeKey != null && gradeKey.equals("ETO-2022-04-28")) {
+      grader = new WinlinkCheckInGrader(gradeKey);
     }
   }
 

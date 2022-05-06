@@ -47,9 +47,21 @@ public class FieldSituationReportGrader implements IGrader {
   public GradeResult grade(GradableMessage m) {
     if (gradeKey.equals("ETO-2022-04-14")) {
       return grade_ETO_2022_04_14((FieldSituationMessage) m);
+    } else if (gradeKey.equals("ETO-2022-05-14")) {
+      return grade_ETO_2022_05_14((FieldSituationMessage) m);
     }
 
     return null;
+  }
+
+  private GradeResult grade_ETO_2022_05_14(FieldSituationMessage m) {
+    var points = 10;
+    var explanations = new ArrayList<String>();
+
+    var grade = String.valueOf(points);
+    var explanation = (points == 100) ? "perfect score" : String.join("\n", explanations);
+
+    return new GradeResult(grade, explanation);
   }
 
   private GradeResult grade_ETO_2022_04_14(FieldSituationMessage m) {

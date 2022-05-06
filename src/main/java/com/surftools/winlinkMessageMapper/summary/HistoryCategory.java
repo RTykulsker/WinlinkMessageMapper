@@ -33,8 +33,8 @@ public enum HistoryCategory {
   FIRST_TIME_LAST_TIME(2, "1st time this exercise!"), //
   NEEDS_ENCOURAGEMENT(3, "1% - 50%"), //
   GOING_STRONG(4, "50% - 90%"), //
-  HEAVEY_HITTER(5, "90% - 99%"), //
-  HUNDRED_PERCENT(6, "100%"), //
+  HEAVEY_HITTER(5, "90% - 100%"), //
+  // HUNDRED_PERCENT(6, "100%"), //
   ;
 
   /**

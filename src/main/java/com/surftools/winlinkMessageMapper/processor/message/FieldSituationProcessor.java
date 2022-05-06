@@ -63,7 +63,9 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
     this.gradeKey = gradeKey;
 
     if (gradeKey != null) {
-      if (gradeKey.equals("ETO-2022-04-14")) {
+      if (gradeKey.startsWith("check_in:mc")) {
+        grader = null;
+      } else if (gradeKey.equals("fsr:ETO-2022-04-14")) {
         grader = new FieldSituationReportGrader(gradeKey);
       } else {
         grader = new DefaultGrader(gradeKey);
@@ -134,7 +136,7 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, formVersion);
 
-      if (gradeKey != null) {
+      if (grader != null) {
         grade(m);
       }
 

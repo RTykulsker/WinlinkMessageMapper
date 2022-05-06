@@ -93,12 +93,44 @@ public abstract class AbstractBaseProcessor implements IProcessor {
    * @return
    */
   public String convertToDecimalDegrees(String ddmm) {
+    final var REDUNDANT_LAST_CHAR_SET = new HashSet<Character>(List.of('N', 'S', 'E', 'W'));
+
+    if (ddmm == null || ddmm.length() == 0) {
+      return "";
+    } else {
+      ddmm = ddmm.trim();
+    }
+
+    // it gets worse: 37.69250150N or -121.78913700W, but not 47-32.23N or 122-14.33W
+    var lastChar = ddmm.charAt(ddmm.length() - 1);
+    if (REDUNDANT_LAST_CHAR_SET.contains(lastChar) && ((ddmm.startsWith("-")) || (ddmm.indexOf("-") == -1))) {
+      ddmm = ddmm.substring(0, ddmm.length() - 1);
+    }
+
+    // apparently, sometimes, somehow, it's already in decimal degrees
+    double decimalDegrees = 0d;
+    try {
+      decimalDegrees = Double.parseDouble(ddmm);
+      return ddmm;
+    } catch (Exception e) {
+      ;
+    }
+
     char direction = ddmm.charAt(ddmm.length() - 1);
     ddmm = ddmm.substring(0, ddmm.length() - 1);
     String[] fields = ddmm.split("-");
+    if (fields == null || fields.length == 0 || fields[0].length() == 0) {
+      return "";
+    }
     double degrees = Double.parseDouble(fields[0]);
-    double minutes = Double.parseDouble(fields[1]);
-    double decimalDegrees = degrees + (minutes / 60d);
+    double minutes = 0;
+    try {
+      minutes = Double.parseDouble(fields[1]);
+    } catch (Exception e) {
+      logger.warn("no minutes in ddmm: " + ddmm);
+      ;
+    }
+    decimalDegrees = degrees + (minutes / 60d);
     DecimalFormat df = new DecimalFormat("#.#####");
     df.setRoundingMode(RoundingMode.CEILING);
     String result = ((direction == 'S' || direction == 'W') ? "-" : "") + df.format(decimalDegrees);

@@ -469,10 +469,11 @@ public class Summarizer {
       }
 
       double percent = Math.round(100d * exerciseCount / totalExerciseCount);
-      if (percent >= 99d) {
-        ph.setCategory(HistoryCategory.HUNDRED_PERCENT);
-        continue;
-      } else if (percent >= 90d) {
+      // if (percent >= 99d) {
+      // ph.setCategory(HistoryCategory.HUNDRED_PERCENT);
+      // continue;
+      // } else
+      if (percent >= 90d) {
         ph.setCategory(HistoryCategory.HEAVEY_HITTER);
         continue;
       } else if (percent >= 50d) {

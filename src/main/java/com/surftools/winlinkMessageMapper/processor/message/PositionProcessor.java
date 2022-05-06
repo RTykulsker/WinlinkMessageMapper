@@ -27,16 +27,24 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.processor.message;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.PositionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class PositionProcessor extends AbstractBaseProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(PositionProcessor.class);
 
   @Override
   public ExportedMessage process(ExportedMessage message) {
     var mime = message.plainContent;
     String[] mimeLines = mime.split("\\n");
+
+    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
+      logger.info("exportedMessage: " + message);
+    }
 
     var latitude = convertToDecimalDegrees(getStringFromMime("Latitude: ", mimeLines));
     var longitude = convertToDecimalDegrees(getStringFromMime("Longitude: ", mimeLines));
