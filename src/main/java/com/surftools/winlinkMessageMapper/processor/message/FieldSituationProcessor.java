@@ -56,16 +56,15 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
   }
 
-  private final String gradeKey;
   private IGrader grader = null;
 
   public FieldSituationProcessor(String gradeKey) {
-    this.gradeKey = gradeKey;
-
     if (gradeKey != null) {
       if (gradeKey.startsWith("check_in:mc")) {
         grader = null;
       } else if (gradeKey.equals("fsr:ETO-2022-04-14")) {
+        grader = new FieldSituationReportGrader(gradeKey);
+      } else if (gradeKey.equals("fsr:ETO-2022-05-14")) {
         grader = new FieldSituationReportGrader(gradeKey);
       } else {
         grader = new DefaultGrader(gradeKey);
@@ -104,8 +103,8 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       String landlineStatus = getStringFromXml("land");
       String landlineComments = getStringFromXml("comm1");
 
-      String cellPhoneComments = getStringFromXml("cell");
-      String cellPhoneStatus = getStringFromXml("comm2");
+      String cellPhoneStatus = getStringFromXml("cell");
+      String cellPhoneComments = getStringFromXml("comm2");
 
       String radioStatus = getStringFromXml("amfm");
       String radioComments = getStringFromXml("comm3");
