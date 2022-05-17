@@ -51,6 +51,7 @@ public class Deduplicator {
 
   private final int thresholdDistanceMeters;
   private final boolean deduplicateNonGisByCall;
+  private final boolean doJitter;
 
   public Deduplicator() {
     this(DEFAULT_THRESHOLD_DISTANCE_METERS, DEFAULT_DEDUPLICATE_NONGIS_BY_CALL);
@@ -63,6 +64,7 @@ public class Deduplicator {
   public Deduplicator(int thresholdDistanceMeters, boolean deduplicateNonGisByCall) {
     this.thresholdDistanceMeters = thresholdDistanceMeters;
     this.deduplicateNonGisByCall = deduplicateNonGisByCall;
+    this.doJitter = true;
   }
 
   public void deduplicate(Map<MessageType, List<ExportedMessage>> messageMap) {
@@ -138,8 +140,72 @@ public class Deduplicator {
     return;
   }
 
+  private void jitter(MessageType messageType, Map<MessageType, List<ExportedMessage>> messageMap) {
+    List<ExportedMessage> inputMessages = messageMap.get(messageType);
+    if (inputMessages == null) {
+      logger.debug("no messages of type: " + messageType);
+      return;
+    }
+
+    if (messageType == MessageType.REJECTS) {
+      logger.debug("no deduplication performed for type: " + messageType);
+      return;
+    }
+
+    // make a list of messages for each call
+    Map<String, List<ExportedMessage>> callMessageListMap = new HashMap<>();
+    for (ExportedMessage message : inputMessages) {
+      var call = message.from;
+      var list = callMessageListMap.getOrDefault(call, new ArrayList<ExportedMessage>());
+      list.add(message);
+      callMessageListMap.put(call, list);
+    }
+
+    List<ExportedMessage> outputMessages = new ArrayList<ExportedMessage>(inputMessages.size());
+    for (String call : callMessageListMap.keySet()) {
+      var list = callMessageListMap.get(call);
+      if (list.size() == 1) {
+        outputMessages.addAll(list);
+        continue;
+      }
+      var n = list.size();
+
+      // we now have multiple messages for the same call
+      var latSum = 0d;
+      var lonSum = 0d;
+      for (var message : list) {
+        GisMessage m = (GisMessage) message;
+        latSum += Double.parseDouble(m.latitude);
+        lonSum += Double.parseDouble(m.longitude);
+      }
+      var latCenter = latSum / n;
+      var lonCenter = lonSum / n;
+      var radius = 0.00005d;
+
+      for (var i = 0; i < n; ++i) {
+        var m = (GisMessage) list.get(i);
+        double theta = 360d * i / n;
+        double radians = Math.toRadians(theta);
+        double latNew = latCenter + (radius * Math.sin(radians));
+        double lonNew = lonCenter + (radius * Math.cos(radians));
+        m.latitude = String.valueOf(latNew);
+        m.longitude = String.valueOf(lonNew);
+      }
+      outputMessages.addAll(list);
+    }
+
+    messageMap.put(messageType, outputMessages);
+
+    logger
+        .info("type: " + messageType + ", processed: " + inputMessages.size() + " messages, returning: "
+            + outputMessages.size() + " messages");
+  }
+
   private void deduplicateGIS(MessageType messageType, Map<MessageType, List<ExportedMessage>> messageMap) {
     if (thresholdDistanceMeters < 0) {
+      if (doJitter) {
+        jitter(messageType, messageMap);
+      }
       logger.info("threshold negative: deduplication skipped");
       return;
     }

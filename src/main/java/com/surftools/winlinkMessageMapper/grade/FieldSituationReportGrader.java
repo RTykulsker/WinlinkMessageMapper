@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
@@ -71,7 +72,7 @@ public class FieldSituationReportGrader implements IGrader {
 
     // AGENCY or GROUP NAME: Must match exactly EmComm Training Organization 0514 THIS IS A DRILL
     expected = "EmComm Training Organization 0514 THIS IS A DRILL";
-    if (m.organization != null && m.organization.equals(expected)) {
+    if (m.organization != null && m.organization.equalsIgnoreCase(expected)) {
       points += 5;
     } else {
       explanations.add("Agency/Group name not: " + expected + ".");
@@ -179,16 +180,28 @@ public class FieldSituationReportGrader implements IGrader {
 
     // Box 12 must contain ashfall mounts in inches if present or “NO ASHFALL” if none is present
     if (m.additionalComments != null) {
-      if (m.additionalComments.equalsIgnoreCase("NO ASHFALL".toUpperCase())) {
+      var comments = m.additionalComments.toLowerCase();
+      if (comments.contains("NO ASHFALL".toLowerCase())) {
         points += 5;
       } else {
-        if (m.additionalComments.toUpperCase().contains("INCH")) {
+        if (comments.contains("inch") || comments.matches(".*\\d.*")) {
           points += 5;
         } else {
           explanations
-              .add("Box 12 must contain ashfall mounts in inches if present or “NO ASHFALL” if none is present.");
+              .add("Box 12 must contain ashfall amounts in inches if present or “NO ASHFALL” if none is present.");
         }
       }
+
+      // additional activity option -- no original credit, so now it's extra credit
+      {
+        final var jetSet = Set.of("jet stream over", "jet stream near", "jetstream over", "jetstream near");
+        for (var string : jetSet) {
+          if (comments.contains(string)) {
+            points += 5;
+            explanations.add("extra credit for Jet Stream");
+          } // end if contains
+        } // end for
+      } // end block additional activity
     } else {
       explanations.add("Box 12 must contain ashfall mounts in inches if present or “NO ASHFALL” if none is present.");
     }
@@ -200,6 +213,7 @@ public class FieldSituationReportGrader implements IGrader {
       explanations.add("Box 13 must be filled.");
     }
 
+    points = Math.min(100, points);
     var grade = String.valueOf(points);
     var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
 

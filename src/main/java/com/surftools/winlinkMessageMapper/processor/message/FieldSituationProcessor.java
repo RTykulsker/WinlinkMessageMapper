@@ -76,13 +76,13 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
   public ExportedMessage process(ExportedMessage message) {
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT.attachmentName()));
-
-      makeDocument(message.messageId, xmlString);
-
       if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
         logger.info("exportedMessage: " + message);
       }
+
+      String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT.attachmentName()));
+
+      makeDocument(message.messageId, xmlString);
 
       var latLong = getLatLongFromXml(null);
       if (latLong == null) {

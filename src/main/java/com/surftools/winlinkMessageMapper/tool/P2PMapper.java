@@ -61,6 +61,10 @@ import com.surftools.winlinkMessageMapper.dto.p2p.TargetStation;
 /**
  * App to produce a KML file that shows the result of a ETO P2P exercise
  *
+ * we need to run the WinlinkMessageMapper (wimp) to get a set of ExportedMessages we can parse
+ *
+ * we can run WinlinkMessageMapper either with or without deduplication
+ *
  * http://kml4earth.appspot.com/icons.html
  *
  * @author bobt
@@ -115,11 +119,14 @@ public class P2PMapper {
   public void run() {
     try {
       List<TargetStation> targetStations = getTargetStations(targetStationFileName, excludeTargetStations);
-      List<FieldStation> fieldStations = getFieldStations(fieldStationFileName, excludeFieldStations);
+      List<FieldStation> fieldStations = getFieldStations(fieldStationFileName, excludeFieldStations, targetStations);
       jitter(targetStations, fieldStations);
       String kmlText = makeKmlText(targetStations, fieldStations, templateFileName, mapName, mapDescription);
       writeTemplateFile(outputDirName, kmlText);
+
+      // validate at end, so I don't have to scroll through output!
       validateTargetFiles(targetStations, targetDirName);
+
       logger.info("exiting");
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
@@ -167,9 +174,15 @@ public class P2PMapper {
     return set;
   }
 
-  private List<FieldStation> getFieldStations(String fieldFileName, String excludeFieldStations) throws Exception {
+  private List<FieldStation> getFieldStations(String fieldFileName, String excludeFieldStations,
+      List<TargetStation> targetStations) throws Exception {
     var excludeSet = makeExcludeSet(excludeFieldStations);
     List<FieldStation> fieldStations = new ArrayList<>();
+
+    Map<String, TargetStation> targetStationMap = new HashMap<>();
+    for (TargetStation target : targetStations) {
+      targetStationMap.put(target.call, target);
+    }
 
     Reader reader = new FileReader(fieldFileName);
     CSVParser parser = new CSVParserBuilder() //
@@ -184,12 +197,20 @@ public class P2PMapper {
     String[] fields = null;
     while ((fields = csvReader.readNext()) != null) {
       var fieldStation = new FieldStation(fields);
-      if (!excludeSet.contains(fieldStation.from)) {
-        fieldStations.add(fieldStation);
-        logger.info("adding " + fieldStation);
-      } else {
-        logger.info("excluding " + fieldStation);
+
+      if (excludeSet.contains(fieldStation.from)) {
+        logger.warn("excluding " + fieldStation);
+        continue;
       }
+
+      TargetStation targetStation = targetStationMap.get(fieldStation.to);
+      if (targetStation == null) {
+        logger.warn("skipping " + fieldStation.from + " because unsupported target: " + fieldStation.to);
+        continue;
+      }
+
+      fieldStations.add(fieldStation);
+      logger.info("adding " + fieldStation);
     }
 
     logger.info("returning: " + fieldStations.size() + " field Stations from: " + fieldFileName);
@@ -230,12 +251,17 @@ public class P2PMapper {
       }
     }
 
+    int validTargetCount = 0;
     for (String call : targetMap.keySet()) {
       int count = targetCountMap.get(call);
       if (count != 1) {
         logger.warn("call: " + call + ", fileCount: " + count);
+      } else {
+        ++validTargetCount;
       }
     }
+
+    logger.info("received files for " + validTargetCount + " targets");
   }
 
   /**
