@@ -50,6 +50,7 @@ import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
@@ -57,6 +58,7 @@ import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProces
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
+import com.surftools.winlinkMessageMapper.processor.message.Ics213ReplyProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.PositionProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.SpotRepProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WaISnapProcessor;
@@ -317,6 +319,7 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
     processorMap.put(MessageType.ICS_213, new Ics213Processor(MessageType.ICS_213));
     processorMap.put(MessageType.GIS_ICS_213, new Ics213Processor(MessageType.GIS_ICS_213));
+
     processorMap.put(MessageType.WX_LOCAL, new WxLocalProcessor());
     processorMap.put(MessageType.WX_SEVERE, new WxSevereProcessor());
     processorMap.put(MessageType.WX_HURRICANE, new WxHurricaneProcessor());
@@ -325,6 +328,8 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(gradeKey));
     processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor(gradeKey));
     processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor(gradeKey));
+    processorMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyProcessor());
+    processorMap.put(MessageType.ACK, new AckProcessor());
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -393,6 +398,8 @@ public class WinlinkMessageMapper {
       return MessageType.WA_RR;
     } else if (attachmentNames.contains(MessageType.WA_ISNAP.attachmentName())) {
       return MessageType.WA_ISNAP;
+    } else if (attachmentNames.contains(MessageType.ICS_213_REPLY.attachmentName())) {
+      return MessageType.ICS_213_REPLY;
       /**
        * subject-based
        */
@@ -405,6 +412,8 @@ public class WinlinkMessageMapper {
       return MessageType.ETO_CHECK_IN;
     } else if (subject.equals("Position Report")) {
       return MessageType.POSITION;
+    } else if (subject.startsWith("ACK:")) {
+      return MessageType.ACK;
     } else {
       return MessageType.UNKNOWN;
     }

@@ -92,6 +92,10 @@ public class ExportedMessage implements IMessage {
     return mime.split("\n");
   }
 
+  public String getPlainContent() {
+    return plainContent;
+  }
+
   @Override
   public String[] getHeaders() {
     throw new RuntimeException("ExportedMessage.getHeaders() not implemented");
@@ -99,7 +103,7 @@ public class ExportedMessage implements IMessage {
 
   @Override
   public String[] getValues() {
-    throw new RuntimeException("ExportedMessage.getHeaders() not implemented");
+    throw new RuntimeException("ExportedMessage.getValues() not implemented");
   }
 
   public MessageType getMessageType() {
