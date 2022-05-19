@@ -36,13 +36,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -367,17 +367,16 @@ public class P2PMapper {
     final var DASHES = "------------------------------------------------------------";
     Map<String, TargetStation> targetMap = new HashMap<>(); // target.call -> target
 
-    // use TreeSet for ordered list; fieldFLM is call out from field, targetFLM is call in to target
-    Map<String, TreeSet<FieldStation>> fieldOutboundFieldsMap = new HashMap<>(); // field call -> list of fields;
-    Map<String, TreeSet<FieldStation>> targetInboundFieldsMap = new HashMap<>(); // target call -> list of fields
+    Map<String, List<FieldStation>> fieldOutboundFieldsMap = new HashMap<>(); // field call -> list of fields;
+    Map<String, List<FieldStation>> targetInboundFieldsMap = new HashMap<>(); // target call -> list of fields
     StringBuilder sb = new StringBuilder();
 
     for (FieldStation field : fieldStations) {
-      var outbounds = fieldOutboundFieldsMap.getOrDefault(field.from, new TreeSet<>());
+      var outbounds = fieldOutboundFieldsMap.getOrDefault(field.from, new ArrayList<>());
       outbounds.add(field);
       fieldOutboundFieldsMap.put(field.from, outbounds);
 
-      var inbounds = targetInboundFieldsMap.getOrDefault(field.to, new TreeSet<>());
+      var inbounds = targetInboundFieldsMap.getOrDefault(field.to, new ArrayList<>());
       inbounds.add(field);
       targetInboundFieldsMap.put(field.to, inbounds);
     }
@@ -394,6 +393,7 @@ public class P2PMapper {
 
       var inbounds = targetInboundFieldsMap.get(station.call);
       if (inbounds != null && inbounds.size() > 0) {
+        Collections.sort(inbounds);
         sb.append("Inbound Connections: " + inbounds.size() + "\n");
         sb.append(DASHES + "\n");
         for (FieldStation field : inbounds) {
@@ -413,7 +413,6 @@ public class P2PMapper {
     Set<String> markedFieldStations = new HashSet<>();
     fieldStations.sort((FieldStation s1, FieldStation s2) -> s1.from.compareTo(s2.from));
     for (FieldStation station : fieldStations) {
-
       // don't allow more that one placemark for any field station
       if (markedFieldStations.contains(station.from)) {
         continue;
@@ -428,6 +427,7 @@ public class P2PMapper {
 
       var outbounds = fieldOutboundFieldsMap.get(station.from);
       sb.append("Outbound Connections: " + outbounds.size() + "\n" + DASHES + "\n");
+      Collections.sort(outbounds);
       for (FieldStation field : outbounds) {
         TargetStation target = targetMap.get(field.to);
         sb.append(field.date + " " + field.time + ", " + field.to + ", ");
