@@ -38,6 +38,7 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
+import com.surftools.winlinkMessageMapper.grade.GraderType;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class ExpectGrader implements IGrader {
@@ -131,6 +132,12 @@ public class ExpectGrader implements IGrader {
 
   @Override
   public String getPostProcessReport(List<ExportedMessage> messages) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public GraderType getGraderType() {
     // TODO Auto-generated method stub
     return null;
   }

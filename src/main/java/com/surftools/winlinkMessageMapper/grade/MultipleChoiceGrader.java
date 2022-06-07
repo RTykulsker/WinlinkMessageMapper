@@ -210,4 +210,9 @@ public class MultipleChoiceGrader implements IGrader {
     this.validResponseString = string;
   }
 
+  @Override
+  public GraderType getGraderType() {
+    return GraderType.SINGLE_LINE_STRING;
+  }
+
 }

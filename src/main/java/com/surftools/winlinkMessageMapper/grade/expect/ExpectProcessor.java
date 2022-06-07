@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
+import com.surftools.winlinkMessageMapper.grade.GraderType;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class ExpectProcessor implements IGrader {
@@ -418,6 +419,12 @@ public class ExpectProcessor implements IGrader {
 
   public String getName() {
     return name;
+  }
+
+  @Override
+  public GraderType getGraderType() {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 }

@@ -49,6 +49,7 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
+import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
@@ -311,9 +312,19 @@ public class WinlinkMessageMapper {
    * @return
    */
   private Map<MessageType, IProcessor> makeProcessorMap() {
+    IGrader grader = makeGrader(gradeKey);
+
     Map<MessageType, IProcessor> processorMap = new HashMap<>();
-    processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, gradeKey));
-    processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, gradeKey));
+    if (grader != null) {
+      processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, grader));
+      processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, grader));
+      processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(grader));
+    } else {
+      processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, gradeKey));
+      processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, gradeKey));
+      processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(gradeKey));
+    }
+
     processorMap.put(MessageType.DYFI, new DyfiProcessor());
     processorMap.put(MessageType.POSITION, new PositionProcessor());
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
@@ -325,7 +336,7 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.WX_HURRICANE, new WxHurricaneProcessor());
     processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
-    processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(gradeKey));
+
     processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor(gradeKey));
     processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor(gradeKey));
     processorMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyProcessor());
@@ -349,6 +360,35 @@ public class WinlinkMessageMapper {
 
     this.processorMap = processorMap;
     return processorMap;
+  }
+
+  private IGrader makeGrader(String gradeKey) {
+    if (gradeKey == null) {
+      return null;
+    }
+
+    if (gradeKey.startsWith("class:")) {
+      var gradeKeyClassName = gradeKey.substring(6);
+
+      final var prefixes = new String[] { "", "com.surftools.winlinkMessageMapper.grade.named." };
+      IGrader grader = null;
+      for (var prefix : prefixes) {
+        var className = prefix + gradeKeyClassName;
+        try {
+          var clazz = Class.forName(className);
+          if (clazz != null) {
+            grader = (IGrader) clazz.getDeclaredConstructor().newInstance();
+            return grader;
+          }
+        } catch (Exception e) {
+          ;
+        }
+      }
+
+      throw new RuntimeException("could not find class for " + gradeKeyClassName);
+    } // end if class:
+
+    return null;
   }
 
   public Set<String> makeDumpIds(String dumpIdsString) {

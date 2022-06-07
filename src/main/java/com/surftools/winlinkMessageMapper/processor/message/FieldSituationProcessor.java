@@ -38,7 +38,6 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
-import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.FieldSituationReportGrader;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
@@ -67,9 +66,13 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       } else if (gradeKey.equals("fsr:ETO-2022-05-14")) {
         grader = new FieldSituationReportGrader(gradeKey);
       } else {
-        grader = new DefaultGrader(gradeKey);
+        throw new RuntimeException("unsupported grader for key: " + gradeKey);
       }
     }
+  }
+
+  public FieldSituationProcessor(IGrader grader) {
+    this.grader = grader;
   }
 
   @Override

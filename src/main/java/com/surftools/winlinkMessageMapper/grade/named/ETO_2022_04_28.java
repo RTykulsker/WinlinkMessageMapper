@@ -25,31 +25,29 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.grade;
+package com.surftools.winlinkMessageMapper.grade.named;
 
 import java.util.List;
 
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
+import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
+import com.surftools.winlinkMessageMapper.grade.GradeResult;
+import com.surftools.winlinkMessageMapper.grade.GraderType;
+import com.surftools.winlinkMessageMapper.grade.IGrader;
 
-public class WinlinkCheckInGrader implements IGrader {
-
-  private final String gradeKey;
-
-  public WinlinkCheckInGrader(String gradeKey) {
-    this.gradeKey = gradeKey;
-  }
+/**
+ * alternative grader on a Winlink Check In message in lieu of Position Report
+ *
+ * @author bobt
+ *
+ */
+public class ETO_2022_04_28 implements IGrader {
 
   @Override
-  public GradeResult grade(GradableMessage m) {
-    if (gradeKey.equals("ETO-2022-04-28")) {
-      return grade_ETO_2022_04_28((CheckInMessage) m);
-    }
-
-    return null;
-  }
-
-  private GradeResult grade_ETO_2022_04_28(CheckInMessage m) {
+  public GradeResult grade(GradableMessage gm) {
+    CheckInMessage m = (CheckInMessage) gm;
     var grade = "";
     String explanation = null;
 
@@ -64,22 +62,18 @@ public class WinlinkCheckInGrader implements IGrader {
   }
 
   @Override
+  public GraderType getGraderType() {
+    return GraderType.WHOLE_MESSAGE;
+  }
+
+  @Override
   public GradeResult grade(String s) {
-    var grade = "";
-    String explanation = null;
-
-    var comments = s;
-    if (comments != null && comments.equals("Alternate Exercise for 4/28/2022")) {
-      grade = "Alternative OK";
-    } else {
-      grade = "Not graded";
-    }
-
-    return new GradeResult(grade, explanation);
+    return null;
   }
 
   @Override
   public String getPostProcessReport(List<ExportedMessage> messages) {
     return DefaultGrader.defaultPostProcessReport(messages);
   }
+
 }

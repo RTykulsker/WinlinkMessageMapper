@@ -39,9 +39,9 @@ import com.surftools.winlinkMessageMapper.dto.message.CheckOutMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
+import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
-import com.surftools.winlinkMessageMapper.grade.WinlinkCheckInGrader;
 
 public class CheckInProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CheckInProcessor.class);
@@ -63,17 +63,23 @@ public class CheckInProcessor extends AbstractBaseProcessor {
   public CheckInProcessor(boolean isCheckIn, String gradeKey) {
     messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
 
-    if (gradeKey != null && gradeKey.startsWith(messageType.toString() + ":" + "mc")) {
-      MultipleChoiceGrader mcGrader = new MultipleChoiceGrader(messageType);
-      mcGrader.parse(gradeKey);
-      mcGrader.setDoDequote(true);
-      mcGrader.setDoStopChars(false);
-      mcGrader.setDoToUpper(true);
-      mcGrader.setDoTrim(true);
-      grader = mcGrader;
-    } else if (gradeKey != null && gradeKey.equals("ETO-2022-04-28")) {
-      grader = new WinlinkCheckInGrader(gradeKey);
+    if (gradeKey != null) {
+      // TODO contains versus startWith
+      if (gradeKey.startsWith(messageType.toString() + ":" + "mc")) {
+        MultipleChoiceGrader mcGrader = new MultipleChoiceGrader(messageType);
+        mcGrader.parse(gradeKey);
+        mcGrader.setDoDequote(true);
+        mcGrader.setDoStopChars(false);
+        mcGrader.setDoToUpper(true);
+        mcGrader.setDoTrim(true);
+        grader = mcGrader;
+      }
     }
+  }
+
+  public CheckInProcessor(boolean isCheckIn, IGrader grader) {
+    messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
+    this.grader = grader;
   }
 
   @Override
@@ -131,31 +137,27 @@ public class CheckInProcessor extends AbstractBaseProcessor {
   }
 
   private void grade(CheckInMessage m) {
-    var response = makeResponse(m);
-    var result = grader.grade(response);
+
+    GradeResult result = null;
+    switch (grader.getGraderType()) {
+    case MULTI_LINE_STRING:
+      result = grader.grade(m.comments);
+      break;
+    case MULTIPLE_MESSAGES:
+      break;
+    case SINGLE_LINE_STRING:
+      result = grader.grade(getFirstLineOf(m.comments));
+      break;
+    case WHOLE_MESSAGE:
+      result = grader.grade(m);
+      break;
+    }
 
     if (result != null) {
       m.setIsGraded(true);
       m.setGrade(result.grade());
       m.setExplanation(result.explanation());
     }
-  }
-
-  /**
-   * response is first line, if any from comments
-   *
-   * @param m
-   */
-  private String makeResponse(CheckInMessage m) {
-    var response = "";
-    if (m.comments != null) {
-      String[] commentsLines = m.comments.trim().split("\n");
-      if (commentsLines != null && commentsLines.length > 0) {
-        response = commentsLines[0];
-      }
-    }
-
-    return response;
   }
 
   @Override

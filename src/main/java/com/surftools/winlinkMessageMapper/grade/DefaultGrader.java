@@ -34,7 +34,7 @@ import java.util.Map;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 
-public class DefaultGrader implements IGrader {
+public abstract class DefaultGrader implements IGrader {
 
   private final String gradeKey;
 

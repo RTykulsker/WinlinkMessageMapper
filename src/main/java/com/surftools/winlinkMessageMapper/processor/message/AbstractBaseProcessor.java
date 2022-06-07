@@ -334,6 +334,28 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return s;
   }
 
+  /**
+   * get first line from a multi-line string
+   *
+   * @param first
+   *          (possibly empty) line
+   */
+  public String getFirstLineOf(String multiLine) {
+    if (multiLine == null) {
+      return "";
+    }
+
+    var firstLine = "";
+    if (multiLine != null) {
+      String[] lines = multiLine.split("\n");
+      if (lines != null && lines.length > 0) {
+        firstLine = lines[0];
+      }
+    }
+
+    return firstLine;
+  }
+
   public static void setDumpIds(Set<String> _dumpIds) {
     if (dumpIds != null) {
       dumpIds = _dumpIds;

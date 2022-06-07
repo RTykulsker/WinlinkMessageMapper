@@ -43,17 +43,50 @@ public class AshfallReplyParser implements IReplyParser {
     var reply = r.reply;
     var lines = reply.split("\n");
 
+    r.values = new String[N_FIELDS];
     if (lines.length == N_FIELDS) {
       ++goodParseCount;
+      for (var i = 0; i < N_FIELDS; ++i) {
+        var line = lines[i];
+        var strippedLine = stripNumber(line);
+        r.values[i] = strippedLine;
+      }
       r.values = lines;
       r.isParseOk = true;
     } else {
+      if (false) {
+        {
+          // for (var line : lines) {
+          // var numberString = line.replaceAll("^[0-9]", "");
+          // int index = -1;
+          // try {
+          // index = Integer.parseInt(numberString);
+          // } catch (Exception e) {
+          //
+          // }
+        }
+      }
       ++badParseCount;
       r.values = new String[N_FIELDS];
       r.isParseOk = false;
       r.parseErrors = "found " + lines.length + " lines in reply";
     }
+  }
 
+  private String stripNumber(String line) {
+    if (!Character.isDigit(line.charAt(0))) {
+      return line;
+    }
+
+    for (int i = 0; i < line.length(); ++i) {
+      var c = line.charAt(i);
+      if (Character.isDigit(c) || !Character.isAlphabetic(c)) {
+        continue;
+      }
+      var s = line.substring(i);
+      return s;
+    }
+    return "";
   }
 
   @Override

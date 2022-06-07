@@ -25,43 +25,32 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.grade;
+package com.surftools.winlinkMessageMapper.grade.named;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
+import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
+import com.surftools.winlinkMessageMapper.grade.GradeResult;
+import com.surftools.winlinkMessageMapper.grade.GraderType;
+import com.surftools.winlinkMessageMapper.grade.IGrader;
 
-public class FieldSituationReportGrader implements IGrader {
-
-  private final String gradeKey;
-
-  public FieldSituationReportGrader(String gradeKey) {
-    this.gradeKey = gradeKey;
-  }
+/**
+ * Operation Ashfall
+ *
+ * @param m
+ * @return
+ */
+public class ETO_2022_05_14 implements IGrader {
 
   @Override
-  public GradeResult grade(GradableMessage m) {
-    if (gradeKey.equals("fsr:ETO-2022-04-14")) {
-      return grade_ETO_2022_04_14((FieldSituationMessage) m);
-    } else if (gradeKey.equals("fsr:ETO-2022-05-14")) {
-      return grade_ETO_2022_05_14((FieldSituationMessage) m);
-    }
-
-    return null;
-  }
-
-  /**
-   * Operation Ashfall
-   *
-   * @param m
-   * @return
-   */
-  private GradeResult grade_ETO_2022_05_14(FieldSituationMessage m) {
+  public GradeResult grade(GradableMessage gm) {
+    FieldSituationMessage m = (FieldSituationMessage) gm;
 
     // participation points
     var points = 20;
@@ -223,102 +212,9 @@ public class FieldSituationReportGrader implements IGrader {
     return new GradeResult(grade, explanation);
   }
 
-  private GradeResult grade_ETO_2022_04_14(FieldSituationMessage m) {
-    var points = 0;
-    var explanations = new ArrayList<String>();
-
-    // automatic fail with 0 grade if not Routine precedence
-    var precedence = m.precedence;
-    if (!precedence.equals("(R) - Routine")) {
-      return new GradeResult("0", "non-Routine precedence is automatic failure");
-    } else {
-      points += 10;
-    }
-
-    // require task == WLT-001
-    var task = m.task;
-    if (task != null && !task.equals("WLT-001")) {
-      explanations.add("expected task: WLT-001, got: " + task);
-    } else {
-      points += 10;
-    }
-
-    // require NO isHelpNeeded
-    var isHelpNeeded = m.isHelpNeeded;
-    if (!isHelpNeeded.equals("NO")) {
-      explanations.add("expected ishelpNeeded: NO, got " + isHelpNeeded);
-    } else {
-      points += 10;
-    }
-
-    // require null neededHelp
-    var neededHelp = m.neededHelp;
-    if (neededHelp == null || neededHelp.length() == 0) {
-      points += 10;
-    } else {
-      explanations.add("expected neededHelp: (null), got: " + neededHelp);
-    }
-
-    // loop through {tv,water,internet}Status, rotating the expected status
-    final var statuses = Arrays.asList(m.tvStatus, m.waterStatus, m.internetStatus);
-    final var labels = Arrays.asList("tv", "water", "internet");
-    final var expecteds = Arrays.asList("YES", "Unknown - N/A", "NO");
-    List<Integer> indices = null;
-
-    // set up "regional" rotations of expected values
-    if (new HashSet<String>(Arrays.asList("ETO-01", "ETO-02", "ETO-03", "ETO-04")).contains(m.to)) {
-      indices = Arrays.asList(0, 1, 2);
-    } else if (new HashSet<String>(Arrays.asList("ETO-05", "ETO-06", "ETO-07", "ETO-08")).contains(m.to)) {
-      indices = Arrays.asList(1, 2, 0);
-    } else if (new HashSet<String>(Arrays.asList("ETO-09", "ETO-10", "ETO-DX")).contains(m.to)) {
-      indices = Arrays.asList(2, 0, 1);
-    } else {
-      explanations.add("unexpected To: " + m.to);
-    }
-
-    if (indices != null) {
-      for (int i = 0; i < statuses.size(); ++i) {
-        var status = statuses.get(i);
-        // rotate through the expected value based on "region"
-        var expected = expecteds.get(indices.get(i));
-        if (status.equals(expected)) {
-          points += 10;
-        } else {
-          explanations.add("expected " + labels.get(i) + "Status: " + expected + ", got: " + status);
-        }
-      }
-    }
-
-    // loop through {tv,water,internet}Comments, expect all to be: "this is an exercise"
-    boolean isStrict = false;
-    if (isStrict) {
-      final var THIS_IS_AN_EXERCISE = "this is an exercise";
-      final var comments = Arrays.asList(m.tvComments, m.waterComments, m.internetComments);
-      for (int i = 0; i < comments.size(); ++i) {
-        var comment = comments.get(i);
-        if (comment != null && comment.equals(THIS_IS_AN_EXERCISE)) {
-          points += 10;
-        } else {
-          explanations.add("expected " + labels.get(i) + "Comments: " + THIS_IS_AN_EXERCISE + ", got: " + comment);
-        }
-      }
-    } else {
-      final var THIS_IS_AN_EXERCISE = "this is an exercise";
-      final var comments = Arrays.asList(m.tvComments, m.waterComments, m.internetComments);
-      for (int i = 0; i < comments.size(); ++i) {
-        var comment = comments.get(i);
-        if (comment != null && comment.toLowerCase().startsWith(THIS_IS_AN_EXERCISE)) {
-          points += 10;
-        } else {
-          explanations.add("expected " + labels.get(i) + "Comments: " + THIS_IS_AN_EXERCISE + ", got: " + comment);
-        }
-      }
-    }
-
-    var grade = String.valueOf(points);
-    var explanation = (points == 100) ? "perfect score" : String.join("\n", explanations);
-
-    return new GradeResult(grade, explanation);
+  @Override
+  public GraderType getGraderType() {
+    return GraderType.WHOLE_MESSAGE;
   }
 
   @Override
@@ -331,8 +227,4 @@ public class FieldSituationReportGrader implements IGrader {
     return DefaultGrader.defaultPostProcessReport(messages);
   }
 
-  @Override
-  public GraderType getGraderType() {
-    return GraderType.WHOLE_MESSAGE;
-  }
 }

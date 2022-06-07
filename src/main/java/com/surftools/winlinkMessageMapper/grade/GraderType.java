@@ -27,17 +27,9 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.grade;
 
-import java.util.List;
-
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-
-public interface IGrader {
-
-  public GradeResult grade(GradableMessage m);
-
-  public GradeResult grade(String s);
-
-  public String getPostProcessReport(List<ExportedMessage> messages);
-
-  public GraderType getGraderType();
+public enum GraderType {
+  SINGLE_LINE_STRING, //
+  MULTI_LINE_STRING, //
+  WHOLE_MESSAGE, //
+  MULTIPLE_MESSAGES,
 }
