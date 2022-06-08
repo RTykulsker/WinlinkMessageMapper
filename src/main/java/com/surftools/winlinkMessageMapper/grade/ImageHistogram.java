@@ -29,6 +29,7 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.grade;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -50,7 +51,7 @@ public class ImageHistogram {
     redBins = greenBins = blueBins = 4;
   }
 
-  private float[] filter(BufferedImage src) {
+  public float[] filter(BufferedImage src) {
     int width = src.getWidth();
     int height = src.getHeight();
 
@@ -124,6 +125,11 @@ public class ImageHistogram {
    */
   public double match(float[] sourceData, File canFile) throws Exception {
     float[] candidateData = this.filter(ImageIO.read(canFile));
+    return calcSimilarity(sourceData, candidateData);
+  }
+
+  public double match(float[] sourceData, byte[] canData) throws Exception {
+    float[] candidateData = this.filter(ImageIO.read(new ByteArrayInputStream(canData)));
     return calcSimilarity(sourceData, candidateData);
   }
 

@@ -50,6 +50,10 @@ public class ETO_2022_05_14 implements IGrader {
 
   @Override
   public GradeResult grade(GradableMessage gm) {
+    if (!(gm instanceof FieldSituationMessage)) {
+      return null;
+    }
+
     FieldSituationMessage m = (FieldSituationMessage) gm;
 
     // participation points

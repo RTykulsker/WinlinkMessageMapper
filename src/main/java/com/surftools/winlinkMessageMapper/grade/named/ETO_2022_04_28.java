@@ -47,6 +47,10 @@ public class ETO_2022_04_28 implements IGrader {
 
   @Override
   public GradeResult grade(GradableMessage gm) {
+    if (!(gm instanceof CheckInMessage)) {
+      return null;
+    }
+
     CheckInMessage m = (CheckInMessage) gm;
     var grade = "";
     String explanation = null;
