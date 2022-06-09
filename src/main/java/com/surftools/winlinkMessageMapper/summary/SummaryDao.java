@@ -82,9 +82,7 @@ public class SummaryDao {
 
       writer.close();
       logger.info("wrote " + list.size() + " exerciseSummaries to file: " + outputPath);
-    } catch (
-
-    Exception e) {
+    } catch (Exception e) {
       logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
     }
   }

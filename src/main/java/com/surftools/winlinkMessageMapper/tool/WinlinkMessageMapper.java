@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.surftools.winlinkMessageMapper.aggregation.AggregatorProcessor;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageReader;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageWriter;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
@@ -126,6 +127,9 @@ public class WinlinkMessageMapper {
   @Option(name = "--gradeKey", usage = "exercise/processor-specific key to identify grading method, if any")
   private String gradeKey = null;
 
+  @Option(name = "--aggregatorName", usage = "exercise-specific name of multi-message aggregator, if any")
+  private String aggregatorName = null;
+
   public static void main(String[] args) {
     WinlinkMessageMapper app = new WinlinkMessageMapper();
     CmdLineParser parser = new CmdLineParser(app);
@@ -185,11 +189,18 @@ public class WinlinkMessageMapper {
       writer.writeAll(messageMap);
 
       // summary
-      var summarizer = new Summarizer(databasePathName, pathName);
-      summarizer.setDumpIds(dumpIdsSet);
-      summarizer.summarize(messageMap);
+      if (databasePathName != null) {
+        var summarizer = new Summarizer(databasePathName, pathName);
+        summarizer.setDumpIds(dumpIdsSet);
+        summarizer.summarize(messageMap);
+      }
 
       writePostProcessorMessages(messageMap);
+
+      if (aggregatorName != null) {
+        var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
+        aggregatorProcessor.aggregate(messageMap, pathName);
+      }
 
       logger.info("exiting");
     } catch (Exception e) {
@@ -406,7 +417,7 @@ public class WinlinkMessageMapper {
         IGrader grader = null;
         switch (graderStrategy) {
         case CLASS:
-          final var prefixes = new String[] { "", "com.surftools.winlinkMessageMapper.grade.named." };
+          final var prefixes = new String[] { "com.surftools.winlinkMessageMapper.grade.named.", "" };
 
           for (var prefix : prefixes) {
             var className = prefix + fields[1];
@@ -417,7 +428,7 @@ public class WinlinkMessageMapper {
                 graderMap.put(messageType, grader);
               }
             } catch (Exception e) {
-              explanations.add("could not find grader class for name: " + className);
+              ;// explanations.add("could not find grader class for name: " + className);
             }
           }
           break;
