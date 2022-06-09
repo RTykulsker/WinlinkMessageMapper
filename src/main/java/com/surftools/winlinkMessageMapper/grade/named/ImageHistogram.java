@@ -26,7 +26,7 @@ SOFTWARE.
 */
 // https://github.com/nivance/image-similarity/blob/master/src/main/java/image/similarity/ImageHistogram.java
 
-package com.surftools.winlinkMessageMapper.grade;
+package com.surftools.winlinkMessageMapper.grade.named;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;

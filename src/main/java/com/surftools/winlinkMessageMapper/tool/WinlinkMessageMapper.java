@@ -43,13 +43,17 @@ import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageReader;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageWriter;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
+import com.surftools.winlinkMessageMapper.grade.GraderStrategy;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
+import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
+import com.surftools.winlinkMessageMapper.grade.expect.ExpectGrader;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
@@ -312,35 +316,33 @@ public class WinlinkMessageMapper {
    * @return
    */
   private Map<MessageType, IProcessor> makeProcessorMap() {
-    IGrader grader = makeGrader(gradeKey);
+    var graderMap = makeGraders(gradeKey);
+    var processorMap = new HashMap<MessageType, IProcessor>();
 
-    Map<MessageType, IProcessor> processorMap = new HashMap<>();
-    if (grader != null) {
-      processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, grader));
-      processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, grader));
-      processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(grader));
-    } else {
-      processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, gradeKey));
-      processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, gradeKey));
-      processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor(gradeKey));
-    }
-
+    processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, graderMap.get(MessageType.CHECK_IN)));
+    processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, graderMap.get(MessageType.CHECK_OUT)));
+    processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
     processorMap.put(MessageType.DYFI, new DyfiProcessor());
-    processorMap.put(MessageType.POSITION, new PositionProcessor());
-    processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
-    processorMap.put(MessageType.ICS_213, new Ics213Processor(MessageType.ICS_213));
-    processorMap.put(MessageType.GIS_ICS_213, new Ics213Processor(MessageType.GIS_ICS_213));
 
     processorMap.put(MessageType.WX_LOCAL, new WxLocalProcessor());
     processorMap.put(MessageType.WX_SEVERE, new WxSevereProcessor());
     processorMap.put(MessageType.WX_HURRICANE, new WxHurricaneProcessor());
-    processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
-    processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
 
-    processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor(gradeKey));
-    processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor(gradeKey));
-    processorMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyProcessor());
+    processorMap.put(MessageType.HOSPITAL_BED, new HospitalBedProcessor());
+    processorMap.put(MessageType.POSITION, new PositionProcessor());
+
+    processorMap.put(MessageType.ICS_213, new Ics213Processor(MessageType.ICS_213));
+    processorMap.put(MessageType.GIS_ICS_213, new Ics213Processor(MessageType.GIS_ICS_213));
+    processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
+
+    processorMap
+        .put(MessageType.FIELD_SITUATION_REPORT,
+            new FieldSituationProcessor(graderMap.get(MessageType.FIELD_SITUATION_REPORT)));
+    processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor(graderMap.get(MessageType.WA_RR)));
+    processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor(graderMap.get(MessageType.WA_RR)));
+
     processorMap.put(MessageType.ACK, new AckProcessor());
+    processorMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyProcessor());
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -362,33 +364,86 @@ public class WinlinkMessageMapper {
     return processorMap;
   }
 
-  private IGrader makeGrader(String gradeKey) {
-    if (gradeKey == null) {
-      return null;
-    }
+  /**
+   * parse the gradeKey, construct the appropriate grader
+   *
+   * @param gradeKey
+   * @return
+   */
+  private Map<MessageType, IGrader> makeGraders(String gradeKey) {
+    var graderMap = new HashMap<MessageType, IGrader>();
+    var explanations = new ArrayList<String>();
 
-    if (gradeKey.startsWith("class:")) {
-      var gradeKeyClassName = gradeKey.substring(6);
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 
-      final var prefixes = new String[] { "", "com.surftools.winlinkMessageMapper.grade.named." };
-      IGrader grader = null;
-      for (var prefix : prefixes) {
-        var className = prefix + gradeKeyClassName;
-        try {
-          var clazz = Class.forName(className);
-          if (clazz != null) {
-            grader = (IGrader) clazz.getDeclaredConstructor().newInstance();
-            return grader;
+      var jsonMap = mapper.readValue(gradeKey, Map.class);
+      for (var messageTypeName : jsonMap.keySet()) {
+        var messageType = MessageType.fromString((String) messageTypeName);
+        if (messageType == null) {
+          explanations.add("messageType: " + messageTypeName + " not recognized");
+          continue;
+        }
+
+        var value = (String) jsonMap.get(messageTypeName);
+        if (value == null || value.length() == 0) {
+          explanations.add("null or empty details for type: " + messageType);
+          continue;
+        }
+
+        var fields = value.split(":");
+        if (fields.length < 2) {
+          explanations.add("can't parse details for type: " + messageType);
+          continue;
+        }
+
+        var graderStrategy = GraderStrategy.fromString(fields[0]);
+        if (graderStrategy == null) {
+          explanations.add("unsupported strategy for type: " + messageType);
+        }
+
+        IGrader grader = null;
+        switch (graderStrategy) {
+        case CLASS:
+          final var prefixes = new String[] { "", "com.surftools.winlinkMessageMapper.grade.named." };
+
+          for (var prefix : prefixes) {
+            var className = prefix + fields[1];
+            try {
+              var clazz = Class.forName(className);
+              if (clazz != null) {
+                grader = (IGrader) clazz.getDeclaredConstructor().newInstance();
+                graderMap.put(messageType, grader);
+              }
+            } catch (Exception e) {
+              explanations.add("could not find grader class for name: " + className);
+            }
           }
-        } catch (Exception e) {
-          ;
+          break;
+
+        case EXPECT:
+          var expectGrader = new ExpectGrader(messageType, fields[1]);
+          graderMap.put(messageType, expectGrader);
+          break;
+
+        case MULTIPLE_CHOICE:
+          var mcGrader = new MultipleChoiceGrader(messageType);
+          mcGrader.parse(messageTypeName + ":" + value);
+          graderMap.put(messageType, mcGrader);
+          break;
         }
       }
+    } catch (Exception e) {
+      explanations.add(e.getLocalizedMessage());
+    }
 
-      throw new RuntimeException("could not find class for " + gradeKeyClassName);
-    } // end if class:
-
-    return null;
+    if (explanations.size() == 0) {
+      return graderMap;
+    } else {
+      throw new RuntimeException(
+          "could not parse gradeKey: " + gradeKey + "\ndetails: " + String.join(",", explanations + "\n"));
+    }
   }
 
   public Set<String> makeDumpIds(String dumpIdsString) {

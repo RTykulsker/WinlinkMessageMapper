@@ -32,13 +32,10 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.message.AckMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class AckProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(AckProcessor.class);
-
-  private final MessageType messageType = MessageType.ACK;
 
   @Override
   public ExportedMessage process(ExportedMessage message) {

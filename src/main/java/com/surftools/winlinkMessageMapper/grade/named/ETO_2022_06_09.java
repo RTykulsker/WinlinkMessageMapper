@@ -48,7 +48,6 @@ import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.GraderType;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
-import com.surftools.winlinkMessageMapper.grade.ImageHistogram;
 
 /**
  * Winlink Check In, with cropped and resized image, compared to reference, and difficulty in comments
@@ -67,7 +66,11 @@ public class ETO_2022_06_09 implements IGrader {
 
   private final ImageHistogram histogrammer;
   private final float[] referenceFilter;
+
   private final Path outputPath;
+  private final Path allPath;
+  private final Path okPath;
+  private final Path binnedPath;
 
   // for post processing
   private int ppCount;
@@ -75,7 +78,7 @@ public class ETO_2022_06_09 implements IGrader {
   private int ppImageSizeOk;
   private int ppImageSimOk;
   private int ppCommentOk;
-  private int ppOrganizationOk;
+  // private int ppOrganizationOk;
   private int ppDateOk;
   private int[] ppCommentCounts = new int[5];
   private double ppSumSimScore;
@@ -83,6 +86,7 @@ public class ETO_2022_06_09 implements IGrader {
   private int ppSimScoreNotOkCount;
   private double ppSumSimOkScore;
   private double ppSumSimNotOkScore;
+  private int[] ppBinCounts = new int[101];
 
   public ETO_2022_06_09() throws Exception {
     histogrammer = new ImageHistogram();
@@ -92,14 +96,11 @@ public class ETO_2022_06_09 implements IGrader {
       throw new RuntimeException("Reference file: " + REFERENCE_IMAGE_FILENAME + " not found");
     }
 
-    var outputDirectory = new File(OUTPUT_DIRECTORY);
-    if (!outputDirectory.exists()) {
-      var ok = outputDirectory.mkdirs();
-      if (!ok) {
-        throw new RuntimeException("Could not create output image directory");
-      }
-    }
-    outputPath = outputDirectory.toPath();
+    outputPath = Path.of(OUTPUT_DIRECTORY);
+    deleteDirectory(outputPath);
+    allPath = createDirectory(Path.of(outputPath.toString(), "alll"));
+    okPath = createDirectory(Path.of(outputPath.toString(), "ok"));
+    binnedPath = createDirectory(Path.of(outputPath.toString(), "binned"));
 
     referenceFilter = histogrammer.filter(ImageIO.read(refFile));
 
@@ -143,6 +144,7 @@ public class ETO_2022_06_09 implements IGrader {
     }
 
     if (bufferedImage != null) {
+      var isImageSimilar = false;
       ++ppImagePresentOk;
       points += 25;
 
@@ -161,16 +163,15 @@ public class ETO_2022_06_09 implements IGrader {
         if (simScore >= SIMILARITY_THRESHOLD) {
           ++ppImageSimOk;
           ppSumSimOkScore += simScore;
-          points += 25;
+          points += 30;
+          isImageSimilar = true;
         } else {
           ppSumSimNotOkScore += simScore;
           ++ppSimScoreNotOkCount;
           explanations.add("attached image too dissimilar: " + formatPercent(simScore));
         }
-
-        var scoredImageFileName = m.from + "-" + m.messageId + "-" + formatPercent(simScore) + "-" + imageFileName;
-        var scoredImagePath = Path.of(outputPath.toString(), scoredImageFileName);
-        Files.write(scoredImagePath, bytes);
+        writeFile(simScore, bytes, m.from, m.messageId, imageFileName, isImageSimilar);
+        ++ppBinCounts[(int) (100 * simScore)];
       } catch (Exception e) {
         logger.error("exception calculating simScore for messageId: " + m.messageId + ", " + e.getLocalizedMessage());
       }
@@ -203,13 +204,13 @@ public class ETO_2022_06_09 implements IGrader {
       explanations.add("no comment supplied of difficulty of assignment");
     }
 
-    var organization = m.organization;
-    if (organization != null && organization.equalsIgnoreCase("ETO Winlink Thursday")) {
-      ++ppOrganizationOk;
-      points += 5;
-    } else {
-      explanations.add("group/agency not 'ETO Winlink Thursday'");
-    }
+    // var organization = m.organization;
+    // if (organization != null && organization.equalsIgnoreCase("ETO Winlink Thursday")) {
+    // ++ppOrganizationOk;
+    // points += 5;
+    // } else {
+    // explanations.add("group/agency not 'ETO Winlink Thursday'");
+    // }
 
     if (m.date.equals(REQUIRED_DATE)) {
       ++ppDateOk;
@@ -254,7 +255,7 @@ public class ETO_2022_06_09 implements IGrader {
     sb.append(formatPP("image attached", ppImagePresentOk));
     sb.append(formatPP("image size", ppImageSizeOk));
     sb.append(formatPP("image similarity", ppImageSimOk));
-    sb.append(formatPP("agency/group name", ppOrganizationOk));
+    // sb.append(formatPP("agency/group name", ppOrganizationOk));
     sb.append(formatPP("sent on correct date", ppDateOk));
     sb.append(formatPP("comments on difficulty", ppCommentOk));
     sb.append(formatPPCounts());
@@ -263,6 +264,14 @@ public class ETO_2022_06_09 implements IGrader {
     sb.append("\n   average simScore(ok): " + formatPercent(ppSumSimOkScore / ppImageSimOk));
     sb.append("\n   average simScore(not ok): " + formatPercent(ppSumSimNotOkScore / ppSimScoreNotOkCount));
     sb.append("\n");
+
+    sb.append("\n   counts by bin\n");
+    for (var binIndex = 100; binIndex >= 0; --binIndex) {
+      if (ppBinCounts[binIndex] == 0) {
+        continue;
+      }
+      sb.append("      count[" + binIndex + "] = " + ppBinCounts[binIndex] + "\n");
+    }
 
     return sb.toString();
   }
@@ -281,6 +290,46 @@ public class ETO_2022_06_09 implements IGrader {
 
   }
 
+  /**
+   * write the image file twice
+   *
+   * once to the all directory
+   *
+   * if isSimilar enough, then to the ok directory
+   *
+   * if not isSimilar enough, to a "binned" directory
+   *
+   * @param simScore
+   * @param bytes
+   * @param from
+   * @param messageId
+   * @param imageFileName
+   * @param isImageSimilar
+   */
+  private void writeFile(Double simScore, byte[] bytes, String from, String messageId, String imageFileName,
+      boolean isImageSimilar) {
+    var scoredImageFileName = from + "-" + messageId + "-" + formatPercent(simScore) + "-" + imageFileName;
+
+    try {
+      var allImagePath = Path.of(allPath.toString(), scoredImageFileName);
+      Files.write(allImagePath, bytes);
+
+      if (isImageSimilar) {
+        var okImagePath = Path.of(okPath.toString(), scoredImageFileName);
+        Files.write(okImagePath, bytes);
+      } else {
+        int binIndex = (int) (100 * simScore);
+        var binnedImagePath = createDirectory(Path.of(binnedPath.toString(), String.valueOf(binIndex)));
+        binnedImagePath = Path.of(binnedImagePath.toString(), scoredImageFileName);
+        Files.write(binnedImagePath, bytes);
+      }
+    } catch (Exception e) {
+      logger
+          .error("Exception writing image file for call: " + from + ", messageId: " + messageId + ", "
+              + e.getLocalizedMessage());
+    }
+  }
+
   private String formatPP(String label, int okCount) {
     var notOkCount = ppCount - okCount;
     var okPercent = (double) okCount / (double) ppCount;
@@ -289,6 +338,38 @@ public class ETO_2022_06_09 implements IGrader {
         + okCount + "(" + formatPercent(okPercent) + ") ok, " //
         + notOkCount + "(" + formatPercent(notOkPercent) + ") not ok" //
         + "\n";
+  }
+
+  /**
+   * recursively remove directory and all contents
+   *
+   * @param path
+   */
+  public void deleteDirectory(Path path) {
+    try {
+      if (Files.exists(path)) {
+        Files //
+            .walk(path) //
+              .map(Path::toFile) //
+              .sorted((o1, o2) -> -o1.compareTo(o2)) //
+              .forEach(File::delete);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("exception deleting directory: " + path.toString() + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  /**
+   * (recursively) create directory
+   *
+   * @param path
+   */
+  public Path createDirectory(Path path) {
+    try {
+      return Files.createDirectories(path);
+    } catch (Exception e) {
+      throw new RuntimeException("exception creating directory: " + path.toString() + ", " + e.getLocalizedMessage());
+    }
   }
 
 }

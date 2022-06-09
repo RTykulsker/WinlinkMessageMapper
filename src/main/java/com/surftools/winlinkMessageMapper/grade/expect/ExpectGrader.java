@@ -48,42 +48,23 @@ public class ExpectGrader implements IGrader {
   private final MessageType messageType;
 
   /**
-   * gradeKey: <type>:expect:<comma-delimited-list-of-files>;<another blob>;<another blob>
+   * gradeKey: <type>:expect:<comma-delimited-list-of-files>
+   *
+   * @param messageType
    *
    * @param gradeKey
-   * @param messageType
+   *
    */
-  public ExpectGrader(String gradeKey, MessageType messageType) {
+  public ExpectGrader(MessageType messageType, String gradeKey) {
     this.messageType = messageType;
 
     var filenames = new ArrayList<String>();
     processors = new ArrayList<ExpectProcessor>();
 
-    var blobs = gradeKey.split(";");
-    for (String blob : blobs) {
-      if (!blob.contains("expect")) {
-        logger.info("skipping blob: " + blob + ", not an expect blob");
-        continue;
-      }
+    var fields = gradeKey.split(",");
 
-      var fields = blob.split(":");
-      if (fields.length != 3) {
-        logger.error("skipping blob: " + blob + ", wrong number of fields");
-        continue;
-      }
+    filenames.addAll(Arrays.asList(fields));
 
-      var blobMessageType = MessageType.fromString(fields[0]);
-      if (blobMessageType == null) {
-        logger.info("skipping blob: " + blob + ", unsuppported messageType");
-      }
-
-      if (blobMessageType != messageType) {
-        logger.info("skipping blob: " + blob + ", wrong messageType");
-      }
-
-      filenames.addAll(Arrays.asList(fields[2]));
-      logger.info("processing blob: " + blob);
-    } // end loop over blobs
     logger.info("extracted " + filenames.size() + " filenames from gradeKey: " + gradeKey);
 
     for (var filename : filenames) {

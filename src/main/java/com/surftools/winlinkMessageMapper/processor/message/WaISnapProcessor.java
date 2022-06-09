@@ -37,20 +37,14 @@ import com.surftools.winlinkMessageMapper.dto.message.WaISnapMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
-import com.surftools.winlinkMessageMapper.grade.expect.ExpectGrader;
 
 public class WaISnapProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(WaISnapProcessor.class);
 
   private final IGrader grader;
 
-  public WaISnapProcessor(String gradeKey) {
-
-    if (gradeKey != null && gradeKey.startsWith(MessageType.WA_ISNAP.toString() + ":" + "expect")) {
-      grader = new ExpectGrader(gradeKey, MessageType.WA_ISNAP);
-    } else {
-      grader = null;
-    }
+  public WaISnapProcessor(IGrader grader) {
+    this.grader = grader;
   }
 
   @Override

@@ -37,20 +37,14 @@ import com.surftools.winlinkMessageMapper.dto.message.WaResourceRequestMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
-import com.surftools.winlinkMessageMapper.grade.expect.ExpectGrader;
 
 public class WaResourceRequestProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(WaResourceRequestProcessor.class);
 
   private final IGrader grader;
 
-  public WaResourceRequestProcessor(String gradeKey) {
-
-    if (gradeKey != null && gradeKey.startsWith(MessageType.WA_RR.toString() + ":" + "expect")) {
-      grader = new ExpectGrader(gradeKey, MessageType.WA_RR);
-    } else {
-      grader = null;
-    }
+  public WaResourceRequestProcessor(IGrader grader) {
+    this.grader = grader;
   }
 
   @Override
