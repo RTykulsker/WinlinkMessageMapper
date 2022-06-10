@@ -31,9 +31,12 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -59,6 +62,7 @@ public class ETO_2022_06_09 implements IGrader {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2022_06_09.class);
 
   private final String REFERENCE_IMAGE_FILENAME = "/home/bobt/Documents/eto/2022-06-09/reference.jpg";
+  private final String IMG_SIM_OVERRIDE_FILENAME = "/home/bobt/Documents/eto/2022-06-09/imgSim-overrides.txt";
   private final String OUTPUT_DIRECTORY = "/home/bobt/Documents/eto/2022-06-09/output/images";
   private final int MAX_ATTACHMENT_SIZE = 6000;
   private final Double SIMILARITY_THRESHOLD = 0.98;
@@ -66,11 +70,16 @@ public class ETO_2022_06_09 implements IGrader {
 
   private final ImageHistogram histogrammer;
   private final float[] referenceFilter;
+  private final Set<String> imgSimOverrideToPassSet = new HashSet<>();
+  private final Set<String> imgSimOverrideToFailSet = new HashSet<>();
 
   private final Path outputPath;
   private final Path allPath;
-  private final Path okPath;
+  private final Path passPath;
+  private final Path failPath;
   private final Path binnedPath;
+  private final Path annotatedMessageIdPath;
+  private final Path annotatedCallPath;
 
   // for post processing
   private int ppCount;
@@ -88,6 +97,9 @@ public class ETO_2022_06_09 implements IGrader {
   private double ppSumSimNotOkScore;
   private int[] ppBinCounts = new int[101];
 
+  private int ppImgSimOverrideToPassCount;
+  private int ppImgSimOverrideToFailCount;
+
   public ETO_2022_06_09() throws Exception {
     histogrammer = new ImageHistogram();
 
@@ -99,17 +111,65 @@ public class ETO_2022_06_09 implements IGrader {
     outputPath = Path.of(OUTPUT_DIRECTORY);
     deleteDirectory(outputPath);
     allPath = createDirectory(Path.of(outputPath.toString(), "alll"));
-    okPath = createDirectory(Path.of(outputPath.toString(), "ok"));
+    passPath = createDirectory(Path.of(outputPath.toString(), "pass"));
+    failPath = createDirectory(Path.of(outputPath.toString(), "fail"));
     binnedPath = createDirectory(Path.of(outputPath.toString(), "binned"));
+    annotatedMessageIdPath = createDirectory(Path.of(outputPath.toString(), "annotated-messageId"));
+    annotatedCallPath = createDirectory(Path.of(outputPath.toString(), "annotated-call"));
 
     referenceFilter = histogrammer.filter(ImageIO.read(refFile));
 
     logger.info("Reference File: " + REFERENCE_IMAGE_FILENAME);
+    logger.info("imgSim-overrides File: " + IMG_SIM_OVERRIDE_FILENAME);
     logger.info("Reference elements: " + referenceFilter.length);
     logger.info("Max Attachment Size: " + MAX_ATTACHMENT_SIZE);
     logger.info("Similarity Threshold: " + SIMILARITY_THRESHOLD);
-    logger.info("Output Image Path: " + outputPath);
+    logger.info("Output Image Path: " + OUTPUT_DIRECTORY);
     logger.info("Required Date: " + REQUIRED_DATE);
+
+    processOverrideFile();
+  }
+
+  /**
+   * file format should be:
+   *
+   * XXXXXXXXXXXX -- to override messageId to pass
+   *
+   * XXXXXXXXXXXX,pass -- to override messageId to pass
+   *
+   * XXXXXXXXXXXX,fail -- to override messageId to fail
+   *
+   */
+  private void processOverrideFile() {
+    try {
+      List<String> lines = Files.readAllLines(Path.of(IMG_SIM_OVERRIDE_FILENAME));
+      for (var line : lines) {
+        var fields = line.split(",");
+        if (fields.length == 1) {
+          // assume a messageId to pass
+          imgSimOverrideToPassSet.add(fields[0]);
+        } else if (fields.length == 2) {
+          var action = fields[1];
+          if (action.equals("pass")) {
+            imgSimOverrideToPassSet.add(fields[0]);
+          } else if (action.equals("fail")) {
+            imgSimOverrideToFailSet.add(fields[0]);
+          } else {
+            logger.warn("unsupported imgSim override line: " + line + " -- ignored");
+          }
+        } else {
+          logger.warn("unsupported imgSim override line: " + line + " -- ignored");
+        }
+      }
+    } catch (NoSuchFileException e) {
+      logger.warn(IMG_SIM_OVERRIDE_FILENAME + " file not found");
+    } catch (Exception e) {
+      logger
+          .error("Exception processing imgSim override file: " + IMG_SIM_OVERRIDE_FILENAME + ", "
+              + e.getLocalizedMessage());
+    }
+    logger.info("overrides to pass: " + imgSimOverrideToPassSet.size());
+    logger.info("overrides to fail: " + imgSimOverrideToFailSet.size());
   }
 
   @Override
@@ -160,16 +220,31 @@ public class ETO_2022_06_09 implements IGrader {
         simScore = histogrammer.match(referenceFilter, bytes);
         ppSumSimScore += simScore;
         ++ppSimScoreCount;
+
         if (simScore >= SIMILARITY_THRESHOLD) {
+          isImageSimilar = true;
+          if (imgSimOverrideToFailSet.contains(m.messageId)) {
+            ++ppImgSimOverrideToFailCount;
+            isImageSimilar = false;
+          }
+        } else {
+          isImageSimilar = false;
+          if (imgSimOverrideToPassSet.contains(m.messageId)) {
+            ++ppImgSimOverrideToPassCount;
+            isImageSimilar = true;
+          }
+        }
+
+        if (isImageSimilar) {
           ++ppImageSimOk;
           ppSumSimOkScore += simScore;
           points += 30;
-          isImageSimilar = true;
         } else {
           ppSumSimNotOkScore += simScore;
           ++ppSimScoreNotOkCount;
           explanations.add("attached image too dissimilar: " + formatPercent(simScore));
         }
+
         writeFile(simScore, bytes, m.from, m.messageId, imageFileName, isImageSimilar);
         ++ppBinCounts[(int) (100 * simScore)];
       } catch (Exception e) {
@@ -265,6 +340,10 @@ public class ETO_2022_06_09 implements IGrader {
     sb.append("\n   average simScore(not ok): " + formatPercent(ppSumSimNotOkScore / ppSimScoreNotOkCount));
     sb.append("\n");
 
+    sb.append("\n   override to fail count: " + ppImgSimOverrideToFailCount);
+    sb.append("\n   override to pass count: " + ppImgSimOverrideToPassCount);
+    sb.append("\n");
+
     sb.append("\n   counts by bin\n");
     for (var binIndex = 100; binIndex >= 0; --binIndex) {
       if (ppBinCounts[binIndex] == 0) {
@@ -291,13 +370,13 @@ public class ETO_2022_06_09 implements IGrader {
   }
 
   /**
-   * write the image file twice
+   * write the image file, to the all/ directory
    *
-   * once to the all directory
+   * write a link to either the graded/pass/ or graded/fail directory
    *
-   * if isSimilar enough, then to the ok directory
+   * write a link to the binned/XX/ directory, where XX is (int)(100 * simScore)
    *
-   * if not isSimilar enough, to a "binned" directory
+   * write a link to the annotated/XX directory and then annotate the IMAGE with the messageId
    *
    * @param simScore
    * @param bytes
@@ -308,22 +387,63 @@ public class ETO_2022_06_09 implements IGrader {
    */
   private void writeFile(Double simScore, byte[] bytes, String from, String messageId, String imageFileName,
       boolean isImageSimilar) {
+
     var scoredImageFileName = from + "-" + messageId + "-" + formatPercent(simScore) + "-" + imageFileName;
 
     try {
+      // write the file
       var allImagePath = Path.of(allPath.toString(), scoredImageFileName);
       Files.write(allImagePath, bytes);
 
+      // create the link to pass or fail
       if (isImageSimilar) {
-        var okImagePath = Path.of(okPath.toString(), scoredImageFileName);
-        Files.write(okImagePath, bytes);
+        var passImagePath = Path.of(passPath.toString(), scoredImageFileName);
+        Files.createLink(passImagePath, allImagePath);
       } else {
-        int binIndex = (int) (100 * simScore);
-        var binnedImagePath = createDirectory(Path.of(binnedPath.toString(), String.valueOf(binIndex)));
-        binnedImagePath = Path.of(binnedImagePath.toString(), scoredImageFileName);
-        Files.write(binnedImagePath, bytes);
+        var failImagePath = Path.of(failPath.toString(), scoredImageFileName);
+        Files.createLink(failImagePath, allImagePath);
       }
-    } catch (Exception e) {
+
+      int binIndex = (int) (100 * simScore);
+      var binnedImagePath = createDirectory(Path.of(binnedPath.toString(), String.valueOf(binIndex)));
+      binnedImagePath = Path.of(binnedImagePath.toString(), scoredImageFileName);
+      Files.createLink(binnedImagePath, allImagePath);
+
+      // apply annotation by messageId -- write a file, don't link it!
+      var annotatedMessageIdImagePath = createDirectory(
+          Path.of(annotatedMessageIdPath.toString(), String.valueOf(binIndex)));
+      annotatedMessageIdImagePath = Path.of(annotatedMessageIdImagePath.toString(), scoredImageFileName);
+      Files.write(annotatedMessageIdImagePath, bytes);
+
+      var runtime = Runtime.getRuntime();
+      var cmd = new String[] { "/usr/bin/convert", //
+          annotatedMessageIdImagePath.toString(), //
+          "label:" + messageId, //
+          "-gravity", //
+          "Center", //
+          "-append", //
+          annotatedMessageIdImagePath.toString() };
+      var process = runtime.exec(cmd);
+      process.waitFor();
+
+      // apply annotation by call -- write a file, don't link it!
+      var annotatedCallImagePath = Path.of(annotatedCallPath.toString(), scoredImageFileName);
+      Files.write(annotatedCallImagePath, bytes);
+
+      runtime = Runtime.getRuntime();
+      cmd = new String[] { "/usr/bin/convert", //
+          annotatedCallImagePath.toString(), //
+          "label:" + from, //
+          "-gravity", //
+          "Center", //
+          "-append", //
+          annotatedCallImagePath.toString() };
+      process = runtime.exec(cmd);
+      process.waitFor();
+
+    } catch (
+
+    Exception e) {
       logger
           .error("Exception writing image file for call: " + from + ", messageId: " + messageId + ", "
               + e.getLocalizedMessage());
