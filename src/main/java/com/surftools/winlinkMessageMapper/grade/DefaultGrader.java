@@ -28,6 +28,9 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.grade;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +41,11 @@ public abstract class DefaultGrader implements IGrader {
 
   private final String gradeKey;
 
+  protected static Comparator<String> gradeComparator = new DefaultGradeComparator();
+
   public DefaultGrader(String gradeKey) {
     this.gradeKey = gradeKey;
+    gradeComparator = new DefaultGradeComparator();
   }
 
   @Override
@@ -88,7 +94,11 @@ public abstract class DefaultGrader implements IGrader {
     StringBuilder sb = new StringBuilder();
     sb.append("\n");
     sb.append(messages.get(0).getMessageType().toString() + ": " + totalGraded + " messages" + "\n");
-    for (String grade : gradeCountMap.keySet()) {
+
+    // sort keys, based on grader criteria
+    var keySet = new ArrayList<String>(gradeCountMap.keySet());
+    Collections.sort(keySet, gradeComparator);
+    for (String grade : keySet) {
       int count = gradeCountMap.getOrDefault(grade, Integer.valueOf(0));
       double percent = 100d * count / totalGraded;
       var percentString = FORMAT.format(percent) + "%";
@@ -97,5 +107,42 @@ public abstract class DefaultGrader implements IGrader {
     var s = sb.toString();
     return s;
   }
+
+  protected static class DefaultGradeComparator implements Comparator<String> {
+
+    @Override
+    public int compare(String o1, String o2) {
+      // numeric descending, alpha ascending
+      Double d1 = null;
+      Double d2 = null;
+      try {
+        d1 = Double.parseDouble(o1);
+      } catch (Exception e) {
+        ;
+      }
+      try {
+        d2 = Double.parseDouble(o2);
+      } catch (Exception e) {
+        ;
+      }
+
+      if (d1 == null && d2 == null) {
+        return o1.compareTo(o2);
+      } else if (d1 == null) {
+        return 1;
+      } else if (d2 == null) {
+        return -1;
+      } else {
+        double diff = d2 - d1;
+        if (diff > 0) {
+          return 1;
+        } else if (diff < 0) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }
+    } // end compare()
+  } // end class DefaultGradeComparator
 
 }
