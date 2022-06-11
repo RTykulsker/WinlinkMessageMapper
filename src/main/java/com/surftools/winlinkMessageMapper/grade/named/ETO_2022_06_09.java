@@ -67,6 +67,9 @@ public class ETO_2022_06_09 implements IGrader {
   private final int MAX_ATTACHMENT_SIZE = 6000;
   private final Double SIMILARITY_THRESHOLD = 0.98;
   private final String REQUIRED_DATE = "2022/06/09";
+  private final boolean doAnnotationByMessageId = false;
+  private final boolean doAnnotationByCall = false;
+  private final boolean gradeDateAsBonus = true;
 
   private final ImageHistogram histogrammer;
   private final float[] referenceFilter;
@@ -78,8 +81,8 @@ public class ETO_2022_06_09 implements IGrader {
   private final Path passPath;
   private final Path failPath;
   private final Path binnedPath;
-  private final Path annotatedMessageIdPath;
-  private final Path annotatedCallPath;
+  private Path annotatedMessageIdPath;
+  private Path annotatedCallPath;
 
   // for post processing
   private int ppCount;
@@ -114,8 +117,14 @@ public class ETO_2022_06_09 implements IGrader {
     passPath = createDirectory(Path.of(outputPath.toString(), "pass"));
     failPath = createDirectory(Path.of(outputPath.toString(), "fail"));
     binnedPath = createDirectory(Path.of(outputPath.toString(), "binned"));
-    annotatedMessageIdPath = createDirectory(Path.of(outputPath.toString(), "annotated-messageId"));
-    annotatedCallPath = createDirectory(Path.of(outputPath.toString(), "annotated-call"));
+
+    if (doAnnotationByMessageId) {
+      annotatedMessageIdPath = createDirectory(Path.of(outputPath.toString(), "annotated-messageId"));
+    }
+
+    if (doAnnotationByCall) {
+      annotatedCallPath = createDirectory(Path.of(outputPath.toString(), "annotated-call"));
+    }
 
     referenceFilter = histogrammer.filter(ImageIO.read(refFile));
 
@@ -126,6 +135,9 @@ public class ETO_2022_06_09 implements IGrader {
     logger.info("Similarity Threshold: " + SIMILARITY_THRESHOLD);
     logger.info("Output Image Path: " + OUTPUT_DIRECTORY);
     logger.info("Required Date: " + REQUIRED_DATE);
+    logger.info("Do Annotations by MessageId: " + doAnnotationByMessageId);
+    logger.info("Do Annotations by Call: " + doAnnotationByCall);
+    logger.info("Grade Date as Bonus: " + gradeDateAsBonus);
 
     processOverrideFile();
   }
@@ -238,7 +250,7 @@ public class ETO_2022_06_09 implements IGrader {
         if (isImageSimilar) {
           ++ppImageSimOk;
           ppSumSimOkScore += simScore;
-          points += 30;
+          points += (gradeDateAsBonus) ? 25 : 30;
         } else {
           ppSumSimNotOkScore += simScore;
           ++ppSimScoreNotOkCount;
@@ -274,7 +286,7 @@ public class ETO_2022_06_09 implements IGrader {
     }
     if (commentsOk) {
       ++ppCommentOk;
-      points += 10;
+      points += (gradeDateAsBonus) ? 25 : 10;
     } else {
       explanations.add("no comment supplied of difficulty of assignment");
     }
@@ -290,6 +302,9 @@ public class ETO_2022_06_09 implements IGrader {
     if (m.date.equals(REQUIRED_DATE)) {
       ++ppDateOk;
       points += 10;
+      if (gradeDateAsBonus) {
+        explanations.add("10 point bonus for sending on " + REQUIRED_DATE + " (UTC)");
+      }
     } else {
       explanations.add("message wasn't sent on required date of " + REQUIRED_DATE + " (UTC)");
     }
@@ -376,7 +391,7 @@ public class ETO_2022_06_09 implements IGrader {
    *
    * write a link to the binned/XX/ directory, where XX is (int)(100 * simScore)
    *
-   * write a link to the annotated/XX directory and then annotate the IMAGE with the messageId
+   * (optionally) write a file to the annotated/XX directory and then annotate the IMAGE with the messageId and/or call
    *
    * @param simScore
    * @param bytes
@@ -410,36 +425,41 @@ public class ETO_2022_06_09 implements IGrader {
       Files.createLink(binnedImagePath, allImagePath);
 
       // apply annotation by messageId -- write a file, don't link it!
-      var annotatedMessageIdImagePath = createDirectory(
-          Path.of(annotatedMessageIdPath.toString(), String.valueOf(binIndex)));
-      annotatedMessageIdImagePath = Path.of(annotatedMessageIdImagePath.toString(), scoredImageFileName);
-      Files.write(annotatedMessageIdImagePath, bytes);
+      if (doAnnotationByMessageId) {
+        var annotatedMessageIdImagePath = createDirectory(
+            Path.of(annotatedMessageIdPath.toString(), String.valueOf(binIndex)));
+        annotatedMessageIdImagePath = Path.of(annotatedMessageIdImagePath.toString(), scoredImageFileName);
+        Files.write(annotatedMessageIdImagePath, bytes);
 
-      var runtime = Runtime.getRuntime();
-      var cmd = new String[] { "/usr/bin/convert", //
-          annotatedMessageIdImagePath.toString(), //
-          "label:" + messageId, //
-          "-gravity", //
-          "Center", //
-          "-append", //
-          annotatedMessageIdImagePath.toString() };
-      var process = runtime.exec(cmd);
-      process.waitFor();
+        var runtime = Runtime.getRuntime();
+        var cmd = new String[] { "/usr/bin/convert", //
+            annotatedMessageIdImagePath.toString(), //
+            "label:" + messageId, //
+            "-gravity", //
+            "Center", //
+            "-append", //
+            annotatedMessageIdImagePath.toString() };
+        var process = runtime.exec(cmd);
+        process.waitFor();
+      }
 
       // apply annotation by call -- write a file, don't link it!
-      var annotatedCallImagePath = Path.of(annotatedCallPath.toString(), scoredImageFileName);
-      Files.write(annotatedCallImagePath, bytes);
 
-      runtime = Runtime.getRuntime();
-      cmd = new String[] { "/usr/bin/convert", //
-          annotatedCallImagePath.toString(), //
-          "label:" + from, //
-          "-gravity", //
-          "Center", //
-          "-append", //
-          annotatedCallImagePath.toString() };
-      process = runtime.exec(cmd);
-      process.waitFor();
+      if (doAnnotationByCall) {
+        var annotatedCallImagePath = Path.of(annotatedCallPath.toString(), scoredImageFileName);
+        Files.write(annotatedCallImagePath, bytes);
+
+        var runtime = Runtime.getRuntime();
+        var cmd = new String[] { "/usr/bin/convert", //
+            annotatedCallImagePath.toString(), //
+            "label:" + from, //
+            "-gravity", //
+            "Center", //
+            "-append", //
+            annotatedCallImagePath.toString() };
+        var process = runtime.exec(cmd);
+        process.waitFor();
+      }
 
     } catch (
 
