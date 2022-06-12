@@ -44,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
@@ -312,6 +311,11 @@ public class ETO_2022_06_09 implements IGrader {
     points = Math.min(100, points);
     var grade = String.valueOf(points);
     var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
+
+    gm.setIsGraded(true);
+    gm.setGrade(grade);
+    gm.setExplanation(explanation);
+
     return new GradeResult(grade, explanation);
   }
 
@@ -334,16 +338,9 @@ public class ETO_2022_06_09 implements IGrader {
   }
 
   @Override
-  public String getPostProcessReport(List<ExportedMessage> messages) {
+  public String getPostProcessReport(List<GradableMessage> messages) {
     if (messages == null || messages.size() == 0 || messages.get(0).getMessageType() != MessageType.CHECK_IN) {
       return null;
-    }
-
-    // TODO compile statistics here
-    for (var ex : messages) {
-      var m = (CheckInMessage) ex;
-      // makes sense to grade here, and not from CheckInProcessor
-      // but need to move post processing before writing in WinlinkMessageMapper
     }
 
     var defaultReport = DefaultGrader.defaultPostProcessReport(messages);

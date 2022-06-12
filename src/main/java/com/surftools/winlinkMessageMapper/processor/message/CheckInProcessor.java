@@ -39,9 +39,6 @@ import com.surftools.winlinkMessageMapper.dto.message.CheckOutMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
-import com.surftools.winlinkMessageMapper.grade.GradeResult;
-import com.surftools.winlinkMessageMapper.grade.IGrader;
-import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
 
 public class CheckInProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CheckInProcessor.class);
@@ -58,28 +55,8 @@ public class CheckInProcessor extends AbstractBaseProcessor {
 
   private final MessageType messageType;
 
-  private IGrader grader = null;
-
-  public CheckInProcessor(boolean isCheckIn, String gradeKey) {
+  public CheckInProcessor(boolean isCheckIn) {
     messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
-
-    if (gradeKey != null) {
-      // TODO contains versus startWith
-      if (gradeKey.startsWith(messageType.toString() + ":" + "mc")) {
-        MultipleChoiceGrader mcGrader = new MultipleChoiceGrader(messageType);
-        mcGrader.parse(gradeKey);
-        mcGrader.setDoDequote(true);
-        mcGrader.setDoStopChars(false);
-        mcGrader.setDoToUpper(true);
-        mcGrader.setDoTrim(true);
-        grader = mcGrader;
-      }
-    }
-  }
-
-  public CheckInProcessor(boolean isCheckIn, IGrader grader) {
-    messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
-    this.grader = grader;
   }
 
   @Override
@@ -126,47 +103,15 @@ public class CheckInProcessor extends AbstractBaseProcessor {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
       }
 
-      if (grader != null) {
-        grade(m);
-      }
-
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
 
-  private void grade(CheckInMessage m) {
-
-    GradeResult result = null;
-    switch (grader.getGraderType()) {
-    case MULTI_LINE_STRING:
-      result = grader.grade(m.comments);
-      break;
-    case MULTIPLE_MESSAGES:
-      break;
-    case SINGLE_LINE_STRING:
-      result = grader.grade(getFirstLineOf(m.comments));
-      break;
-    case WHOLE_MESSAGE:
-      result = grader.grade(m);
-      break;
-    }
-
-    if (result != null) {
-      m.setIsGraded(true);
-      m.setGrade(result.grade());
-      m.setExplanation(result.explanation());
-    }
-  }
-
   @Override
   public String getPostProcessReport(List<ExportedMessage> messages) {
-    if (grader != null) {
-      return grader.getPostProcessReport(messages);
-    } else {
-      return "";
-    }
+    return "";
   }
 
 }

@@ -35,8 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-
 public abstract class DefaultGrader implements IGrader {
 
   private final String gradeKey;
@@ -63,19 +61,18 @@ public abstract class DefaultGrader implements IGrader {
   }
 
   @Override
-  public String getPostProcessReport(List<ExportedMessage> messages) {
+  public String getPostProcessReport(List<GradableMessage> messages) {
     return "";
   }
 
-  public static String defaultPostProcessReport(List<ExportedMessage> messages) {
+  public static String defaultPostProcessReport(List<GradableMessage> messages) {
     if (messages == null) {
       return "";
     }
 
     Map<String, Integer> gradeCountMap = new HashMap<>();
     int totalGraded = 0;
-    for (ExportedMessage message : messages) {
-      GradableMessage m = (GradableMessage) message;
+    for (var m : messages) {
       if (m.isGraded()) {
         String grade = m.getGrade();
         int count = gradeCountMap.getOrDefault(grade, Integer.valueOf(0));

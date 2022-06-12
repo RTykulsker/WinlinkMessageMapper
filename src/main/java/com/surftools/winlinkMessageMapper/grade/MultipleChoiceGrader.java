@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 public class MultipleChoiceGrader implements IGrader {
@@ -164,7 +163,7 @@ public class MultipleChoiceGrader implements IGrader {
   }
 
   @Override
-  public String getPostProcessReport(List<ExportedMessage> messages) {
+  public String getPostProcessReport(List<GradableMessage> messages) {
     return DefaultGrader.defaultPostProcessReport(messages);
   }
 

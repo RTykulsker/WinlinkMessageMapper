@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
@@ -213,6 +212,11 @@ public class ETO_2022_05_14 implements IGrader {
     if (automaticFail) {
       grade = "Automatic Fail";
     }
+
+    gm.setIsGraded(true);
+    gm.setGrade(grade);
+    gm.setExplanation(explanation);
+
     return new GradeResult(grade, explanation);
   }
 
@@ -227,7 +231,7 @@ public class ETO_2022_05_14 implements IGrader {
   }
 
   @Override
-  public String getPostProcessReport(List<ExportedMessage> messages) {
+  public String getPostProcessReport(List<GradableMessage> messages) {
     return DefaultGrader.defaultPostProcessReport(messages);
   }
 

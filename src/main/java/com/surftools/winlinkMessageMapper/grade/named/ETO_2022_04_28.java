@@ -30,7 +30,6 @@ package com.surftools.winlinkMessageMapper.grade.named;
 import java.util.List;
 
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
@@ -62,6 +61,10 @@ public class ETO_2022_04_28 implements IGrader {
       grade = "Not graded";
     }
 
+    gm.setIsGraded(true);
+    gm.setGrade(grade);
+    gm.setExplanation(explanation);
+
     return new GradeResult(grade, explanation);
   }
 
@@ -76,7 +79,7 @@ public class ETO_2022_04_28 implements IGrader {
   }
 
   @Override
-  public String getPostProcessReport(List<ExportedMessage> messages) {
+  public String getPostProcessReport(List<GradableMessage> messages) {
     return DefaultGrader.defaultPostProcessReport(messages);
   }
 

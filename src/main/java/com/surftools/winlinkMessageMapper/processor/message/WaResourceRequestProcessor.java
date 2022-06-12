@@ -36,15 +36,11 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.WaResourceRequestMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
-import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class WaResourceRequestProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(WaResourceRequestProcessor.class);
 
-  private final IGrader grader;
-
-  public WaResourceRequestProcessor(IGrader grader) {
-    this.grader = grader;
+  public WaResourceRequestProcessor() {
   }
 
   @Override
@@ -71,16 +67,6 @@ public class WaResourceRequestProcessor extends AbstractBaseProcessor {
       }
 
       var m = new WaResourceRequestMessage(message, map);
-
-      if (grader != null) {
-        var result = grader.grade(m);
-        if (result != null) {
-          m.setIsGraded(true);
-          m.setGrade(result.grade());
-          m.setExplanation(result.explanation());
-        }
-      }
-
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());

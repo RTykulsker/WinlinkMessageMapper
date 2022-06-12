@@ -51,6 +51,7 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GraderStrategy;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
@@ -163,6 +164,9 @@ public class WinlinkMessageMapper {
         }
       }
 
+      // fail-fast if we can't make the graders
+      var graderMap = makeGraders(gradeKey);
+
       logger.info("WinlinkMessageMapper, starting with input path: " + path);
 
       if (requiredMessageTypeString != null) {
@@ -184,6 +188,9 @@ public class WinlinkMessageMapper {
       var deduplicator = new Deduplicator(deduplicationThresholdMeters);
       deduplicator.deduplicate(messageMap);
 
+      // grade individual messages after deduplication, grade summary and processor summary
+      gradeAndPostProcesss(messageMap, graderMap);
+
       // output
       var writer = new ExportedMessageWriter(pathName);
       writer.writeAll(messageMap);
@@ -194,8 +201,6 @@ public class WinlinkMessageMapper {
         summarizer.setDumpIds(dumpIdsSet);
         summarizer.summarize(messageMap);
       }
-
-      writePostProcessorMessages(messageMap);
 
       if (aggregatorName != null) {
         var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
@@ -209,27 +214,51 @@ public class WinlinkMessageMapper {
     }
   }
 
-  private void writePostProcessorMessages(Map<MessageType, List<ExportedMessage>> messageMap) {
-    StringBuilder sb = new StringBuilder();
+  /**
+   * grade individual messages after deduplication, because grade lost in the de-dupe process
+   *
+   * both grader and processor have summaries;
+   *
+   * grader summary can be exercise-specific,
+   *
+   * processor summary is more general
+   *
+   * @param messageMap
+   * @param graderMap
+   */
+  private void gradeAndPostProcesss(Map<MessageType, List<ExportedMessage>> messageMap,
+      Map<MessageType, IGrader> graderMap) {
+
     for (MessageType messageType : processorMap.keySet()) {
-      var messages = messageMap.get(messageType);
+      StringBuilder sb = new StringBuilder();
+      var exportedMessages = messageMap.get(messageType);
+      IGrader grader = graderMap.get(messageType);
+      if (grader != null) {
+        var gradedMessages = new ArrayList<GradableMessage>(exportedMessages.size());
+        for (var m : exportedMessages) {
+          var message = (GradableMessage) m;
+          grader.grade(message);
+          gradedMessages.add(message);
+        }
+        sb.append(grader.getPostProcessReport(gradedMessages));
+
+        exportedMessages.clear();
+        for (var message : gradedMessages) {
+          var m = (ExportedMessage) message;
+          exportedMessages.add(m);
+        }
+        messageMap.put(messageType, exportedMessages);
+      } // endif grader not null
 
       IProcessor processor = processorMap.get(messageType);
-      if (processor == null) {
-        continue;
+      if (processor != null) {
+        sb.append(processor.getPostProcessReport(exportedMessages));
       }
 
-      var report = processor.getPostProcessReport(messages);
-      if (report == null) {
-        continue;
+      if (sb.length() > 0) {
+        logger.info("Post Processing Report for MessageType: " + messageType.toString() + ":\n" + sb.toString());
       }
-
-      sb.append(report);
-    }
-    var totalReport = sb.toString();
-
-    logger.info("Post Processing Report:\n" + totalReport);
-
+    } // end message type
   }
 
   /**
@@ -327,11 +356,10 @@ public class WinlinkMessageMapper {
    * @return
    */
   private Map<MessageType, IProcessor> makeProcessorMap() {
-    var graderMap = makeGraders(gradeKey);
     var processorMap = new HashMap<MessageType, IProcessor>();
 
-    processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true, graderMap.get(MessageType.CHECK_IN)));
-    processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false, graderMap.get(MessageType.CHECK_OUT)));
+    processorMap.put(MessageType.CHECK_IN, new CheckInProcessor(true));
+    processorMap.put(MessageType.CHECK_OUT, new CheckInProcessor(false));
     processorMap.put(MessageType.SPOTREP, new SpotRepProcessor());
     processorMap.put(MessageType.DYFI, new DyfiProcessor());
 
@@ -346,11 +374,9 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.GIS_ICS_213, new Ics213Processor(MessageType.GIS_ICS_213));
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
 
-    processorMap
-        .put(MessageType.FIELD_SITUATION_REPORT,
-            new FieldSituationProcessor(graderMap.get(MessageType.FIELD_SITUATION_REPORT)));
-    processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor(graderMap.get(MessageType.WA_RR)));
-    processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor(graderMap.get(MessageType.WA_RR)));
+    processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
+    processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor());
+    processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor());
 
     processorMap.put(MessageType.ACK, new AckProcessor());
     processorMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyProcessor());
@@ -430,6 +456,11 @@ public class WinlinkMessageMapper {
             } catch (Exception e) {
               ;// explanations.add("could not find grader class for name: " + className);
             }
+          } // end loop over prefixes
+          if (grader == null) {
+            explanations.add("could not find grader class for name: " + fields[1]);
+          } else {
+            graderMap.put(messageType, grader);
           }
           break;
 

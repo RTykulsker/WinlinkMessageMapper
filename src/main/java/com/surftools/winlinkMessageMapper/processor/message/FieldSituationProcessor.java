@@ -38,8 +38,6 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
-import com.surftools.winlinkMessageMapper.grade.GradeResult;
-import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class FieldSituationProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(FieldSituationProcessor.class);
@@ -54,10 +52,7 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
   }
 
-  private IGrader grader = null;
-
-  public FieldSituationProcessor(IGrader grader) {
-    this.grader = grader;
+  public FieldSituationProcessor() {
   }
 
   @Override
@@ -123,23 +118,9 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
           noaaStatus, noaaComments, additionalComments, poc, formVersion);
 
-      if (grader != null) {
-        grade(m);
-      }
-
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
-    }
-  }
-
-  private void grade(FieldSituationMessage m) {
-    GradeResult result = grader.grade(m);
-
-    if (result != null) {
-      m.setIsGraded(true);
-      m.setGrade(result.grade());
-      m.setExplanation(result.explanation());
     }
   }
 
@@ -158,10 +139,6 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
 
   @Override
   public String getPostProcessReport(List<ExportedMessage> messages) {
-    if (grader != null) {
-      return grader.getPostProcessReport(messages);
-    } else {
-      return "";
-    }
+    return "";
   }
 }

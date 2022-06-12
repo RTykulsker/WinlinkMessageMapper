@@ -34,7 +34,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
@@ -112,7 +111,7 @@ public class ExpectGrader implements IGrader {
   }
 
   @Override
-  public String getPostProcessReport(List<ExportedMessage> messages) {
+  public String getPostProcessReport(List<GradableMessage> messages) {
     // TODO Auto-generated method stub
     return null;
   }

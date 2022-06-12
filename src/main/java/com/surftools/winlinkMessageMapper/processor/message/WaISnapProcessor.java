@@ -36,15 +36,11 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.WaISnapMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
-import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 public class WaISnapProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(WaISnapProcessor.class);
 
-  private final IGrader grader;
-
-  public WaISnapProcessor(IGrader grader) {
-    this.grader = grader;
+  public WaISnapProcessor() {
   }
 
   @Override
@@ -66,16 +62,6 @@ public class WaISnapProcessor extends AbstractBaseProcessor {
       }
 
       var m = new WaISnapMessage(message, map);
-
-      if (grader != null) {
-        var result = grader.grade(m);
-        if (result != null) {
-          m.setIsGraded(true);
-          m.setGrade(result.grade());
-          m.setExplanation(result.explanation());
-        }
-      }
-
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
