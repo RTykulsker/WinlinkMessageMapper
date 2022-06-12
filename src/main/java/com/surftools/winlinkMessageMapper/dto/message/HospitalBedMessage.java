@@ -28,10 +28,11 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 
 // see https://protect-public.hhs.gov/pages/hospital-utilization for real-world data
 
-public class HospitalBedMessage extends GisMessage {
+public class HospitalBedMessage extends GisMessage implements GradableMessage {
 
   public final String facility;
 
@@ -67,6 +68,10 @@ public class HospitalBedMessage extends GisMessage {
 
   public final String totalBedCount;
   public final String additionalComments;
+
+  private boolean isGraded;
+  private String grade;
+  private String explanation;
 
   private static boolean includeAllFields = false;
 
@@ -125,55 +130,135 @@ public class HospitalBedMessage extends GisMessage {
   @Override
   public String[] getHeaders() {
     if (includeAllFields) {
-      return new String[] { //
-          "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-          "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
-          "EmergencyBedCount", "EmergencyBedNotes", //
-          "PediatricsBedCount", "PediatricsBedNotes", //
-          "MedicalBedCount", "MedicalBedNotes", //
-          "PsychiatryBedCount", "PsychiatryBedNotes", //
-          "BurnBedCount", "BurnBedNotes", //
-          "CriticalBedCount", "CriticalBedNotes", //
-          "Other1Name", "Other1BedCount", "Other1BedNotes", //
-          "Other2Name", "Other2BedCount", "Other2BedNotes", //
-          "TotalBedCount", "AdditionalComments"//
-      };
+      if (isGraded) {
+        return new String[] { //
+            "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+            "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
+            "EmergencyBedCount", "EmergencyBedNotes", //
+            "PediatricsBedCount", "PediatricsBedNotes", //
+            "MedicalBedCount", "MedicalBedNotes", //
+            "PsychiatryBedCount", "PsychiatryBedNotes", //
+            "BurnBedCount", "BurnBedNotes", //
+            "CriticalBedCount", "CriticalBedNotes", //
+            "Other1Name", "Other1BedCount", "Other1BedNotes", //
+            "Other2Name", "Other2BedCount", "Other2BedNotes", //
+            "TotalBedCount", "AdditionalComments", "Grade", "Explanation"//
+        };
+      } else {
+        return new String[] { //
+            "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+            "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
+            "EmergencyBedCount", "EmergencyBedNotes", //
+            "PediatricsBedCount", "PediatricsBedNotes", //
+            "MedicalBedCount", "MedicalBedNotes", //
+            "PsychiatryBedCount", "PsychiatryBedNotes", //
+            "BurnBedCount", "BurnBedNotes", //
+            "CriticalBedCount", "CriticalBedNotes", //
+            "Other1Name", "Other1BedCount", "Other1BedNotes", //
+            "Other2Name", "Other2BedCount", "Other2BedNotes", //
+            "TotalBedCount", "AdditionalComments"//
+        };
+      }
     } else {
-      return new String[] { //
-          "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-          "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
-          "MedicalBedCount", "MedicalBedNotes", //
-          "CriticalBedCount", "CriticalBedNotes", //
-          "TotalBedCount", "AdditionalComments"//
-      };
+      if (isGraded) {
+        return new String[] { //
+            "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+            "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
+            "MedicalBedCount", "MedicalBedNotes", //
+            "CriticalBedCount", "CriticalBedNotes", //
+            "TotalBedCount", "AdditionalComments", "Grade", "Explanation"//
+        };
+      } else {
+        return new String[] { //
+            "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+            "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
+            "MedicalBedCount", "MedicalBedNotes", //
+            "CriticalBedCount", "CriticalBedNotes", //
+            "TotalBedCount", "AdditionalComments"//
+        };
+      }
     }
   }
 
   @Override
   public String[] getValues() {
     if (includeAllFields) {
-      return new String[] { //
-          messageId, from, to, subject, date, time, latitude, longitude, //
-          organization, facility, contactPerson, contactPhone, contactEmail, //
-          emergencyBedCount, emergencyBedNotes, //
-          pediatricsBedCount, pediatricsBedNotes, //
-          medicalBedCount, medicalBedNotes, //
-          psychiatryBedCount, psychiatryBedNotes, //
-          burnBedCount, burnBedNotes, //
-          criticalBedCount, criticalBedNotes, //
-          other1Name, other1BedCount, other1BedNotes, //
-          other2Name, other2BedCount, other2BedNotes, //
-          totalBedCount, additionalComments//
-      };
-    } else {
-      return new String[] { //
-          messageId, from, to, subject, date, time, latitude, longitude, //
-          organization, facility, contactPerson, contactPhone, contactEmail, //
-          medicalBedCount, medicalBedNotes, //
-          criticalBedCount, criticalBedNotes, //
-          totalBedCount, additionalComments//
-      };
-    }
+      if (isGraded) {
+        return new String[] { //
+            messageId, from, to, subject, date, time, latitude, longitude, //
+            organization, facility, contactPerson, contactPhone, contactEmail, //
+            emergencyBedCount, emergencyBedNotes, //
+            pediatricsBedCount, pediatricsBedNotes, //
+            medicalBedCount, medicalBedNotes, //
+            psychiatryBedCount, psychiatryBedNotes, //
+            burnBedCount, burnBedNotes, //
+            criticalBedCount, criticalBedNotes, //
+            other1Name, other1BedCount, other1BedNotes, //
+            other2Name, other2BedCount, other2BedNotes, //
+            totalBedCount, additionalComments, grade, explanation//
+        };
+      } else {
+        return new String[] { //
+            messageId, from, to, subject, date, time, latitude, longitude, //
+            organization, facility, contactPerson, contactPhone, contactEmail, //
+            emergencyBedCount, emergencyBedNotes, //
+            pediatricsBedCount, pediatricsBedNotes, //
+            medicalBedCount, medicalBedNotes, //
+            psychiatryBedCount, psychiatryBedNotes, //
+            burnBedCount, burnBedNotes, //
+            criticalBedCount, criticalBedNotes, //
+            other1Name, other1BedCount, other1BedNotes, //
+            other2Name, other2BedCount, other2BedNotes, //
+            totalBedCount, additionalComments//
+        };
+      }
+    } else { // all fields
+      if (isGraded) {
+        return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+            organization, facility, contactPerson, contactPhone, contactEmail, //
+            medicalBedCount, medicalBedNotes, //
+            criticalBedCount, criticalBedNotes, //
+            totalBedCount, additionalComments//
+        };
+      } else {
+        return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+            organization, facility, contactPerson, contactPhone, contactEmail, //
+            medicalBedCount, medicalBedNotes, //
+            criticalBedCount, criticalBedNotes, //
+            totalBedCount, additionalComments, grade, explanation//
+        };
+      } // not graded
+    } // not all fields
+  } // get values
+
+  @Override
+  public boolean isGraded() {
+    return isGraded;
+  }
+
+  @Override
+  public void setIsGraded(boolean isGraded) {
+    this.isGraded = isGraded;
+  }
+
+  @Override
+  public String getGrade() {
+    return grade;
+  }
+
+  @Override
+  public void setGrade(String grade) {
+    this.grade = grade;
+  }
+
+  @Override
+  public String getExplanation() {
+    return explanation;
+  }
+
+  @Override
+  public void setExplanation(String explanation) {
+    this.explanation = explanation;
   }
 
   @Override
