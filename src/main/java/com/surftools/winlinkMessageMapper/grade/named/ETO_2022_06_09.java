@@ -339,6 +339,13 @@ public class ETO_2022_06_09 implements IGrader {
       return null;
     }
 
+    // TODO compile statistics here
+    for (var ex : messages) {
+      var m = (CheckInMessage) ex;
+      // makes sense to grade here, and not from CheckInProcessor
+      // but need to move post processing before writing in WinlinkMessageMapper
+    }
+
     var defaultReport = DefaultGrader.defaultPostProcessReport(messages);
     var sb = new StringBuilder(defaultReport);
     sb.append("\nETO-2022-06-09 Grading Report: graded " + ppCount + " Winlink Check In messages\n");
