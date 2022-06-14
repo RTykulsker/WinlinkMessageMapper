@@ -60,6 +60,8 @@ public class MultipleChoiceGrader implements IGrader {
   private String correctResponseString;
   private Set<String> incorrectResponseSet;
 
+  private Set<String> dumpIds;
+
   public MultipleChoiceGrader(MessageType messageType) {
     correctResponseSet = new HashSet<>();
     incorrectResponseSet = new HashSet<>();
@@ -67,6 +69,7 @@ public class MultipleChoiceGrader implements IGrader {
 
   @Override
   public GradeResult grade(String response) {
+
     var grade = "";
     var explanation = "";
 
@@ -212,6 +215,11 @@ public class MultipleChoiceGrader implements IGrader {
   @Override
   public GraderType getGraderType() {
     return GraderType.SINGLE_LINE_STRING;
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    this.dumpIds = dumpIds;
   }
 
 }

@@ -460,18 +460,21 @@ public class WinlinkMessageMapper {
           if (grader == null) {
             explanations.add("could not find grader class for name: " + fields[1]);
           } else {
+            grader.setDumpIds(dumpIdsSet);
             graderMap.put(messageType, grader);
           }
           break;
 
         case EXPECT:
           var expectGrader = new ExpectGrader(messageType, fields[1]);
+          expectGrader.setDumpIds(dumpIdsSet);
           graderMap.put(messageType, expectGrader);
           break;
 
         case MULTIPLE_CHOICE:
           var mcGrader = new MultipleChoiceGrader(messageType);
           mcGrader.parse(messageTypeName + ":" + value);
+          mcGrader.setDumpIds(dumpIdsSet);
           graderMap.put(messageType, mcGrader);
           break;
         }

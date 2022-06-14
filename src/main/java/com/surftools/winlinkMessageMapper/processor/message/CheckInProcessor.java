@@ -62,16 +62,16 @@ public class CheckInProcessor extends AbstractBaseProcessor {
   @Override
   public ExportedMessage process(ExportedMessage message) {
 
+    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
+      // logger.info("exportedMessage: " + message);
+    }
+
     try {
       if (saveAttachments) {
         saveAttachments(message);
       }
 
       String xmlString = new String(message.attachments.get(messageType.attachmentName()));
-
-      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-        logger.info("exportedMessage: " + message);
-      }
 
       makeDocument(message.messageId, xmlString);
 

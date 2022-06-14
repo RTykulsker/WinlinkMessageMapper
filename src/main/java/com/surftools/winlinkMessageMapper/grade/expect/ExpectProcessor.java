@@ -426,4 +426,10 @@ public class ExpectProcessor implements IGrader {
     return null;
   }
 
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    // TODO Auto-generated method stub
+
+  }
+
 }

@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.grade;
 
 import java.util.List;
+import java.util.Set;
 
 public interface IGrader {
 
@@ -38,4 +39,6 @@ public interface IGrader {
   public String getPostProcessReport(List<GradableMessage> messages);
 
   public GraderType getGraderType();
+
+  public void setDumpIds(Set<String> dumpIds);
 }

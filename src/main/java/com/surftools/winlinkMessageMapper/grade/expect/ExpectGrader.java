@@ -30,6 +30,7 @@ package com.surftools.winlinkMessageMapper.grade.expect;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,12 @@ public class ExpectGrader implements IGrader {
   public GraderType getGraderType() {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    // TODO Auto-generated method stub
+
   }
 
 }

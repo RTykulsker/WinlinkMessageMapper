@@ -29,6 +29,7 @@ package com.surftools.winlinkMessageMapper.grade.named;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.HospitalBedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -255,6 +256,12 @@ public class ETO_2022_06_16 implements IGrader {
         + okCount + "(" + formatPercent(okPercent) + ") ok, " //
         + notOkCount + "(" + formatPercent(notOkPercent) + ") not ok" //
         + "\n";
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    // TODO Auto-generated method stub
+
   }
 
 }

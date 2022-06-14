@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.grade.named;
 
 import java.util.List;
+import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
@@ -81,6 +82,12 @@ public class ETO_2022_04_28 implements IGrader {
   @Override
   public String getPostProcessReport(List<GradableMessage> messages) {
     return DefaultGrader.defaultPostProcessReport(messages);
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    // TODO Auto-generated method stub
+
   }
 
 }

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
@@ -162,5 +163,11 @@ public class ETO_2022_04_14 implements IGrader {
   @Override
   public GraderType getGraderType() {
     return GraderType.WHOLE_MESSAGE;
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    // TODO Auto-generated method stub
+
   }
 }

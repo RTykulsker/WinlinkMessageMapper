@@ -102,7 +102,10 @@ public class ETO_2022_06_09 implements IGrader {
   private int ppImgSimOverrideToPassCount;
   private int ppImgSimOverrideToFailCount;
 
+  private Set<String> dumpIds;
+
   public ETO_2022_06_09() throws Exception {
+
     histogrammer = new ImageHistogram();
 
     var refFile = new File(REFERENCE_IMAGE_FILENAME);
@@ -190,6 +193,10 @@ public class ETO_2022_06_09 implements IGrader {
     }
 
     CheckInMessage m = (CheckInMessage) gm;
+
+    if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
+      // logger.info("ETO_2022_06_09 grader: " + m);
+    }
 
     ++ppCount;
     var points = 0;
@@ -514,6 +521,11 @@ public class ETO_2022_06_09 implements IGrader {
     } catch (Exception e) {
       throw new RuntimeException("exception creating directory: " + path.toString() + ", " + e.getLocalizedMessage());
     }
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    this.dumpIds = dumpIds;
   }
 
 }
