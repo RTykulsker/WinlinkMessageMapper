@@ -33,8 +33,9 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 public class CheckOutMessage extends CheckInMessage {
 
   public CheckOutMessage(ExportedMessage xmlMessage, LatLongPair latLong, String organization, String comments,
-      String status, String band, String mode, String version, MessageType messageType) {
-    super(xmlMessage, latLong, organization, comments, status, band, mode, version, messageType);
+      String status, String band, String mode, String version, String formDate, String formTime,
+      MessageType messageType) {
+    super(xmlMessage, latLong, organization, comments, status, band, mode, version, formDate, formTime, messageType);
   }
 
   @Override

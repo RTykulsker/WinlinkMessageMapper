@@ -38,39 +38,47 @@ public class CheckInMessage extends GisMessage implements GradableMessage {
   public final String mode;
   public final String version;
 
+  public final String formDate;
+  public final String formTime;
+
   private boolean isGraded;
   private String grade;
   private String explanation;
 
   public CheckInMessage(ExportedMessage xmlMessage, LatLongPair latlong, String organization, //
-      String comments, String status, String band, String mode, String version, MessageType messageType) {
+      String comments, String status, String band, String mode, String version, //
+      String formDate, String formTime, MessageType messageType) {
     super(xmlMessage, latlong, organization);
     this.comments = comments;
     this.status = status;
     this.band = band;
     this.mode = mode;
     this.version = version;
+
+    this.formDate = formDate;
+    this.formTime = formTime;
   }
 
   @Override
   public String[] getHeaders() {
     if (isGraded) {
-      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude",
-          "Organization", "Comments", "Status", "Band", "Mode", "Grade", "Explanation", "Version" };
+      return new String[] { "MessageId", "From", "To", "ToList", "CcList", "Subject", "Date", "Time", "Latitude",
+          "Longitude", "Organization", "Comments", "Status", "Band", "Mode", "Grade", "Explanation", "Version",
+          "FormDate", "FormTime" };
     } else {
-      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude",
-          "Organization", "Comments", "Status", "Band", "Mode", "Version" };
+      return new String[] { "MessageId", "From", "To", "ToList", "CcList", "Subject", "Date", "Time", "Latitude",
+          "Longitude", "Organization", "Comments", "Status", "Band", "Mode", "Version", "FormDate", "FormTime" };
     }
   }
 
   @Override
   public String[] getValues() {
     if (isGraded) {
-      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, comments,
-          status, band, mode, grade, explanation, version };
+      return new String[] { messageId, from, to, toList, ccList, subject, date, time, latitude, longitude, organization,
+          comments, status, band, mode, grade, explanation, version, formDate, formTime };
     } else {
-      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, comments,
-          status, band, mode, version };
+      return new String[] { messageId, from, to, toList, ccList, subject, date, time, latitude, longitude, organization,
+          comments, status, band, mode, version, formDate, formTime };
     }
   }
 

@@ -411,6 +411,10 @@ public class WinlinkMessageMapper {
     var graderMap = new HashMap<MessageType, IGrader>();
     var explanations = new ArrayList<String>();
 
+    if (gradeKey == null) {
+      return graderMap;
+    }
+
     try {
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);

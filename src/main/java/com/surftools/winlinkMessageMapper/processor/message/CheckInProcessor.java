@@ -63,7 +63,7 @@ public class CheckInProcessor extends AbstractBaseProcessor {
   public ExportedMessage process(ExportedMessage message) {
 
     if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      // logger.info("exportedMessage: " + message);
+      logger.info("exportedMessage: " + message);
     }
 
     try {
@@ -89,6 +89,19 @@ public class CheckInProcessor extends AbstractBaseProcessor {
       var version = "";
       var templateVersion = getStringFromXml("templateversion");
 
+      String formDate = null;
+      String formTime = null;
+      var datetime = getStringFromXml("datetime");
+      if (datetime != null) {
+        var fields = datetime.split(" ");
+        if (fields != null && fields.length >= 1) {
+          formDate = fields[0];
+        }
+        if (fields.length >= 2) {
+          formTime = fields[1];
+        }
+      }
+
       if (templateVersion != null) {
         var fields = templateVersion.split(" ");
         version = fields[fields.length - 1]; // last field
@@ -96,9 +109,11 @@ public class CheckInProcessor extends AbstractBaseProcessor {
 
       CheckInMessage m = null;
       if (messageType == MessageType.CHECK_IN) {
-        m = new CheckInMessage(message, latLong, organization, comments, status, band, mode, version, messageType);
+        m = new CheckInMessage(message, latLong, organization, comments, status, band, mode, version, formDate,
+            formTime, messageType);
       } else if (messageType == MessageType.CHECK_OUT) {
-        m = new CheckOutMessage(message, latLong, organization, comments, status, band, mode, version, messageType);
+        m = new CheckOutMessage(message, latLong, organization, comments, status, band, mode, version, formDate,
+            formTime, messageType);
       } else {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
       }

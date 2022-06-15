@@ -34,7 +34,7 @@ public class EtoCheckInMessage extends CheckInMessage {
 
   public EtoCheckInMessage(ExportedMessage xmlMessage, LatLongPair latLong, String organization, String comments,
       String status, String band, String mode, String version, MessageType messageType) {
-    super(xmlMessage, latLong, organization, comments, status, band, mode, version, messageType);
+    super(xmlMessage, latLong, organization, comments, status, band, mode, version, null, null, messageType);
   }
 
   @Override

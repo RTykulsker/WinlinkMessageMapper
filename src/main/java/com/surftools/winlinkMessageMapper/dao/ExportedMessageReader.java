@@ -131,7 +131,10 @@ public class ExportedMessageReader {
       logger.info("exportedMessage: " + "{messageId: " + messageId + ", sender: " + sender + "}");
     }
 
-    String recipient = getRecipient(mimeLines);
+    var recipients = getRecipients(mimeLines);
+    String recipient = recipients[0];
+    String toList = recipients[1];
+    String ccList = recipients[2];
 
     ExportedMessage message = null;
     String plainContent = null;
@@ -139,16 +142,16 @@ public class ExportedMessageReader {
 
     var parser = AbstractBaseProcessor.makeMimeMessageParser(mime);
     if (parser == null) {
-      message = new ExportedMessage(messageId, sender, recipient, subject, dateString, timeString, mime, plainContent,
-          attachments);
+      message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, dateString, timeString, mime,
+          plainContent, attachments);
       return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
     }
 
     plainContent = parser.getPlainContent();
     attachments = AbstractBaseProcessor.getAttachments(parser);
 
-    message = new ExportedMessage(messageId, sender, recipient, subject, dateString, timeString, mime, plainContent,
-        attachments);
+    message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, dateString, timeString, mime,
+        plainContent, attachments);
     return message;
   }
 
@@ -161,29 +164,50 @@ public class ExportedMessageReader {
   // SMTP:w3ihp@jmbventures.com
   // Message-ID: Z4VVKSSM1GII
 
-  public String getRecipient(String[] mimeLines) {
+  /**
+   *
+   * @param mimeLines
+   * @return array of Strings
+   *
+   *         0 -- the "recipient"
+   *
+   *         1 -- the toList
+   *
+   *         2 -- the ccList
+   */
+  public String[] getRecipients(String[] mimeLines) {
+    List<String> toList = new ArrayList<String>();
+    List<String> ccList = new ArrayList<String>();
+    List<String> theList = null;
+
+    boolean isFound = false;
+    for (String line : mimeLines) {
+      if (line.startsWith("Message-ID: ")) {
+        break;
+      }
+
+      if (line.startsWith("To: ")) {
+        isFound = true;
+        theList = toList;
+      }
+
+      if (line.startsWith("Cc: ")) {
+        theList = ccList;
+      }
+
+      if (isFound) {
+        line = pre_fixAddress(line);
+        if (line != null) {
+          theList.add(pre_fixAddress(line));
+        }
+      } else {
+        continue;
+      }
+    } // end for over lines
 
     List<String> addresses = new ArrayList<>();
-
-    for (String keyWord : new String[] { "To: ", "Cc: " }) {
-      boolean isFound = false;
-      for (String line : mimeLines) {
-        if (line.startsWith("Message-ID: ")) {
-          break;
-        }
-        if (line.startsWith(keyWord)) {
-          isFound = true;
-        }
-        if (isFound) {
-          line = pre_fixAddress(line);
-          if (line != null) {
-            addresses.add(pre_fixAddress(line));
-          }
-        } else {
-          continue;
-        }
-      } // end for over lines
-    } // end for over keyWords
+    addresses.addAll(toList);
+    addresses.addAll(ccList);
 
     if (addresses.size() == 0) {
       return null;
@@ -193,8 +217,10 @@ public class ExportedMessageReader {
 
     String address = chooseBestAddress(addresses);
     address = post_fix(address);
-    return address;
-  } // end getRecipient
+
+    var strings = new String[] { address, String.join(",", toList), String.join(",", ccList) };
+    return strings;
+  } // end getRecipients
 
   /**
    * clean up line, strip leading To: Cc: and space, strip trailing ,

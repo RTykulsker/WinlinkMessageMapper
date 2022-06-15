@@ -39,6 +39,8 @@ public class ExportedMessage implements IMessage {
   public final String messageId;
   public final String from;
   public final String to;
+  public final String toList;
+  public final String ccList;
   public final String subject;
   public final String date;
   public final String time;
@@ -49,11 +51,13 @@ public class ExportedMessage implements IMessage {
 
   public final LocalDateTime dateTime;
 
-  public ExportedMessage(String messageId, String from, String to, String subject, String date, String time,
-      String mime, String plainContent, Map<String, byte[]> attachments) {
+  public ExportedMessage(String messageId, String from, String to, String toList, String ccList, //
+      String subject, String date, String time, String mime, String plainContent, Map<String, byte[]> attachments) {
     this.messageId = messageId;
     this.from = from;
     this.to = to;
+    this.toList = toList;
+    this.ccList = ccList;
     this.subject = subject;
     this.date = date;
     this.time = time;
@@ -77,6 +81,8 @@ public class ExportedMessage implements IMessage {
     this.messageId = exportedMessage.messageId;
     this.from = exportedMessage.from;
     this.to = exportedMessage.to;
+    this.toList = exportedMessage.toList;
+    this.ccList = exportedMessage.ccList;
     this.subject = exportedMessage.subject;
     this.date = exportedMessage.date;
     this.time = exportedMessage.time;
