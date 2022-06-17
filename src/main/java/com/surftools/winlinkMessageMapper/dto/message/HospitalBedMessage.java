@@ -73,7 +73,7 @@ public class HospitalBedMessage extends GisMessage implements GradableMessage {
   private String grade;
   private String explanation;
 
-  private static boolean includeAllFields = false;
+  private static boolean includeAllFields = true;
 
   public HospitalBedMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
       String organization, String facility, String contactPerson, String contactPhone, String contactEmail, //
@@ -218,14 +218,14 @@ public class HospitalBedMessage extends GisMessage implements GradableMessage {
             organization, facility, contactPerson, contactPhone, contactEmail, //
             medicalBedCount, medicalBedNotes, //
             criticalBedCount, criticalBedNotes, //
-            totalBedCount, additionalComments//
+            totalBedCount, additionalComments, grade, explanation//
         };
       } else {
         return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
             organization, facility, contactPerson, contactPhone, contactEmail, //
             medicalBedCount, medicalBedNotes, //
             criticalBedCount, criticalBedNotes, //
-            totalBedCount, additionalComments, grade, explanation//
+            totalBedCount, additionalComments//
         };
       } // not graded
     } // not all fields

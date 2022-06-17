@@ -150,7 +150,7 @@ public class SummaryDao {
       Reader reader = new FileReader(inputPath.toString());
       CSVParser parser = new CSVParserBuilder() //
           .withSeparator(',') //
-            .withIgnoreQuotations(true) //
+            .withIgnoreQuotations(false) //
             .build();
       CSVReader csvReader = new CSVReaderBuilder(reader) //
           .withSkipLines(1)//

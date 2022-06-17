@@ -106,6 +106,10 @@ public class ETO_2022_06_16 implements IGrader {
     }
 
     var contactEmail = m.contactEmail;
+    var atIndex = contactEmail.indexOf("@");
+    if (atIndex >= 0) {
+      contactEmail = contactEmail.substring(0, atIndex);
+    }
     if (contactEmail != null && contactEmail.equalsIgnoreCase(m.from)) {
       ++ppCountEmailOk;
       points += 10;
@@ -113,66 +117,20 @@ public class ETO_2022_06_16 implements IGrader {
       explanations.add("email not set to your Winlink address");
     }
 
-    var medCount = m.medicalBedCount;
-    var medNotes = m.medicalBedNotes;
-    if (medCount != null) {
-      Integer count = null;
-      try {
-        count = Integer.parseInt(medCount);
-        if (count == 0) {
-          if (medNotes != null) {
-            ++ppCountMedicalBedOk;
-            points += 20;
-          } else {
-            explanations.add("medical bed count missing or zero without explanation");
-          }
-        }
-      } catch (Exception e) {
-        if (medNotes != null) {
-          ++ppCountMedicalBedOk;
-          points += 20;
-        } else {
-          explanations.add("medical bed count unreadable without explanation");
-        }
-      }
+    var explanation = checkBedCountsAndNotes(m.medicalBedCount, m.medicalBedNotes, "medical");
+    if (explanation != null) {
+      explanations.add(explanation);
     } else {
-      if (medNotes != null) {
-        ++ppCountMedicalBedOk;
-        points += 20;
-      } else {
-        explanations.add("medical bed count missing or zero without explanation");
-      }
+      points += 20;
+      ++ppCountMedicalBedOk;
     }
 
-    var critCount = m.criticalBedCount;
-    var critNotes = m.criticalBedNotes;
-    if (critCount != null) {
-      Integer count = null;
-      try {
-        count = Integer.parseInt(critCount);
-        if (count == 0) {
-          if (critNotes != null) {
-            ++ppCountCriticalBedOk;
-            points += 20;
-          } else {
-            explanations.add("critical bed count missing or zero without explanation");
-          }
-        }
-      } catch (Exception e) {
-        if (critNotes != null) {
-          ++ppCountCriticalBedOk;
-          points += 20;
-        } else {
-          explanations.add("critical bed count unreadable without explanation");
-        }
-      }
+    explanation = checkBedCountsAndNotes(m.criticalBedCount, m.criticalBedNotes, "critical");
+    if (explanation != null) {
+      explanations.add(explanation);
     } else {
-      if (critNotes != null) {
-        ++ppCountCriticalBedOk;
-        points += 20;
-      } else {
-        explanations.add("critical bed count missing or zero without explanation");
-      }
+      points += 20;
+      ++ppCountCriticalBedOk;
     }
 
     var areOtherCountPresent = false;
@@ -201,13 +159,23 @@ public class ETO_2022_06_16 implements IGrader {
 
     points = Math.min(100, points);
     var grade = String.valueOf(points);
-    var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
+    explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
 
     gm.setIsGraded(true);
     gm.setGrade(grade);
     gm.setExplanation(explanation);
 
     return new GradeResult(grade, explanation);
+  }
+
+  private String checkBedCountsAndNotes(String counts, String notes, String label) {
+    if (counts == null && notes == null) {
+      return label + " bed count missing or zero without explanation";
+    } else if (counts != null && notes != null) {
+      return label + " bed count has unneeded explanation";
+    } else {
+      return null;
+    }
   }
 
   private String formatPercent(Double d) {
@@ -230,7 +198,7 @@ public class ETO_2022_06_16 implements IGrader {
 
   @Override
   public String getPostProcessReport(List<GradableMessage> messages) {
-    if (messages == null || messages.size() == 0 || messages.get(0).getMessageType() != MessageType.CHECK_IN) {
+    if (messages == null || messages.size() == 0 || messages.get(0).getMessageType() != MessageType.HOSPITAL_BED) {
       return null;
     }
 
