@@ -291,6 +291,9 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       xmlString += ">";
     }
 
+    // [Fatal Error] :16:31: Character reference "&#21" is an invalid XML character.
+    xmlString = xmlString.replaceAll("&#21", "_");
+
     try {
       DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
       dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);

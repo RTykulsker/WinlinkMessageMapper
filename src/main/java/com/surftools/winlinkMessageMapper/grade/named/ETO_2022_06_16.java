@@ -106,15 +106,19 @@ public class ETO_2022_06_16 implements IGrader {
     }
 
     var contactEmail = m.contactEmail;
-    var atIndex = contactEmail.indexOf("@");
-    if (atIndex >= 0) {
-      contactEmail = contactEmail.substring(0, atIndex);
-    }
-    if (contactEmail != null && contactEmail.equalsIgnoreCase(m.from)) {
-      ++ppCountEmailOk;
-      points += 10;
+    if (contactEmail != null) {
+      var atIndex = contactEmail.indexOf("@");
+      if (atIndex >= 0) {
+        contactEmail = contactEmail.substring(0, atIndex);
+      }
+      if (contactEmail != null && contactEmail.equalsIgnoreCase(m.from)) {
+        ++ppCountEmailOk;
+        points += 10;
+      } else {
+        explanations.add("contactEmail not set to your Winlink address");
+      }
     } else {
-      explanations.add("email not set to your Winlink address");
+      explanations.add("contactEmail not provided");
     }
 
     var explanation = checkBedCountsAndNotes(m.medicalBedCount, m.medicalBedNotes, "medical");

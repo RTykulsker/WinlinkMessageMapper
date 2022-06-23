@@ -133,8 +133,14 @@ public abstract class AbstractBaseAggregator implements IAggregator {
       } // end loop over messages
       var avgLatitude = sumLatitude / gisCount;
       var avgLongitude = sumLongitude / gisCount;
-      map.put(KEY_AVERAGE_LATITUDE, String.format(String.format("%.5f", avgLatitude)));
-      map.put(KEY_AVERAGE_LONGITUDE, String.format("%.5f", avgLongitude));
+
+      if (gisCount == 0) {
+        map.put(KEY_AVERAGE_LATITUDE, "");
+        map.put(KEY_AVERAGE_LONGITUDE, "");
+      } else {
+        map.put(KEY_AVERAGE_LATITUDE, String.format(String.format("%.5f", avgLatitude)));
+        map.put(KEY_AVERAGE_LONGITUDE, String.format("%.5f", avgLongitude));
+      }
       map.put(KEY_GIS_COUNT, gisCount);
 
       var aggregateMessage = new AggregateMessage(from, map);

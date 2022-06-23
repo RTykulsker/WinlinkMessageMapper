@@ -62,6 +62,7 @@ import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor_23;
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
@@ -233,7 +234,7 @@ public class WinlinkMessageMapper {
       StringBuilder sb = new StringBuilder();
       var exportedMessages = messageMap.get(messageType);
       IGrader grader = graderMap.get(messageType);
-      if (grader != null) {
+      if (grader != null && exportedMessages != null) {
         var gradedMessages = new ArrayList<GradableMessage>(exportedMessages.size());
         for (var m : exportedMessages) {
           var message = (GradableMessage) m;
@@ -375,6 +376,8 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
 
     processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
+    processorMap.put(MessageType.FIELD_SITUATION_REPORT_23, new FieldSituationProcessor_23());
+
     processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor());
     processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor());
 
@@ -534,6 +537,8 @@ public class WinlinkMessageMapper {
       return MessageType.SPOTREP;
     } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
       return MessageType.FIELD_SITUATION_REPORT;
+    } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
+      return MessageType.FIELD_SITUATION_REPORT_23;
     } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
       return MessageType.WX_LOCAL;
     } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {

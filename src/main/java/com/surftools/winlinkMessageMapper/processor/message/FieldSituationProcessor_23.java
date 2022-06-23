@@ -36,12 +36,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
+import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage_23;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
-public class FieldSituationProcessor extends AbstractBaseProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(FieldSituationProcessor.class);
+public class FieldSituationProcessor_23 extends AbstractBaseProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(FieldSituationProcessor_23.class);
 
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
@@ -53,7 +53,7 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
   }
 
-  public FieldSituationProcessor() {
+  public FieldSituationProcessor_23() {
   }
 
   @Override
@@ -64,7 +64,7 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
         logger.info("exportedMessage: " + message);
       }
 
-      String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT_23.attachmentName()));
 
       makeDocument(message.messageId, xmlString);
 
@@ -112,7 +112,7 @@ public class FieldSituationProcessor extends AbstractBaseProcessor {
       String poc = getStringFromXml("poc");
       String formVersion = parseFormVersion(getStringFromXml("templateversion"));
 
-      FieldSituationMessage m = new FieldSituationMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
+      FieldSituationMessage_23 m = new FieldSituationMessage_23(message, latLong.getLatitude(), latLong.getLongitude(), //
           precedence, task, isHelpNeeded, neededHelp, //
           organization, city, county, state, territory, //
           landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,

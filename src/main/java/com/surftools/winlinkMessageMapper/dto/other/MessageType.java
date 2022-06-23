@@ -56,7 +56,10 @@ public enum MessageType {
   WA_ISNAP(16, "wa_isnap", false, "RMS_Express_Form_ISNAP_WA_Viewer.xml"), //
 
   ACK(17, "ack", false, null), //
-  ICS_213_REPLY(18, "ics_213_reply", false, "RMS_Express_Form_ICS213_SendReply_Viewer.xml");
+  ICS_213_REPLY(18, "ics_213_reply", false, "RMS_Express_Form_ICS213_SendReply_Viewer.xml"), //
+
+  FIELD_SITUATION_REPORT_23(19, "field_situation_23", true, "RMS_Express_Form_Field Situation Report 23_viewer.xml"), //
+  ;
 
   /**
    * id serves NO purpose other than to discourage re-ordering of values
