@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 public class MultipleChoiceGrader implements IGrader {
@@ -172,6 +173,13 @@ public class MultipleChoiceGrader implements IGrader {
 
   @Override
   public GradeResult grade(GradableMessage m) {
+    if (m instanceof CheckInMessage) {
+      CheckInMessage message = (CheckInMessage) m;
+      var result = grade(message.comments);
+      message.setIsGraded(true);
+      message.setGrade(result.grade());
+      message.setExplanation(result.explanation());
+    }
     return null;
   }
 
