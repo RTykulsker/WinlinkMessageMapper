@@ -27,11 +27,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.reply;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class AshfallReplyParser implements IReplyParser {
-  private static final Logger logger = LoggerFactory.getLogger(AshfallReplyParser.class);
 
   private final int N_FIELDS = 8;
 
@@ -54,18 +50,6 @@ public class AshfallReplyParser implements IReplyParser {
       r.values = lines;
       r.isParseOk = true;
     } else {
-      if (false) {
-        {
-          // for (var line : lines) {
-          // var numberString = line.replaceAll("^[0-9]", "");
-          // int index = -1;
-          // try {
-          // index = Integer.parseInt(numberString);
-          // } catch (Exception e) {
-          //
-          // }
-        }
-      }
       ++badParseCount;
       r.values = new String[N_FIELDS];
       r.isParseOk = false;

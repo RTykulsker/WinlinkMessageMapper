@@ -61,6 +61,7 @@ public class MultipleChoiceGrader implements IGrader {
   private String correctResponseString;
   private Set<String> incorrectResponseSet;
 
+  @SuppressWarnings("unused")
   private Set<String> dumpIds;
 
   public MultipleChoiceGrader(MessageType messageType) {
