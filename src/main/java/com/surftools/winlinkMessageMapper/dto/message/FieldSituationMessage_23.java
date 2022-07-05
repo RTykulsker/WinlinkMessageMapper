@@ -178,4 +178,9 @@ public class FieldSituationMessage_23 extends GisMessage implements GradableMess
   public String getExplanation() {
     return explanation;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return additionalComments;
+  }
 }

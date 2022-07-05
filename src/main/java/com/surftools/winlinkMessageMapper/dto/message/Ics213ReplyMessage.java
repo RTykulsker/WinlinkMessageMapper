@@ -64,4 +64,9 @@ public class Ics213ReplyMessage extends ExportedMessage {
   public MessageType getMessageType() {
     return MessageType.ICS_213_REPLY;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return message;
+  }
 }

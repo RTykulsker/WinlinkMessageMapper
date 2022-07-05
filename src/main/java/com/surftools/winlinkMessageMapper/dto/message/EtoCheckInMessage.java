@@ -41,4 +41,9 @@ public class EtoCheckInMessage extends CheckInMessage {
   public MessageType getMessageType() {
     return MessageType.ETO_CHECK_IN;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }

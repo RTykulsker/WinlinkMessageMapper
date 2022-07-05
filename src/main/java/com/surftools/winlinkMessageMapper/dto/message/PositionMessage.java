@@ -51,4 +51,9 @@ public class PositionMessage extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.POSITION;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }

@@ -117,4 +117,9 @@ public class CheckInMessage extends GisMessage implements GradableMessage {
     this.explanation = explanation;
   }
 
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
+
 }

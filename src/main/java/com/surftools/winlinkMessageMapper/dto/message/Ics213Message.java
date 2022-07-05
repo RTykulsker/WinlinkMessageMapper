@@ -53,4 +53,9 @@ public class Ics213Message extends ExportedMessage {
   public MessageType getMessageType() {
     return MessageType.ICS_213;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return message;
+  }
 }

@@ -265,4 +265,9 @@ public class HospitalBedMessage extends GisMessage implements GradableMessage {
   public MessageType getMessageType() {
     return MessageType.HOSPITAL_BED;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return additionalComments;
+  }
 }

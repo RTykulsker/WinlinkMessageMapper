@@ -99,4 +99,9 @@ public class SpotRepMessage extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.SPOTREP;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return additionalComments;
+  }
 }

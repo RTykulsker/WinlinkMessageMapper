@@ -66,4 +66,9 @@ public class DyfiMessage extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.DYFI;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }

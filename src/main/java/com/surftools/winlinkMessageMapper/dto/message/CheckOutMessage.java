@@ -42,4 +42,9 @@ public class CheckOutMessage extends CheckInMessage {
   public MessageType getMessageType() {
     return MessageType.CHECK_OUT;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }

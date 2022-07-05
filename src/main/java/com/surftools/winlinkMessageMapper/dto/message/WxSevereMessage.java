@@ -105,4 +105,9 @@ public class WxSevereMessage extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.WX_SEVERE;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }

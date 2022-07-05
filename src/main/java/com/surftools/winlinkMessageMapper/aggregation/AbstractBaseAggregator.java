@@ -45,8 +45,11 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 public abstract class AbstractBaseAggregator implements IAggregator {
   protected final Logger logger;
   protected List<AggregateMessage> aggregateMessages;
+  protected final Map<String, AggregateMessage> aggregateMessageMap;
   protected final Map<String, Map<MessageType, List<ExportedMessage>>> fromMessageMap;
   protected final Map<String, List<ExportedMessage>> fromListMap;
+
+  protected String outputFileName = "aggregate.csv";
 
   protected final String KEY_START_DATETIME = "startDateTime";
   protected final String KEY_END_DATETIME = "endDateTime";
@@ -65,6 +68,7 @@ public abstract class AbstractBaseAggregator implements IAggregator {
     this.aggregateMessages = new ArrayList<>();
     fromMessageMap = new HashMap<String, Map<MessageType, List<ExportedMessage>>>();
     fromListMap = new HashMap<String, List<ExportedMessage>>();
+    aggregateMessageMap = new HashMap<String, AggregateMessage>();
   }
 
   @Override
@@ -145,13 +149,15 @@ public abstract class AbstractBaseAggregator implements IAggregator {
 
       var aggregateMessage = new AggregateMessage(from, map);
       aggregateMessages.add(aggregateMessage);
+      aggregateMessageMap.put(from, aggregateMessage);
     }
   }
 
   @Override
   public void output(String pathName) {
-    Path outputPath = Path.of(pathName, "output", "aggregate.csv");
+    Path outputPath = Path.of(pathName, "output", outputFileName);
 
+    var messageCount = 0;
     try {
       File outputDirectory = new File(outputPath.toFile().getParent());
       if (!outputDirectory.exists()) {
@@ -163,15 +169,27 @@ public abstract class AbstractBaseAggregator implements IAggregator {
 
       if (aggregateMessages.size() > 0) {
         for (AggregateMessage m : aggregateMessages) {
-          writer.writeNext(getValues(m));
+          if (m != null) {
+            var values = getValues(m);
+            if (values != null) {
+              writer.writeNext(values);
+              ++messageCount;
+            }
+          } else {
+            continue;
+          }
         }
       }
 
       writer.close();
-      logger.info("wrote " + aggregateMessages.size() + " aggregate messages to file: " + outputPath);
+      logger.info("wrote " + messageCount + " aggregate messages to file: " + outputPath);
     } catch (Exception e) {
       logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
     }
+  }
+
+  public void setOutputFileName(String outputFileName) {
+    this.outputFileName = outputFileName;
   }
 
 }

@@ -56,6 +56,7 @@ import com.surftools.winlinkMessageMapper.grade.GraderStrategy;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
 import com.surftools.winlinkMessageMapper.grade.expect.ExpectGrader;
+import com.surftools.winlinkMessageMapper.multiMessageMapper.SimpleMultiMessageCommentProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
@@ -132,6 +133,9 @@ public class WinlinkMessageMapper {
   @Option(name = "--aggregatorName", usage = "exercise-specific name of multi-message aggregator, if any")
   private String aggregatorName = null;
 
+  @Option(name = "--mmCommentKey", usage = "MultiMessageComment key, if any")
+  private String mmCommentKey = null;
+
   public static void main(String[] args) {
     WinlinkMessageMapper app = new WinlinkMessageMapper();
     CmdLineParser parser = new CmdLineParser(app);
@@ -206,6 +210,12 @@ public class WinlinkMessageMapper {
       if (aggregatorName != null) {
         var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
         aggregatorProcessor.aggregate(messageMap, pathName);
+      }
+
+      if (mmCommentKey != null) {
+        var mmCommentProcessor = new SimpleMultiMessageCommentProcessor(mmCommentKey);
+        mmCommentProcessor.aggregate(messageMap, pathName);
+        mmCommentProcessor.output(pathName);
       }
 
       logger.info("exiting");

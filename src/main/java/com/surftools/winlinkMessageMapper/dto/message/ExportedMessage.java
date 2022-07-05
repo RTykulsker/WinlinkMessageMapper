@@ -116,4 +116,13 @@ public class ExportedMessage implements IMessage {
     return MessageType.UNKNOWN;
   }
 
+  /**
+   * default behavior will be to return empty string
+   *
+   * @return
+   */
+  public String getMultiMessageComment() {
+    return "";
+  }
+
 }

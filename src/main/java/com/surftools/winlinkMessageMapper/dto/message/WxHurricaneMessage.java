@@ -97,4 +97,9 @@ public class WxHurricaneMessage extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.WX_HURRICANE;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }

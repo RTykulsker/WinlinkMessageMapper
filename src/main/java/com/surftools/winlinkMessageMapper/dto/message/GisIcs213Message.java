@@ -53,4 +53,9 @@ public class GisIcs213Message extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.GIS_ICS_213;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return message;
+  }
 }

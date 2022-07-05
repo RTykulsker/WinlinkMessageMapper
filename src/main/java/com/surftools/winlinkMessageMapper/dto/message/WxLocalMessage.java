@@ -60,4 +60,9 @@ public class WxLocalMessage extends GisMessage {
   public MessageType getMessageType() {
     return MessageType.WX_LOCAL;
   }
+
+  @Override
+  public String getMultiMessageComment() {
+    return comments;
+  }
 }
