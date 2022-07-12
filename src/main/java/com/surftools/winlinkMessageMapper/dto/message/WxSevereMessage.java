@@ -28,8 +28,9 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 
-public class WxSevereMessage extends GisMessage {
+public class WxSevereMessage extends GisMessage implements GradableMessage {
   public final String type;
   public final String contactPerson;
   public final String contactPhone;
@@ -49,6 +50,10 @@ public class WxSevereMessage extends GisMessage {
   public final String rain;
   public final String rainPeriod;
   public final String comments;
+
+  private boolean isGraded;
+  private String grade;
+  private String explanation;
 
   public WxSevereMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
       String type, String contactPerson, String contactPhone, String contactEmail, //
@@ -81,29 +86,79 @@ public class WxSevereMessage extends GisMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Type", "ContactPerson", "ContactPhone", "ContactEmail", //
-        "City", "Region", "County", "Other", //
-        "Flood", "HailSize", "WindSpeed", "Tornado", //
-        "WindDamage", "Precipitation", "Snow", "FreezingRain", //
-        "Rain", "RainPeriod", //
-        "Comments" };
+    if (isGraded) {
+      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+          "Type", "ContactPerson", "ContactPhone", "ContactEmail", //
+          "City", "Region", "County", "Other", //
+          "Flood", "HailSize", "WindSpeed", "Tornado", //
+          "WindDamage", "Precipitation", "Snow", "FreezingRain", //
+          "Rain", "RainPeriod", //
+          "Comments", "Grade", "Explanation", };
+    } else {
+      return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+          "Type", "ContactPerson", "ContactPhone", "ContactEmail", //
+          "City", "Region", "County", "Other", //
+          "Flood", "HailSize", "WindSpeed", "Tornado", //
+          "WindDamage", "Precipitation", "Snow", "FreezingRain", //
+          "Rain", "RainPeriod", //
+          "Comments" };
+    }
   }
 
   @Override
   public String[] getValues() {
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        type, contactPerson, contactPhone, contactEmail, //
-        city, region, county, other, //
-        flood, hailSize, windSpeed, tornado, //
-        windDamage, precipitation, snow, freezingRain, //
-        rain, rainPeriod, //
-        comments };
+    if (isGraded) {
+      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+          type, contactPerson, contactPhone, contactEmail, //
+          city, region, county, other, //
+          flood, hailSize, windSpeed, tornado, //
+          windDamage, precipitation, snow, freezingRain, //
+          rain, rainPeriod, //
+          comments, grade, explanation };
+    } else {
+      return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+          type, contactPerson, contactPhone, contactEmail, //
+          city, region, county, other, //
+          flood, hailSize, windSpeed, tornado, //
+          windDamage, precipitation, snow, freezingRain, //
+          rain, rainPeriod, //
+          comments };
+    }
   }
 
   @Override
   public MessageType getMessageType() {
     return MessageType.WX_SEVERE;
+  }
+
+  @Override
+  public boolean isGraded() {
+    return isGraded;
+  }
+
+  @Override
+  public void setIsGraded(boolean isGraded) {
+    this.isGraded = isGraded;
+  }
+
+  @Override
+  public String getGrade() {
+    return grade;
+  }
+
+  @Override
+  public void setGrade(String grade) {
+    this.grade = grade;
+  }
+
+  @Override
+  public String getExplanation() {
+    return explanation;
+  }
+
+  @Override
+  public void setExplanation(String explanation) {
+    this.explanation = explanation;
   }
 
   @Override

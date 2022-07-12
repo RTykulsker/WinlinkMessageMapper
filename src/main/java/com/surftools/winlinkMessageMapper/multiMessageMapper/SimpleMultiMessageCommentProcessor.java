@@ -45,7 +45,7 @@ public class SimpleMultiMessageCommentProcessor extends AbstractBaseAggregator {
 
   protected final Map<String, MultiMessageComment> mmcMessageMap;
 
-  private static final String KEY_MIN_MESSAGE_COUNT = "minMessageCount";
+  private static final String CONFIG_KEY_MIN_MESSAGE_COUNT = "minMessageCount";
   private int minMessageCount = Integer.MAX_VALUE;
 
   @SuppressWarnings("unchecked")
@@ -59,7 +59,7 @@ public class SimpleMultiMessageCommentProcessor extends AbstractBaseAggregator {
       mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 
       var jsonMap = mapper.readValue(mmCommentKey, Map.class);
-      minMessageCount = (int) jsonMap.getOrDefault(KEY_MIN_MESSAGE_COUNT, Integer.MAX_VALUE);
+      minMessageCount = (int) jsonMap.getOrDefault(CONFIG_KEY_MIN_MESSAGE_COUNT, Integer.MAX_VALUE);
     } catch (Exception e) {
       logger.error("could not parse mmCommentKey: " + mmCommentKey + ", " + e.getLocalizedMessage());
     }
