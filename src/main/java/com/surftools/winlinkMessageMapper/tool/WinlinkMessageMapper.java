@@ -45,6 +45,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.winlinkMessageMapper.aggregation.AggregatorProcessor;
+import com.surftools.winlinkMessageMapper.aggregation.common.NeighborAggregator;
+import com.surftools.winlinkMessageMapper.aggregation.common.SimpleMultiMessageCommentAggregator;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageReader;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageWriter;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
@@ -56,7 +58,6 @@ import com.surftools.winlinkMessageMapper.grade.GraderStrategy;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
 import com.surftools.winlinkMessageMapper.grade.expect.ExpectGrader;
-import com.surftools.winlinkMessageMapper.multiMessageMapper.SimpleMultiMessageCommentProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
@@ -213,10 +214,14 @@ public class WinlinkMessageMapper {
       }
 
       if (mmCommentKey != null) {
-        var mmCommentProcessor = new SimpleMultiMessageCommentProcessor(mmCommentKey);
+        var mmCommentProcessor = new SimpleMultiMessageCommentAggregator(mmCommentKey);
         mmCommentProcessor.aggregate(messageMap, pathName);
         mmCommentProcessor.output(pathName);
       }
+
+      var neighborAggregator = new NeighborAggregator(10, 10);
+      neighborAggregator.aggregate(messageMap);
+      neighborAggregator.output(pathName);
 
       logger.info("exiting");
     } catch (Exception e) {

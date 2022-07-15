@@ -50,6 +50,7 @@ public abstract class AbstractBaseAggregator implements IAggregator {
   protected final Map<String, List<ExportedMessage>> fromListMap;
 
   protected String outputFileName = "aggregate.csv";
+  protected boolean doOutput = true;
 
   protected final String KEY_START_DATETIME = "startDateTime";
   protected final String KEY_END_DATETIME = "endDateTime";
@@ -155,6 +156,10 @@ public abstract class AbstractBaseAggregator implements IAggregator {
 
   @Override
   public void output(String pathName) {
+    if (!doOutput) {
+      return;
+    }
+
     Path outputPath = Path.of(pathName, "output", outputFileName);
 
     var messageCount = 0;
@@ -190,6 +195,24 @@ public abstract class AbstractBaseAggregator implements IAggregator {
 
   public void setOutputFileName(String outputFileName) {
     this.outputFileName = outputFileName;
+  }
+
+  protected MessageType getMostCommonMessageType(Map<MessageType, List<ExportedMessage>> messageMap) {
+    int maxCount = -1;
+    MessageType maxType = null;
+
+    for (var type : messageMap.keySet()) {
+      var list = messageMap.get(type);
+      if (list == null) {
+        continue;
+      }
+
+      if (list.size() > maxCount) {
+        maxCount = list.size();
+        maxType = type;
+      }
+    }
+    return maxType;
   }
 
 }

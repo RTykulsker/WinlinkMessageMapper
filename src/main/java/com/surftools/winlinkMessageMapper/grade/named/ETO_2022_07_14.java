@@ -35,7 +35,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,6 +86,7 @@ public class ETO_2022_07_14 implements IGrader {
   private Set<String> dumpIds;
 
   public ETO_2022_07_14() throws Exception {
+    dumpIds = new HashSet<>();
 
     outputPath = Path.of(OUTPUT_DIRECTORY);
     deleteDirectory(outputPath);
@@ -224,7 +227,7 @@ public class ETO_2022_07_14 implements IGrader {
     if (ppMissingValueCountMap.size() > 0) {
       sb.append("Missing value count:\n");
       for (String key : ppMissingValueCountMap.keySet()) {
-        int value = ppMissingValueCountMap.get(key);
+        int value = ppCount - ppMissingValueCountMap.get(key);
         sb.append(formatPP(key, value));
       }
     }
@@ -245,8 +248,16 @@ public class ETO_2022_07_14 implements IGrader {
    */
   private void writeImageFile(byte[] bytes, String from, String imageFileName) {
 
+    // wtf with dumpIds?
+    var doDebug = false;
+    var myDumpIds = Arrays.asList("KI7IHU");
+    if (myDumpIds.contains(from)) {
+      doDebug = true;
+    }
+
     try {
       // write the file
+      imageFileName = from + "-" + imageFileName;
       var allImagePath = Path.of(allPath.toString(), imageFileName);
       Files.write(allImagePath, bytes);
 
@@ -271,8 +282,13 @@ public class ETO_2022_07_14 implements IGrader {
         var height = source.getHeight();
         var deltaHeight = 25;
         var font = g.getFont().deriveFont((float) deltaHeight);
+        var type = source.getType();
+        if (type == 0) {
+          type = BufferedImage.TYPE_INT_RGB;
+        }
 
-        var newImage = new BufferedImage(width, height + deltaHeight, source.getType());
+        width = Math.max(100, width);
+        var newImage = new BufferedImage(width, height + deltaHeight, type);
         g.dispose();
         g = newImage.getGraphics();
         g.setFont(font);

@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.multiMessageMapper;
+package com.surftools.winlinkMessageMapper.aggregation.common;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +40,8 @@ import com.surftools.winlinkMessageMapper.aggregation.AggregateMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
-public class SimpleMultiMessageCommentProcessor extends AbstractBaseAggregator {
-  private static final Logger logger = LoggerFactory.getLogger(SimpleMultiMessageCommentProcessor.class);
+public class SimpleMultiMessageCommentAggregator extends AbstractBaseAggregator {
+  private static final Logger logger = LoggerFactory.getLogger(SimpleMultiMessageCommentAggregator.class);
 
   protected final Map<String, MultiMessageComment> mmcMessageMap;
 
@@ -49,7 +49,7 @@ public class SimpleMultiMessageCommentProcessor extends AbstractBaseAggregator {
   private int minMessageCount = Integer.MAX_VALUE;
 
   @SuppressWarnings("unchecked")
-  public SimpleMultiMessageCommentProcessor(String mmCommentKey) {
+  public SimpleMultiMessageCommentAggregator(String mmCommentKey) {
     super(logger);
     super.setOutputFileName("mmComments.csv");
     mmcMessageMap = new HashMap<>();
