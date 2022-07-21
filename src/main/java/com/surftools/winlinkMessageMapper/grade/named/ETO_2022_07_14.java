@@ -35,7 +35,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -66,6 +65,8 @@ public class ETO_2022_07_14 implements IGrader {
 
   private final String OUTPUT_DIRECTORY = "/home/bobt/Documents/eto/2022-07-14/output/images";
   private final int MAX_ATTACHMENT_SIZE = 6000;
+  private final int MIN_ATTATCHMENT_SIZE = 3000;
+  private final int MIN_IMAGE_PIXELS = 64;
 
   private final boolean doAnnotation = true;
 
@@ -73,14 +74,25 @@ public class ETO_2022_07_14 implements IGrader {
   private final Path allPath;
   private final Path rightSizePath;
   private final Path tooBigPath;
+  private final Path fileTooSmallPath;
+  private final Path imageTooSmallPath;
   private Path annotatedAllPath;
   private Path annotatedRightSizePath;
   private Path annotatedTooBigPath;
+  private Path annotatedFileTooSmallPath;
+  private Path annotatedImageTooSmallPath;
 
   // for post processing
   private int ppCount;
   private int ppImagePresentOk;
-  private int ppImageSizeOk;
+  private int ppFileTooBig;
+  private int ppFileNotTooBig;
+  private int ppFileRightSize;
+  private int ppFileTooSmall;
+  private int ppPixelsTooSmall;
+  private int ppSumWidth;
+  private int ppSumHeight;
+
   private Map<String, Integer> ppMissingValueCountMap = new HashMap<>();
 
   private Set<String> dumpIds;
@@ -93,11 +105,15 @@ public class ETO_2022_07_14 implements IGrader {
     allPath = createDirectory(Path.of(outputPath.toString(), "all"));
     rightSizePath = createDirectory(Path.of(outputPath.toString(), "rightSized"));
     tooBigPath = createDirectory(Path.of(outputPath.toString(), "tooBig"));
+    fileTooSmallPath = createDirectory(Path.of(outputPath.toString(), "fileTooSmall"));
+    imageTooSmallPath = createDirectory(Path.of(outputPath.toString(), "imageTooSmall"));
 
     if (doAnnotation) {
       annotatedAllPath = createDirectory(Path.of(outputPath.toString(), "annotated", "all"));
       annotatedRightSizePath = createDirectory(Path.of(outputPath.toString(), "annotated", "rightSized"));
       annotatedTooBigPath = createDirectory(Path.of(outputPath.toString(), "annotated", "tooBig"));
+      annotatedFileTooSmallPath = createDirectory(Path.of(outputPath.toString(), "annotated", "fileTooSmall"));
+      annotatedImageTooSmallPath = createDirectory(Path.of(outputPath.toString(), "annotated", "imageTooSmall"));
     }
 
     logger.info("Max Attachment Size: " + MAX_ATTACHMENT_SIZE);
@@ -132,7 +148,7 @@ public class ETO_2022_07_14 implements IGrader {
         if (bufferedImage == null) {
           continue;
         }
-        logger.info("image found for attachment: " + key + ", size:" + bytes.length);
+        logger.debug("image found for attachment: " + key + ", size:" + bytes.length);
         imageFileName = key;
         break;
       } catch (Exception e) {
@@ -145,12 +161,32 @@ public class ETO_2022_07_14 implements IGrader {
       points += 40;
 
       if (bytes.length <= MAX_ATTACHMENT_SIZE) {
-        ++ppImageSizeOk;
+        ++ppFileNotTooBig;
         points += 40;
       } else {
+        ++ppFileTooBig;
         explanations.add("image attachment size too large");
       }
-      writeImageFile(bytes, m.from, imageFileName);
+
+      var width = bufferedImage.getWidth();
+      var height = bufferedImage.getHeight();
+      var isImageTooSmall = (width <= MIN_IMAGE_PIXELS) || (height <= MIN_IMAGE_PIXELS);
+
+      if (bytes.length < MIN_ATTATCHMENT_SIZE) {
+        ++ppFileTooSmall;
+      }
+
+      if (isImageTooSmall) {
+        ++ppPixelsTooSmall;
+      }
+
+      if (bytes.length >= MIN_ATTATCHMENT_SIZE && bytes.length <= MAX_ATTACHMENT_SIZE) {
+        ++ppFileRightSize;
+        ppSumWidth += width;
+        ppSumHeight += height;
+      }
+
+      writeImageFile(bytes, m.from, m.messageId, imageFileName, isImageTooSmall);
     } else {
       explanations.add("no image attachment found");
     }
@@ -221,7 +257,16 @@ public class ETO_2022_07_14 implements IGrader {
     var sb = new StringBuilder(defaultReport);
     sb.append("\nETO-2022-07-14 Grading Report: graded " + ppCount + " Severe Weather messages\n");
     sb.append(formatPP("image attached", ppImagePresentOk));
-    sb.append(formatPP("image size", ppImageSizeOk));
+    sb.append(formatPP("image file too big", ppFileTooBig));
+    sb.append(formatPP("image file not too big", ppFileNotTooBig));
+    sb.append(formatPP("image file right sized", ppFileRightSize));
+    sb.append(formatPP("image file too small", ppFileTooSmall));
+    sb.append(formatPP("image too small", ppPixelsTooSmall));
+
+    int avgWidth = (int) Math.round(ppSumWidth / (double) ppFileRightSize);
+    int avgHeight = (int) Math.round(ppSumHeight / (double) ppFileRightSize);
+    sb.append("  average image size: " + avgWidth + "x" + avgHeight + " for right sized images\n");
+
     sb.append("\n");
 
     if (ppMissingValueCountMap.size() > 0) {
@@ -244,20 +289,15 @@ public class ETO_2022_07_14 implements IGrader {
    *
    * @param bytes
    * @param from
+   * @param messageId
    * @param imageFileName
+   * @param isImageTooSmall
    */
-  private void writeImageFile(byte[] bytes, String from, String imageFileName) {
-
-    // wtf with dumpIds?
-    var doDebug = false;
-    var myDumpIds = Arrays.asList("KI7IHU");
-    if (myDumpIds.contains(from)) {
-      doDebug = true;
-    }
-
+  private void writeImageFile(byte[] bytes, String from, String messageId, String imageFileName,
+      boolean isImageTooSmall) {
     try {
       // write the file
-      imageFileName = from + "-" + imageFileName;
+      imageFileName = from + "-" + messageId + "-" + imageFileName;
       var allImagePath = Path.of(allPath.toString(), imageFileName);
       Files.write(allImagePath, bytes);
 
@@ -270,10 +310,20 @@ public class ETO_2022_07_14 implements IGrader {
         Files.createLink(tooBigImagePath, allImagePath);
       }
 
+      if (bytes.length < MIN_ATTATCHMENT_SIZE) {
+        var fileTooSmallImagePath = Path.of(fileTooSmallPath.toString(), imageFileName);
+        Files.createLink(fileTooSmallImagePath, allImagePath);
+      }
+
+      if (isImageTooSmall) {
+        var imageTooSmallImagePath = Path.of(imageTooSmallPath.toString(), imageFileName);
+        Files.createLink(imageTooSmallImagePath, allImagePath);
+      }
+
       // apply annotation by call -- write a file, don't link it!
 
       if (doAnnotation) {
-        var annotatedImageFileName = from + ".png";
+        var annotatedImageFileName = from + "-" + messageId + ".png";
         var annotatedAllImagePath = Path.of(annotatedAllPath.toString(), annotatedImageFileName);
 
         var source = ImageIO.read(new ByteArrayInputStream(bytes));
@@ -318,6 +368,17 @@ public class ETO_2022_07_14 implements IGrader {
           var annotatedTooBigImagePath = Path.of(annotatedTooBigPath.toString(), annotatedImageFileName);
           Files.createLink(annotatedTooBigImagePath, annotatedAllImagePath);
         }
+
+        if (bytes.length < MIN_ATTATCHMENT_SIZE) {
+          var annotatedFileTooImagePath = Path.of(annotatedFileTooSmallPath.toString(), annotatedImageFileName);
+          Files.createLink(annotatedFileTooImagePath, allImagePath);
+        }
+
+        if (isImageTooSmall) {
+          var annotatedImageTooSmallImagePath = Path.of(annotatedImageTooSmallPath.toString(), imageFileName);
+          Files.createLink(annotatedImageTooSmallImagePath, allImagePath);
+        }
+
       } // endif doAnnotation
     } catch (Exception e) {
       logger.error("Exception writing image file for call: " + from + ", " + e.getLocalizedMessage());

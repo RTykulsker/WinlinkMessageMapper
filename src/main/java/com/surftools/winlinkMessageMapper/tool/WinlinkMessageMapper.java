@@ -534,40 +534,53 @@ public class WinlinkMessageMapper {
   public MessageType getMessageType(ExportedMessage message) {
     var subject = message.subject;
 
+    var doDebug = false;
+    if (message.messageId != null) {
+      if (message.messageId.equals("6ZT5WOAYQW5U\n") //
+          || message.messageId.equals("A2HHJ2ZG4OA4") //
+          || message.messageId.equals("CXBMTNUMM55W") //
+          || message.messageId.equals("JX42VUSJ7DLT")) {
+        doDebug = true;
+      }
+    }
+
     /**
      * mime based
      */
     var attachments = message.attachments;
-    var attachmentNames = attachments.keySet();
+    if (attachments != null) {
+      var attachmentNames = attachments.keySet();
 
-    if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
-      return MessageType.ICS_213;
-    } else if (attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
-      return MessageType.CHECK_IN;
-    } else if (attachmentNames.contains(MessageType.CHECK_OUT.attachmentName())) {
-      return MessageType.CHECK_OUT;
-    } else if (attachmentNames.contains(MessageType.HOSPITAL_BED.attachmentName())) {
-      return MessageType.HOSPITAL_BED;
-    } else if (attachmentNames.contains(MessageType.SPOTREP.attachmentName())) {
-      return MessageType.SPOTREP;
-    } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
-      return MessageType.FIELD_SITUATION_REPORT;
-    } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
-      return MessageType.FIELD_SITUATION_REPORT_23;
-    } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
-      return MessageType.WX_LOCAL;
-    } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {
-      return MessageType.WX_SEVERE;
-    } else if (attachmentNames.contains(MessageType.WA_RR.attachmentName())) {
-      return MessageType.WA_RR;
-    } else if (attachmentNames.contains(MessageType.WA_ISNAP.attachmentName())) {
-      return MessageType.WA_ISNAP;
-    } else if (attachmentNames.contains(MessageType.ICS_213_REPLY.attachmentName())) {
-      return MessageType.ICS_213_REPLY;
-      /**
-       * subject-based
-       */
-    } else if (subject.startsWith("DYFI Automatic Entry")) {
+      if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
+        return MessageType.ICS_213;
+      } else if (attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
+        return MessageType.CHECK_IN;
+      } else if (attachmentNames.contains(MessageType.CHECK_OUT.attachmentName())) {
+        return MessageType.CHECK_OUT;
+      } else if (attachmentNames.contains(MessageType.HOSPITAL_BED.attachmentName())) {
+        return MessageType.HOSPITAL_BED;
+      } else if (attachmentNames.contains(MessageType.SPOTREP.attachmentName())) {
+        return MessageType.SPOTREP;
+      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
+        return MessageType.FIELD_SITUATION_REPORT;
+      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
+        return MessageType.FIELD_SITUATION_REPORT_23;
+      } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
+        return MessageType.WX_LOCAL;
+      } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {
+        return MessageType.WX_SEVERE;
+      } else if (attachmentNames.contains(MessageType.WA_RR.attachmentName())) {
+        return MessageType.WA_RR;
+      } else if (attachmentNames.contains(MessageType.WA_ISNAP.attachmentName())) {
+        return MessageType.WA_ISNAP;
+      } else if (attachmentNames.contains(MessageType.ICS_213_REPLY.attachmentName())) {
+        return MessageType.ICS_213_REPLY;
+      }
+    }
+    /**
+     * subject-based
+     */
+    if (subject.startsWith("DYFI Automatic Entry")) {
       return MessageType.DYFI;
     } else if (subject.startsWith("Hurricane Report")) {
       return MessageType.WX_HURRICANE;
