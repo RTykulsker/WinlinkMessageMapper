@@ -534,16 +534,6 @@ public class WinlinkMessageMapper {
   public MessageType getMessageType(ExportedMessage message) {
     var subject = message.subject;
 
-    var doDebug = false;
-    if (message.messageId != null) {
-      if (message.messageId.equals("6ZT5WOAYQW5U\n") //
-          || message.messageId.equals("A2HHJ2ZG4OA4") //
-          || message.messageId.equals("CXBMTNUMM55W") //
-          || message.messageId.equals("JX42VUSJ7DLT")) {
-        doDebug = true;
-      }
-    }
-
     /**
      * mime based
      */

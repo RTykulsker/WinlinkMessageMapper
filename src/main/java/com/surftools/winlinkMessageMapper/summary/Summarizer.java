@@ -54,6 +54,9 @@ public class Summarizer {
   private String exerciseName = null;
   private String exerciseDescription = null;
 
+  private MessageType exerciseMessageType = null;
+  private Map<String, ExportedMessage> exerciseCallMessageMap = new HashMap<>();
+
   private ExerciseSummary exerciseSummary;
   private List<ExerciseSummary> currentExerciseSummaryList;
   private List<ExerciseSummary> pastExerciseSummaryList;
@@ -304,6 +307,11 @@ public class Summarizer {
     summaryDao.writeParticipantSummary(currentParticipantSummaryList, false);
 
     summaryDao.writeParticipantHistory(currentParticipantHistoryList, false);
+
+    summaryDao.writeExerciseParticipantHistory(currentParticipantHistoryList, exerciseDate);
+
+    summaryDao
+        .writeFirstTimers(currentParticipantHistoryList, exerciseDate, exerciseMessageType, exerciseCallMessageMap);
   }
 
   private void computeCurrentValues(Map<MessageType, List<ExportedMessage>> messageMap) {
@@ -342,6 +350,14 @@ public class Summarizer {
     exerciseDate = makeExerciseDate(exerciseDate, dateCountMap);
     exerciseName = makeExerciseName(exerciseName, exerciseMessageCounts);
     exerciseDescription = makeExerciseDescription(exerciseDescription, exerciseDate, exerciseName);
+
+    exerciseMessageType = MessageType.fromString(exerciseName);
+    if (exerciseMessageType != null && exerciseMessageType != MessageType.UNKNOWN) {
+      var list = messageMap.get(exerciseMessageType);
+      for (var message : list) {
+        exerciseCallMessageMap.put(message.from, message);
+      }
+    }
 
     exerciseSummary = new ExerciseSummary(exerciseDate, exerciseName, exerciseDescription, //
         totalMessageCount, callPartipantSummaryMap.keySet().size(), MessageType.values().length, exerciseMessageCounts,

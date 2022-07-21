@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,8 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
+import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 public class SummaryDao {
   private static final Logger logger = LoggerFactory.getLogger(Summarizer.class);
@@ -132,6 +135,67 @@ public class SummaryDao {
       }
       writer.close();
       logger.info("wrote " + list.size() + " participantHistories to file: " + outputPath);
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  public void writeExerciseParticipantHistory(List<ParticipantHistory> list, String exerciseDate) {
+    Path outputPath = Path.of(outputPathName, "output", "database", "exercise-participantHistory.csv");
+
+    try {
+      File outputDirectory = new File(outputPath.toFile().getParent());
+      if (!outputDirectory.exists()) {
+        outputDirectory.mkdir();
+      }
+
+      var comparator = new ParticipantHistoryComparator();
+      Collections.sort(list, comparator);
+
+      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
+      writer.writeNext(ParticipantHistory.getHeaders());
+      var messageCount = 0;
+      for (ParticipantHistory ph : list) {
+        if (ph.getLastDate().equals(exerciseDate)) {
+          ++messageCount;
+          writer.writeNext(ph.getValues());
+        }
+      }
+      writer.close();
+      logger.info("wrote " + messageCount + " exercise-participantHistories to file: " + outputPath);
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  public void writeFirstTimers(List<ParticipantHistory> list, String exerciseDate, MessageType messageType,
+      Map<String, ExportedMessage> exerciseCallMessageMap) {
+    Path outputPath = Path.of(outputPathName, "output", "database", "firstTimers-" + messageType.toString() + ".csv");
+
+    try {
+      File outputDirectory = new File(outputPath.toFile().getParent());
+      if (!outputDirectory.exists()) {
+        outputDirectory.mkdir();
+      }
+
+      var comparator = new ParticipantHistoryComparator();
+      Collections.sort(list, comparator);
+
+      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
+      var aMessage = exerciseCallMessageMap.values().iterator().next();
+      var messageCount = 0;
+      writer.writeNext(aMessage.getHeaders());
+      for (ParticipantHistory ph : list) {
+        if (ph.getLastDate().equals(exerciseDate) && ph.getExerciseCount() == 1) {
+          var call = ph.getCall();
+          var message = exerciseCallMessageMap.get(call);
+          writer.writeNext(message.getValues());
+          ++messageCount;
+        }
+      }
+      writer.close();
+      logger
+          .info("wrote " + messageCount + " first time " + messageType.toString() + " message to file: " + outputPath);
     } catch (Exception e) {
       logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
     }
@@ -287,4 +351,5 @@ public class SummaryDao {
     }
 
   }
+
 }
