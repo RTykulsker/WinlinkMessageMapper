@@ -59,6 +59,9 @@ public enum MessageType {
   ICS_213_REPLY(18, "ics_213_reply", false, "RMS_Express_Form_ICS213_SendReply_Viewer.xml"), //
 
   FIELD_SITUATION_REPORT_23(19, "field_situation_23", true, "RMS_Express_Form_Field Situation Report 23_viewer.xml"), //
+  FIELD_SITUATION_REPORT_25(20, "field_situation_25", true, "RMS_Express_Form_Field Situation Report 25_viewer.xml"), //
+
+  ETO_CHECK_IN_V2(21, "eto_check_in_v2", true), //
   ;
 
   /**

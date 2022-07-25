@@ -63,6 +63,7 @@ import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInV2Processor;
 import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor_23;
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
@@ -389,9 +390,11 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.ICS_213, new Ics213Processor(MessageType.ICS_213));
     processorMap.put(MessageType.GIS_ICS_213, new Ics213Processor(MessageType.GIS_ICS_213));
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
+    processorMap.put(MessageType.ETO_CHECK_IN_V2, new EtoCheckInV2Processor());
 
     processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
     processorMap.put(MessageType.FIELD_SITUATION_REPORT_23, new FieldSituationProcessor_23());
+    processorMap.put(MessageType.FIELD_SITUATION_REPORT_25, null); // TODO
 
     processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor());
     processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor());
@@ -538,7 +541,7 @@ public class WinlinkMessageMapper {
      * mime based
      */
     var attachments = message.attachments;
-    if (attachments != null) {
+    if (attachments != null && attachments.size() > 0) {
       var attachmentNames = attachments.keySet();
 
       if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
@@ -555,6 +558,8 @@ public class WinlinkMessageMapper {
         return MessageType.FIELD_SITUATION_REPORT;
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
         return MessageType.FIELD_SITUATION_REPORT_23;
+      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_25.attachmentName())) {
+        return MessageType.FIELD_SITUATION_REPORT_25;
       } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
         return MessageType.WX_LOCAL;
       } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {
@@ -577,6 +582,9 @@ public class WinlinkMessageMapper {
     } else if (subject.startsWith("Winlink Thursday Net Check-In")
         || subject.startsWith("Re: Winlink Thursday Net Check-In")) {
       return MessageType.ETO_CHECK_IN;
+    } else if (subject.startsWith("ETO Winlink Thursday Check-In")
+        || subject.startsWith("Re: ETO Winlink Thursday Check-In")) {
+      return MessageType.ETO_CHECK_IN_V2;
     } else if (subject.equals("Position Report")) {
       return MessageType.POSITION;
     } else if (subject.startsWith("ACK:")) {

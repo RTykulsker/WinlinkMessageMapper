@@ -40,6 +40,7 @@ public enum RejectType {
   CANT_PARSE_MIME(8, "can't parse MIME"), //
   SAME_CALL(9, "same call, earlier time"), //
   UNSUPPORTED_TYPE(10, "unsupported type"), //
+  CANT_PARSE_ETO_JSON(11, "can't parse ETO json"), //
   ;
 
   /**

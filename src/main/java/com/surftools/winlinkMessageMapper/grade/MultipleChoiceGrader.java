@@ -176,10 +176,16 @@ public class MultipleChoiceGrader implements IGrader {
   public GradeResult grade(GradableMessage m) {
     if (m instanceof CheckInMessage) {
       CheckInMessage message = (CheckInMessage) m;
-      var result = grade(message.comments);
       message.setIsGraded(true);
-      message.setGrade(result.grade());
-      message.setExplanation(result.explanation());
+      var comments = message.comments;
+      if (comments != null) {
+        var result = grade(message.comments);
+        message.setGrade(result.grade());
+        message.setExplanation(result.explanation());
+      } else {
+        message.setGrade(NOT_VALID);
+        message.setExplanation("No response provided");
+      }
     }
     return null;
   }
