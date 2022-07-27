@@ -48,7 +48,7 @@ public class EtoCheckInV2Processor extends AbstractBaseProcessor {
     }
 
     ObjectMapper mapper = new ObjectMapper();
-    Map<String, Object> map = null;
+    Map<String, String> map = null;
     try {
       var jsonString = message.plainContent;
       map = mapper.readValue(jsonString, Map.class);
@@ -56,12 +56,12 @@ public class EtoCheckInV2Processor extends AbstractBaseProcessor {
       return reject(message, RejectType.CANT_PARSE_ETO_JSON, e.getMessage());
     }
 
-    String latitude = Double.toString((Double) map.get("Latitude"));
-    String longitude = Double.toString((Double) map.get("Longitude"));
-    var comments = (String) map.get("Comments");
-    var formName = (String) map.get("FormName");
-    var version = (String) map.get("Version");
-    var dateTimeLocal = (String) map.get("DateTimeLocal");
+    String latitude = map.get("Latitude");
+    String longitude = map.get("Longitude");
+    var comments = map.get("Comments");
+    var formName = map.get("FormName");
+    var version = map.get("Version");
+    var dateTimeLocal = map.get("DateTimeLocal");
     var formDate = "";
     var formTime = "";
     if (dateTimeLocal != null) {

@@ -170,6 +170,12 @@ public class SummaryDao {
 
   public void writeFirstTimers(List<ParticipantHistory> list, String exerciseDate, MessageType messageType,
       Map<String, ExportedMessage> exerciseCallMessageMap) {
+
+    if (messageType == MessageType.UNKNOWN || list.size() == 0) {
+      logger.info("wrote zero firstTimer messages");
+      return;
+    }
+
     Path outputPath = Path.of(outputPathName, "output", "database", "firstTimers-" + messageType.toString() + ".csv");
 
     try {
@@ -185,6 +191,7 @@ public class SummaryDao {
       var aMessage = exerciseCallMessageMap.values().iterator().next();
       var messageCount = 0;
       writer.writeNext(aMessage.getHeaders());
+
       for (ParticipantHistory ph : list) {
         if (ph.getLastDate().equals(exerciseDate) && ph.getExerciseCount() == 1) {
           var call = ph.getCall();
@@ -210,6 +217,7 @@ public class SummaryDao {
       return list;
     }
 
+    var rowCount = -1;
     try {
       Reader reader = new FileReader(inputPath.toString());
       CSVParser parser = new CSVParserBuilder() //
@@ -220,14 +228,16 @@ public class SummaryDao {
           .withSkipLines(1)//
             .withCSVParser(parser)//
             .build();
-
+      rowCount = 1;
       String[] fields = null;
       while ((fields = csvReader.readNext()) != null) {
+        ++rowCount;
+
         var exerciseSummary = new ExerciseSummary(fields);
         list.add(exerciseSummary);
       }
     } catch (Exception e) {
-      logger.error("Exception reading " + inputPath.toString() + ", " + e.getLocalizedMessage());
+      logger.error("Exception reading " + inputPath.toString() + ", row " + rowCount + ", " + e.getLocalizedMessage());
     }
 
     logger.info("returning: " + list.size() + " exerciseSummaries from: " + inputPath.toString());
@@ -243,6 +253,7 @@ public class SummaryDao {
       return list;
     }
 
+    var rowCount = -1;
     try {
       Reader reader = new BufferedReader(new FileReader(inputPath.toString()));
       CSVParser parser = new CSVParserBuilder() //
@@ -253,14 +264,18 @@ public class SummaryDao {
           .withSkipLines(1)//
             .withCSVParser(parser)//
             .build();
+      rowCount = 1;
 
       String[] fields = null;
       while ((fields = csvReader.readNext()) != null) {
+        ++rowCount;
         var participantSummary = new ParticipantSummary(fields);
         list.add(participantSummary);
       }
     } catch (Exception e) {
-      logger.error("Exception reading " + inputPath.toString() + ", " + e.getLocalizedMessage());
+      logger
+          .error(
+              "Exception reading " + inputPath.toString() + ", rowCount: " + rowCount + ", " + e.getLocalizedMessage());
     }
 
     logger.info("returning: " + list.size() + " participantSummaries from: " + inputPath.toString());
@@ -276,6 +291,7 @@ public class SummaryDao {
       return list;
     }
 
+    var rowCount = -1;
     try {
       Reader reader = new FileReader(inputPath.toString());
       CSVParser parser = new CSVParserBuilder() //
@@ -286,14 +302,18 @@ public class SummaryDao {
           .withSkipLines(1)//
             .withCSVParser(parser)//
             .build();
+      rowCount = 1;
 
       String[] fields = null;
       while ((fields = csvReader.readNext()) != null) {
+        ++rowCount;
         var participantHistory = new ParticipantHistory(fields);
         list.add(participantHistory);
       }
     } catch (Exception e) {
-      logger.error("Exception reading " + inputPath.toString() + ", " + e.getLocalizedMessage());
+      logger
+          .error(
+              "Exception reading " + inputPath.toString() + ", rowCount: " + rowCount + ", " + e.getLocalizedMessage());
     }
 
     logger.info("returning: " + list.size() + " participantHistories from: " + inputPath.toString());

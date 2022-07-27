@@ -44,9 +44,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.utils.config.impl.PropertyFileConfigurationManager;
 import com.surftools.winlinkMessageMapper.aggregation.AggregatorProcessor;
 import com.surftools.winlinkMessageMapper.aggregation.common.NeighborAggregator;
 import com.surftools.winlinkMessageMapper.aggregation.common.SimpleMultiMessageCommentAggregator;
+import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageReader;
 import com.surftools.winlinkMessageMapper.dao.ExportedMessageWriter;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
@@ -96,47 +99,13 @@ public class WinlinkMessageMapper {
   private static final Logger logger = LoggerFactory.getLogger(WinlinkMessageMapper.class);
 
   private Map<MessageType, IProcessor> processorMap;
+  private IConfigurationManager cm;
 
-  @Option(name = "--path", usage = "path to message files", required = true)
-  private String pathName = null;
+  @Option(name = "--configurationFile", usage = "path to configuration file", required = false)
+  private String configurationFileName = "configuration.txt";
 
-  @Option(name = "--databasePath", usage = "path to input database summary files", required = false)
-  private String databasePathName = "/home/bobt/Documents/eto/database";
-
-  @Option(name = "--requiredMessageType", usage = "to ONLY process messages of a given type", required = false)
-  private String requiredMessageTypeString = null;
   private MessageType requiredMessageType = null;
-
-  @Option(name = "--dumpIds", usage = "comma-delimited list of messageIds or call signs to dump message contents for", required = false)
-  private String dumpIdsString = null;
   private Set<String> dumpIdsSet = null;
-
-  @Option(name = "--preferredPrefixes", usage = "comma-delimited preferred prefixes for To: addresses")
-  private String preferredPrefixes = "ETO";
-
-  @Option(name = "--preferredSuffixes", usage = "comma-delimited preferred suffixes for To: addresses")
-  private String preferredSuffixes = "Winlink.org,winlink.org";
-
-  @Option(name = "--notPreferredPrefixes", usage = "comma-delimited NOT preferred prefixes for To: addresses")
-  private String notPreferredPrefixes = "QTH,SMTP";
-
-  @Option(name = "--notPreferredSuffixes", usage = "comma-delimited NOT preferred suffixes for To: addresses.")
-  private String notPreferredSuffixes = null;
-
-  @Option(name = "--deduplicationThresholdMeters", usage = "threshold distance in meters to avoid being considered a duplicate location, negative to skip")
-  private int deduplicationThresholdMeters = 100;
-
-  @Option(name = "--saveAttachments", usage = "save ALL attachments in exported message")
-  private boolean saveAttachments = false;
-
-  @Option(name = "--gradeKey", usage = "exercise/processor-specific key to identify grading method, if any")
-  private String gradeKey = null;
-
-  @Option(name = "--aggregatorName", usage = "exercise-specific name of multi-message aggregator, if any")
-  private String aggregatorName = null;
-
-  @Option(name = "--mmCommentKey", usage = "MultiMessageComment key, if any")
-  private String mmCommentKey = null;
 
   public static void main(String[] args) {
     WinlinkMessageMapper app = new WinlinkMessageMapper();
@@ -153,6 +122,13 @@ public class WinlinkMessageMapper {
   private void run() {
     try {
 
+      cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
+
+      if (dumpIdsSet == null) {
+        dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
+      }
+
+      var pathName = cm.getAsString(Key.PATH);
       Path path = Paths.get(pathName);
       if (!Files.exists(path)) {
         logger.error("specified path: " + pathName + " does not exist");
@@ -161,6 +137,7 @@ public class WinlinkMessageMapper {
         logger.debug("path: " + path);
       }
 
+      var requiredMessageTypeString = cm.getAsString(Key.REQUIRED_MESSAGE_TYPE);
       if (requiredMessageTypeString != null) {
         requiredMessageType = MessageType.valueOf(requiredMessageTypeString);
         if (requiredMessageType == null) {
@@ -172,7 +149,7 @@ public class WinlinkMessageMapper {
       }
 
       // fail-fast if we can't make the graders
-      var graderMap = makeGraders(gradeKey);
+      var graderMap = makeGraders(cm.getAsString(Key.GRADE_KEY));
 
       logger.info("WinlinkMessageMapper, starting with input path: " + path);
 
@@ -181,8 +158,11 @@ public class WinlinkMessageMapper {
       }
 
       // read all ExportedMessages from the files
-      var exportedMessages = readAllExportedMessages(path, preferredPrefixes, preferredSuffixes, notPreferredPrefixes,
-          notPreferredSuffixes);
+      var exportedMessages = readAllExportedMessages(path, //
+          cm.getAsString(Key.PREFERRED_PREFIXES, "ETO"), //
+          cm.getAsString(Key.PREFERRED_SUFFEXES, "Winlink.org,winlink.org"), //
+          cm.getAsString(Key.NOT_PREFERRED_PREFIXES, "QTH,SMTP"), //
+          cm.getAsString(Key.NOT_PREFERRED_SUFFIXES));
 
       // transform ExportedMessages into type-specific messages
       var messageMap = processAllExportedMessages(exportedMessages);
@@ -192,7 +172,7 @@ public class WinlinkMessageMapper {
       rejectionProcessor.processExplicitRejections(messageMap);
 
       // deduplication
-      var deduplicator = new Deduplicator(deduplicationThresholdMeters);
+      var deduplicator = new Deduplicator(cm.getAsInt(Key.DEDUPLICATION_THRESHOLD_Meters, 100));
       deduplicator.deduplicate(messageMap);
 
       // grade individual messages after deduplication, grade summary and processor summary
@@ -203,17 +183,20 @@ public class WinlinkMessageMapper {
       writer.writeAll(messageMap);
 
       // summary
+      var databasePathName = cm.getAsString(Key.DATABASE_PATH);
       if (databasePathName != null) {
         var summarizer = new Summarizer(databasePathName, pathName);
         summarizer.setDumpIds(dumpIdsSet);
         summarizer.summarize(messageMap);
       }
 
+      var aggregatorName = cm.getAsString(Key.AGGREGATOR_NAME);
       if (aggregatorName != null) {
         var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
         aggregatorProcessor.aggregate(messageMap, pathName);
       }
 
+      var mmCommentKey = cm.getAsString(Key.MM_COMMENT_KEY);
       if (mmCommentKey != null) {
         var mmCommentProcessor = new SimpleMultiMessageCommentAggregator(mmCommentKey);
         mmCommentProcessor.aggregate(messageMap, pathName);
@@ -346,7 +329,7 @@ public class WinlinkMessageMapper {
     reader.setNotPreferredSuffixes(notPreferredSuffixes);
 
     if (dumpIdsSet == null) {
-      dumpIdsSet = makeDumpIds(dumpIdsString);
+      dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
       AbstractBaseProcessor.setDumpIds(dumpIdsSet);
       reader.setDumpIds(dumpIdsSet);
     }
@@ -394,7 +377,7 @@ public class WinlinkMessageMapper {
 
     processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
     processorMap.put(MessageType.FIELD_SITUATION_REPORT_23, new FieldSituationProcessor_23());
-    processorMap.put(MessageType.FIELD_SITUATION_REPORT_25, null); // TODO
+    processorMap.put(MessageType.FIELD_SITUATION_REPORT_25, null);
 
     processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor());
     processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor());
@@ -411,12 +394,12 @@ public class WinlinkMessageMapper {
     } // end if requiredMessageType != null
 
     if (dumpIdsSet == null) {
-      dumpIdsSet = makeDumpIds(dumpIdsString);
+      dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
       AbstractBaseProcessor.setDumpIds(dumpIdsSet);
     }
 
-    AbstractBaseProcessor.setPath(Paths.get(pathName));
-    AbstractBaseProcessor.setSaveAttachments(saveAttachments);
+    AbstractBaseProcessor.setPath(Paths.get(cm.getAsString(Key.PATH)));
+    AbstractBaseProcessor.setSaveAttachments(cm.getAsBoolean(Key.SAVE_ATTACHMENTS));
 
     this.processorMap = processorMap;
     return processorMap;
