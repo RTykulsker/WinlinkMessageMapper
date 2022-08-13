@@ -52,6 +52,8 @@ public enum Key implements IConfigurationKey {
 
   MM_COMMENT_KEY("mmCommentKey"), // MultiMessageComment key, if any
 
+  TARGET_PATH("targetPath"), // for P2P processing
+
   ;
 
   private final String key;

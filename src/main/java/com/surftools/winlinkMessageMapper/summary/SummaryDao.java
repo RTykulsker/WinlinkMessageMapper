@@ -196,6 +196,10 @@ public class SummaryDao {
         if (ph.getLastDate().equals(exerciseDate) && ph.getExerciseCount() == 1) {
           var call = ph.getCall();
           var message = exerciseCallMessageMap.get(call);
+          if (message == null) {
+            continue;
+          }
+
           writer.writeNext(message.getValues());
           ++messageCount;
         }

@@ -30,7 +30,7 @@ package com.surftools.winlinkMessageMapper.dto.p2p;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+import com.surftools.utils.location.LatLongPair;
 
 public class FieldStation implements Comparable<FieldStation> {
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");

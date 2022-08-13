@@ -30,9 +30,9 @@ package com.surftools.winlinkMessageMapper.processor.message;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.WxHurricaneMessage;
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class WxHurricaneProcessor extends AbstractBaseProcessor {

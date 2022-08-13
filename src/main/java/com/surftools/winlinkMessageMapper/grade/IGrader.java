@@ -30,6 +30,8 @@ package com.surftools.winlinkMessageMapper.grade;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.config.IConfigurationManager;
+
 public interface IGrader {
 
   public GradeResult grade(GradableMessage m);
@@ -41,4 +43,6 @@ public interface IGrader {
   public GraderType getGraderType();
 
   public void setDumpIds(Set<String> dumpIds);
+
+  public void setConfigurationManager(IConfigurationManager cm);
 }

@@ -63,6 +63,7 @@ public enum MessageType {
   //
 
   ETO_CHECK_IN_V2(21, "eto_check_in_v2", true), //
+  UNIFIED_FIELD_SITUATION(22, "unifiedFieldSituation", true), //
   ;
 
   /**

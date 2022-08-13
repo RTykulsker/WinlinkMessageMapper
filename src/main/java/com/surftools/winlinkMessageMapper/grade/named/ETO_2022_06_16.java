@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.HospitalBedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
@@ -232,8 +233,10 @@ public class ETO_2022_06_16 implements IGrader {
 
   @Override
   public void setDumpIds(Set<String> dumpIds) {
-    // TODO Auto-generated method stub
+  }
 
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
   }
 
 }

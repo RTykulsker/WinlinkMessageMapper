@@ -125,4 +125,7 @@ public class ExportedMessage implements IMessage {
     return "";
   }
 
+  public String notnull(String s) {
+    return (s == null) ? "" : s;
+  }
 }

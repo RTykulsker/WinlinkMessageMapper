@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.reply.IReplyParser;
 import com.surftools.winlinkMessageMapper.reply.ParsedReply;
 

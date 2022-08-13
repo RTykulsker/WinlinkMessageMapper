@@ -34,12 +34,18 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import com.surftools.utils.config.IConfigurationManager;
 
 public abstract class DefaultGrader implements IGrader {
 
   private final String gradeKey;
 
   protected static Comparator<String> gradeComparator = new DefaultGradeComparator();
+
+  protected IConfigurationManager cm;
+  protected Set<String> dumpIds;
 
   public DefaultGrader(String gradeKey) {
     this.gradeKey = gradeKey;
@@ -103,6 +109,16 @@ public abstract class DefaultGrader implements IGrader {
     }
     var s = sb.toString();
     return s;
+  }
+
+  @Override
+  public void setDumpIds(Set<String> dumpIds) {
+    this.dumpIds = dumpIds;
+  }
+
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
+    this.cm = cm;
   }
 
   protected static class DefaultGradeComparator implements Comparator<String> {

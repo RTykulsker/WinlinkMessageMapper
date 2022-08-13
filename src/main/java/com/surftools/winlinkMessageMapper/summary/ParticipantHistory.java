@@ -29,7 +29,7 @@ package com.surftools.winlinkMessageMapper.summary;
 
 import java.util.ArrayList;
 
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+import com.surftools.utils.location.LatLongPair;
 
 /**
  * one record, per participant, across all exercises

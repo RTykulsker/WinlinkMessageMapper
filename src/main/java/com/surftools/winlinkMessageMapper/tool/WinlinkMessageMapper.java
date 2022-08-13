@@ -67,14 +67,13 @@ import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInV2Processor;
-import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor;
-import com.surftools.winlinkMessageMapper.processor.message.FieldSituationProcessor_23;
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213ReplyProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.PositionProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.SpotRepProcessor;
+import com.surftools.winlinkMessageMapper.processor.message.UnifiedFieldSituationProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WaISnapProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WaResourceRequestProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.WxHurricaneProcessor;
@@ -375,9 +374,11 @@ public class WinlinkMessageMapper {
     processorMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInProcessor());
     processorMap.put(MessageType.ETO_CHECK_IN_V2, new EtoCheckInV2Processor());
 
-    processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
-    processorMap.put(MessageType.FIELD_SITUATION_REPORT_23, new FieldSituationProcessor_23());
-    processorMap.put(MessageType.FIELD_SITUATION_REPORT_25, null);
+    processorMap.put(MessageType.UNIFIED_FIELD_SITUATION, new UnifiedFieldSituationProcessor());
+    // TODO delete me
+    // processorMap.put(MessageType.FIELD_SITUATION_REPORT, new FieldSituationProcessor());
+    // processorMap.put(MessageType.FIELD_SITUATION_REPORT_23, new FieldSituationProcessor_23());
+    // processorMap.put(MessageType.FIELD_SITUATION_REPORT_25, null);
 
     processorMap.put(MessageType.WA_RR, new WaResourceRequestProcessor());
     processorMap.put(MessageType.WA_ISNAP, new WaISnapProcessor());
@@ -451,15 +452,26 @@ public class WinlinkMessageMapper {
         IGrader grader = null;
         switch (graderStrategy) {
         case CLASS:
+          // if (fields[1].equals("ETO_2022_08_18")) {
+          // grader = new ETO_2022_08_18();
+          // grader.setDumpIds(dumpIdsSet);
+          // grader.setConfigurationManager(cm);
+          // graderMap.put(messageType, grader);
+          // break;
+          // }
+
           final var prefixes = new String[] { "com.surftools.winlinkMessageMapper.grade.named.", "" };
 
           for (var prefix : prefixes) {
+            if (grader != null) {
+              continue;
+            }
             var className = prefix + fields[1];
             try {
               var clazz = Class.forName(className);
               if (clazz != null) {
                 grader = (IGrader) clazz.getDeclaredConstructor().newInstance();
-                graderMap.put(messageType, grader);
+                break;
               }
             } catch (Exception e) {
               ;// explanations.add("could not find grader class for name: " + className);
@@ -469,6 +481,7 @@ public class WinlinkMessageMapper {
             explanations.add("could not find grader class for name: " + fields[1]);
           } else {
             grader.setDumpIds(dumpIdsSet);
+            grader.setConfigurationManager(cm);
             graderMap.put(messageType, grader);
           }
           break;
@@ -476,6 +489,7 @@ public class WinlinkMessageMapper {
         case EXPECT:
           var expectGrader = new ExpectGrader(messageType, fields[1]);
           expectGrader.setDumpIds(dumpIdsSet);
+          expectGrader.setConfigurationManager(cm);
           graderMap.put(messageType, expectGrader);
           break;
 
@@ -483,6 +497,7 @@ public class WinlinkMessageMapper {
           var mcGrader = new MultipleChoiceGrader(messageType);
           mcGrader.parse(messageTypeName + ":" + value);
           mcGrader.setDumpIds(dumpIdsSet);
+          mcGrader.setConfigurationManager(cm);
           graderMap.put(messageType, mcGrader);
           break;
         }
@@ -538,11 +553,11 @@ public class WinlinkMessageMapper {
       } else if (attachmentNames.contains(MessageType.SPOTREP.attachmentName())) {
         return MessageType.SPOTREP;
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT;
+        return MessageType.UNIFIED_FIELD_SITUATION;
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT_23;
+        return MessageType.UNIFIED_FIELD_SITUATION;
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_25.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT_25;
+        return MessageType.UNIFIED_FIELD_SITUATION;
       } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
         return MessageType.WX_LOCAL;
       } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {

@@ -1,6 +1,6 @@
 /**
 
-The MIT License (MIT)
+ The MIT License (MIT)
 
 Copyright (c) 2022, Robert Tykulsker
 
@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
@@ -69,7 +70,7 @@ public class ETO_2022_07_28 implements IGrader {
     ++ppCount;
 
     if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-      // logger.info("ETO_2022_07_28 grader: " + m);
+      // System.err.println("ETO_2022_07_28 grader: " + m);
     }
 
     /**
@@ -90,7 +91,7 @@ public class ETO_2022_07_28 implements IGrader {
 
     var org = m.organization;
     final var requiredOrg = "ETO Winlink Thursday";
-    if (org != null && org.equals(requiredOrg)) {
+    if (org != null && org.equalsIgnoreCase(requiredOrg)) {
       points += 25;
       ++ppOrgOk;
     } else {
@@ -183,6 +184,10 @@ public class ETO_2022_07_28 implements IGrader {
   @Override
   public void setDumpIds(Set<String> dumpIds) {
     this.dumpIds = dumpIds;
+  }
+
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
   }
 
 }

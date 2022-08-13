@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
@@ -167,7 +168,9 @@ public class ETO_2022_04_14 implements IGrader {
 
   @Override
   public void setDumpIds(Set<String> dumpIds) {
-    // TODO Auto-generated method stub
+  }
 
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
   }
 }

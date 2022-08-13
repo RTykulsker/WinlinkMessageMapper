@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
@@ -235,6 +236,11 @@ public class MultipleChoiceGrader implements IGrader {
   @Override
   public void setDumpIds(Set<String> dumpIds) {
     this.dumpIds = dumpIds;
+  }
+
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
+
   }
 
 }

@@ -43,6 +43,7 @@ import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
@@ -526,6 +527,10 @@ public class ETO_2022_06_09 implements IGrader {
   @Override
   public void setDumpIds(Set<String> dumpIds) {
     this.dumpIds = dumpIds;
+  }
+
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
   }
 
 }

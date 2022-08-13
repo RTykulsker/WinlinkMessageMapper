@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.GraderType;
@@ -428,8 +429,10 @@ public class ExpectProcessor implements IGrader {
 
   @Override
   public void setDumpIds(Set<String> dumpIds) {
-    // TODO Auto-generated method stub
+  }
 
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
   }
 
 }

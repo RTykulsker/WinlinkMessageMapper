@@ -30,9 +30,9 @@ package com.surftools.winlinkMessageMapper.processor.message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.message.EtoCheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 

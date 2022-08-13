@@ -27,7 +27,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.p2p;
 
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+import com.surftools.utils.location.LatLongPair;
 
 public class TargetStation {
 

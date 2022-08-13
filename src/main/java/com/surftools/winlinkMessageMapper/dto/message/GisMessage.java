@@ -29,7 +29,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.message;
 
-import com.surftools.winlinkMessageMapper.dto.other.LatLongPair;
+import com.surftools.utils.location.LatLongPair;
 
 public class GisMessage extends ExportedMessage {
   public String latitude;
@@ -47,7 +47,7 @@ public class GisMessage extends ExportedMessage {
     super(xmlMessage);
     this.latitude = latLong.getLatitude();
     this.longitude = latLong.getLongitude();
-    this.organization = organization;
+    this.organization = (organization == null) ? "" : organization;
   }
 
   @Override

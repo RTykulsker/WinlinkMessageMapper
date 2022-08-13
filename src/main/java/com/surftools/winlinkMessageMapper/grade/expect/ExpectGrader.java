@@ -35,6 +35,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
@@ -107,26 +108,25 @@ public class ExpectGrader implements IGrader {
 
   @Override
   public GradeResult grade(String s) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   @Override
   public String getPostProcessReport(List<GradableMessage> messages) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   @Override
   public GraderType getGraderType() {
-    // TODO Auto-generated method stub
-    return null;
+    return GraderType.WHOLE_MESSAGE;
   }
 
   @Override
   public void setDumpIds(Set<String> dumpIds) {
-    // TODO Auto-generated method stub
+  }
 
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
   }
 
 }

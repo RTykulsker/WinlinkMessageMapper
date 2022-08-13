@@ -42,7 +42,7 @@ import com.surftools.winlinkMessageMapper.aggregation.AggregateMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
-import com.surftools.winlinkMessageMapper.util.LocationUtils;
+import com.surftools.winlinkMessageMapper.util.MyLocationUtils;
 
 public class NeighborAggregator extends AbstractBaseAggregator {
   private static final Logger logger = LoggerFactory.getLogger(NeighborAggregator.class);
@@ -180,11 +180,11 @@ public class NeighborAggregator extends AbstractBaseAggregator {
   }
 
   private int computeDistance(ExportedMessage fromMessage, ExportedMessage toMessage) {
-    return LocationUtils.computeDistanceMiles((GisMessage) fromMessage, (GisMessage) toMessage);
+    return MyLocationUtils.computeDistanceMiles((GisMessage) fromMessage, (GisMessage) toMessage);
   }
 
   private int computeBearing(ExportedMessage fromMessage, ExportedMessage toMessage) {
-    return LocationUtils.computeBearing((GisMessage) fromMessage, (GisMessage) toMessage);
+    return MyLocationUtils.computeBearing((GisMessage) fromMessage, (GisMessage) toMessage);
   }
 
   private int computeReverseBearing(int bearing) {
