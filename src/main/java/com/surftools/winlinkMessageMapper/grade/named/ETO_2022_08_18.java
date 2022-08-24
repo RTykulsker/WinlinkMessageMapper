@@ -58,9 +58,9 @@ import com.surftools.winlinkMessageMapper.grade.IGrader;
 /**
  * The Required Portion (Part 1/Thursday) will be graded as follows:
  *
- * 50 points for Agency/Group name of: ETO WLT/P2P Exercise
+ * 100 points for Agency/Group name of: ETO WLT/P2P Exercise
  *
- * 50 points for including ETO either in the To or Cc list
+ * 50 points for including ETO or ETO-AAR either in the To or Cc list
  *
  * 25 point deduction for any non-Hawaiian Field station who includes any of the Hawaiian Target stations (channels
  * 31-35) in the Send To, To, or Cc list
@@ -83,6 +83,7 @@ public class ETO_2022_08_18 implements IGrader {
   private int ppIsHawaiianCount;
 
   private int ppTargetCount;
+  private int ppWillBeField;
   private Map<String, Integer> ppTargetCountMap;
   private Map<String, Integer> ppBandCountMap;
   private Map<String, Integer> ppRegionCountMap;
@@ -133,7 +134,7 @@ public class ETO_2022_08_18 implements IGrader {
         if (target == null) {
           continue;
         }
-        logger.info(target.toString());
+        logger.debug(target.toString());
         var call = target.call;
         targetSet.add(call);
         targetMap.put(call, target);
@@ -186,13 +187,21 @@ public class ETO_2022_08_18 implements IGrader {
       explanations.add("agency/group name not " + requiredOrg);
     }
 
-    final var requiredAddress = "ETO";
+    final var requiredAddress = "ETO-AAR";
+    final var altRequiredAddress = "ETO";
     var addresses = makeAddressSet(m);
-    if (addresses.contains(requiredAddress)) {
+    if (addresses.contains(requiredAddress) || addresses.contains(altRequiredAddress)) {
       points += 50;
       ++ppRequiredAddressOk;
     } else {
       explanations.add("required address '" + requiredAddress + "' not present");
+    }
+
+    for (var address : addresses) {
+      if (targetMap.keySet().contains(address)) {
+        ++ppWillBeField;
+        break;
+      }
     }
 
     boolean isMessageInBox = geoBox.isInBox(new LatLongPair(m.latitude, m.longitude));
@@ -289,7 +298,8 @@ public class ETO_2022_08_18 implements IGrader {
     sb.append(formatPP("in Hawaii", ppIsHawaiianCount, ppCount));
     sb.append("\n");
 
-    sb.append("\nTotal targets: " + ppTargetCount + "\n");
+    sb.append("RMS stations that will be Field Stations: " + ppWillBeField + "\n");
+    sb.append("Total targets: " + ppTargetCount + "\n");
     sb.append("\nCounts by Target Call \n");
     for (String call : ppTargetCountMap.keySet()) {
       sb.append(formatPP("call: " + call, ppTargetCountMap.get(call), ppTargetCount));
@@ -349,7 +359,7 @@ public class ETO_2022_08_18 implements IGrader {
 
       var _call = fields[6];
       var _region = fields[5];
-      var _band = fields[2];
+      var _band = fields[1];
       var _latitude = Double.valueOf(fields[8]);
       var _longitude = Double.valueOf(fields[9]);
       var target = new Target(_call, _region, _band, _latitude, _longitude);

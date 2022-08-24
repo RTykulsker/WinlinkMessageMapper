@@ -41,7 +41,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -50,11 +52,11 @@ import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 public class Summarizer {
   private static final Logger logger = LoggerFactory.getLogger(Summarizer.class);
 
-  private String exerciseDate = null;
-  private String exerciseName = null;
-  private String exerciseDescription = null;
+  private final String exerciseDate;
+  private final String exerciseName;
+  private final String exerciseDescription;
+  private final MessageType exerciseMessageType;
 
-  private MessageType exerciseMessageType = null;
   private Map<String, ExportedMessage> exerciseCallMessageMap = new HashMap<>();
 
   private ExerciseSummary exerciseSummary;
@@ -73,16 +75,13 @@ public class Summarizer {
 
   private SummaryDao summaryDao;
 
-  public Summarizer(String inputPathName, String outputPathName) {
+  public Summarizer(IConfigurationManager cm, String inputPathName, String outputPathName) {
     summaryDao = new SummaryDao(inputPathName, outputPathName);
-  }
 
-  public Summarizer(String inputPathName, String outputPathName, String exerciseDate, String exerciseName,
-      String exerciseDescription) {
-    this(inputPathName, outputPathName);
-    this.exerciseDate = exerciseDate;
-    this.exerciseName = exerciseName;
-    this.exerciseDescription = exerciseDescription;
+    this.exerciseDate = cm.getAsString(Key.EXERCISE_DATE);
+    this.exerciseName = cm.getAsString(Key.EXERCISE_NAME);
+    this.exerciseDescription = cm.getAsString(Key.EXERCISE_DESCRIPTION);
+    this.exerciseMessageType = MessageType.fromString(cm.getAsString(Key.EXERCISE_MESSAGE_TYPE));
   }
 
   /**
@@ -347,15 +346,12 @@ public class Summarizer {
       exerciseRejectCounts.increment(message);
     } // end loop over messages
 
-    exerciseDate = makeExerciseDate(exerciseDate, dateCountMap);
-    exerciseName = makeExerciseName(exerciseName, exerciseMessageCounts);
-    exerciseDescription = makeExerciseDescription(exerciseDescription, exerciseDate, exerciseName);
-
-    exerciseMessageType = MessageType.fromString(exerciseName);
     if (exerciseMessageType != null && exerciseMessageType != MessageType.UNKNOWN) {
       var list = messageMap.get(exerciseMessageType);
-      for (var message : list) {
-        exerciseCallMessageMap.put(message.from, message);
+      if (list != null) {
+        for (var message : list) {
+          exerciseCallMessageMap.put(message.from, message);
+        }
       }
     }
 
@@ -405,54 +401,6 @@ public class Summarizer {
 
     Collections.sort(messages, new ExportedMessageComparator());
     return messages;
-  }
-
-  private String makeExerciseDescription(String exerciseDescription, String exerciseDate, String exerciseName) {
-    if (exerciseDescription != null) {
-      return exerciseDescription;
-    }
-
-    return "ETO WLT on " + exerciseDate + " for " + exerciseName;
-  }
-
-  private String makeExerciseName(String exerciseName, MessageCounts messageCounts) {
-    if (exerciseName != null) {
-      return exerciseName;
-    }
-
-    var countMap = messageCounts.getCountMap();
-    int maxCount = -1;
-    MessageType maxType = null;
-    for (MessageType messageType : countMap.keySet()) {
-      int count = countMap.get(messageType);
-      if (count > maxCount) {
-        maxCount = count;
-        maxType = messageType;
-      }
-    }
-
-    if (maxType == null) {
-      maxType = MessageType.UNKNOWN;
-    }
-
-    return maxType.toString();
-  }
-
-  private String makeExerciseDate(String exerciseDate, HashMap<String, Integer> dateCountMap) {
-    if (exerciseDate != null) {
-      return exerciseDate;
-    }
-
-    int maxCount = -1;
-    String maxDate = null;
-    for (String date : dateCountMap.keySet()) {
-      int count = dateCountMap.get(date);
-      if (count > maxCount) {
-        maxDate = date;
-        maxCount = count;
-      }
-    }
-    return maxDate;
   }
 
   private String makeSummaryText(int totalMessageCount, MessageCounts messageCounts, RejectCounts rejectCounts) {

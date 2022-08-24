@@ -89,6 +89,8 @@ public class ExportedMessageReader {
     logger.info("Processing file: " + filePath.getFileName());
     List<ExportedMessage> messages = new ArrayList<>();
 
+    var iNode = 0;
+    var nNodes = 0;
     try {
       DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
       dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -96,9 +98,9 @@ public class ExportedMessageReader {
       Document doc = db.parse(getInputStream(filePath));
       doc.getDocumentElement().normalize();
       NodeList nodeList = doc.getElementsByTagName("message");
-      int nNodes = nodeList.getLength();
-      for (int i = 0; i < nNodes; ++i) {
-        Node node = nodeList.item(i);
+      nNodes = nodeList.getLength();
+      for (iNode = 0; iNode < nNodes; ++iNode) {
+        Node node = nodeList.item(iNode);
         if (node.getNodeType() == Node.ELEMENT_NODE) {
           Element element = (Element) node;
           ExportedMessage message = readMessage(element);
@@ -107,7 +109,7 @@ public class ExportedMessageReader {
       } // end for over messages
     } catch (Exception e) {
       logger
-          .error("Exception processing file: " + filePath.getFileName()
+          .error("Exception processing file: " + filePath.getFileName() + ", message " + iNode + " of " + nNodes
               + " (maybe not exported Winlink Messages XML file) : " + e.getLocalizedMessage());
     }
 
@@ -121,6 +123,11 @@ public class ExportedMessageReader {
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
     var sender = element.getElementsByTagName("sender").item(0).getTextContent();
     var mime = element.getElementsByTagName("mime").item(0).getTextContent();
+
+    var isP2P = "False";
+    if (element.getElementsByTagName("peertopeer").getLength() > 0) {
+      isP2P = element.getElementsByTagName("peertopeer").item(0).getTextContent();
+    }
 
     String[] dtFields = dtString.split(" ");
     var dateString = dtFields[0];
@@ -152,6 +159,8 @@ public class ExportedMessageReader {
 
     message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, dateString, timeString, mime,
         plainContent, attachments);
+    message.isP2P = isP2P != null && isP2P.equalsIgnoreCase("true");
+
     return message;
   }
 

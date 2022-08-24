@@ -51,6 +51,8 @@ public class ExportedMessage implements IMessage {
 
   public final LocalDateTime dateTime;
 
+  public boolean isP2P;
+
   public ExportedMessage(String messageId, String from, String to, String toList, String ccList, //
       String subject, String date, String time, String mime, String plainContent, Map<String, byte[]> attachments) {
     this.messageId = messageId;

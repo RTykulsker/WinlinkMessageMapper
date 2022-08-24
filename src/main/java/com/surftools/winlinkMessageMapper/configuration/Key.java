@@ -54,6 +54,13 @@ public enum Key implements IConfigurationKey {
 
   TARGET_PATH("targetPath"), // for P2P processing
 
+  EXERCISE_DATE("exerciseDate"), // for Summarizer
+  EXERCISE_NAME("exerciseName"), // for Summarizer
+  EXERCISE_DESCRIPTION("exerciseDescription"), // for Summarizer
+  EXERCISE_MESSAGE_TYPE("exerciseMessageType"), // for Summarizer
+
+  EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
+
   ;
 
   private final String key;

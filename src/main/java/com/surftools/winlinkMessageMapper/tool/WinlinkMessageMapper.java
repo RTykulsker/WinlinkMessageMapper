@@ -32,11 +32,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -184,7 +187,7 @@ public class WinlinkMessageMapper {
       // summary
       var databasePathName = cm.getAsString(Key.DATABASE_PATH);
       if (databasePathName != null) {
-        var summarizer = new Summarizer(databasePathName, pathName);
+        var summarizer = new Summarizer(cm, databasePathName, pathName);
         summarizer.setDumpIds(dumpIdsSet);
         summarizer.summarize(messageMap);
       }
@@ -205,6 +208,8 @@ public class WinlinkMessageMapper {
       var neighborAggregator = new NeighborAggregator(10, 10);
       neighborAggregator.aggregate(messageMap);
       neighborAggregator.output(pathName);
+
+      missingDataReport(messageMap);
 
       logger.info("exiting");
     } catch (Exception e) {
@@ -532,7 +537,7 @@ public class WinlinkMessageMapper {
    * @param message
    * @return
    */
-  public MessageType getMessageType(ExportedMessage message) {
+  public static MessageType getMessageType(ExportedMessage message) {
     var subject = message.subject;
 
     /**
@@ -591,4 +596,48 @@ public class WinlinkMessageMapper {
       return MessageType.UNKNOWN;
     }
   }
+
+  private void missingDataReport(Map<MessageType, List<ExportedMessage>> messageMap) {
+    var toMap = new TreeMap<String, Integer>();
+    var messageType = MessageType.fromString(cm.getAsString(Key.EXERCISE_MESSAGE_TYPE));
+    var messageList = messageMap.get(messageType);
+    for (var message : messageList) {
+      var to = message.to;
+      var count = toMap.getOrDefault(to, Integer.valueOf(0));
+      ++count;
+      toMap.put(to, count);
+    }
+
+    final var defaultExpectedDestinations = "ETO-01,ETO-02,ETO-03,ETO-04,ETO-05,ETO-06,ETO-07,ETO-08,ETO-09,ETO-10,ETO-CAN,ETO-DX";
+    var expectedToString = cm.getAsString(Key.EXPECTED_DESTINATIONS, defaultExpectedDestinations);
+    var expectedSet = new TreeSet<String>(Arrays.asList(expectedToString.split(",")));
+
+    var missingExpectedDestinations = new TreeSet<String>(expectedSet);
+    var foundUnexpectedDestinations = new TreeSet<String>();
+
+    for (var to : toMap.keySet()) {
+      if (expectedSet.contains(to)) {
+        missingExpectedDestinations.remove(to);
+      } else {
+        foundUnexpectedDestinations.add(to);
+      }
+    }
+
+    if (missingExpectedDestinations.size() == 0) {
+      logger.info("all expected destinations found");
+    } else {
+      logger.warn("missing destinations: " + String.join(",", missingExpectedDestinations));
+    }
+
+    if (foundUnexpectedDestinations.size() == 0) {
+      logger.info("no unexpected destinations found");
+    } else {
+      var list = new ArrayList<String>();
+      for (var to : foundUnexpectedDestinations) {
+        list.add(to + "(" + toMap.get(to) + ")");
+      }
+      logger.warn("found unexpected destinations: " + String.join(",", list));
+    }
+  }
+
 }

@@ -97,7 +97,7 @@ public class SummaryDao {
     try {
       File outputDirectory = new File(outputPath.toFile().getParent());
       if (!outputDirectory.exists()) {
-        outputDirectory.mkdir();
+        outputDirectory.mkdirs();
       }
 
       var comparator = new ParticipantSummaryComparator();
@@ -122,7 +122,7 @@ public class SummaryDao {
     try {
       File outputDirectory = new File(outputPath.toFile().getParent());
       if (!outputDirectory.exists()) {
-        outputDirectory.mkdir();
+        outputDirectory.mkdirs();
       }
 
       var comparator = new ParticipantHistoryComparator();
@@ -284,6 +284,66 @@ public class SummaryDao {
 
     logger.info("returning: " + list.size() + " participantSummaries from: " + inputPath.toString());
     return list;
+  }
+
+  public List<CallSignChange> readCallSignChanges() {
+    var list = new ArrayList<CallSignChange>();
+    Path inputPath = Path.of(inputPathName, "callSignChange.csv");
+
+    if (!inputPath.toFile().exists()) {
+      logger.warn("file: " + inputPath.toString() + " not found");
+      return list;
+    }
+
+    var rowCount = -1;
+    try {
+      Reader reader = new BufferedReader(new FileReader(inputPath.toString()));
+      CSVParser parser = new CSVParserBuilder() //
+          .withSeparator(',') //
+            .withIgnoreQuotations(true) //
+            .build();
+      CSVReader csvReader = new CSVReaderBuilder(reader) //
+          .withSkipLines(1)//
+            .withCSVParser(parser)//
+            .build();
+      rowCount = 1;
+
+      String[] fields = null;
+      while ((fields = csvReader.readNext()) != null) {
+        ++rowCount;
+        var callSignChange = CallSignChange.parse(fields);
+        list.add(callSignChange);
+      }
+    } catch (Exception e) {
+      logger
+          .error(
+              "Exception reading " + inputPath.toString() + ", rowCount: " + rowCount + ", " + e.getLocalizedMessage());
+    }
+
+    logger.info("returning: " + list.size() + " callSignChanges from: " + inputPath.toString());
+    return list;
+  }
+
+  public void writeCallSignChanges(List<CallSignChange> list) {
+    Path outputPath = Path.of(outputPathName, "callSignChange.csv");
+
+    try {
+      File outputDirectory = new File(outputPath.toFile().getParent());
+      if (!outputDirectory.exists()) {
+        outputDirectory.mkdir();
+      }
+
+      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
+      writer.writeNext(CallSignChange.getHeaders());
+      var messageCount = 0;
+      for (CallSignChange csc : list) {
+        writer.writeNext(csc.getValues());
+      }
+      writer.close();
+      logger.info("wrote " + messageCount + " callSignChanges to file: " + outputPath);
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
   }
 
   public List<ParticipantHistory> readParticipantHistories() {

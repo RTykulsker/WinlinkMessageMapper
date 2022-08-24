@@ -64,6 +64,17 @@ public class ParticipantHistory {
     this.category = HistoryCategory.UNDEFINED;
   }
 
+  public ParticipantHistory(ParticipantHistory other) {
+    this.call = other.call;
+    this.lastDate = other.lastDate;
+    this.lastName = other.lastName;
+    this.lastLocation = other.lastLocation;
+    this.exerciseCount = other.exerciseCount;
+    this.messageCount = other.messageCount;
+    this.category = other.category;
+    this.mapLocation = other.mapLocation;
+  }
+
   public ParticipantHistory(String[] fields) {
     call = fields[0];
     lastDate = fields[1];
