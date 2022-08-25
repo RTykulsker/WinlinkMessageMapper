@@ -63,13 +63,27 @@ public class Dao {
   private Map<String, Field> fieldMap;
 
   private final Set<String> dumpIds;
+  private final Set<String> excludedFieldSet;
+  private final Set<String> excludedTargetSet;
 
   public Dao(IConfigurationManager cm) {
     this.cm = cm;
 
     dumpIds = new TreeSet<>();
-    var dumpIdsString = cm.getAsString(PickupKey.DUMP_IDS);
+    var dumpIdsString = cm.getAsString(PickupKey.DUMP_IDS, "");
     dumpIds.addAll(Arrays.asList(dumpIdsString.split(",")));
+
+    excludedFieldSet = new TreeSet<>();
+    var excludedFieldString = cm.getAsString(PickupKey.EXCLUDED_FIELDS, "");
+    excludedFieldSet.addAll(Arrays.asList(excludedFieldString.split(",")));
+
+    excludedTargetSet = new TreeSet<>();
+    var excludedTargetString = cm.getAsString(PickupKey.EXCLUDED_TARGETS, "");
+    excludedTargetSet.addAll(Arrays.asList(excludedTargetString.split(",")));
+
+    logger.info("dumpIds: " + String.join(",", dumpIds));
+    logger.info("excludedFieldCalls: " + String.join(",", excludedFieldSet));
+    logger.info("excludedTargetCalls: " + String.join(",", excludedTargetSet));
   }
 
   public Map<String, Target> getTargetMap() {
@@ -105,12 +119,19 @@ public class Dao {
       String[] fields;
       while ((fields = csvReader.readNext()) != null) {
         var target = new Target(fields);
+        if (excludedTargetSet.contains(target.call)) {
+          logger.info("*** skipping excludedTarget: " + target);
+          continue;
+        }
+
         if (target.ignore) {
           logger.warn("skipping target: " + target.toString() + " because of explicit ignore");
-        } else {
-          logger.debug(target.toString());
-          targets.add(target);
+          continue;
         }
+
+        logger.debug(target.toString());
+        targets.add(target);
+
       }
     } catch (Exception e) {
       logger.error("exception processing targets: " + targetFilePathName + ", " + e.getLocalizedMessage());
@@ -153,6 +174,11 @@ public class Dao {
       String[] fields;
       while ((fields = csvReader.readNext()) != null) {
         var field = new Field(fields);
+        if (excludedFieldSet.contains(field.call)) {
+          logger.info("*** skipping excludedField: " + field);
+          continue;
+        }
+
         logger.debug("row: " + list.size() + ", " + field.toString());
         list.add(field);
 

@@ -45,6 +45,8 @@ public enum PickupKey implements IConfigurationKey {
 
   DUMP_IDS("dumpIds"), // comma-delimited list of messageIds or call signs to dump message contents for
 
+  EXCLUDED_FIELDS("excludedFields"), // comma-delimited list of Field station calls to exclude
+  EXCLUDED_TARGETS("excludedTargets"), // comma-delimited list of Target stations calls to be excluded
   ;
 
   private final String key;
