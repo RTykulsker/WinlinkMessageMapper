@@ -30,6 +30,7 @@ package com.surftools.winlinkMessageMapper.processor.message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.PositionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
@@ -46,8 +47,8 @@ public class PositionProcessor extends AbstractBaseProcessor {
       logger.info("exportedMessage: " + message);
     }
 
-    var latitude = convertToDecimalDegrees(getStringFromMime("Latitude: ", mimeLines));
-    var longitude = convertToDecimalDegrees(getStringFromMime("Longitude: ", mimeLines));
+    var latitude = LocationUtils.convertToDecimalDegrees(getStringFromMime("Latitude: ", mimeLines));
+    var longitude = LocationUtils.convertToDecimalDegrees(getStringFromMime("Longitude: ", mimeLines));
     var comments = getComments(mimeLines);
 
     if (latitude.length() == 0 || longitude.length() == 0) {

@@ -601,11 +601,14 @@ public class WinlinkMessageMapper {
     var toMap = new TreeMap<String, Integer>();
     var messageType = MessageType.fromString(cm.getAsString(Key.EXERCISE_MESSAGE_TYPE));
     var messageList = messageMap.get(messageType);
-    for (var message : messageList) {
-      var to = message.to;
-      var count = toMap.getOrDefault(to, Integer.valueOf(0));
-      ++count;
-      toMap.put(to, count);
+
+    if (messageList != null) {
+      for (var message : messageList) {
+        var to = message.to;
+        var count = toMap.getOrDefault(to, Integer.valueOf(0));
+        ++count;
+        toMap.put(to, count);
+      }
     }
 
     final var defaultExpectedDestinations = "ETO-01,ETO-02,ETO-03,ETO-04,ETO-05,ETO-06,ETO-07,ETO-08,ETO-09,ETO-10,ETO-CAN,ETO-DX";
