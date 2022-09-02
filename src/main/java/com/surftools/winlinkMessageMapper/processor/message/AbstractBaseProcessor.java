@@ -306,17 +306,18 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return firstLine;
   }
 
-  public static void setDumpIds(Set<String> _dumpIds) {
-    if (dumpIds != null) {
-      dumpIds = _dumpIds;
-    }
+  @Override
+  public void setDumpIds(Set<String> _dumpIds) {
+    dumpIds = _dumpIds;
   }
 
-  public static void setSaveAttachments(boolean _saveAttachments) {
+  @Override
+  public void setSaveAttachments(boolean _saveAttachments) {
     saveAttachments = _saveAttachments;
   }
 
-  public static void setPath(Path _path) {
+  @Override
+  public void setPath(Path _path) {
     path = _path;
   }
 

@@ -64,7 +64,6 @@ import com.surftools.winlinkMessageMapper.grade.GraderStrategy;
 import com.surftools.winlinkMessageMapper.grade.IGrader;
 import com.surftools.winlinkMessageMapper.grade.MultipleChoiceGrader;
 import com.surftools.winlinkMessageMapper.grade.expect.ExpectGrader;
-import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.AckProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CheckInProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.DyfiProcessor;
@@ -125,10 +124,7 @@ public class WinlinkMessageMapper {
     try {
 
       cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
-
-      if (dumpIdsSet == null) {
-        dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
-      }
+      dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
 
       var pathName = cm.getAsString(Key.PATH);
       Path path = Paths.get(pathName);
@@ -272,7 +268,7 @@ public class WinlinkMessageMapper {
    * @return
    */
   private Map<MessageType, List<ExportedMessage>> processAllExportedMessages(List<ExportedMessage> exportedMessages) {
-    var processorMap = makeProcessorMap();
+    processorMap = makeProcessorMap();
 
     Map<MessageType, List<ExportedMessage>> messageMap = new HashMap<>();
 
@@ -331,12 +327,7 @@ public class WinlinkMessageMapper {
     reader.setPreferredSuffixes(preferredPrefixes);
     reader.setNotPreferredPrefixes(notPreferredPrefixes);
     reader.setNotPreferredSuffixes(notPreferredSuffixes);
-
-    if (dumpIdsSet == null) {
-      dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
-      AbstractBaseProcessor.setDumpIds(dumpIdsSet);
-      reader.setDumpIds(dumpIdsSet);
-    }
+    reader.setDumpIds(dumpIdsSet);
 
     // read all Exported Messages from files
     List<ExportedMessage> exportedMessages = new ArrayList<>();
@@ -399,15 +390,11 @@ public class WinlinkMessageMapper {
       } // end for over types in map
     } // end if requiredMessageType != null
 
-    if (dumpIdsSet == null) {
-      dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
-      AbstractBaseProcessor.setDumpIds(dumpIdsSet);
+    for (IProcessor processor : processorMap.values()) {
+      processor.setDumpIds(dumpIdsSet);
+      processor.setPath(Paths.get(cm.getAsString(Key.PATH)));
     }
 
-    AbstractBaseProcessor.setPath(Paths.get(cm.getAsString(Key.PATH)));
-    AbstractBaseProcessor.setSaveAttachments(cm.getAsBoolean(Key.SAVE_ATTACHMENTS));
-
-    this.processorMap = processorMap;
     return processorMap;
   }
 
@@ -523,9 +510,7 @@ public class WinlinkMessageMapper {
     Set<String> set = new HashSet<>();
     if (dumpIdsString != null) {
       String[] fields = dumpIdsString.split(",");
-      for (String string : fields) {
-        set.add(string);
-      }
+      set.addAll(Arrays.asList(fields));
       logger.info("dumpIds: " + String.join(",", set));
     }
     return set;
@@ -562,6 +547,8 @@ public class WinlinkMessageMapper {
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
         return MessageType.UNIFIED_FIELD_SITUATION;
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_25.attachmentName())) {
+        return MessageType.UNIFIED_FIELD_SITUATION;
+      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_26.attachmentName())) {
         return MessageType.UNIFIED_FIELD_SITUATION;
       } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
         return MessageType.WX_LOCAL;

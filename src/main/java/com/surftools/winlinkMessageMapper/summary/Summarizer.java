@@ -424,7 +424,7 @@ public class Summarizer {
 
       var exerciseCount = ph.getExerciseCount();
       if (exerciseCount == 1) {
-        if (ph.getLastDate().equals(exerciseDate)) {
+        if (ph.getLastDate() == null || ph.getLastDate().equals(exerciseDate)) {
           ph.setCategory(HistoryCategory.FIRST_TIME_LAST_TIME);
         } else {
           ph.setCategory(HistoryCategory.ONE_AND_DONE);

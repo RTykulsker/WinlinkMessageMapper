@@ -27,7 +27,9 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.processor.message;
 
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 
@@ -52,5 +54,11 @@ public interface IProcessor {
    * @return
    */
   public String getPostProcessReport(List<ExportedMessage> messages);
+
+  public void setDumpIds(Set<String> dumpIdsSet);
+
+  public void setPath(Path path);
+
+  public void setSaveAttachments(boolean asBoolean);
 
 }

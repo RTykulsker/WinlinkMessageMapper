@@ -149,7 +149,7 @@ public class UnifiedFieldSituationMessage extends GisMessage implements Gradable
 
   @Override
   public MessageType getMessageType() {
-    return MessageType.FIELD_SITUATION_REPORT_23;
+    return MessageType.UNIFIED_FIELD_SITUATION;
   }
 
   @Override

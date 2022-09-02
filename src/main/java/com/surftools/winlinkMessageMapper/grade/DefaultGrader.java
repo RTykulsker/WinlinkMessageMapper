@@ -36,35 +36,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import com.surftools.utils.config.IConfigurationManager;
 
 public abstract class DefaultGrader implements IGrader {
-
-  private final String gradeKey;
+  protected Logger logger = null;;
 
   protected static Comparator<String> gradeComparator = new DefaultGradeComparator();
 
   protected IConfigurationManager cm;
   protected Set<String> dumpIds;
+  protected int ppCount;
 
-  public DefaultGrader(String gradeKey) {
-    this.gradeKey = gradeKey;
+  public DefaultGrader(Logger logger) {
+    this.logger = logger;
     gradeComparator = new DefaultGradeComparator();
   }
 
-  @Override
-  public GradeResult grade(String s) {
-    String grade = "unknown";
-    String explanation = "unsupported gradeKey: " + gradeKey;
-    return new GradeResult(grade, explanation);
-  }
-
-  @Override
-  public GradeResult grade(GradableMessage m) {
-    String grade = "unknown";
-    String explanation = "unsupported gradeKey: " + gradeKey;
-    return new GradeResult(grade, explanation);
-  }
+  // @Override
+  // public GradeResult grade(String s) {
+  // String grade = "unknown";
+  // String explanation = "unsupported gradeKey: " + gradeKey;
+  // return new GradeResult(grade, explanation);
+  // }
+  //
+  // @Override
+  // public GradeResult grade(GradableMessage m) {
+  // String grade = "unknown";
+  // String explanation = "unsupported gradeKey: " + gradeKey;
+  // return new GradeResult(grade, explanation);
+  // }
 
   @Override
   public String getPostProcessReport(List<GradableMessage> messages) {
@@ -109,6 +111,24 @@ public abstract class DefaultGrader implements IGrader {
     }
     var s = sb.toString();
     return s;
+  }
+
+  protected String formatPercent(Double d) {
+    if (d == null) {
+      return "";
+    }
+
+    return String.format("%.2f", 100d * d) + "%";
+  }
+
+  protected String formatPP(String label, int okCount) {
+    var notOkCount = ppCount - okCount;
+    var okPercent = okCount / (double) ppCount;
+    var notOkPercent = 1d - okPercent;
+    return "  " + label + ": " //
+        + okCount + "(" + formatPercent(okPercent) + ") ok, " //
+        + notOkCount + "(" + formatPercent(notOkPercent) + ") not ok" //
+        + "\n";
   }
 
   @Override

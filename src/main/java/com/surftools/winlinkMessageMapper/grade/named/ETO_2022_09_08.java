@@ -36,13 +36,11 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.EtoCheckInV2Message;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.GraderType;
-import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 /**
  * ETO Check In V2 (custom form)
@@ -50,19 +48,18 @@ import com.surftools.winlinkMessageMapper.grade.IGrader;
  * @author bobt
  *
  */
-public class ETO_2022_09_08 implements IGrader {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2022_09_08.class);
-
-  private IConfigurationManager cm;
+public class ETO_2022_09_08 extends DefaultGrader {
+  @SuppressWarnings("unused")
+  private static Logger logger = LoggerFactory.getLogger(ETO_2022_09_08.class);
 
   // for post processing
-  private int ppCount;
   private int ppCommentOk;
   private Map<String, Integer> commentCountMap;
 
   private Set<String> dumpIds;
 
   public ETO_2022_09_08() {
+    super(logger);
     commentCountMap = new TreeMap<>();
   }
 
@@ -118,14 +115,6 @@ public class ETO_2022_09_08 implements IGrader {
     return new GradeResult(grade, explanation);
   }
 
-  private String formatPercent(Double d) {
-    if (d == null) {
-      return "";
-    }
-
-    return String.format("%.2f", 100d * d) + "%";
-  }
-
   @Override
   public GraderType getGraderType() {
     return GraderType.WHOLE_MESSAGE;
@@ -154,42 +143,6 @@ public class ETO_2022_09_08 implements IGrader {
     }
 
     return sb.toString();
-  }
-
-  private String formatPP(String label, int okCount) {
-    var notOkCount = ppCount - okCount;
-    var okPercent = (double) okCount / (double) ppCount;
-    var notOkPercent = 1d - okPercent;
-    return "  " + label + ": " //
-        + okCount + "(" + formatPercent(okPercent) + ") ok, " //
-        + notOkCount + "(" + formatPercent(notOkPercent) + ") not ok" //
-        + "\n";
-  }
-
-  @Override
-  public void setDumpIds(Set<String> dumpIds) {
-    this.dumpIds = dumpIds;
-  }
-
-  @Override
-  public void setConfigurationManager(IConfigurationManager cm) {
-    this.cm = cm;
-  }
-
-  public static record PositionReport(String from, String to, String nauticalMiles, String bearing, String latitude,
-      String longitude, String date, String time, String comments) {
-
-    public static String[] getHeaders() {
-      return new String[] { //
-          "From", "To", "NauticalMiles", "Bearing", "Latitude", "Longitude", //
-          "Date", "Time", "Comments" };
-    }
-
-    public String[] getValues() {
-      return new String[] { //
-          from, to, nauticalMiles, bearing, latitude, longitude, //
-          date, time, comments };
-    }
   }
 
 }

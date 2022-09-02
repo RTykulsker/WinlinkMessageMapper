@@ -60,6 +60,7 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
       MessageType.FIELD_SITUATION_REPORT, //
       MessageType.FIELD_SITUATION_REPORT_23, //
       MessageType.FIELD_SITUATION_REPORT_25, //
+      MessageType.FIELD_SITUATION_REPORT_26, //
   };
   private static final Set<MessageType> SUPPORTED_TYPES_SET;
   private static final Map<MessageType, Integer> typeCountMap;
@@ -79,6 +80,12 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
 
   @Override
   public ExportedMessage process(ExportedMessage message) {
+    var messageId = message.messageId;
+    var from = message.from;
+
+    if (dumpIds.contains(messageId) || dumpIds.contains(from)) {
+      logger.info("dump: " + message);
+    }
 
     MessageType baseMessageType = getMessageType(message);
     if (!SUPPORTED_TYPES_SET.contains(baseMessageType)) {
@@ -90,11 +97,7 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
     typeCountMap.put(baseMessageType, ++count);
 
     try {
-      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-        logger.info("exportedMessage: " + message);
-      }
-
-      String xmlString = new String(message.attachments.get(MessageType.FIELD_SITUATION_REPORT_23.attachmentName()));
+      String xmlString = new String(message.attachments.get(baseMessageType.attachmentName()));
 
       makeDocument(message.messageId, xmlString);
 
@@ -153,7 +156,8 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
 
       return m;
     } catch (Exception e) {
-      return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
+      return reject(message, RejectType.PROCESSING_ERROR,
+          "mId: " + messageId + ", from: " + from + ", " + e.getMessage());
     }
   }
 
@@ -174,6 +178,8 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
         return MessageType.FIELD_SITUATION_REPORT_23;
       } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_25.attachmentName())) {
         return MessageType.FIELD_SITUATION_REPORT_25;
+      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_26.attachmentName())) {
+        return MessageType.FIELD_SITUATION_REPORT_26;
       } else {
 
         return MessageType.UNKNOWN;
