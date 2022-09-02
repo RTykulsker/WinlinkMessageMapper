@@ -532,6 +532,12 @@ public class WinlinkMessageMapper {
     if (attachments != null && attachments.size() > 0) {
       var attachmentNames = attachments.keySet();
 
+      for (var name : attachmentNames) {
+        if (name.startsWith(MessageType.UNIFIED_FIELD_SITUATION.attachmentName())) {
+          return MessageType.UNIFIED_FIELD_SITUATION;
+        }
+      }
+
       if (attachmentNames.contains(MessageType.ICS_213.attachmentName())) {
         return MessageType.ICS_213;
       } else if (attachmentNames.contains(MessageType.CHECK_IN.attachmentName())) {
@@ -542,14 +548,6 @@ public class WinlinkMessageMapper {
         return MessageType.HOSPITAL_BED;
       } else if (attachmentNames.contains(MessageType.SPOTREP.attachmentName())) {
         return MessageType.SPOTREP;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
-        return MessageType.UNIFIED_FIELD_SITUATION;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
-        return MessageType.UNIFIED_FIELD_SITUATION;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_25.attachmentName())) {
-        return MessageType.UNIFIED_FIELD_SITUATION;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_26.attachmentName())) {
-        return MessageType.UNIFIED_FIELD_SITUATION;
       } else if (attachmentNames.contains(MessageType.WX_LOCAL.attachmentName())) {
         return MessageType.WX_LOCAL;
       } else if (attachmentNames.contains(MessageType.WX_SEVERE.attachmentName())) {

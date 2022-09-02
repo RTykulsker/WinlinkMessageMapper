@@ -30,11 +30,9 @@ package com.surftools.winlinkMessageMapper.processor.message;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,14 +54,7 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
-  private static final MessageType[] SUPPORTED_TYPES = { //
-      MessageType.FIELD_SITUATION_REPORT, //
-      MessageType.FIELD_SITUATION_REPORT_23, //
-      MessageType.FIELD_SITUATION_REPORT_25, //
-      MessageType.FIELD_SITUATION_REPORT_26, //
-  };
-  private static final Set<MessageType> SUPPORTED_TYPES_SET;
-  private static final Map<MessageType, Integer> typeCountMap;
+  private static final Map<UnderlyingMessageType, Integer> typeCountMap;
 
   static {
     var set = new LinkedHashSet<String>();
@@ -71,7 +62,6 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
     set.addAll(Arrays.asList(OVERRIDE_LAT_LON_TAG_NAMES));
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
 
-    SUPPORTED_TYPES_SET = new HashSet<>(Arrays.asList(SUPPORTED_TYPES));
     typeCountMap = new HashMap<>();
   }
 
@@ -87,17 +77,19 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
       logger.info("dump: " + message);
     }
 
-    MessageType baseMessageType = getMessageType(message);
-    if (!SUPPORTED_TYPES_SET.contains(baseMessageType)) {
-      return reject(message, RejectType.UNSUPPORTED_TYPE, baseMessageType.toString());
-    }
+    UnderlyingMessageType underlyingMessageType = getUnderlyingMessageType(message);
 
     // increment count by type
-    var count = typeCountMap.getOrDefault(baseMessageType, Integer.valueOf(0));
-    typeCountMap.put(baseMessageType, ++count);
+    var count = typeCountMap.getOrDefault(underlyingMessageType, Integer.valueOf(0));
+    typeCountMap.put(underlyingMessageType, ++count);
+
+    if (underlyingMessageType == UnderlyingMessageType.UNSUPPORTED) {
+      ;
+      return reject(message, RejectType.UNSUPPORTED_TYPE, underlyingMessageType.toString());
+    }
 
     try {
-      String xmlString = new String(message.attachments.get(baseMessageType.attachmentName()));
+      String xmlString = new String(message.attachments.get(underlyingMessageType.toString()));
 
       makeDocument(message.messageId, xmlString);
 
@@ -167,25 +159,19 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
    * @param message
    * @return
    */
-  private MessageType getMessageType(ExportedMessage message) {
+  private UnderlyingMessageType getUnderlyingMessageType(ExportedMessage message) {
     var attachments = message.attachments;
     if (attachments != null && attachments.size() > 0) {
       var attachmentNames = attachments.keySet();
 
-      if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_23.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT_23;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_25.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT_25;
-      } else if (attachmentNames.contains(MessageType.FIELD_SITUATION_REPORT_26.attachmentName())) {
-        return MessageType.FIELD_SITUATION_REPORT_26;
-      } else {
-
-        return MessageType.UNKNOWN;
+      for (var name : attachmentNames) {
+        if (name.startsWith(MessageType.UNIFIED_FIELD_SITUATION.attachmentName())) {
+          var umt = UnderlyingMessageType.fromString(name);
+          return umt;
+        }
       }
     }
-    return MessageType.UNKNOWN;
+    return null;
   }
 
   private String parseFormVersion(String string) {
@@ -209,10 +195,41 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
 
     var sb = new StringBuilder();
     sb.append("\nField Situation Report types:\n");
-    for (MessageType type : SUPPORTED_TYPES) {
+    for (UnderlyingMessageType type : UnderlyingMessageType.values()) {
       sb.append("  type: " + type.name() + ", count: " + typeCountMap.getOrDefault(type, Integer.valueOf(0)) + "\n");
     }
     sb.append("\n");
     return sb.toString();
+  }
+
+  private static enum UnderlyingMessageType {
+
+    FIELD_SITUATION_REPORT("RMS_Express_Form_Field Situation Report_viewer.xml"), //
+    FIELD_SITUATION_REPORT_23("RMS_Express_Form_Field Situation Report 23_viewer.xml"), //
+    FIELD_SITUATION_REPORT_25("RMS_Express_Form_Field Situation Report 25_viewer.xml"), //
+    FIELD_SITUATION_REPORT_26("RMS_Express_Form_Field Situation Report 26_viewer.xml"), //
+    UNSUPPORTED("unsupported");
+    ;
+
+    private final String attachmentName;
+
+    private UnderlyingMessageType(String attachmentName) {
+      this.attachmentName = attachmentName;
+    }
+
+    public static UnderlyingMessageType fromString(String string) {
+      for (UnderlyingMessageType umt : UnderlyingMessageType.values()) {
+        if (umt.toString().equals(string)) {
+          return umt;
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public String toString() {
+      return attachmentName;
+    }
+
   }
 }

@@ -67,7 +67,7 @@ public class ETO_2022_05_14_Aggregator extends AbstractBaseAggregator {
       var list = fromListMap.get(from);
       for (var message : list) {
         var messageType = message.getMessageType();
-        if (messageType != MessageType.FIELD_SITUATION_REPORT) {
+        if (messageType != MessageType.UNIFIED_FIELD_SITUATION) {
           continue;
         }
 

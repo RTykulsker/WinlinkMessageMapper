@@ -51,8 +51,7 @@ import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.message.CheckOutMessage;
 import com.surftools.winlinkMessageMapper.dto.message.DyfiMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
-import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage_23;
+import com.surftools.winlinkMessageMapper.dto.message.UnifiedFieldSituationMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 /**
@@ -299,13 +298,7 @@ public class LAX_2022_06_18_Shifting_SoCal extends AbstractBaseAggregator {
         explanations.add("No Check In message");
       }
 
-      var isType23 = false;
-      list = map.get(MessageType.FIELD_SITUATION_REPORT_23);
-      if (list == null || list.size() == 0) {
-        list = map.get(MessageType.FIELD_SITUATION_REPORT);
-      } else {
-        isType23 = true;
-      }
+      list = map.get(MessageType.UNIFIED_FIELD_SITUATION);
       if (list != null) {
         var exportedMessage = list.get(0);
 
@@ -315,17 +308,11 @@ public class LAX_2022_06_18_Shifting_SoCal extends AbstractBaseAggregator {
 
         LocalDateTime fsrDtUtc = null;
         boolean hasWatermelon = false;
-        if (isType23) {
-          var fsrMessage = (FieldSituationMessage_23) list.get(0);
-          fsrDtUtc = fsrMessage.dateTime;
-          hasWatermelon = fsrMessage.additionalComments != null
-              && fsrMessage.additionalComments.toLowerCase().contains("watermelon");
-        } else {
-          var fsrMessage = (FieldSituationMessage) list.get(0);
-          fsrDtUtc = fsrMessage.dateTime;
-          hasWatermelon = fsrMessage.additionalComments != null
-              && fsrMessage.additionalComments.toLowerCase().contains("watermelon");
-        }
+
+        var fsrMessage = (UnifiedFieldSituationMessage) list.get(0);
+        fsrDtUtc = fsrMessage.dateTime;
+        hasWatermelon = fsrMessage.additionalComments != null
+            && fsrMessage.additionalComments.toLowerCase().contains("watermelon");
 
         m.data().put(KEY_FSR_COUNT, 1);
 

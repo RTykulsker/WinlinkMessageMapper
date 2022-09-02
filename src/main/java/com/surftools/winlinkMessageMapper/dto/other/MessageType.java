@@ -51,21 +51,20 @@ public enum MessageType {
   REJECTS(12, "rejects"), //
   UNKNOWN(13, "unknown"), // can't infer message type
 
-  FIELD_SITUATION_REPORT(14, "field_situation", true, "RMS_Express_Form_Field Situation Report_viewer.xml"), //
+  // FIELD_SITUATION_REPORT(14, "field_situation", true, "RMS_Express_Form_Field Situation Report_viewer.xml"), //
   WA_RR(15, "wa_rr", false, "RMS_Express_Form_ICS213RR_WA_Viewer.xml"), //
   WA_ISNAP(16, "wa_isnap", false, "RMS_Express_Form_ISNAP_WA_Viewer.xml"), //
 
   ACK(17, "ack", false, null), //
   ICS_213_REPLY(18, "ics_213_reply", false, "RMS_Express_Form_ICS213_SendReply_Viewer.xml"), //
 
-  FIELD_SITUATION_REPORT_23(19, "field_situation_23", true, "RMS_Express_Form_Field Situation Report 23_viewer.xml"), //
-  FIELD_SITUATION_REPORT_25(20, "field_situation_25", true, "RMS_Express_Form_Field Situation Report 25_viewer.xml"), //
-
-  //
+  // FIELD_SITUATION_REPORT_23(19, "field_situation_23", true, "RMS_Express_Form_Field Situation Report 23_viewer.xml"),
+  // FIELD_SITUATION_REPORT_25(20, "field_situation_25", true, "RMS_Express_Form_Field Situation Report 25_viewer.xml"),
 
   ETO_CHECK_IN_V2(21, "eto_check_in_v2", true), //
-  UNIFIED_FIELD_SITUATION(22, "unified_FSR", true), //
-  FIELD_SITUATION_REPORT_26(22, "field_situation_26", true, "RMS_Express_Form_Field Situation Report 26_viewer.xml"), //
+  UNIFIED_FIELD_SITUATION(22, "unified_FSR", true, "RMS_Express_Form_Field Situation Report"), //
+
+  // FIELD_SITUATION_REPORT_26(22, "field_situation_26", true, "RMS_Express_Form_Field Situation Report 26_viewer.xml"),
 
   ;
 

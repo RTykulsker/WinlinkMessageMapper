@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.surftools.utils.config.IConfigurationManager;
-import com.surftools.winlinkMessageMapper.dto.message.FieldSituationMessage;
+import com.surftools.winlinkMessageMapper.dto.message.UnifiedFieldSituationMessage;
 import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
@@ -50,11 +50,11 @@ public class ETO_2022_05_14 implements IGrader {
 
   @Override
   public GradeResult grade(GradableMessage gm) {
-    if (!(gm instanceof FieldSituationMessage)) {
+    if (!(gm instanceof UnifiedFieldSituationMessage)) {
       return null;
     }
 
-    FieldSituationMessage m = (FieldSituationMessage) gm;
+    UnifiedFieldSituationMessage m = (UnifiedFieldSituationMessage) gm;
 
     // participation points
     var points = 20;
