@@ -33,7 +33,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 
@@ -42,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
@@ -52,7 +53,6 @@ import com.surftools.winlinkMessageMapper.grade.DefaultGrader;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 import com.surftools.winlinkMessageMapper.grade.GradeResult;
 import com.surftools.winlinkMessageMapper.grade.GraderType;
-import com.surftools.winlinkMessageMapper.grade.IGrader;
 
 /**
  * NEARBY Winlink Catalog Request Mapping Challenge
@@ -66,10 +66,8 @@ import com.surftools.winlinkMessageMapper.grade.IGrader;
  * @author bobt
  *
  */
-public class ETO_2022_09_29 implements IGrader {
+public class ETO_2022_09_29 extends DefaultGrader {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2022_09_29.class);
-
-  private IConfigurationManager cm;
 
   private final int MAX_ATTACHMENT_SIZE = 5120;
 
@@ -86,7 +84,6 @@ public class ETO_2022_09_29 implements IGrader {
   private Path textBadContentPath;
 
   // for post processing
-  private int ppCount;
 
   private int ppImagePresentOk;
   private int ppImageSizeOk;
@@ -96,8 +93,9 @@ public class ETO_2022_09_29 implements IGrader {
   private int ppTextContentOk;
   private int ppTextNameOk;
 
-  private int ppCommentOk;
   private int ppOrganizationOk;
+  private int ppCommentOk;
+  private final Map<Integer, Integer> ppCommentMatchMap;
 
   private Set<String> dumpIds;
 
@@ -105,9 +103,12 @@ public class ETO_2022_09_29 implements IGrader {
   private final List<PositionReport> allPositionReports;
 
   public ETO_2022_09_29() {
+    super(logger);
     // don't have a cm when we are constructed;
     isInitialized = false;
     allPositionReports = new ArrayList<>();
+
+    ppCommentMatchMap = new TreeMap<>();
   }
 
   /**
@@ -156,7 +157,7 @@ public class ETO_2022_09_29 implements IGrader {
    *
    * Agency/Group name (step 8.2.2) is ETO Winlink Thursday – 10 points
    *
-   * Comments are empty (Step 8.2.5) – 10 points
+   * Comments match the count from step 2.1.6 – 10 points (Step 8.2.5) – 10 points
    *
    */
   public GradeResult grade(GradableMessage gm) {
@@ -172,12 +173,13 @@ public class ETO_2022_09_29 implements IGrader {
     CheckInMessage m = (CheckInMessage) gm;
 
     if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-      // logger.info("ETO_2022_09_29 grader: " + m);
+      logger.info("ETO_2022_09_29 grader: " + m);
     }
 
     ++ppCount;
     var points = 0;
     var explanations = new ArrayList<String>();
+    var commentMatchCount = 0;
 
     var imageFileName = getImageFile(m);
     if (imageFileName != null) {
@@ -229,12 +231,13 @@ public class ETO_2022_09_29 implements IGrader {
       var list = parse(m, content);
 
       var isTextContentOk = false;
+      var requiredContent = "ETO Winlink Thursday 09/29/2022 Challenge Exercise";
+
       if (list.size() > 0) {
         allPositionReports.addAll(list);
         var pr = list.get(0);
         var comments = pr.comments;
 
-        var requiredContent = "Winlink Thursday 09/29/2022 Challenge";
         if (comments.equalsIgnoreCase(requiredContent)) {
           points += 10;
           isTextContentOk = true;
@@ -247,14 +250,20 @@ public class ETO_2022_09_29 implements IGrader {
         } else {
           explanations.add("expected to find 30 Position Reports in text, only found " + list.size());
         }
+
+        commentMatchCount = (int) list.stream().filter(o -> o.comments.equalsIgnoreCase(requiredContent)).count();
+        var mapCount = ppCommentMatchMap.getOrDefault(commentMatchCount, Integer.valueOf(0));
+        ++mapCount;
+        ppCommentMatchMap.put(commentMatchCount, mapCount);
       }
 
       writeText(m, textFileName, bytes, isTextNameOk, isTextContentOk);
     } else {
       explanations.add("no text attachment found");
     }
+
     var organization = m.organization;
-    var requiredOrganization = "ETO Winlink Thursday";
+    var requiredOrganization = "ETO Winlink Thursday 09/29/2022 Challenge Exercise";
     if (organization != null && organization.equalsIgnoreCase(requiredOrganization)) {
       ++ppOrganizationOk;
       points += 10;
@@ -266,14 +275,21 @@ public class ETO_2022_09_29 implements IGrader {
     if (comments != null) {
       comments = comments.trim();
       if (comments.isEmpty()) {
-        ++ppCommentOk;
-        points += 10;
+        explanations.add("comments should be: " + commentMatchCount);
       } else {
-        explanations.add("comments should not be present");
+        try {
+          var commentCount = Integer.valueOf(comments);
+          if (commentCount == commentMatchCount) {
+            points += 10;
+          } else {
+            explanations.add("comments should be: " + commentMatchCount + ", not " + commentCount);
+          }
+        } catch (Exception e) {
+          explanations.add("comments should be: " + commentMatchCount + ", not " + comments);
+        }
       }
     } else {
-      ++ppCommentOk;
-      points += 10;
+      explanations.add("comments should be: " + commentMatchCount);
     }
 
     points = Math.min(100, points);
@@ -396,14 +412,6 @@ public class ETO_2022_09_29 implements IGrader {
     return null;
   }
 
-  private String formatPercent(Double d) {
-    if (d == null) {
-      return "";
-    }
-
-    return String.format("%.2f", 100d * d) + "%";
-  }
-
   @Override
   public GraderType getGraderType() {
     return GraderType.WHOLE_MESSAGE;
@@ -434,9 +442,24 @@ public class ETO_2022_09_29 implements IGrader {
     sb.append(formatPP("text content", ppTextContentOk));
 
     sb.append(formatPP("agency/group name", ppOrganizationOk));
-    sb.append(formatPP("no comments supplied", ppCommentOk));
+    sb.append(formatPP("comments match text count", ppCommentOk));
+
+    var totalMatches = ppCommentMatchMap.values().stream().reduce(0, Integer::sum);
+    sb.append("\nCounts by comment match:\n");
+    for (var nMatches : ppCommentMatchMap.keySet()) {
+      var count = ppCommentMatchMap.get(nMatches);
+      sb.append(formatMatchCount(nMatches, count, totalMatches));
+    }
 
     return sb.toString();
+  }
+
+  protected String formatMatchCount(int nMatches, int count, int totalMatches) {
+
+    var okPercent = count / (double) totalMatches;
+    return "  " + nMatches + ": " //
+        + count + "(" + formatPercent(okPercent) + ")\n";
+
   }
 
   private void writeAllPositionReports(List<PositionReport> list) {
@@ -528,26 +551,6 @@ public class ETO_2022_09_29 implements IGrader {
               + e.getLocalizedMessage());
     }
 
-  }
-
-  private String formatPP(String label, int okCount) {
-    var notOkCount = ppCount - okCount;
-    var okPercent = (double) okCount / (double) ppCount;
-    var notOkPercent = 1d - okPercent;
-    return "  " + label + ": " //
-        + okCount + "(" + formatPercent(okPercent) + ") ok, " //
-        + notOkCount + "(" + formatPercent(notOkPercent) + ") not ok" //
-        + "\n";
-  }
-
-  @Override
-  public void setDumpIds(Set<String> dumpIds) {
-    this.dumpIds = dumpIds;
-  }
-
-  @Override
-  public void setConfigurationManager(IConfigurationManager cm) {
-    this.cm = cm;
   }
 
   public static record PositionReport(String from, String to, String nauticalMiles, String bearing, String latitude,
