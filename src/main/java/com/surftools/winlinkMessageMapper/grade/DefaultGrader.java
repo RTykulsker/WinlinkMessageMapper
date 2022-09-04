@@ -131,6 +131,18 @@ public abstract class DefaultGrader implements IGrader {
         + "\n";
   }
 
+  protected String formatCounts(String key, int count, int sumCounts) {
+    var percent = count / (double) sumCounts;
+    return "  " + key + ": " //
+        + count + "(" + formatPercent(percent) + ")\n";
+  }
+
+  protected String formatCounts(int key, int count, int sumCounts) {
+    var percent = count / (double) sumCounts;
+    return "  " + key + ": " //
+        + count + "(" + formatPercent(percent) + ")\n";
+  }
+
   @Override
   public void setDumpIds(Set<String> dumpIds) {
     this.dumpIds = dumpIds;

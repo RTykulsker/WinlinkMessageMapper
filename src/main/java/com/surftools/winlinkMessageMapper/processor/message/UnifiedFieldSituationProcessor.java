@@ -137,6 +137,8 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
       String poc = getStringFromXml("poc");
       String formVersion = parseFormVersion(getStringFromXml("templateversion"));
 
+      // TODO verify that I've identified base variables and variants
+
       UnifiedFieldSituationMessage m = new UnifiedFieldSituationMessage(//
           message, latLong.getLatitude(), latLong.getLongitude(), //
           precedence, task, isHelpNeeded, neededHelp, //

@@ -532,6 +532,7 @@ public class WinlinkMessageMapper {
     if (attachments != null && attachments.size() > 0) {
       var attachmentNames = attachments.keySet();
 
+      // because there is/was FSR, FSR_23, FSR_25, FSR_26 ...
       for (var name : attachmentNames) {
         if (name.startsWith(MessageType.UNIFIED_FIELD_SITUATION.attachmentName())) {
           return MessageType.UNIFIED_FIELD_SITUATION;

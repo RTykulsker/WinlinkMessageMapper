@@ -28,21 +28,29 @@ SOFTWARE.
 package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 
-public class DyfiMessage extends GisMessage {
+public class DyfiMessage extends GisMessage implements GradableMessage {
   public final String location;
   public final boolean isRealEvent;
   public final boolean isFelt;
+  public final String response;
   public final String comments;
   public final String intensity;
   public final String formVersion;
 
+  private boolean isGraded;
+  private String grade;
+  private String explanation;
+
   public DyfiMessage(ExportedMessage xmlMessage, String latitude, String longitude, String organization, //
-      String location, boolean isRealEvent, boolean isFelt, String comments, String intensity, String formVersion) {
+      String location, boolean isRealEvent, boolean isFelt, String response, String comments, String intensity,
+      String formVersion) {
     super(xmlMessage, latitude, longitude, organization);
     this.location = location;
     this.isRealEvent = isRealEvent;
     this.isFelt = isFelt;
+    this.response = response;
     this.comments = comments;
     this.intensity = intensity;
     this.formVersion = formVersion;
@@ -52,14 +60,16 @@ public class DyfiMessage extends GisMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", "ExerciseId", //
-        "Location", "IsRealEvent", "IsFelt", "Comments", "Intensity", "FormVersion" };
+        "Location", "IsRealEvent", "IsFelt", "Response", "Comments", "Intensity", "FormVersion", "Grade",
+        "Explanation" };
   }
 
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, //
         latitude, longitude, organization, location, //
-        Boolean.toString(isRealEvent), Boolean.toString(isFelt), comments, intensity, formVersion };
+        Boolean.toString(isRealEvent), Boolean.toString(isFelt), response, comments, intensity, formVersion, grade,
+        explanation };
   }
 
   @Override
@@ -70,5 +80,35 @@ public class DyfiMessage extends GisMessage {
   @Override
   public String getMultiMessageComment() {
     return comments;
+  }
+
+  @Override
+  public boolean isGraded() {
+    return isGraded;
+  }
+
+  @Override
+  public void setIsGraded(boolean isGraded) {
+    this.isGraded = isGraded;
+  }
+
+  @Override
+  public String getGrade() {
+    return grade;
+  }
+
+  @Override
+  public void setGrade(String grade) {
+    this.grade = grade;
+  }
+
+  @Override
+  public String getExplanation() {
+    return explanation;
+  }
+
+  @Override
+  public void setExplanation(String explanation) {
+    this.explanation = explanation;
   }
 }

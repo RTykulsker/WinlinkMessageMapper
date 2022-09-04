@@ -448,18 +448,10 @@ public class ETO_2022_09_29 extends DefaultGrader {
     sb.append("\nCounts by comment match:\n");
     for (var nMatches : ppCommentMatchMap.keySet()) {
       var count = ppCommentMatchMap.get(nMatches);
-      sb.append(formatMatchCount(nMatches, count, totalMatches));
+      sb.append(formatCounts(nMatches, count, totalMatches));
     }
 
     return sb.toString();
-  }
-
-  protected String formatMatchCount(int nMatches, int count, int totalMatches) {
-
-    var okPercent = count / (double) totalMatches;
-    return "  " + nMatches + ": " //
-        + count + "(" + formatPercent(okPercent) + ")\n";
-
   }
 
   private void writeAllPositionReports(List<PositionReport> list) {

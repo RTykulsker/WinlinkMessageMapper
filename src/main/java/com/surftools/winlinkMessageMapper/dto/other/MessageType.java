@@ -64,8 +64,6 @@ public enum MessageType {
   ETO_CHECK_IN_V2(21, "eto_check_in_v2", true), //
   UNIFIED_FIELD_SITUATION(22, "unified_FSR", true, "RMS_Express_Form_Field Situation Report"), //
 
-  // FIELD_SITUATION_REPORT_26(22, "field_situation_26", true, "RMS_Express_Form_Field Situation Report 26_viewer.xml"),
-
   ;
 
   /**
