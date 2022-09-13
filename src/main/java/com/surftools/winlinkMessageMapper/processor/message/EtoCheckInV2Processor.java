@@ -51,6 +51,13 @@ public class EtoCheckInV2Processor extends AbstractBaseProcessor {
     Map<String, String> map = null;
     try {
       var jsonString = message.plainContent;
+
+      var plainContext = message.plainContent;
+      var beginIndex = plainContext.indexOf("{");
+      var endIndex = plainContext.lastIndexOf("}") + 1;
+      jsonString = plainContext.substring(beginIndex, endIndex);
+
+      jsonString = jsonString.replaceAll("\n", "");
       map = mapper.readValue(jsonString, Map.class);
     } catch (Exception e) {
       return reject(message, RejectType.CANT_PARSE_ETO_JSON, e.getMessage());

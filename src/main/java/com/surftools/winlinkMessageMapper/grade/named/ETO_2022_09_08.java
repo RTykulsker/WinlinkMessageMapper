@@ -49,11 +49,10 @@ import com.surftools.winlinkMessageMapper.grade.GraderType;
  *
  */
 public class ETO_2022_09_08 extends DefaultGrader {
-  @SuppressWarnings("unused")
   private static Logger logger = LoggerFactory.getLogger(ETO_2022_09_08.class);
 
   // for post processing
-  private int ppCommentOk;
+  private int ppFormVersionOk;
   private Map<String, Integer> commentCountMap;
 
   private Set<String> dumpIds;
@@ -87,18 +86,23 @@ public class ETO_2022_09_08 extends DefaultGrader {
 
     var comments = m.comments;
     var expectedComments = "1.0.4";
-    if (comments != null) {
+    if (comments == null) {
+      explanations.add("expected Comments: '" + expectedComments + "' not found");
+      comments = "(null)";
+    } else {
       comments = comments.trim();
       if (comments.equals(expectedComments)) {
         points += 25;
       } else {
-        explanations
-            .add("Comments (" + comments + ") doesn't matchexpected Comments: '" + expectedComments + "' not found");
+        explanations.add("Comments (" + comments + ") doesn't match required: '" + expectedComments + "'");
       }
-    } else {
-      explanations.add("expected Comments: '" + expectedComments + "' not found");
-      comments = "(null)";
     }
+
+    var formVersion = m.version;
+    if (formVersion.equals(expectedComments)) {
+      ++ppFormVersionOk;
+    }
+
     var count = commentCountMap.getOrDefault(comments, Integer.valueOf(0));
     ++count;
     commentCountMap.put(comments, count);
@@ -134,12 +138,12 @@ public class ETO_2022_09_08 extends DefaultGrader {
     var defaultReport = DefaultGrader.defaultPostProcessReport(messages);
     var sb = new StringBuilder(defaultReport);
     sb.append("\nETO-2022-09-08 Grading Report: graded " + ppCount + " ETO Check In V2 messages\n");
-    sb.append(formatPP("Correct form version", ppCommentOk));
+    sb.append(formatPP("Correct form version", ppFormVersionOk));
 
     sb.append("\nCounts by comment:\n");
     for (var comment : commentCountMap.keySet()) {
       var count = commentCountMap.get(comment);
-      sb.append(formatPP(comment, count));
+      sb.append(formatCounts(comment, count, ppCount));
     }
 
     return sb.toString();
