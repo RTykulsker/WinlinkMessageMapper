@@ -27,8 +27,6 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.summary;
 
-import java.util.ArrayList;
-
 /**
  * typically one row per exercise
  *
@@ -41,23 +39,14 @@ public class ExerciseSummary {
   private String description;
   private int totalMessages;
   private int uniqueParticipants;
-  private int messageVersion;
-  private MessageCounts messageCounts;
-  private int rejectsVersion;
-  private RejectCounts rejectCounts;
 
-  public ExerciseSummary(String date, String name, String description, int totalMessages, int uniqueParticipants,
-      int messageVersion, MessageCounts messageCounts, int rejectsVersion, RejectCounts rejectCounts) {
+  public ExerciseSummary(String date, String name, String description, int totalMessages, int uniqueParticipants) {
     super();
     this.date = date;
     this.name = name;
     this.description = description;
     this.totalMessages = totalMessages;
     this.uniqueParticipants = uniqueParticipants;
-    this.messageVersion = messageVersion;
-    this.messageCounts = messageCounts;
-    this.rejectsVersion = rejectsVersion;
-    this.rejectCounts = rejectCounts;
   }
 
   public ExerciseSummary(String[] fields) {
@@ -66,11 +55,6 @@ public class ExerciseSummary {
     description = fields[2];
     totalMessages = Integer.parseInt(fields[3]);
     uniqueParticipants = Integer.parseInt(fields[4]);
-    messageVersion = Integer.parseInt(fields[5]);
-    messageCounts = new MessageCounts(fields, 6);
-    int index = 6 + messageVersion;
-    rejectsVersion = Integer.parseInt(fields[index]);
-    rejectCounts = new RejectCounts(fields, index + 1);
   }
 
   public String getDate() {
@@ -113,78 +97,13 @@ public class ExerciseSummary {
     this.uniqueParticipants = uniqueParticipants;
   }
 
-  public int getMessageVersion() {
-    return messageVersion;
-  }
-
-  public void setMessageVersion(int messageVersion) {
-    this.messageVersion = messageVersion;
-  }
-
-  public MessageCounts getMessageCounts() {
-    return messageCounts;
-  }
-
-  public void setMessageCounts(MessageCounts messageCounts) {
-    this.messageCounts = messageCounts;
-  }
-
-  public int getRejectsVersion() {
-    return rejectsVersion;
-  }
-
-  public void setRejectsVersion(int rejectsVersion) {
-    this.rejectsVersion = rejectsVersion;
-  }
-
-  public RejectCounts getRejectCounts() {
-    return rejectCounts;
-  }
-
-  public void setRejectCounts(RejectCounts rejectCounts) {
-    this.rejectCounts = rejectCounts;
-  }
-
   public static String[] getHeaders() {
-    var list = new ArrayList<String>();
-
-    list.add("Exercise Date");
-    list.add("Exercise Name");
-    list.add("Exercise Description");
-    list.add("Total Messages");
-    list.add("Unique Participants");
-
-    list.add("Message Version");
-    list.addAll(MessageCounts.getHeaders());
-
-    list.add("Rejects Version");
-    list.addAll(RejectCounts.getHeaders());
-
-    String[] array = new String[list.size()];
-    list.toArray(array);
-
-    return (array);
+    return new String[] { "Exercise Date", "Exercise Time", "Exercise Description", "Total Messages",
+        "Unique Participants" };
   }
 
   public String[] getValues() {
-    var list = new ArrayList<String>();
-
-    list.add(date);
-    list.add(name);
-    list.add(description);
-    list.add(String.valueOf(totalMessages));
-    list.add(String.valueOf(uniqueParticipants));
-
-    list.add(String.valueOf(messageVersion));
-    list.addAll(messageCounts.getValues());
-
-    list.add(String.valueOf(rejectsVersion));
-    list.addAll(rejectCounts.getValues());
-
-    String[] array = new String[list.size()];
-    list.toArray(array);
-
-    return (array);
+    return new String[] { date, name, description, String.valueOf(totalMessages), String.valueOf(uniqueParticipants) };
   }
 
 }

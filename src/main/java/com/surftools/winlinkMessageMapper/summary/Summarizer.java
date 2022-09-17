@@ -47,7 +47,6 @@ import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
-import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class Summarizer {
   private static final Logger logger = LoggerFactory.getLogger(Summarizer.class);
@@ -331,8 +330,6 @@ public class Summarizer {
 
       var call = message.from;
       var participantSummary = callPartipantSummaryMap.getOrDefault(call, new ParticipantSummary(call));
-      participantSummary.getMessageCounts().increment(message);
-      participantSummary.getRejectCounts().increment(message);
       if (participantSummary.getLastLocation() == null) {
         if (message.getMessageType().isGisType()) {
           var gisMessage = (GisMessage) message;
@@ -356,8 +353,7 @@ public class Summarizer {
     }
 
     exerciseSummary = new ExerciseSummary(exerciseDate, exerciseName, exerciseDescription, //
-        totalMessageCount, callPartipantSummaryMap.keySet().size(), MessageType.values().length, exerciseMessageCounts,
-        RejectType.values().length, exerciseRejectCounts);
+        totalMessageCount, callPartipantSummaryMap.keySet().size());
 
     // fix up participantSummaries, now that exercise data and name are known
     callParticipantHistoryMap = new HashMap<String, ParticipantHistory>();
@@ -370,7 +366,6 @@ public class Summarizer {
       ph.setLastName(exerciseName);
       ph.setLastDate(exerciseDate);
       ph.setLastLocation(ps.getLastLocation());
-      ph.setMessageCount(ps.getMessageCounts().getTotalCount());
       ph.setExerciseCount(1);
       callParticipantHistoryMap.put(call, ph);
     }

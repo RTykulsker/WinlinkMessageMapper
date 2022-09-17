@@ -27,11 +27,7 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.summary;
 
-import java.util.ArrayList;
-
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.winlinkMessageMapper.dto.other.MessageType;
-import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 /**
  * one record/row per participant, per exercise
@@ -45,17 +41,9 @@ public class ParticipantSummary {
   private String name;
   private String call;
   private LatLongPair lastLocation;
-  private int messageVersion;
-  private MessageCounts messageCounts;
-  private int rejectsVersion;
-  private RejectCounts rejectCounts;
 
   public ParticipantSummary(String call) {
     this.call = call;
-    this.messageCounts = new MessageCounts();
-    this.rejectCounts = new RejectCounts();
-    this.messageVersion = MessageType.values().length;
-    this.rejectsVersion = RejectType.values().length;
   }
 
   public ParticipantSummary(String[] fields) {
@@ -63,19 +51,12 @@ public class ParticipantSummary {
     name = fields[1];
     call = fields[2];
     lastLocation = new LatLongPair(fields[3], fields[4]);
-
-    messageVersion = Integer.parseInt(fields[5]);
-    messageCounts = new MessageCounts(fields, 6);
-
-    int index = 6 + messageVersion;
-    rejectsVersion = Integer.parseInt(fields[index]);
-    rejectCounts = new RejectCounts(fields, index + 1);
   }
 
   @Override
   public String toString() {
     return "ParticipantSummary {date: " + date + ", name: " + name + ", call: " + call + ", lastLocation: "
-        + lastLocation + ", messageCounts: " + messageCounts + ", rejectCounts: " + rejectCounts + "}";
+        + lastLocation + "}";
   }
 
   public String getDate() {
@@ -110,84 +91,14 @@ public class ParticipantSummary {
     this.lastLocation = lastLocation;
   }
 
-  public int getMessageVersion() {
-    return messageVersion;
-  }
-
-  public void setMessageVersion(int messageVersion) {
-    this.messageVersion = messageVersion;
-  }
-
-  public MessageCounts getMessageCounts() {
-    return messageCounts;
-  }
-
-  public void setMessageCounts(MessageCounts messageCounts) {
-    this.messageCounts = messageCounts;
-  }
-
-  public int getRejectsVersion() {
-    return rejectsVersion;
-  }
-
-  public void setRejectsVersion(int rejectsVersion) {
-    this.rejectsVersion = rejectsVersion;
-  }
-
-  public RejectCounts getRejectCounts() {
-    return rejectCounts;
-  }
-
-  public void setRejectCounts(RejectCounts rejectCounts) {
-    this.rejectCounts = rejectCounts;
-  }
-
   public static String[] getHeaders() {
-    var list = new ArrayList<String>();
-
-    list.add("Exercise Date");
-    list.add("Exercise Name");
-    list.add("Call");
-    list.add("Last Latitude");
-    list.add("Last Longitude");
-
-    list.add("Message Version");
-    list.addAll(MessageCounts.getHeaders());
-
-    list.add("Rejects Version");
-    list.addAll(RejectCounts.getHeaders());
-
-    String[] array = new String[list.size()];
-    list.toArray(array);
-
-    return (array);
+    return new String[] { "Exercise Date", "Exercise Name", "Call", "Last Latitude", "Last Longitude" };
   }
 
   public String[] getValues() {
-    var list = new ArrayList<String>();
-
-    list.add(date);
-    list.add(name);
-    list.add(call);
-
-    if (lastLocation == null) {
-      list.add("");
-      list.add("");
-    } else {
-      list.add(lastLocation.getLatitude());
-      list.add(lastLocation.getLongitude());
-    }
-
-    list.add(String.valueOf(messageVersion));
-    list.addAll(messageCounts.getValues());
-
-    list.add(String.valueOf(rejectsVersion));
-    list.addAll(rejectCounts.getValues());
-
-    String[] array = new String[list.size()];
-    list.toArray(array);
-
-    return (array);
+    return new String[] { date, name, call, //
+        ((lastLocation == null) ? "" : lastLocation.getLatitude()), //
+        ((lastLocation == null) ? "" : lastLocation.getLongitude()) };
   }
 
 }
