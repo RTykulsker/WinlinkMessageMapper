@@ -33,20 +33,33 @@ public class Ics213Message extends ExportedMessage {
   public final String organization;
   public final String message;
 
-  public Ics213Message(ExportedMessage xmlMessage, String organization, String message) {
+  public final String incidentName;
+  public final String icsTo;
+  public final String icsFrom;
+  public final String icsSubject;
+
+  public Ics213Message(ExportedMessage xmlMessage, String organization, String message, String incidentName,
+      String icsFrom, String icsTo, String icsSubject) {
     super(xmlMessage);
     this.organization = organization;
     this.message = message;
+
+    this.incidentName = incidentName;
+    this.icsTo = icsTo;
+    this.icsFrom = icsFrom;
+    this.icsSubject = icsSubject;
   }
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Organization", "Message", };
+    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Organization", "Message",
+        "IncidentName", "IcsTo", "IcsFrom", "IcsSubject" };
   }
 
   @Override
   public String[] getValues() {
-    return new String[] { messageId, from, to, subject, date, time, organization, message };
+    return new String[] { messageId, from, to, subject, date, time, organization, message, incidentName, icsFrom, icsTo,
+        icsSubject };
   }
 
   @Override

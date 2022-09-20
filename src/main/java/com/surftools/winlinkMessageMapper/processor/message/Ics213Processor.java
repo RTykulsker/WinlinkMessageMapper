@@ -65,14 +65,19 @@ public class Ics213Processor extends AbstractBaseProcessor {
         messageText = getStringFromXml("Message");
       }
 
+      var incidentName = getStringFromXml("inc_name");
+      var from = getStringFromXml("fm_name");
+      var to = getStringFromXml("to_name");
+      var subject = getStringFromXml("subjectline");
+
       LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);
       if (latLongComment == null) {
-        var m = new Ics213Message(message, organization, messageText);
+        var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject);
         return m;
       } else {
         LatLongPair latLong = latLongComment.latLong;
         if (!latLong.isValid()) {
-          var m = new Ics213Message(message, organization, messageText);
+          var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject);
           return m;
         } else {
           String restOfMessage = latLongComment.comment;

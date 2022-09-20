@@ -171,7 +171,7 @@ public class SummaryDao {
   public void writeFirstTimers(List<ParticipantHistory> list, String exerciseDate, MessageType messageType,
       Map<String, ExportedMessage> exerciseCallMessageMap) {
 
-    if (messageType == MessageType.UNKNOWN || list.size() == 0) {
+    if (messageType == MessageType.UNKNOWN || list.size() == 0 || exerciseCallMessageMap.size() == 0) {
       logger.info("wrote zero firstTimer messages");
       return;
     }
