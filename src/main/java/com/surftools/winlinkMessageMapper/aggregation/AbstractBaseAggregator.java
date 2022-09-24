@@ -32,8 +32,10 @@ import java.io.FileWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 
@@ -48,6 +50,7 @@ public abstract class AbstractBaseAggregator implements IAggregator {
   protected final Map<String, AggregateMessage> aggregateMessageMap;
   protected final Map<String, Map<MessageType, List<ExportedMessage>>> fromMessageMap;
   protected final Map<String, List<ExportedMessage>> fromListMap;
+  protected static Set<String> dumpIds = new HashSet<>();
 
   protected String outputFileName = "aggregate.csv";
   protected boolean doOutput = true;
@@ -152,6 +155,11 @@ public abstract class AbstractBaseAggregator implements IAggregator {
       aggregateMessages.add(aggregateMessage);
       aggregateMessageMap.put(from, aggregateMessage);
     }
+  }
+
+  @Override
+  public void setDumpIds(Set<String> _dumpIds) {
+    dumpIds = _dumpIds;
   }
 
   @Override

@@ -29,6 +29,7 @@ package com.surftools.winlinkMessageMapper.aggregation;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -65,4 +66,7 @@ public class AggregatorProcessor {
     aggregator.output(pathName);
   }
 
+  public void setDumpIds(Set<String> _dumpIds) {
+    aggregator.setDumpIds(_dumpIds);
+  }
 }

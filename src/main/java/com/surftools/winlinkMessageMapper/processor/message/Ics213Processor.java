@@ -99,6 +99,9 @@ public class Ics213Processor extends AbstractBaseProcessor {
    * @return
    */
   private LatLongComment getLatLongAndCommentFromXml(String messageText) {
+    if (messageText == null) {
+      return null;
+    }
     LatLongPair latLong = new LatLongPair("", "");
     String latLongString = null;
     String restOfMessage = "";

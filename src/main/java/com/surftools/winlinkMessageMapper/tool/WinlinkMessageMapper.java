@@ -191,6 +191,7 @@ public class WinlinkMessageMapper {
       var aggregatorName = cm.getAsString(Key.AGGREGATOR_NAME);
       if (aggregatorName != null) {
         var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
+        aggregatorProcessor.setDumpIds(dumpIdsSet);
         aggregatorProcessor.aggregate(messageMap, pathName);
       }
 

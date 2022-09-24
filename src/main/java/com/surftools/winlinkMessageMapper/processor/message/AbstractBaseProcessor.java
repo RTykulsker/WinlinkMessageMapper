@@ -35,8 +35,10 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -304,6 +306,48 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
 
     return firstLine;
+  }
+
+  protected String dumpXmlMap() {
+    var map = getXmlValueMap();
+    var sb = new StringBuilder();
+
+    for (var name : map.keySet()) {
+      var value = getStringFromXml(name);
+      sb.append("name: " + name + " => value: " + value + "\n");
+    }
+
+    return sb.toString();
+  }
+
+  protected Map<String, String> getXmlValueMap() {
+    var map = new LinkedHashMap<String, String>();
+    var variableNames = new ArrayList<String>();
+    var level1Node = currentDocument.getChildNodes().item(0);
+    var level1List = level1Node.getChildNodes();
+    var nLevel1 = level1List.getLength();
+    for (int iLevel1 = 0; iLevel1 < nLevel1; ++iLevel1) {
+      var level2Node = level1List.item(iLevel1);
+      var level2List = level2Node.getChildNodes();
+      var nLevel2 = level2List.getLength();
+      for (int iLevel2 = 0; iLevel2 < nLevel2; ++iLevel2) {
+        var level3Node = level2List.item(iLevel2);
+        var level3List = level3Node.getChildNodes();
+        var nLevel3 = level3List.getLength();
+        for (int iLevel3 = 0; iLevel3 < nLevel3; ++iLevel3) {
+
+          var name = level2List.item(iLevel2).getNodeName();
+          if (name != null) {
+            variableNames.add(name);
+          }
+        }
+      }
+    }
+
+    for (var name : variableNames) {
+      map.put(name, getStringFromXml(name));
+    }
+    return map;
   }
 
   @Override

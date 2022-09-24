@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,11 @@ public class ETO_2022_09_22_Aggregator extends AbstractBaseAggregator {
     for (var m : aggregateMessages) {
 
       var from = m.from();
+
+      if (dumpIds.contains(from)) {
+        logger.info("dump: " + from);
+      }
+
       var map = fromMessageMap.get(from);
 
       EtoCheckInV2Message checkInMessage = null;
@@ -280,6 +286,7 @@ public class ETO_2022_09_22_Aggregator extends AbstractBaseAggregator {
         ++scoreCount;
         ppScoreCountMap.put(points, scoreCount);
 
+        clearinghouse = clearinghouse == null ? checkInClearinghouse : clearinghouse;
         var entry = new Entry(from, clearinghouse, location, checkInComments, checkInMessageId, icsSetupName,
             icsIncidentName, icsTo, icsFrom, icsSubject, icsMessageMessage, grade, explanation);
 
@@ -349,7 +356,9 @@ public class ETO_2022_09_22_Aggregator extends AbstractBaseAggregator {
 
     var n = noLocationEntries.size();
     logger.info(n + " entries have no locations: fixing");
-    var list = LocationUtils.jitter(n, null, 1000);
+    var s = noLocationEntries.stream().map(Entry::call).collect(Collectors.toList());
+    logger.info("entries to be fixed: " + s);
+    var list = LocationUtils.jitter(n, null, 10000);
 
     for (var i = 0; i < n; ++i) {
       var entry = noLocationEntries.get(i);
