@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.tool;
+package com.surftools.winlinkMessageMapper.tool.p2p.dropoff;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -55,8 +55,6 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.surftools.winlinkMessageMapper.dto.p2p.FieldStation;
-import com.surftools.winlinkMessageMapper.dto.p2p.TargetStation;
 
 /**
  * App to produce a KML file that shows the result of a ETO P2P exercise
@@ -76,6 +74,9 @@ public class P2PMapper {
   }
 
   private static final Logger logger = LoggerFactory.getLogger(P2PMapper.class);
+
+  // TODO put into a configuration file
+  // TODO use P2P keys
 
   @Option(name = "--excludeTargets", metaVar = "EXCLUDE_TARGETS", usage = "exclude target stations [call,[call...]]", required = false)
   private static String excludeTargetStations = null;

@@ -98,7 +98,7 @@ public class ExerciseSummary {
   }
 
   public static String[] getHeaders() {
-    return new String[] { "Exercise Date", "Exercise Time", "Exercise Description", "Total Messages",
+    return new String[] { "Exercise Date", "Exercise Name", "Exercise Description", "Total Messages",
         "Unique Participants" };
   }
 

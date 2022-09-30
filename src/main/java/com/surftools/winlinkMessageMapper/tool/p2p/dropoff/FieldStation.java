@@ -25,50 +25,45 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.dto.p2p;
+package com.surftools.winlinkMessageMapper.tool.p2p.dropoff;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import com.surftools.utils.location.LatLongPair;
 
-public class TargetStation {
+public class FieldStation implements Comparable<FieldStation> {
+  public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
-  public final String band;
-  public final String centerFrequency;
-  public final String dialFrequency;
-  public final String mode;
-  public final String region;
-  public final String call;
-  public final String city;
-  public final String state;
-  public final String grid;
+  public final String messageId;
+  public final String from;
+  public final String to;
+  public final String subject;
+  public final String date;
+  public final String time;
   public final LatLongPair latLong;
+  public final String organization;
+  public final String comments;
 
-  public TargetStation(String[] fields) {
+  public final LocalDateTime dateTime;
+
+  public FieldStation(String[] fields) {
     int index = 0;
-    band = fields[index++].trim();
-    centerFrequency = fields[index++].trim();
-    dialFrequency = fields[index++].trim();
-    mode = fields[index++].trim();
-    region = fields[index++].trim();
-    call = fields[index++].trim();
-    city = fields[index++].trim();
-    state = fields[index++].trim();
-    grid = fields[index++].trim();
+
+    messageId = fields[index++].trim();
+    from = fields[index++].trim();
+    to = fields[index++].trim();
+    subject = fields[index++].trim();
+    date = fields[index++].trim();
+    time = fields[index++].trim();
     String latitude = fields[index++].trim();
     String longitude = fields[index++].trim();
-    latLong = new LatLongPair(latitude, longitude);
-  }
+    organization = fields[index++].trim();
+    comments = fields[index++].trim();
 
-  public TargetStation(TargetStation other, String latitude, String longitude) {
-    this.band = other.band;
-    this.centerFrequency = other.centerFrequency;
-    this.dialFrequency = other.dialFrequency;
-    this.mode = other.mode;
-    this.region = other.region;
-    this.call = other.call;
-    this.city = other.city;
-    this.state = other.state;
-    this.grid = other.grid;
     latLong = new LatLongPair(latitude, longitude);
+
+    dateTime = LocalDateTime.parse(date + " " + time, FORMATTER);
   }
 
   public LatLongPair getLatLongPair() {
@@ -85,8 +80,13 @@ public class TargetStation {
 
   @Override
   public String toString() {
-    return "TargetStation {call: " + call + ", city: " + city + ", state: " + state + ", latitude: "
-        + latLong.getLatitude() + ", longitude: " + latLong.getLongitude() + "}";
+    return "FieldStation {from: " + from + ", to: " + to + ", latitude: " + latLong.getLatitude() + ", longitude: "
+        + latLong.getLongitude() + "}";
+  }
+
+  @Override
+  public int compareTo(FieldStation o) {
+    return dateTime.compareTo(o.dateTime);
   }
 
 }
