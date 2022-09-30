@@ -60,7 +60,7 @@ public enum Key implements IConfigurationKey {
   EXERCISE_MESSAGE_TYPE("exerciseMessageType"), // for Summarizer
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
-
+  MAX_DAYS_BEFORE_LATE("maxDaysBeforeLate"), // for warning about late messages
   ;
 
   private final String key;

@@ -15,7 +15,6 @@
 		<maven.compiler.plugin.version>3.3</maven.compiler.plugin.version>
 		<maven.appassembler.plugin.version>1.10</maven.appassembler.plugin.version>
 
-		<surftools.utils.version>1.0.0</surftools.utils.version>
 		<args4j.version>2.33</args4j.version>
 		<jackson.version>2.13.1</jackson.version>
 		<commons.codec.version>1.15</commons.codec.version>
@@ -44,12 +43,6 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>${jackson.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.surftools</groupId>
-			<artifactId>utils</artifactId>
-			<version>${surftools.utils.version}</version>
 		</dependency>
 			
 		<dependency>

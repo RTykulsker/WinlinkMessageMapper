@@ -58,6 +58,7 @@ public class Ics213Processor extends AbstractBaseProcessor {
       makeDocument(message.messageId, xmlString);
 
       String organization = getStringFromXml("formtitle");
+      // var gridSquare = getStringFromXml("grid_square");
 
       // we want the value of the <message> element
       String messageText = getStringFromXml("message");

@@ -31,6 +31,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -156,11 +160,9 @@ public class WinlinkMessageMapper {
       }
 
       // read all ExportedMessages from the files
-      var exportedMessages = readAllExportedMessages(path, //
-          cm.getAsString(Key.PREFERRED_PREFIXES, "ETO"), //
-          cm.getAsString(Key.PREFERRED_SUFFEXES, "Winlink.org,winlink.org"), //
-          cm.getAsString(Key.NOT_PREFERRED_PREFIXES, "QTH,SMTP"), //
-          cm.getAsString(Key.NOT_PREFERRED_SUFFIXES));
+      var exportedMessages = readAllExportedMessages(cm);
+
+      warnForLateMessages(exportedMessages);
 
       // transform ExportedMessages into type-specific messages
       var messageMap = processAllExportedMessages(exportedMessages);
@@ -212,6 +214,60 @@ public class WinlinkMessageMapper {
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
       System.exit(1);
+    }
+  }
+
+  /**
+   * iterate through all read, but unclassified messages to see if any are "late", or more precisely, "too old"
+   *
+   * requires the following configuration items:
+   *
+   * EXERCISE_DATE -- date (YYYY-MM-DD) when exercise occurred
+   *
+   * MAX_DAYS_BEFORE_LATE -- number of days (default 7) to consider a message "too old"
+   *
+   * @param exportedMessages
+   */
+  private void warnForLateMessages(List<ExportedMessage> exportedMessages) {
+    var exerciseDateString = cm.getAsString(Key.EXERCISE_DATE).replaceAll("/", "-");
+    var exerciseDate = LocalDate.parse(exerciseDateString);
+    var exerciseDateTime = LocalDateTime.of(exerciseDate, LocalTime.MIDNIGHT);
+    var maxLateDays = cm.getAsInt(Key.MAX_DAYS_BEFORE_LATE, 7);
+
+    var count = 0; // total late count
+    var toCountMap = new HashMap<String, Integer>(); // count by destination (clearinghouse)
+    var lateCountMap = new TreeMap<String, Integer>(); // count of late messages by clearinghouse
+    for (var m : exportedMessages) {
+      var messageDateTime = m.dateTime;
+      var duration = Duration.between(messageDateTime, exerciseDateTime);
+      var to = m.to; // destination/clearinghouse
+
+      // always increment the count by destination
+      var toCount = toCountMap.getOrDefault(to, Integer.valueOf(0));
+      ++toCount;
+      toCountMap.put(to, toCount);
+
+      if (duration.toDays() > maxLateDays) {
+        // only if late
+        ++count;
+        logger
+            .warn("### late message: from " + m.from + ", to: " + m.to + ", mId: " + m.messageId + ", duration: "
+                + duration.toDays());
+        var lateCount = lateCountMap.getOrDefault(to, Integer.valueOf(0));
+        ++lateCount;
+        lateCountMap.put(to, lateCount);
+      }
+    }
+
+    // output as needed
+    if (count > 0) {
+      logger.warn("### " + count + " total late messages");
+
+      for (var to : lateCountMap.keySet()) {
+        var lateCount = lateCountMap.get(to);
+        var toCount = toCountMap.get(to);
+        logger.warn("### to: " + to + ", late: " + lateCount + ", total: " + toCount);
+      }
     }
   }
 
@@ -313,21 +369,19 @@ public class WinlinkMessageMapper {
   /**
    * extract all the ExportedMessages from the files
    *
-   * @param path
-   * @param preferredPrefixes
-   * @param preferredSuffixes
-   * @param notPreferredPrefixes
-   * @param notPreferredSuffixes
+   * @param cm
    * @return
    */
-  private List<ExportedMessage> readAllExportedMessages(Path path, String preferredPrefixes, String preferredSuffixes,
-      String notPreferredPrefixes, String notPreferredSuffixes) {
+  private List<ExportedMessage> readAllExportedMessages(IConfigurationManager cm) {
+
+    var pathName = cm.getAsString(Key.PATH);
+    Path path = Paths.get(pathName);
 
     ExportedMessageReader reader = new ExportedMessageReader();
-    reader.setPreferredPrefixes(preferredPrefixes);
-    reader.setPreferredSuffixes(preferredPrefixes);
-    reader.setNotPreferredPrefixes(notPreferredPrefixes);
-    reader.setNotPreferredSuffixes(notPreferredSuffixes);
+    reader.setPreferredPrefixes(cm.getAsString(Key.PREFERRED_PREFIXES, "ETO"));
+    reader.setPreferredSuffixes(cm.getAsString(Key.PREFERRED_SUFFEXES, "Winlink.org,winlink.org"));
+    reader.setNotPreferredPrefixes(cm.getAsString(Key.NOT_PREFERRED_PREFIXES, "QTH,SMTP"));
+    reader.setNotPreferredSuffixes(cm.getAsString(Key.NOT_PREFERRED_SUFFIXES));
     reader.setDumpIds(dumpIdsSet);
 
     // read all Exported Messages from files
