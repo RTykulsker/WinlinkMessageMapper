@@ -34,6 +34,12 @@ import java.util.Set;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * instantiates the named IAggregator
+ *
+ * @author bobt
+ *
+ */
 public class AggregatorProcessor {
 
   private IAggregator aggregator;

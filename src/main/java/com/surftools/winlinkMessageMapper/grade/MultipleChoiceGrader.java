@@ -38,6 +38,12 @@ import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * for simple, multiple choice exercises
+ *
+ * @author bobt
+ *
+ */
 public class MultipleChoiceGrader implements IGrader {
 
   private static final String CORRECT = "correct";

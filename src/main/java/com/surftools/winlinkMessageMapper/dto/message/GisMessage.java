@@ -31,6 +31,12 @@ package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.utils.location.LatLongPair;
 
+/**
+ * extend an @{ExportedMessage} with latitude/longitude
+ *
+ * @author bobt
+ *
+ */
 public class GisMessage extends ExportedMessage {
   public String latitude;
   public String longitude;

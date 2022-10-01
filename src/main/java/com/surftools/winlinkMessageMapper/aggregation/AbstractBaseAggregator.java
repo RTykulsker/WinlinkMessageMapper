@@ -44,6 +44,12 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * does common aggregation tasks, such as grouping by type, finding location, etc
+ *
+ * @author bobt
+ *
+ */
 public abstract class AbstractBaseAggregator implements IAggregator {
   protected final Logger logger;
   protected List<AggregateMessage> aggregateMessages;

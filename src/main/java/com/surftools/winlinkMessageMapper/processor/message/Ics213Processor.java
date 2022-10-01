@@ -58,7 +58,7 @@ public class Ics213Processor extends AbstractBaseProcessor {
       makeDocument(message.messageId, xmlString);
 
       String organization = getStringFromXml("formtitle");
-      // var gridSquare = getStringFromXml("grid_square");
+      var gridSquare = getStringFromXml("grid_square");
 
       // we want the value of the <message> element
       String messageText = getStringFromXml("message");
@@ -73,12 +73,12 @@ public class Ics213Processor extends AbstractBaseProcessor {
 
       LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);
       if (latLongComment == null) {
-        var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject);
+        var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject, gridSquare);
         return m;
       } else {
         LatLongPair latLong = latLongComment.latLong;
         if (!latLong.isValid()) {
-          var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject);
+          var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject, gridSquare);
           return m;
         } else {
           String restOfMessage = latLongComment.comment;

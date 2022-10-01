@@ -37,6 +37,12 @@ import org.slf4j.LoggerFactory;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * if no specific aggregator is to be instantiated
+ *
+ * @author bobt
+ *
+ */
 public class DefaultAggregator extends AbstractBaseAggregator {
   private static final Logger logger = LoggerFactory.getLogger(DefaultAggregator.class);
 

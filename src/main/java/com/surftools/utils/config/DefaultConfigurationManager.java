@@ -30,7 +30,15 @@ package com.surftools.utils.config;
 import java.util.HashMap;
 import java.util.Map;
 
-public  class DefaultConfigurationManager implements IConfigurationManager {
+/**
+ * generic implementation for an IConfigurationManager
+ *
+ * specific implementations will populate the map!
+ *
+ * @author bobt
+ *
+ */
+public class DefaultConfigurationManager implements IConfigurationManager {
   protected Map<IConfigurationKey, String> map;
   protected IConfigurationKey[] values = null;
 

@@ -32,6 +32,12 @@ import java.util.Set;
 
 import com.surftools.utils.config.IConfigurationManager;
 
+/**
+ * interface that all graders must adhere to
+ *
+ * @author bobt
+ *
+ */
 public interface IGrader {
 
   public GradeResult grade(GradableMessage m);

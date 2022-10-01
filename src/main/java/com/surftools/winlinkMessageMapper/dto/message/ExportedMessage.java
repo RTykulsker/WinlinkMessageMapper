@@ -33,6 +33,12 @@ import java.util.Map;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * base class of all parsed Winlink Messages
+ *
+ * @author bobt
+ *
+ */
 public class ExportedMessage implements IMessage {
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 

@@ -44,6 +44,11 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectTypeContextPair;
 
+/**
+ * read the "rejects.txt" file
+ *
+ *
+ */
 public class ExplicitRejectionProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ExplicitRejectionProcessor.class);
 

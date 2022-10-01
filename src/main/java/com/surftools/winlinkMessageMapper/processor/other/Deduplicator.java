@@ -43,6 +43,14 @@ import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
+/**
+ * participants can and do send in multiple messages of the same type.
+ *
+ * here's how we decide what to do about it.
+ *
+ * @author bobt
+ *
+ */
 public class Deduplicator {
   private static final Logger logger = LoggerFactory.getLogger(Deduplicator.class);
 

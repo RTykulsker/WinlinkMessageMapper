@@ -29,6 +29,12 @@ package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * encapsulate the Winlink Position Report
+ *
+ * @author bobt
+ *
+ */
 public class PositionMessage extends GisMessage {
   public final String comments;
 

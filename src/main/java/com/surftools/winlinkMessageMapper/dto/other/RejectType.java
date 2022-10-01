@@ -27,6 +27,12 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.dto.other;
 
+/**
+ * reasons for rejecting a message
+ *
+ * @author bobt
+ *
+ */
 public enum RejectType {
 
   WRONG_MESSAGE_TYPE(0, "wrong message type"), //

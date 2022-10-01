@@ -33,6 +33,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * various static methods for location-based services
+ *
+ * @author bobt
+ *
+ */
 public class LocationUtils {
 
   // https://en.wikipedia.org/wiki/Great-circle_distance
@@ -73,20 +79,24 @@ public class LocationUtils {
     var adjustedLon = lon + 180d;
     var adjustedLat = lat + 90d;
 
-    var c1 = UPPER.charAt((int) adjustedLon / 20);
-    var c2 = UPPER.charAt((int) adjustedLat / 10);
+    try {
+      var c1 = UPPER.charAt((int) adjustedLon / 20);
+      var c2 = UPPER.charAt((int) adjustedLat / 10);
 
-    var c3 = (int) ((adjustedLon / 2) % 10);
-    var c4 = (int) (adjustedLat % 10);
+      var c3 = (int) ((adjustedLon / 2) % 10);
+      var c4 = (int) (adjustedLat % 10);
 
-    var remainderLon = (adjustedLon - (int) (adjustedLon / 2) * 2) * 60;
-    var remainderLat = (adjustedLat - (int) adjustedLat) * 60;
+      var remainderLon = (adjustedLon - (int) (adjustedLon / 2) * 2) * 60;
+      var remainderLat = (adjustedLat - (int) adjustedLat) * 60;
 
-    var c5 = LOWER.charAt((int) (remainderLon / 5));
-    var c6 = LOWER.charAt((int) (remainderLat / 2.5));
+      var c5 = LOWER.charAt((int) (remainderLon / 5));
+      var c6 = LOWER.charAt((int) (remainderLat / 2.5));
 
-    var sb = new StringBuilder().append(c1).append(c2).append(c3).append(c4).append(c5).append(c6);
-    return sb.toString();
+      var sb = new StringBuilder().append(c1).append(c2).append(c3).append(c4).append(c5).append(c6);
+      return sb.toString();
+    } catch (Exception e) {
+      return "";
+    }
   }
 
   public static String validateLatLon(String latlong, boolean isLat) {

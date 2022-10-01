@@ -27,6 +27,12 @@ SOFTWARE.
 
 package com.surftools.utils.config;
 
+/**
+ * provide configuration values to an application
+ *
+ * @author bobt
+ *
+ */
 public interface IConfigurationManager {
 
   public String getAsString(IConfigurationKey key);

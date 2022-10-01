@@ -33,9 +33,8 @@ import java.math.RoundingMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
- * record DTO for latitude/longitude pair
+ * DTO for latitude/longitude pair
  *
  * The "natural" type is the String, not double. The default precision is 4 decimal digits. This is 111 m at the
  * equator, etc. We are primarily interested in people's locations, and will be storing in text, CSV files.
@@ -64,6 +63,11 @@ public class LatLongPair {
   public LatLongPair(String latitude, String longitude) {
     this.latitude = latitude;
     this.longitude = longitude;
+  }
+
+  @Override
+  public String toString() {
+    return "{lat:" + latitude + ", lon: " + longitude + "}";
   }
 
   private static double centeredModulus(double dividend, double divisor) {
@@ -112,11 +116,6 @@ public class LatLongPair {
 
   public LatLongPair(LatLongPair other) {
     this(other.latitude, other.longitude);
-  }
-
-  @Override
-  public String toString() {
-    return "{lat: " + latitude + ", lon:" + longitude + "}";
   }
 
   public String getLatitude() {

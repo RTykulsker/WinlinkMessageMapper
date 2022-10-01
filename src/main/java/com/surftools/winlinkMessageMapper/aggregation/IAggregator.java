@@ -34,6 +34,14 @@ import java.util.Set;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * an IAggregator can look at and analyze multiple messages of multiple types, all from a single sender
+ *
+ * this allows for more complex and interesting exercises and grading, etc.
+ *
+ * @author bobt
+ *
+ */
 public interface IAggregator {
 
   public String[] getHeaders();

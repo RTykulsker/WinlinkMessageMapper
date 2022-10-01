@@ -27,6 +27,12 @@ SOFTWARE.
 
 package com.surftools.utils.config;
 
+/**
+ * marker interface for a key, typically implemented as an enum
+ *
+ * @author bobt
+ *
+ */
 public interface IConfigurationKey {
 
 }

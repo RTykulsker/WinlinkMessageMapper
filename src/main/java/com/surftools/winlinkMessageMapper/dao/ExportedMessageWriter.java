@@ -44,6 +44,12 @@ import com.surftools.winlinkMessageMapper.dto.message.IMessage;
 import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * writes all the processed messages
+ *
+ * @author bobt
+ *
+ */
 public class ExportedMessageWriter {
   private static final Logger logger = LoggerFactory.getLogger(ExportedMessageWriter.class);
 

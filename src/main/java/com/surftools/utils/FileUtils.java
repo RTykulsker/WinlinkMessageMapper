@@ -31,6 +31,12 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * static methods to support basic file operations
+ *
+ * @author bobt
+ *
+ */
 public class FileUtils {
   public static void makeDirIfNeeded(String fileName) {
     File outputFile = new File(fileName);
@@ -77,6 +83,12 @@ public class FileUtils {
     }
   }
 
+  /**
+   * return a canonical suffix
+   *
+   * @param fileName
+   * @return
+   */
   public static String getFileNameSuffix(String fileName) {
     int index = fileName.lastIndexOf(".");
     if (index == -1) {

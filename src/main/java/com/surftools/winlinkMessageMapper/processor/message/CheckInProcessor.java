@@ -40,6 +40,12 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
+/**
+ * processor for ETO's favorite message type
+ *
+ * @author bobt
+ *
+ */
 public class CheckInProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CheckInProcessor.class);
 

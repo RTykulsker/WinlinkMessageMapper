@@ -30,6 +30,15 @@ package com.surftools.winlinkMessageMapper.dto.message;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
+/**
+ * message created when a message doesn't follow the happy path:
+ *
+ * an internal server error -- bad parsing, null pointer, etc. MUST be researched explict rejection -- bad location,
+ * etc.
+ *
+ * @author bobt
+ *
+ */
 public class RejectionMessage extends ExportedMessage {
   public final RejectType reason;
   public final String context;

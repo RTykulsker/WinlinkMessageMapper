@@ -35,6 +35,12 @@ import java.util.Map;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.expect.ExpectGradableMessage;
 
+/**
+ * Washington State ISNAP message, not used by ETO
+ *
+ * @author bobt
+ *
+ */
 public class WaISnapMessage extends ExportedMessage implements ExpectGradableMessage {
   public static final String[] tags = { //
       "date", //

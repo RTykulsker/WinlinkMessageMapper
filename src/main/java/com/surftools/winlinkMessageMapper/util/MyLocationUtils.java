@@ -31,6 +31,12 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 
+/**
+ * used as a wrapped around the @{LocationUtils}
+ *
+ * @author bobt
+ *
+ */
 public class MyLocationUtils {
 
   public static int computeDistanceMiles(GisMessage m1, GisMessage m2) {
@@ -59,4 +65,16 @@ public class MyLocationUtils {
     return LocationUtils.computeBearing(latitude1, longitude1, latitude2, longitude2);
   }
 
+  public static LatLongPair getPairFromGrid(String gridSquare) {
+    var latitude = LocationUtils.getLatitudeFromMaidenhead(gridSquare);
+    var longitude = LocationUtils.getLongitudeFromMaidenhead(gridSquare);
+    var pair = new LatLongPair(latitude, longitude);
+    return pair;
+  }
+
+  public static boolean isValid(LatLongPair pair) {
+    var latitudeErrors = LocationUtils.validateLatLon(pair.getLatitude(), true);
+    var longitudeErrors = LocationUtils.validateLatLon(pair.getLongitude(), false);
+    return latitudeErrors.length() == 0 && longitudeErrors.length() == 0;
+  }
 }

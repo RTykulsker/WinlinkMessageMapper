@@ -29,6 +29,12 @@ package com.surftools.winlinkMessageMapper.dto.other;
 
 import java.util.ArrayList;
 
+/**
+ * enumeration to define the various message types that we know how to handle
+ *
+ * @author bobt
+ *
+ */
 public enum MessageType {
 
   CHECK_IN(0, "check_in", true, "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //

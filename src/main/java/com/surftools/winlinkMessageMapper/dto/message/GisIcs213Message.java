@@ -29,6 +29,12 @@ package com.surftools.winlinkMessageMapper.dto.message;
 
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * a silly/dangerous idea to require participants to put lat/long on first line of ICS-213 message
+ *
+ * @author bobt
+ *
+ */
 public class GisIcs213Message extends GisMessage {
   public final String message;
 

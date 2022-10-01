@@ -29,6 +29,14 @@ package com.surftools.winlinkMessageMapper.aggregation;
 
 import java.util.Map;
 
+/**
+ * a "last-ditch" DTO to hold aggregation results.
+ *
+ * I've found it more convenient to define an exercise-specific DTO within each new specialized aggregator.
+ *
+ * @author bobt
+ *
+ */
 public record AggregateMessage(String from, Map<String, Object> data) {
 
 }

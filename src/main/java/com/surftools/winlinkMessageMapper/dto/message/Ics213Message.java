@@ -37,9 +37,10 @@ public class Ics213Message extends ExportedMessage {
   public final String icsTo;
   public final String icsFrom;
   public final String icsSubject;
+  public final String gridSquare;
 
   public Ics213Message(ExportedMessage xmlMessage, String organization, String message, String incidentName,
-      String icsFrom, String icsTo, String icsSubject) {
+      String icsFrom, String icsTo, String icsSubject, String gridSquare) {
     super(xmlMessage);
     this.organization = organization;
     this.message = message;
@@ -48,18 +49,19 @@ public class Ics213Message extends ExportedMessage {
     this.icsTo = icsTo;
     this.icsFrom = icsFrom;
     this.icsSubject = icsSubject;
+    this.gridSquare = gridSquare;
   }
 
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Organization", "Message",
-        "IncidentName", "IcsTo", "IcsFrom", "IcsSubject" };
+        "IncidentName", "IcsTo", "IcsFrom", "IcsSubject", "GridSquare" };
   }
 
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, organization, message, incidentName, icsFrom, icsTo,
-        icsSubject };
+        icsSubject, gridSquare };
   }
 
   @Override

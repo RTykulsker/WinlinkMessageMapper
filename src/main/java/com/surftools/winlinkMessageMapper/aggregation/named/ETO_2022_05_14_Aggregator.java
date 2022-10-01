@@ -39,6 +39,12 @@ import com.surftools.winlinkMessageMapper.aggregation.AggregateMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * Aggregator for 2022-05-14 exercise
+ *
+ * @author bobt
+ *
+ */
 public class ETO_2022_05_14_Aggregator extends AbstractBaseAggregator {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2022_05_14_Aggregator.class);
 

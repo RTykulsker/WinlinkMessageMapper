@@ -22,6 +22,12 @@
 
 package com.surftools.utils.location;
 
+/**
+ * DTO for a "geographic box", defined by four points
+ *
+ * @author bobt
+ *
+ */
 public record GeoBox(LatLongPair nw, LatLongPair ne, LatLongPair sw, LatLongPair se) {
   public boolean isInBox(LatLongPair pair) {
     var dLat = pair.getLatitudeAsDouble();

@@ -29,6 +29,12 @@ package com.surftools.winlinkMessageMapper.configuration;
 
 import com.surftools.utils.config.IConfigurationKey;
 
+/**
+ * the @{IConfigurationKey} for the WinlinkMessageMapper
+ *
+ * @author bobt
+ *
+ */
 public enum Key implements IConfigurationKey {
 
   PATH("path"), // path to message files

@@ -33,6 +33,12 @@ import java.util.Set;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 
+/**
+ * interface that all message proccessors must conform to
+ *
+ * @author bobt
+ *
+ */
 public interface IProcessor {
 
   /**

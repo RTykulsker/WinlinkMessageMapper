@@ -31,6 +31,12 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 
+/**
+ * the favorite message type for ETO WLT exercises
+ *
+ * @author bobt
+ *
+ */
 public class CheckInMessage extends GisMessage implements GradableMessage {
   public final String comments;
   public final String status;

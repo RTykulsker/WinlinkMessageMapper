@@ -40,6 +40,12 @@ import com.surftools.winlinkMessageMapper.aggregation.AggregateMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
+/**
+ * an Aggregator that combines all the "comments" fields from all the messages, etc.
+ *
+ * @author bobt
+ *
+ */
 public class SimpleMultiMessageCommentAggregator extends AbstractBaseAggregator {
   private static final Logger logger = LoggerFactory.getLogger(SimpleMultiMessageCommentAggregator.class);
 

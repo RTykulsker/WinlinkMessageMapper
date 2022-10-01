@@ -44,6 +44,12 @@ import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.util.MyLocationUtils;
 
+/**
+ * a "toy" aggregator for nearest (and farthest) neighbors
+ *
+ * @author bobt
+ *
+ */
 public class NeighborAggregator extends AbstractBaseAggregator {
   private static final Logger logger = LoggerFactory.getLogger(NeighborAggregator.class);
 

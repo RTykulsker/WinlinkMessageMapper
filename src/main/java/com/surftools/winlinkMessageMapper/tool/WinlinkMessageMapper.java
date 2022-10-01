@@ -90,7 +90,11 @@ import com.surftools.winlinkMessageMapper.processor.other.ExplicitRejectionProce
 import com.surftools.winlinkMessageMapper.summary.Summarizer;
 
 /**
+ * This is the *main* class
+ *
  * read a bunch of Winlink "Exported Message" files of messages, output single CSV message file
+ *
+ * optionally de-duplicate, grade, aggregate, summarize
  *
  * @author bobt
  *
@@ -124,21 +128,27 @@ public class WinlinkMessageMapper {
     }
   }
 
+  /**
+   * main processing function
+   */
   private void run() {
     try {
 
+      // get an @{IConfigurationManager}, we'll need it for everything
       cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
       dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
 
+      // our working directory, where our input files are
       var pathName = cm.getAsString(Key.PATH);
       Path path = Paths.get(pathName);
       if (!Files.exists(path)) {
         logger.error("specified path: " + pathName + " does not exist");
         System.exit(1);
       } else {
-        logger.debug("path: " + path);
+        logger.info("WinlinkMessageMapper, starting with input path: " + path);
       }
 
+      // we never bother with required messages
       var requiredMessageTypeString = cm.getAsString(Key.REQUIRED_MESSAGE_TYPE);
       if (requiredMessageTypeString != null) {
         requiredMessageType = MessageType.valueOf(requiredMessageTypeString);
@@ -153,21 +163,16 @@ public class WinlinkMessageMapper {
       // fail-fast if we can't make the graders
       var graderMap = makeGraders(cm.getAsString(Key.GRADE_KEY));
 
-      logger.info("WinlinkMessageMapper, starting with input path: " + path);
-
-      if (requiredMessageTypeString != null) {
-        requiredMessageType = MessageType.valueOf(requiredMessageTypeString);
-      }
-
       // read all ExportedMessages from the files
       var exportedMessages = readAllExportedMessages(cm);
 
+      // late messages indicate a selection error at the clearinghouse level
       warnForLateMessages(exportedMessages);
 
       // transform ExportedMessages into type-specific messages
       var messageMap = processAllExportedMessages(exportedMessages);
 
-      // explicit rejections
+      // explicit rejections, such as the "Mongolia syndrome"
       var rejectionProcessor = new ExplicitRejectionProcessor(path);
       rejectionProcessor.processExplicitRejections(messageMap);
 
@@ -182,7 +187,7 @@ public class WinlinkMessageMapper {
       var writer = new ExportedMessageWriter(pathName);
       writer.writeAll(messageMap);
 
-      // summary
+      // summary (history, participants, etc.)
       var databasePathName = cm.getAsString(Key.DATABASE_PATH);
       if (databasePathName != null) {
         var summarizer = new Summarizer(cm, databasePathName, pathName);
@@ -190,6 +195,7 @@ public class WinlinkMessageMapper {
         summarizer.summarize(messageMap);
       }
 
+      // multiple messages from a sender, after de-duplication and grading
       var aggregatorName = cm.getAsString(Key.AGGREGATOR_NAME);
       if (aggregatorName != null) {
         var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
@@ -197,6 +203,7 @@ public class WinlinkMessageMapper {
         aggregatorProcessor.aggregate(messageMap, pathName);
       }
 
+      // allow the @}SimpleMultiMessageCommentAggregator} in addition to the named aggregator
       var mmCommentKey = cm.getAsString(Key.MM_COMMENT_KEY);
       if (mmCommentKey != null) {
         var mmCommentProcessor = new SimpleMultiMessageCommentAggregator(mmCommentKey);
@@ -204,10 +211,12 @@ public class WinlinkMessageMapper {
         mmCommentProcessor.output(pathName);
       }
 
+      // produce the "nearest neighbor" aggregator -- I don't know why I still bother
       var neighborAggregator = new NeighborAggregator(10, 10);
       neighborAggregator.aggregate(messageMap);
       neighborAggregator.output(pathName);
 
+      // to track which, if any clearinghouses haven't yet reported
       missingDataReport(messageMap);
 
       logger.info("exiting");
@@ -499,14 +508,6 @@ public class WinlinkMessageMapper {
         IGrader grader = null;
         switch (graderStrategy) {
         case CLASS:
-          // if (fields[1].equals("ETO_2022_08_18")) {
-          // grader = new ETO_2022_08_18();
-          // grader.setDumpIds(dumpIdsSet);
-          // grader.setConfigurationManager(cm);
-          // graderMap.put(messageType, grader);
-          // break;
-          // }
-
           final var prefixes = new String[] { "com.surftools.winlinkMessageMapper.grade.named.", "" };
 
           for (var prefix : prefixes) {

@@ -55,6 +55,12 @@ import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 import com.surftools.winlinkMessageMapper.processor.message.AbstractBaseProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.CharacterAssassinator;
 
+/**
+ * Reads an "exported message" file, produced by Winlink, creates @{ExportedMessage} records
+ *
+ * @author bobt
+ *
+ */
 public class ExportedMessageReader {
   private static final Logger logger = LoggerFactory.getLogger(ExportedMessageReader.class);
 
@@ -85,6 +91,12 @@ public class ExportedMessageReader {
     return new ByteArrayInputStream(content.getBytes());
   }
 
+  /**
+   * reads a single file (from a clearinghouse), returns a list of ExportedMessage records
+   *
+   * @param filePath
+   * @return
+   */
   public List<ExportedMessage> readAll(Path filePath) {
     logger.info("Processing file: " + filePath.getFileName());
     List<ExportedMessage> messages = new ArrayList<>();
