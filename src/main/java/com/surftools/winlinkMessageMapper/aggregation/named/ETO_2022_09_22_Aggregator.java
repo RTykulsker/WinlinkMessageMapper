@@ -46,7 +46,6 @@ import com.surftools.winlinkMessageMapper.dto.message.EtoCheckInV2Message;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.Ics213Message;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
-import com.surftools.winlinkMessageMapper.util.MyLocationUtils;
 
 /**
  * Aggregator for 2022-09-22 exercise: one ETO Check In and one ICS-213. The ICS-213 should have the Check In messageId
@@ -276,26 +275,26 @@ public class ETO_2022_09_22_Aggregator extends AbstractBaseAggregator {
           ++ppClearinghouseMatchOk;
         }
 
-        var icsGridSquare = icsMessage.gridSquare;
-        if (icsGridSquare != null) {
-          var icsLocation = MyLocationUtils.getPairFromGrid(icsGridSquare);
-          var checkInLocation = new LatLongPair(checkInMessage.latitude, checkInMessage.longitude);
-          if (MyLocationUtils.isValid(checkInLocation)) {
-            var checkInGrid = LocationUtils
-                .computeGrid(checkInLocation.getLatitudeAsDouble(), checkInLocation.getLongitudeAsDouble());
-            var checkInGridLocation = MyLocationUtils.getPairFromGrid(checkInGrid);
-            var distanceMeters = LocationUtils.computeDistanceMeters(icsLocation, checkInGridLocation);
-            if (distanceMeters == 0d) {
-              logger
-                  .debug("call: " + from + ", ics: " + icsGridSquare + ", checkIn: " + checkInGrid + ", distance: "
-                      + distanceMeters + " meters");
-            } else {
-              logger
-                  .info("### call: " + from + ", ics: " + icsGridSquare + ", checkIn: " + checkInGrid + ", distance: "
-                      + distanceMeters + " meters");
-            }
-          }
-        }
+        // var icsGridSquare = icsMessage.gridSquare;
+        // if (icsGridSquare != null) {
+        // var icsLocation = MyLocationUtils.getPairFromGrid(icsGridSquare);
+        // var checkInLocation = new LatLongPair(checkInMessage.latitude, checkInMessage.longitude);
+        // if (MyLocationUtils.isValid(checkInLocation)) {
+        // var checkInGrid = LocationUtils
+        // .computeGrid(checkInLocation.getLatitudeAsDouble(), checkInLocation.getLongitudeAsDouble());
+        // var checkInGridLocation = MyLocationUtils.getPairFromGrid(checkInGrid);
+        // var distanceMeters = LocationUtils.computeDistanceMeters(icsLocation, checkInGridLocation);
+        // if (distanceMeters == 0d) {
+        // logger
+        // .debug("call: " + from + ", ics: " + icsGridSquare + ", checkIn: " + checkInGrid + ", distance: "
+        // + distanceMeters + " meters");
+        // } else {
+        // logger
+        // .info("### call: " + from + ", ics: " + icsGridSquare + ", checkIn: " + checkInGrid + ", distance: "
+        // + distanceMeters + " meters");
+        // }
+        // }
+        // }
       }
 
       // only want folks who sent at least one of the right type of messages

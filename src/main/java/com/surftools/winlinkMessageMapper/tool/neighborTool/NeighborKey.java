@@ -32,7 +32,6 @@ import com.surftools.utils.config.IConfigurationKey;
 public enum NeighborKey implements IConfigurationKey {
 
   PATH("path"), // path to message files
-  KML_TEMPLATE_PATH("kmlTemplatePath"), // template file for KML
   TARGETS("targets"), // comma-delimited list of call sign targets to produce output for
   INPUT("input"), // semicolon-delimited list of comma-delimited params (filename,filetype,file data1, ...)
   DISTANCE_BOUNDS("distanceBounds"), // semicolon-delimited list of comma-delimited pair/triplet of min distance in

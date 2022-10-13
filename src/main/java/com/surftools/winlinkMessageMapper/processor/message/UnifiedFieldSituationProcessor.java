@@ -206,10 +206,11 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
 
   private static enum UnderlyingMessageType {
 
-    FIELD_SITUATION_REPORT("RMS_Express_Form_Field Situation Report_viewer.xml"), //
+    FIELD_SITUATION_REPORT_20("RMS_Express_Form_Field Situation Report_viewer.xml"), //
     FIELD_SITUATION_REPORT_23("RMS_Express_Form_Field Situation Report 23_viewer.xml"), //
     FIELD_SITUATION_REPORT_25("RMS_Express_Form_Field Situation Report 25_viewer.xml"), //
     FIELD_SITUATION_REPORT_26("RMS_Express_Form_Field Situation Report 26_viewer.xml"), //
+    FIELD_SITUATION_REPORT("RMS_Express_Form_Field Situation Report viewer.xml"), //
     UNSUPPORTED("unsupported");
     ;
 

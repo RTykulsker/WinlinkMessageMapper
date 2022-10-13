@@ -260,8 +260,8 @@ public class WinlinkMessageMapper {
         // only if late
         ++count;
         logger
-            .warn("### late message: from " + m.from + ", to: " + m.to + ", mId: " + m.messageId + ", duration: "
-                + duration.toDays());
+            .warn("### late message: from " + m.from + ", to: " + m.to + ", mId: " + m.messageId + ", late by: "
+                + duration.toDays() + " days (" + messageDateTime + ")");
         var lateCount = lateCountMap.getOrDefault(to, Integer.valueOf(0));
         ++lateCount;
         lateCountMap.put(to, lateCount);
@@ -277,6 +277,8 @@ public class WinlinkMessageMapper {
         var toCount = toCountMap.get(to);
         logger.warn("### to: " + to + ", late: " + lateCount + ", total: " + toCount);
       }
+    } else {
+      logger.info("NO late messages before " + maxLateDays + " day cut-off!");
     }
   }
 

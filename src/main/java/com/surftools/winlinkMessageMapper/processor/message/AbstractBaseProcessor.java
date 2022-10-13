@@ -235,6 +235,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
   public void makeDocument(String messageId, String xmlString) {
     xmlString = xmlString.trim().replaceFirst("^([\\W]+)<", "<");
+    xmlString = removeBetween(xmlString, "<parseme>", "</parseme>");
 
     if (!xmlString.endsWith(">")) {
       xmlString += ">";
@@ -256,6 +257,32 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       logger.error("can't parse xml: " + xmlString + ", " + e.getLocalizedMessage());
       throw new RuntimeException("can't parse xml: " + e.getLocalizedMessage());
     }
+  }
+
+  /**
+   * return string with content between start of beginString and end of endString removed
+   *
+   * @param source
+   * @param beginString
+   * @param endString
+   * @return
+   */
+  private String removeBetween(String source, String beginString, String endString) {
+    if (source == null || beginString == null || endString == null) {
+      return source;
+    }
+
+    var beginIndex = source.indexOf(beginString);
+    var endIndex = source.indexOf(endString);
+    if (beginIndex == -1 || endIndex == -1) {
+      return source;
+    }
+
+    var startString = source.substring(0, beginIndex);
+    var finishString = source.substring(endIndex + endString.length());
+    var ret = startString + finishString;
+
+    return ret;
   }
 
   public String getStringFromXml(String tagName) {

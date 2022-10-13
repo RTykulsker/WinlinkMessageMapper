@@ -132,6 +132,7 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
     }
 
     windspeed = windspeed.replaceAll(" ", "");
+    windspeed = windspeed.replaceAll(",", ".");
     String ret = windspeed + SPEED_SUFFFIX;
     Units units = Units.fromString(unitsString);
 
@@ -187,6 +188,7 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
       temperature = temperature.substring(2);
     }
     temperature = temperature.replaceAll(" ", "");
+    temperature = temperature.replaceAll(",", ".");
     String ret = temperature + TEMP_SUFFIX;
     Units units = Units.fromString(unitsString);
     if (units != requiredUnits && !temperature.equals(MISSING)) {
