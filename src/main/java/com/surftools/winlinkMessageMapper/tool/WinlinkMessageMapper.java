@@ -198,7 +198,7 @@ public class WinlinkMessageMapper {
       // multiple messages from a sender, after de-duplication and grading
       var aggregatorName = cm.getAsString(Key.AGGREGATOR_NAME);
       if (aggregatorName != null) {
-        var aggregatorProcessor = new AggregatorProcessor(aggregatorName);
+        var aggregatorProcessor = new AggregatorProcessor(aggregatorName, cm);
         aggregatorProcessor.setDumpIds(dumpIdsSet);
         aggregatorProcessor.aggregate(messageMap, pathName);
       }
@@ -212,9 +212,12 @@ public class WinlinkMessageMapper {
       }
 
       // produce the "nearest neighbor" aggregator -- I don't know why I still bother
-      var neighborAggregator = new NeighborAggregator(10, 10);
-      neighborAggregator.aggregate(messageMap);
-      neighborAggregator.output(pathName);
+      var doNeighbors = false;
+      if (doNeighbors) {
+        var neighborAggregator = new NeighborAggregator(10, 10);
+        neighborAggregator.aggregate(messageMap);
+        neighborAggregator.output(pathName);
+      }
 
       // to track which, if any clearinghouses haven't yet reported
       missingDataReport(messageMap);

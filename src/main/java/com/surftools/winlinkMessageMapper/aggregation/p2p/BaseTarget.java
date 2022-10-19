@@ -25,35 +25,33 @@ SOFTWARE.
 
 */
 
-package com.surftools.winlinkMessageMapper.aggregation;
+package com.surftools.winlinkMessageMapper.aggregation.p2p;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
-import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 /**
- * an IAggregator can look at and analyze multiple messages of multiple types, all from a single sender
+ * minimal DTO for a Target (connect-receive) station.
  *
- * this allows for more complex and interesting exercises and grading, etc.
+ * Additional fields can be added to data or by subclassing
  *
  * @author bobt
  *
  */
-public interface IAggregator {
+public abstract class BaseTarget {
+  public String call;
+  public String band;
+  public String centerFreq;
+  public String dialFreq;
+  public LatLongPair location;
+  public Map<String, Object> data;
+  public List<ExportedMessage> fromList = new ArrayList<>();
 
-  public String[] getHeaders();
+  public abstract String[] getHeaders();
 
-  public String[] getValues(AggregateMessage message);
-
-  public void aggregate(Map<MessageType, List<ExportedMessage>> messageMap);
-
-  public void output(String pathName);
-
-  public void setDumpIds(Set<String> _dumpIds);
-
-  public void setConfigurationManager(IConfigurationManager cm);
+  public abstract String[] getValues();
 }

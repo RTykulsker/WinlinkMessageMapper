@@ -51,6 +51,7 @@ public enum Key implements IConfigurationKey {
                                                                   // considered a duplicate location, negative to skip",
 
   SAVE_ATTACHMENTS("saveAttachments"), // save ALL attachments in exported message
+  MAX_IMAGE_SIZE("maxImageSize"), // of attached images
 
   GRADE_KEY("gradeKey"), // exercise/processor-specific key to identify grading method, if any
 
@@ -58,7 +59,8 @@ public enum Key implements IConfigurationKey {
 
   MM_COMMENT_KEY("mmCommentKey"), // MultiMessageComment key, if any
 
-  TARGET_PATH("targetPath"), // for P2P processing
+  P2P_TARGET_PATH("p2p.targetPath"), // for P2P processing, target definitions
+  P2P_FIELD_PATH("p2p.fieldPath"), // for P2P processing, field (source) definitions
 
   EXERCISE_DATE("exerciseDate"), // for Summarizer
   EXERCISE_NAME("exerciseName"), // for Summarizer
@@ -67,6 +69,7 @@ public enum Key implements IConfigurationKey {
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
   MAX_DAYS_BEFORE_LATE("maxDaysBeforeLate"), // for warning about late messages
+
   ;
 
   private final String key;

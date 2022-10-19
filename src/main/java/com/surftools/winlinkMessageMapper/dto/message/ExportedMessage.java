@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 /**
@@ -58,9 +59,11 @@ public class ExportedMessage implements IMessage {
   public final LocalDateTime dateTime;
 
   public boolean isP2P;
+  public final LatLongPair location;
 
   public ExportedMessage(String messageId, String from, String to, String toList, String ccList, //
-      String subject, String date, String time, String mime, String plainContent, Map<String, byte[]> attachments) {
+      String subject, String date, String time, String mime, String plainContent, Map<String, byte[]> attachments,
+      LatLongPair location) {
     this.messageId = messageId;
     this.from = from;
     this.to = to;
@@ -75,6 +78,7 @@ public class ExportedMessage implements IMessage {
     this.attachments = attachments;
 
     dateTime = LocalDateTime.parse(date + " " + time, FORMATTER);
+    this.location = location;
   }
 
   @Override
@@ -100,6 +104,7 @@ public class ExportedMessage implements IMessage {
     this.attachments = exportedMessage.attachments;
 
     dateTime = LocalDateTime.parse(date + " " + time, FORMATTER);
+    this.location = exportedMessage.location;
   }
 
   public String[] getMimeLines() {

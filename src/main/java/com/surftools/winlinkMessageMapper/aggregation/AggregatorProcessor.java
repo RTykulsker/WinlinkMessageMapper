@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
@@ -43,15 +44,20 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 public class AggregatorProcessor {
 
   private IAggregator aggregator;
+  private IConfigurationManager cm;
 
-  public AggregatorProcessor(String aggregatorName) {
+  public AggregatorProcessor(String aggregatorName, IConfigurationManager cm) {
+    this.cm = cm;
 
     if (aggregatorName.equals("default")) {
       aggregator = new DefaultAggregator();
       return;
     }
 
-    final var prefixes = new String[] { "com.surftools.winlinkMessageMapper.aggregation.named.", "" };
+    final var prefixes = new String[] { //
+        "com.surftools.winlinkMessageMapper.aggregation.named.", //
+        "com.surftools.winlinkMessageMapper.aggregation.p2p.named.", //
+        "" };
 
     for (var prefix : prefixes) {
       var className = prefix + aggregatorName;
@@ -61,13 +67,20 @@ public class AggregatorProcessor {
           aggregator = (IAggregator) clazz.getDeclaredConstructor().newInstance();
           break;
         }
+      } catch (ClassNotFoundException e) {
+        ;
       } catch (Exception e) {
-        throw new RuntimeException("could not find aggregator class for name: " + className);
+        throw new RuntimeException("could not instantiate aggregator: " + e.getLocalizedMessage());
       }
+    }
+
+    if (aggregator == null) {
+      throw new RuntimeException("could not find aggregator class for name: " + aggregatorName);
     }
   }
 
   public void aggregate(Map<MessageType, List<ExportedMessage>> messageMap, String pathName) {
+    aggregator.setConfigurationManager(cm);
     aggregator.aggregate(messageMap);
     aggregator.output(pathName);
   }

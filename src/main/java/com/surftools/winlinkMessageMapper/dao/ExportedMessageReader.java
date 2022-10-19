@@ -49,6 +49,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.RejectionMessage;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
@@ -135,6 +136,8 @@ public class ExportedMessageReader {
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
     var sender = element.getElementsByTagName("sender").item(0).getTextContent();
     var mime = element.getElementsByTagName("mime").item(0).getTextContent();
+    var locationString = element.getElementsByTagName("location").item(0).getTextContent();
+    LatLongPair location = makeLocation(locationString);
 
     var isP2P = "False";
     if (element.getElementsByTagName("peertopeer").getLength() > 0) {
@@ -162,7 +165,7 @@ public class ExportedMessageReader {
     var parser = AbstractBaseProcessor.makeMimeMessageParser(mime);
     if (parser == null) {
       message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, dateString, timeString, mime,
-          plainContent, attachments);
+          plainContent, attachments, location);
       return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
     }
 
@@ -170,10 +173,41 @@ public class ExportedMessageReader {
     attachments = AbstractBaseProcessor.getAttachments(parser);
 
     message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, dateString, timeString, mime,
-        plainContent, attachments);
+        plainContent, attachments, location);
     message.isP2P = isP2P != null && isP2P.equalsIgnoreCase("true");
 
     return message;
+  }
+
+  /**
+   * Winlink 1.7.2.0 introduced the optional <location> tag
+   *
+   * @param locationString,
+   *          for example: 47.537232N, 122.238887W
+   *
+   * @return LatLongPair or null
+   */
+  private LatLongPair makeLocation(String locationString) {
+    if (locationString == null || locationString.trim().isEmpty()) {
+      return null;
+    }
+
+    var fields = locationString.split(",");
+    if (fields.length != 2) {
+      return null;
+    }
+
+    var latString = fields[0].substring(0, fields[0].length() - 1);
+    if (fields[0].endsWith("S")) {
+      latString = "-" + latString.trim();
+    }
+
+    var lonString = fields[1].substring(0, fields[1].length() - 1);
+    if (fields[1].endsWith("W")) {
+      lonString = "-" + lonString.trim();
+    }
+
+    return new LatLongPair(latString, lonString);
   }
 
   // Subject: DYFI Automatic Entry - Winlink EXERCISE

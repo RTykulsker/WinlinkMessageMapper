@@ -48,8 +48,6 @@ import com.surftools.winlinkMessageMapper.dto.message.Ics213Message;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 /**
- * Aggregator for 2022-09-22 exercise: one ETO Check In and one ICS-213. The ICS-213 should have the Check In messageId
- *
  *
  * https://docs.google.com/document/d/130IF-JgzakPpq4nzQxg-p_7DGaBo9SXIKWKAFLOvI1M/edit
  *

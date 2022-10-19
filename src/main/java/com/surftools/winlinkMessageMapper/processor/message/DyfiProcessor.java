@@ -29,6 +29,9 @@ package com.surftools.winlinkMessageMapper.processor.message;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.winlinkMessageMapper.dto.message.DyfiMessage;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
@@ -36,9 +39,15 @@ import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
 public class DyfiProcessor extends AbstractBaseProcessor {
 
+  private static final Logger logger = LoggerFactory.getLogger(DyfiProcessor.class);
+
   @SuppressWarnings("unchecked")
   @Override
   public ExportedMessage process(ExportedMessage message) {
+
+    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
+      logger.info("exportedMessage: " + message);
+    }
 
     var mime = message.plainContent;
 
@@ -66,7 +75,12 @@ public class DyfiProcessor extends AbstractBaseProcessor {
     String latitude = map.get("ciim_mapLat");
     String longitude = map.get("ciim_mapLon");
     if (latitude == null || latitude.length() == 0 || longitude == null || longitude.length() == 0) {
-      return reject(message, RejectType.CANT_PARSE_LATLONG, "lat: " + latitude + ", lon: " + longitude);
+      var location = message.location;
+      latitude = location.getLatitude();
+      longitude = location.getLongitude();
+      if (latitude == null || latitude.length() == 0 || longitude == null || longitude.length() == 0) {
+        return reject(message, RejectType.CANT_PARSE_LATLONG, "lat: " + latitude + ", lon: " + longitude);
+      }
     }
 
     String exerciseId = map.get("exercise_id");

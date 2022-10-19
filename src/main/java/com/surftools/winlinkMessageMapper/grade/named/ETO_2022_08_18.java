@@ -116,7 +116,7 @@ public class ETO_2022_08_18 implements IGrader {
     ppBandCountMap = new HashMap<>();
     ppRegionCountMap = new HashMap<>();
 
-    String targetFilePathName = cm.getAsString(Key.TARGET_PATH);
+    String targetFilePathName = cm.getAsString(Key.P2P_TARGET_PATH);
 
     try {
       Reader reader = new FileReader(targetFilePathName);

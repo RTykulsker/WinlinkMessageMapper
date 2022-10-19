@@ -40,6 +40,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 import com.opencsv.CSVWriter;
+import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -57,6 +58,7 @@ public abstract class AbstractBaseAggregator implements IAggregator {
   protected final Map<String, Map<MessageType, List<ExportedMessage>>> fromMessageMap;
   protected final Map<String, List<ExportedMessage>> fromListMap;
   protected static Set<String> dumpIds = new HashSet<>();
+  protected IConfigurationManager cm;
 
   protected String outputFileName = "aggregate.csv";
   protected boolean doOutput = true;
@@ -209,6 +211,11 @@ public abstract class AbstractBaseAggregator implements IAggregator {
 
   public void setOutputFileName(String outputFileName) {
     this.outputFileName = outputFileName;
+  }
+
+  @Override
+  public void setConfigurationManager(IConfigurationManager cm) {
+    this.cm = cm;
   }
 
   protected MessageType getMostCommonMessageType(Map<MessageType, List<ExportedMessage>> messageMap) {
