@@ -127,7 +127,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
     imagePassPath = FileUtils.createDirectory(Path.of(outputPath.toString(), "pass"));
     imageBadSizePath = FileUtils.createDirectory(Path.of(outputPath.toString(), "badSize"));
 
-    maxImageSize = cm.getAsInt(Key.MAX_IMAGE_SIZE, 5000);
+    maxImageSize = cm.getAsInt(Key.MAX_IMAGE_SIZE, 5120);
   }
 
   @Override
@@ -230,6 +230,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
             var bytes = fsrMessage.attachments.get(imageFileName);
             if (bytes != null) {
               ++ppFsrImageAttachedOk;
+              fsrImageSize = bytes.length;
 
               var isImageSizeOk = false;
               if (bytes.length <= maxImageSize) {
@@ -299,34 +300,34 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
                     + fsrLocation.toString() + ", ics: " + icsLocation.toString());
           }
         }
+      }
 
-        points = Math.min(100, points);
-        points = Math.max(0, points);
-        var grade = String.valueOf(points);
-        var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
+      points = Math.min(100, points);
+      points = Math.max(0, points);
+      var grade = String.valueOf(points);
+      var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
 
-        var scoreCount = ppScoreCountMap.getOrDefault(points, Integer.valueOf(0));
-        ++scoreCount;
-        ppScoreCountMap.put(points, scoreCount);
+      var scoreCount = ppScoreCountMap.getOrDefault(points, Integer.valueOf(0));
+      ++scoreCount;
+      ppScoreCountMap.put(points, scoreCount);
 
-        var entry = new Entry(from, fsrLocation, //
-            fsrClearinghouse, fsrMessageId, fsrComment, fsrImageSize, //
-            icsClearinghouse, icsMessageId, icsComment, //
-            grade, explanation);
+      var entry = new Entry(from, fsrLocation, //
+          fsrClearinghouse, fsrMessageId, fsrComment, fsrImageSize, //
+          icsClearinghouse, icsMessageId, icsComment, //
+          grade, explanation);
 
-        if (isFailure) {
-          ++ppFailCount;
-          failList.add(entry);
-        } else {
-          ++ppPassCount;
-          passList.add(entry);
-        }
+      if (isFailure) {
+        ++ppFailCount;
+        failList.add(entry);
+      } else {
+        ++ppPassCount;
+        passList.add(entry);
       }
     } // end loop over for
 
     var sb = new StringBuilder();
     sb.append("\n\nETO 2022-09-22 RMS aggregate results:\n");
-    sb.append("total participants: " + ppCount);
+    sb.append("total participants: " + ppCount + "\n");
 
     sb.append("participants with both required messages (and not failed): " + ppPassCount + "\n");
     sb.append(format("  FSR received", ppFsrReceived, ppCount));
@@ -429,6 +430,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
 
   private void writeImage(ExportedMessage m, String imageFileName, byte[] bytes, boolean isImageSizeOk) {
 
+    imageFileName = m.from + "-" + imageFileName;
     try {
       // write the file
       var allImagePath = Path.of(imageAllPath.toString(), imageFileName);

@@ -376,6 +376,7 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
   }
 
   protected String makeNetworkPlacemarks() {
+    var drawnSet = new HashSet<String>();
     var sb = new StringBuilder();
     for (var targetCall : targetMap.keySet()) {
       var target = targetMap.get(targetCall);
@@ -384,6 +385,12 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
         var fieldCall = m.from;
         var field = fieldMap.get(fieldCall);
         if (field != null) {
+          // add the link once, independent of number of messages from field to target
+          var drawnKey = field.call + "-" + target.call;
+          if (drawnSet.contains(drawnKey)) {
+            continue;
+          }
+          drawnSet.add(drawnKey);
           sb.append("  <Placemark>\n");
           sb.append("  <name>" + fieldCall + "-" + targetCall + "</name>\n");
           sb.append("    <LineString>\n");
@@ -454,10 +461,11 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
       rowCount = 1;
       String[] fields = null;
       while ((fields = csvReader.readNext()) != null) {
-        ++rowCount;
-
         var field = makeField(fields);
-        fieldMap.put(field.call, field);
+        if (field != null) {
+          fieldMap.put(field.call, field);
+          ++rowCount;
+        }
       }
     } catch (Exception e) {
       logger.error("Exception reading " + inputFile + ", row " + rowCount + ", " + e.getLocalizedMessage());

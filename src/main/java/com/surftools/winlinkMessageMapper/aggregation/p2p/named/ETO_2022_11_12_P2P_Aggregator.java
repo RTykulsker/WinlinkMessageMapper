@@ -303,6 +303,16 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
      * "IcsMessage", // "Grade", "Explanation"
      */
 
+    var fsrMid = fields[3];
+    var icsMid = fields[8];
+
+    /**
+     * we REQUIRE both ICS and FSR messages to qualify Field for P2P exercise
+     */
+    if (fsrMid == null || fsrMid.trim().isEmpty() || icsMid == null || icsMid.trim().isEmpty()) {
+      return null;
+    }
+
     Field field = new Field();
 
     var index = 0;
@@ -331,7 +341,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
       var to = m.to;
       var target = (Target) targetMap.get(to);
       var band = target.band;
-      var location = m.location;
+      var location = target.location;
       var type = m.getMessageType();
       var typeString = (type == MessageType.ICS_213) ? "ics" : "fsr";
       var hasImage = (type == MessageType.UNIFIED_FIELD_SITUATION && hasImageAttachment(m));
