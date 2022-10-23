@@ -73,7 +73,7 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
  *
  * BOTH messages must be present (and not failed) to allow participation in P2P
  *
- * Optional image attached to FSR, 25% if under 5K
+ * Optional image attached to ICS, 25% if under 5K
  *
  * @author bobt
  *
@@ -96,21 +96,21 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
   private int maxImageSize = -1;
 
   static record Entry(String call, LatLongPair location, //
-      String fsrClearinghouse, String fsrMessageId, String fsrComment, int fsrImageSize, //
-      String icsClearinghouse, String icsMessageId, String icsComment, //
+      String fsrClearinghouse, String fsrMessageId, String fsrComment, //
+      String icsClearinghouse, String icsMessageId, String icsComment, int icsImageSize, //
       String grade, String explanation) {
 
     public static String[] getHeaders() {
       return new String[] { "Call", "Latitude", "Longitude", //
-          "FsrTo", "FsrMiD", "FsrComment", "FsrImageBytes", //
-          "IcsTo", "IcsMiD", "IcsMessage", //
+          "FsrTo", "FsrMiD", "FsrComment", //
+          "IcsTo", "IcsMiD", "IcsMessage", "IcsImageBytes", //
           "Grade", "Explanation" };
     }
 
     public String[] getValues() {
       return new String[] { call, location.getLatitude(), location.getLongitude(), //
-          fsrClearinghouse, fsrMessageId, fsrComment, String.valueOf(fsrImageSize), //
-          icsClearinghouse, icsMessageId, icsComment, //
+          fsrClearinghouse, fsrMessageId, fsrComment, //
+          icsClearinghouse, icsMessageId, icsComment, String.valueOf(icsImageSize), //
           grade, explanation };
     }
   };
@@ -141,8 +141,8 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
     var ppIcsReceived = 0;
     var ppFsrSetupOk = 0;
     var ppIcsSetupOk = 0;
-    var ppFsrImageAttachedOk = 0;
-    var ppFsrImageSizeOk = 0;
+    var ppIcsImageAttachedOk = 0;
+    var ppIcsImageSizeOk = 0;
 
     var ppPassCount = 0;
     var ppFailCount = 0;
@@ -174,13 +174,13 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
       String fsrClearinghouse = null;
       String fsrSetup = null;
       String fsrComment = null;
-      int fsrImageSize = -1;
 
       String icsMessageId = null;
       LatLongPair icsLocation = null;
       String icsClearinghouse = null;
       String icsSetup = null;
       String icsComment = null;
+      int icsImageSize = -1;
 
       var points = 0;
       var explanations = new ArrayList<String>();
@@ -225,26 +225,6 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
             ++ppFailFcsBox1Count;
           }
 
-          var imageFileName = getImageFile(fsrMessage);
-          if (imageFileName != null) {
-            var bytes = fsrMessage.attachments.get(imageFileName);
-            if (bytes != null) {
-              ++ppFsrImageAttachedOk;
-              fsrImageSize = bytes.length;
-
-              var isImageSizeOk = false;
-              if (bytes.length <= maxImageSize) {
-                ++ppFsrImageSizeOk;
-                points += 25;
-                isImageSizeOk = true;
-                explanations.add("extra credit for attached image");
-              }
-              writeImage(fsrMessage, imageFileName, bytes, isImageSizeOk);
-            }
-          } else {
-            explanations.add("no image attachment found");
-          }
-
         } // end if fsr != null
       } else {
         explanations.add("no FSR message received");
@@ -280,6 +260,27 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
               explanations.add("ICS setup (" + icsSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
             }
           }
+
+          var imageFileName = getImageFile(fsrMessage);
+          if (imageFileName != null) {
+            var bytes = icsMessage.attachments.get(imageFileName);
+            if (bytes != null) {
+              ++ppIcsImageAttachedOk;
+              icsImageSize = bytes.length;
+
+              var isImageSizeOk = false;
+              if (bytes.length <= maxImageSize) {
+                ++ppIcsImageSizeOk;
+                points += 25;
+                isImageSizeOk = true;
+                explanations.add("extra credit for attached image");
+              }
+              writeImage(fsrMessage, imageFileName, bytes, isImageSizeOk);
+            }
+          } else {
+            explanations.add("no image attachment found");
+          }
+
         }
       } // end if icsList != null
 
@@ -312,8 +313,8 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
       ppScoreCountMap.put(points, scoreCount);
 
       var entry = new Entry(from, fsrLocation, //
-          fsrClearinghouse, fsrMessageId, fsrComment, fsrImageSize, //
-          icsClearinghouse, icsMessageId, icsComment, //
+          fsrClearinghouse, fsrMessageId, fsrComment, //
+          icsClearinghouse, icsMessageId, icsComment, icsImageSize, //
           grade, explanation);
 
       if (isFailure) {
@@ -332,10 +333,11 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
     sb.append("participants with both required messages (and not failed): " + ppPassCount + "\n");
     sb.append(format("  FSR received", ppFsrReceived, ppCount));
     sb.append(format("  FSR setup Ok", ppFsrSetupOk, ppCount));
-    sb.append(format("  FSR image present", ppFsrImageAttachedOk, ppCount));
-    sb.append(format("  FSR image size Ok", ppFsrImageSizeOk, ppCount));
+
     sb.append(format("  ICS received", ppIcsReceived, ppCount));
     sb.append(format("  ICS setup Ok", ppIcsSetupOk, ppCount));
+    sb.append(format("  ICS image present", ppIcsImageAttachedOk, ppCount));
+    sb.append(format("  ICS image size Ok", ppIcsImageSizeOk, ppCount));
 
     sb.append("\nparticipants with automatic fails: " + ppFailCount + "\n");
     sb.append(format("  FAIL because no FSR", ppFailNoFsrCount, ppFailCount));

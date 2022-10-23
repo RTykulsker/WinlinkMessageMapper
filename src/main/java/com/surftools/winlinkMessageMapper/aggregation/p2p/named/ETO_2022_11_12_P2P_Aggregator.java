@@ -93,15 +93,14 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     @Override
     public String[] getHeaders() {
       return new String[] { "Band", "Center Freq. (KHz)", "Dial Freq (KHz)", "ETO Region", //
-          "Station", "Location", "Latitude", "Longitude", "Fsr Count", "Fsr Image Count", "ICS Count",
-          "Total Messages" };
+          "Station", "Location", "Latitude", "Longitude", "Fsr Count", "ICS Count", "Image Count", "Total Messages" };
     }
 
     @Override
     public String[] getValues() {
       return new String[] { band, centerFreq, dialFreq, region, call, //
           locationName, location.getLatitude(), location.getLongitude(), //
-          String.valueOf(fsrCount), String.valueOf(imageCount), String.valueOf(icsCount), //
+          String.valueOf(fsrCount), String.valueOf(icsCount), String.valueOf(imageCount), //
           String.valueOf(fromList.size()) };
     }
   }
@@ -114,13 +113,13 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     @Override
     public String[] getHeaders() {
       return new String[] { "Call", "Latitude", "Longitude", //
-          "Fsr Count", "Fsr Image Count", "ICS Count", "Total Messages" };
+          "Fsr Count", "ICS Count", "Image Count", "Total Messages" };
     }
 
     @Override
     public String[] getValues() {
       return new String[] { call, location.getLatitude(), location.getLongitude(), //
-          String.valueOf(fsrCount), String.valueOf(imageCount), String.valueOf(icsCount), //
+          String.valueOf(fsrCount), String.valueOf(icsCount), String.valueOf(imageCount), //
           String.valueOf(toList.size()) };
     }
   }
@@ -162,15 +161,16 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
           messageType = "ics";
           ++field.icsCount;
           ++target.icsCount;
-        } else if (message instanceof UnifiedFieldSituationMessage) {
-          ++field.fsrCount;
-          ++target.fsrCount;
-          messageType = "fsr";
+
           hasImageAttachment = hasImageAttachment(message);
           if (hasImageAttachment) {
             ++field.imageCount;
             ++target.imageCount;
           }
+        } else if (message instanceof UnifiedFieldSituationMessage) {
+          ++field.fsrCount;
+          ++target.fsrCount;
+          messageType = "fsr";
         } else {
           // this shouldn't happen!
           logger.warn("unexpected messageType for messageId: " + message.messageId);
@@ -299,12 +299,12 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
   @Override
   protected BaseField makeField(String[] fields) {
     /*
-     * "Call", "Latitude", "Longitude", // "FsrTo", "FsrMiD", "FsrComment", "FsrImageBytes", "IcsTo", "IcsMiD",
-     * "IcsMessage", // "Grade", "Explanation"
+     * "Call", "Latitude", "Longitude", // "FsrTo", "FsrMiD", "FsrComment", // "IcsTo", "IcsMiD", "IcsMessage",
+     * "IcsImageBytes", // // "Grade", "Explanation"
      */
 
-    var fsrMid = fields[3];
-    var icsMid = fields[8];
+    var fsrMid = fields[4];
+    var icsMid = fields[7];
 
     /**
      * we REQUIRE both ICS and FSR messages to qualify Field for P2P exercise
@@ -344,7 +344,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
       var location = target.location;
       var type = m.getMessageType();
       var typeString = (type == MessageType.ICS_213) ? "ics" : "fsr";
-      var hasImage = (type == MessageType.UNIFIED_FIELD_SITUATION && hasImageAttachment(m));
+      var hasImage = (type == MessageType.ICS_213 && hasImageAttachment(m));
       var imageString = (hasImage) ? ", with image" : "";
       var distanceMiles = LocationUtils.computeDistanceMiles(field.location, location);
       sb.append(date + " " + time + ", " + to + //
@@ -363,8 +363,8 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     sb.append("band: " + target.band + ", channel: " + target.channel + ", region: " + target.region + "\n");
     sb.append(DASHES);
     sb.append("Inbound messages: " + fromList.size() + "\n");
-    sb.append("  FSR messages: " + target.fsrCount + "(with " + target.imageCount + " images)\n");
-    sb.append("  ICS messages: " + target.icsCount + "\n");
+    sb.append("  FSR messages: " + target.fsrCount + "\n");
+    sb.append("  ICS messages: " + target.icsCount + "(with " + target.imageCount + " images)\n");
     sb.append(DASHES);
     for (var m : fromList) {
       var date = m.date;
@@ -373,7 +373,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
       var location = m.location;
       var type = m.getMessageType();
       var typeString = (type == MessageType.ICS_213) ? "ics" : "fsr";
-      var hasImage = (type == MessageType.UNIFIED_FIELD_SITUATION && hasImageAttachment(m));
+      var hasImage = (type == MessageType.ICS_213 && hasImageAttachment(m));
       var imageString = (hasImage) ? ", with image" : "";
       var distanceMiles = LocationUtils.computeDistanceMiles(target.location, location);
       sb.append(date + " " + time + ", " + from + //

@@ -29,11 +29,11 @@ package com.surftools.winlinkMessageMapper.grade.named;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,15 +53,21 @@ import com.surftools.winlinkMessageMapper.grade.GraderType;
 public class ETO_2022_10_20 extends DefaultGrader {
   private static Logger logger = LoggerFactory.getLogger(ETO_2022_10_20.class);
 
+  public static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
+
   // for post processing
   private int ppIsExerciseOk;
   private int ppAddressToUSGSOk;
   private int ppOrganizationOk;
   private int ppResponseOk;
+  private int ppAutoFailCount;
 
   private Map<Integer, Integer> intensityCountMap;
   private Map<String, Integer> responseCountMap;
   private Map<String, Integer> organizationCountMap;
+  private Map<String, Integer> versionCountMap;
+
+  private Map<String, String> noUSGSCallAddressMap;
 
   private Set<String> dumpIds;
 
@@ -70,6 +76,9 @@ public class ETO_2022_10_20 extends DefaultGrader {
     intensityCountMap = new TreeMap<>();
     responseCountMap = new TreeMap<>();
     organizationCountMap = new TreeMap<>();
+    versionCountMap = new TreeMap<>();
+
+    noUSGSCallAddressMap = new TreeMap<>();
   }
 
   @Override
@@ -108,17 +117,20 @@ public class ETO_2022_10_20 extends DefaultGrader {
     if (isRealEvent) {
       explanations.add("FAIL: must not select 'Real Event'");
       autoFail = true;
+      ++ppAutoFailCount;
     } else {
       ++ppIsExerciseOk;
     }
 
-    var addresses = new TreeSet<String>();
-    addresses.addAll(Arrays.asList(m.toList.split(",")));
-    addresses.addAll(Arrays.asList(m.ccList.split(",")));
-    var requiredUSGSAddress = "dyfi_reports_automated@usgs.gov";
-    if (!addresses.contains(requiredUSGSAddress)) {
-      explanations.add("FAIL: To: and Cc: addresses don't contain required address: " + requiredUSGSAddress);
+    var addresses = new HashSet<String>();
+    addresses.addAll(Arrays.asList(m.toList.replaceAll("SMTP:", "").split(",")));
+    addresses.addAll(Arrays.asList(m.ccList.replaceAll("SMTP:", "").split(",")));
+
+    if (!addresses.contains(REQUIRED_USGS_ADDRESS)) {
+      explanations.add("FAIL: To: and Cc: addresses don't contain required address: " + REQUIRED_USGS_ADDRESS);
       autoFail = true;
+      ++ppAutoFailCount;
+      noUSGSCallAddressMap.put(call, addresses.toString());
     } else {
       ++ppAddressToUSGSOk;
     }
@@ -126,7 +138,7 @@ public class ETO_2022_10_20 extends DefaultGrader {
     var organization = m.organization;
     var requiredOrganization = "ETO Winlink Thursday SHAKEOUT 2022";
     if (organization != null) {
-      if (organization.equalsIgnoreCase(requiredOrganization)) {
+      if (organization.trim().equalsIgnoreCase(requiredOrganization)) {
         points += 50;
         ++ppOrganizationOk;
       } else {
@@ -167,6 +179,11 @@ public class ETO_2022_10_20 extends DefaultGrader {
       logger.warn("could not parse intensity for call: " + call + ", messageId: " + messageId);
     }
 
+    var version = m.formVersion;
+    var count = versionCountMap.getOrDefault(version, Integer.valueOf(0));
+    ++count;
+    versionCountMap.put(version, count);
+
     points = Math.min(100, points);
     points = Math.max(0, points);
     points = autoFail ? 0 : points;
@@ -201,6 +218,8 @@ public class ETO_2022_10_20 extends DefaultGrader {
     sb.append("\nETO-2022-10-20 Grading Report: graded " + ppCount + " DYFI messages\n");
     sb.append(formatPP("Organization ok", ppOrganizationOk));
     sb.append(formatPP("Action ok", ppResponseOk));
+    sb.append("\n");
+    sb.append("Automatic Fail Count: " + ppAutoFailCount + "\n");
     sb.append(formatPP("Is Exerercise", ppIsExerciseOk));
     sb.append(formatPP("Addressed to USGS", ppAddressToUSGSOk));
 
@@ -223,6 +242,18 @@ public class ETO_2022_10_20 extends DefaultGrader {
     for (var key : intensityCountMap.keySet()) {
       var count = intensityCountMap.get(key);
       sb.append(formatCounts(key, count, sumCounts));
+    }
+
+    sb.append("\nCounts by Form Version:\n");
+    sumCounts = versionCountMap.values().stream().reduce(0, Integer::sum);
+    for (var key : versionCountMap.keySet()) {
+      var count = versionCountMap.get(key);
+      sb.append(formatCounts(key, count, sumCounts));
+    }
+
+    sb.append("\nFailed to address message to USGS: (" + REQUIRED_USGS_ADDRESS + ")\n");
+    for (var call : noUSGSCallAddressMap.keySet()) {
+      sb.append("  " + call + ", addresses: " + noUSGSCallAddressMap.get(call) + "\n");
     }
 
     return sb.toString();

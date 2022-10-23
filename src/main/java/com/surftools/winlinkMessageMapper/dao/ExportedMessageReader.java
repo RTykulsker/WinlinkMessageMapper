@@ -136,8 +136,14 @@ public class ExportedMessageReader {
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
     var sender = element.getElementsByTagName("sender").item(0).getTextContent();
     var mime = element.getElementsByTagName("mime").item(0).getTextContent();
-    var locationString = element.getElementsByTagName("location").item(0).getTextContent();
-    LatLongPair location = makeLocation(locationString);
+
+    LatLongPair location = null;
+    try {
+      var locationString = element.getElementsByTagName("location").item(0).getTextContent();
+      location = makeLocation(locationString);
+    } catch (Exception e) {
+      ;
+    }
 
     var isP2P = "False";
     if (element.getElementsByTagName("peertopeer").getLength() > 0) {

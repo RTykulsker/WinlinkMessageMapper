@@ -76,6 +76,9 @@ public class DyfiProcessor extends AbstractBaseProcessor {
     String longitude = map.get("ciim_mapLon");
     if (latitude == null || latitude.length() == 0 || longitude == null || longitude.length() == 0) {
       var location = message.location;
+      if (location == null || !location.isValid()) {
+        return reject(message, RejectType.CANT_PARSE_LATLONG, "lat: " + latitude + ", lon: " + longitude);
+      }
       latitude = location.getLatitude();
       longitude = location.getLongitude();
       if (latitude == null || latitude.length() == 0 || longitude == null || longitude.length() == 0) {
@@ -87,7 +90,9 @@ public class DyfiProcessor extends AbstractBaseProcessor {
     String comments = map.get("comments");
     String location = map.get("ciim_mapAddress");
     boolean isRealEvent = !map.get("eventType").equalsIgnoreCase("EXERCISE");
-    boolean isFelt = map.get("fldSituation_felt").equals("1");
+    var fldSituationFelt = map.get("fldSituation_felt");
+    boolean isFelt = fldSituationFelt != null ? fldSituationFelt.equals("1") : false;
+    // boolean isFelt = map.get("fldSituation_felt").equals("1");
     var intensity = map.get("mapmmscale");
     var formVersion = map.get("form_version");
     var response = map.get("fldExperience_response");
