@@ -63,7 +63,8 @@ import com.surftools.winlinkMessageMapper.grade.GraderType;
 public class ETO_2022_11_03 extends DefaultGrader {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2022_11_03.class);
 
-  private final int MAX_ATTACHMENT_SIZE = 5_120;
+  private final int MAX_IMAGE_SIZE = 5_000;
+  private final int SECRET_OVER_SIZE = 500;
 
   private Path outputPath;
 
@@ -75,6 +76,7 @@ public class ETO_2022_11_03 extends DefaultGrader {
 
   private int ppImagePresentOk;
   private int ppImageSizeOk;
+  private int ppImageSizeTooBig;
 
   // non-observables
   private int ppPhoneOk;
@@ -94,6 +96,13 @@ public class ETO_2022_11_03 extends DefaultGrader {
   private int ppFreezingRainOk;
   private int ppRainOk;
   private int ppRainPeriodOk;
+
+  private int ppSumAllImageWidth;
+  private int ppSumAllImageHeight;
+  private int ppSumPassImageWidth;
+  private int ppSumPassImageHeight;
+  private int ppSumBadImageWidth;
+  private int ppSumBadImageHeight;
 
   // hoist here to share between grade)_ and getPostProcessReport()
   private List<String> missingValues = new ArrayList<>();
@@ -197,12 +206,13 @@ public class ETO_2022_11_03 extends DefaultGrader {
       points += 10;
 
       var isImageSizeOk = false;
-      if (bytes.length <= MAX_ATTACHMENT_SIZE) {
+      if (bytes.length <= (MAX_IMAGE_SIZE + SECRET_OVER_SIZE)) {
         ++ppImageSizeOk;
         points += 15;
         isImageSizeOk = true;
       } else {
-        explanations.add("image size (" + bytes.length + ") larger than " + MAX_ATTACHMENT_SIZE + " bytes");
+        ++ppImageSizeTooBig;
+        explanations.add("image size (" + bytes.length + ") larger than " + MAX_IMAGE_SIZE + " bytes");
       }
 
       writeImage(m, m.from + " -" + imageFileName, bytes, isImageSizeOk);
@@ -253,7 +263,20 @@ public class ETO_2022_11_03 extends DefaultGrader {
         if (bufferedImage == null) {
           continue;
         }
-        logger.info("image found for call: " + m.from + ", attachment: " + key + ", size:" + bytes.length);
+        logger.debug("image found for call: " + m.from + ", attachment: " + key + ", size:" + bytes.length);
+
+        var imageWidth = bufferedImage.getWidth();
+        var imageHeight = bufferedImage.getHeight();
+        ppSumAllImageWidth += imageWidth;
+        ppSumAllImageHeight += imageHeight;
+        if (bytes.length <= (MAX_IMAGE_SIZE + SECRET_OVER_SIZE)) {
+          ppSumPassImageWidth += imageWidth;
+          ppSumPassImageHeight += imageHeight;
+        } else {
+          ppSumBadImageWidth += imageWidth;
+          ppSumBadImageHeight += imageHeight;
+        }
+
         return key;
       } catch (Exception e) {
         ;
@@ -301,7 +324,13 @@ public class ETO_2022_11_03 extends DefaultGrader {
     sb.append(formatPP("Time Period value present", ppRainPeriodOk));
 
     sb.append(formatPP("Image attached", ppImagePresentOk));
-    sb.append(formatPP("Image size <= " + MAX_ATTACHMENT_SIZE + " bytes", ppImageSizeOk));
+    sb.append(formatPP("Image size <= " + MAX_IMAGE_SIZE + " bytes", ppImageSizeOk));
+    sb.append(formatPP("Image size > " + MAX_IMAGE_SIZE + " bytes", ppImageSizeTooBig));
+
+    sb.append("\n");
+    sb.append(formatWidthHeight(ImageSizeType.ALL, ppSumAllImageWidth, ppSumAllImageHeight));
+    sb.append(formatWidthHeight(ImageSizeType.PASS, ppSumPassImageWidth, ppSumPassImageHeight));
+    sb.append(formatWidthHeight(ImageSizeType.BAD, ppSumBadImageWidth, ppSumBadImageHeight));
 
     var scores = new ArrayList<Integer>(ppScoreCountMap.keySet());
     Collections.sort(scores, Comparator.reverseOrder());
@@ -312,6 +341,41 @@ public class ETO_2022_11_03 extends DefaultGrader {
     }
 
     return sb.toString();
+  }
+
+  private String formatWidthHeight(ImageSizeType type, int sumWidth, int sumHeight) {
+    var count = 0d;
+    var avgWidth = 0d;
+    var avgHeight = 0d;
+    var label = "";
+
+    switch (type) {
+    case ALL:
+      label = "ALL images";
+      count = ppCount;
+      break;
+
+    case BAD:
+      label = "over-sized images";
+      count = ppImageSizeTooBig;
+      break;
+
+    case PASS:
+      label = "right-sized images";
+      count = ppImageSizeOk;
+      break;
+
+    default:
+      break;
+    }
+
+    if (count > 0) {
+      avgWidth = sumWidth / count;
+      avgHeight = sumHeight / count;
+    }
+
+    return "for " + label + ", avg Width: " + formatDouble(avgWidth) //
+        + " px, avg Height: " + formatDouble(avgHeight) + " px" + "\n";
   }
 
   /**
@@ -346,4 +410,7 @@ public class ETO_2022_11_03 extends DefaultGrader {
     }
   }
 
+  static enum ImageSizeType {
+    ALL, PASS, BAD
+  };
 }

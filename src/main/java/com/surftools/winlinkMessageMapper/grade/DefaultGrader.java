@@ -113,6 +113,13 @@ public abstract class DefaultGrader implements IGrader {
     return s;
   }
 
+  protected String formatDouble(Double d) {
+    if (d == null) {
+      return "";
+    }
+    return String.format("%.2f", d);
+  }
+
   protected String formatPercent(Double d) {
     if (d == null) {
       return "";
