@@ -63,7 +63,7 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
  *
  * FSR graded on:
  *
- * --- required header: 25%
+ * --- required header: 50%
  *
  * --- No only in Box 1: 25% but automatic fail if Yes
  *
@@ -228,6 +228,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
         } // end if fsr != null
       } else {
         explanations.add("no FSR message received");
+        ++ppFailNoFsrCount;
         isFailure = true;
       } // end if fsrList != null
 
@@ -240,7 +241,6 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
           isFailure = true;
           ++ppFailNoIcsCount;
         } else {
-          points += 25;
           ++ppIcsReceived;
 
           icsMessageId = icsMessage.messageId;
@@ -254,14 +254,14 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
             explanations.add("ICS setup not provided");
           } else {
             if (icsSetup.equalsIgnoreCase(REQUIRED_HEADER_TEXT)) {
-              points += 25;
+              points += 50;
               ++ppIcsSetupOk;
             } else {
               explanations.add("ICS setup (" + icsSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
             }
           }
 
-          var imageFileName = getImageFile(fsrMessage);
+          var imageFileName = getImageFile(icsMessage);
           if (imageFileName != null) {
             var bytes = icsMessage.attachments.get(imageFileName);
             if (bytes != null) {
@@ -275,13 +275,17 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
                 isImageSizeOk = true;
                 explanations.add("extra credit for attached image");
               }
-              writeImage(fsrMessage, imageFileName, bytes, isImageSizeOk);
+              writeImage(icsMessage, imageFileName, bytes, isImageSizeOk);
             }
           } else {
             explanations.add("no image attachment found");
           }
 
         }
+      } else {
+        explanations.add("no ICS message received");
+        ++ppFailNoIcsCount;
+        isFailure = true;
       } // end if icsList != null
 
       // only want folks who sent at least one of the right type of messages
@@ -305,6 +309,11 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
 
       points = Math.min(100, points);
       points = Math.max(0, points);
+
+      if (isFailure) {
+        points = 0;
+      }
+
       var grade = String.valueOf(points);
       var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
 
@@ -330,7 +339,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
     sb.append("\n\nETO 2022-09-22 RMS aggregate results:\n");
     sb.append("total participants: " + ppCount + "\n");
 
-    sb.append("participants with both required messages (and not failed): " + ppPassCount + "\n");
+    sb.append("participants with both required messages (may also fail): " + ppPassCount + "\n");
     sb.append(format("  FSR received", ppFsrReceived, ppCount));
     sb.append(format("  FSR setup Ok", ppFsrSetupOk, ppCount));
 
