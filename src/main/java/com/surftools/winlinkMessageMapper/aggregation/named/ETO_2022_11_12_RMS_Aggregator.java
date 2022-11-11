@@ -63,17 +63,21 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
  *
  * FSR graded on:
  *
- * --- required header: 50%
+ * --- FSR received: 25%
  *
- * --- No only in Box 1: 25% but automatic fail if Yes
+ * --- required header: 25%
+ *
+ * --- automatic fail if Box 1 is Yes
  *
  * ICS-213 Populated as requested
  *
- * --- required header: 50%
+ * --- ICS received: 25%
+ *
+ * --- required header: 25%
  *
  * BOTH messages must be present (and not failed) to allow participation in P2P
  *
- * Optional image attached to ICS, 25% if under 5K
+ * Optional image attached to ICS, bonus 25% if under 5K
  *
  * @author bobt
  *
@@ -242,6 +246,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
           ++ppFailNoIcsCount;
         } else {
           ++ppIcsReceived;
+          points += 25;
 
           icsMessageId = icsMessage.messageId;
           icsClearinghouse = icsMessage.to;
@@ -254,7 +259,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
             explanations.add("ICS setup not provided");
           } else {
             if (icsSetup.equalsIgnoreCase(REQUIRED_HEADER_TEXT)) {
-              points += 50;
+              points += 25;
               ++ppIcsSetupOk;
             } else {
               explanations.add("ICS setup (" + icsSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
@@ -274,11 +279,13 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
                 points += 25;
                 isImageSizeOk = true;
                 explanations.add("extra credit for attached image");
+              } else {
+                explanations.add("no extra credit too large image");
               }
               writeImage(icsMessage, imageFileName, bytes, isImageSizeOk);
             }
           } else {
-            explanations.add("no image attachment found");
+            explanations.add("no optional image attachment on ICS found");
           }
 
         }
@@ -315,7 +322,9 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
       }
 
       var grade = String.valueOf(points);
-      var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
+      var explanation = (points == 100 && explanations.size() == 0) //
+          ? "Perfect Score!"
+          : String.join("\n", explanations);
 
       var scoreCount = ppScoreCountMap.getOrDefault(points, Integer.valueOf(0));
       ++scoreCount;

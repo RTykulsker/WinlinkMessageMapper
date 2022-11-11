@@ -91,6 +91,11 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     public int imageCount;
 
     @Override
+    public String toString() {
+      return "{call: " + call + "}";
+    }
+
+    @Override
     public String[] getHeaders() {
       return new String[] { "Band", "Center Freq. (KHz)", "Dial Freq (KHz)", "ETO Region", //
           "Station", "Location", "Latitude", "Longitude", "Fsr Count", "ICS Count", "Image Count", "Total Messages" };
@@ -109,6 +114,11 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     public int fsrCount;
     public int icsCount;
     public int imageCount;
+
+    @Override
+    public String toString() {
+      return "{call: " + call + "}";
+    }
 
     @Override
     public String[] getHeaders() {
@@ -281,6 +291,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     Target target = new Target();
 
     var index = 0;
+    target.isActive = Boolean.parseBoolean(fields[index++]);
     target.channel = fields[index++];
     target.band = fields[index++];
     target.centerFreq = fields[index++];

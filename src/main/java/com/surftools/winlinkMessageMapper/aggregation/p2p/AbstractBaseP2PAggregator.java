@@ -53,6 +53,7 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.aggregation.AbstractBaseAggregator;
 import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
@@ -89,6 +90,8 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
   @Override
   public void aggregate(Map<MessageType, List<ExportedMessage>> messageMap) {
     super.aggregate(messageMap);
+
+    checkForCoLocation();
 
     var countMessageTypesSkipped = 0;
     var countMessagesSkippedForType = 0;
@@ -164,6 +167,62 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
     }
 
     displayMissingTargets();
+  }
+
+  /**
+   * a Target and a Field at the same location is possible, but not desirable
+   *
+   * Multiple Targets at the same location is probably an error
+   *
+   * Multiple Fields at the same location is possible, but not desirable
+   */
+  protected void checkForCoLocation() {
+    var thresholdMeters = Double.valueOf(cm.getAsString(Key.DEDUPLICATION_THRESHOLD_Meters, "10"));
+
+    var fields = fieldMap.values();
+    var targets = targetMap.values();
+
+    // Target vs Target
+    for (var aTarget : targets) {
+      for (var bTarget : targets) {
+
+        if (aTarget.call.equals(bTarget.call)) {
+          continue;
+        }
+
+        var distanceMeters = LocationUtils.computeDistanceMeters(aTarget.location, bTarget.location);
+        if (distanceMeters < thresholdMeters) {
+          logger.warn("### targets too close: " + aTarget + " and " + bTarget);
+        }
+      }
+    }
+
+    // Field vs Field
+    for (var aField : fields) {
+      for (var bField : fields) {
+
+        if (aField.call.equals(bField.call)) {
+          continue;
+        }
+
+        var distanceMeters = LocationUtils.computeDistanceMeters(aField.location, bField.location);
+        if (distanceMeters < thresholdMeters) {
+          logger.warn("### fields too close: " + aField + " and " + bField);
+        }
+      }
+    }
+
+    // Field vs Target
+    for (var field : fields) {
+      for (var target : targets) {
+
+        var distanceMeters = LocationUtils.computeDistanceMeters(field.location, target.location);
+        if (distanceMeters < thresholdMeters) {
+          logger.warn("### field and target too close: " + field + " and " + target);
+        }
+      }
+    }
+
   }
 
   /**
@@ -431,7 +490,11 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
         ++rowCount;
 
         var target = makeTarget(fields);
-        targetMap.put(target.call, target);
+        if (target.isActive) {
+          targetMap.put(target.call, target);
+        } else {
+          logger.debug("skipping inactive target: " + target);
+        }
       }
     } catch (Exception e) {
       logger.error("Exception reading " + inputFile + ", row " + rowCount + ", " + e.getLocalizedMessage());

@@ -43,6 +43,7 @@ import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
  *
  */
 public abstract class BaseTarget {
+  public boolean isActive;
   public String call;
   public String band;
   public String centerFreq;
