@@ -105,6 +105,7 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
         logger.warn("### skipping " + exportedMessages.size() + " messages of type: " + messageType);
         ++countMessageTypesSkipped;
         countMessagesSkippedForType += exportedMessages.size();
+        continue;
       }
 
       for (var m : exportedMessages) {
@@ -123,13 +124,13 @@ public abstract class AbstractBaseP2PAggregator extends AbstractBaseAggregator {
 
         var field = fieldMap.get(from);
         if (field == null) {
-          logger.warn("### unexpected message from: " + from + ", not in field map");
+          logger.debug("### unexpected message from: " + from + ", not in field map");
           continue;
         }
 
         var target = targetMap.get(to);
         if (target == null) {
-          logger.warn("### unexpected message to: " + to + ", not in target map");
+          logger.debug("### unexpected message to: " + to + ", not in target map");
           continue;
         }
 

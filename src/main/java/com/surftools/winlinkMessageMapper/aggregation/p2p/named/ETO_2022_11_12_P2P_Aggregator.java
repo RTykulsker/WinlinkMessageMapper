@@ -111,6 +111,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
   }
 
   private static class Field extends BaseField {
+    public String to;
     public int fsrCount;
     public int icsCount;
     public int imageCount;
@@ -122,19 +123,24 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "Call", "Latitude", "Longitude", //
+      return new String[] { "Call", "To", "Latitude", "Longitude", //
           "Fsr Count", "ICS Count", "Image Count", "Total Messages" };
     }
 
     @Override
     public String[] getValues() {
-      return new String[] { call, location.getLatitude(), location.getLongitude(), //
+      return new String[] { call, to, location.getLatitude(), location.getLongitude(), //
           String.valueOf(fsrCount), String.valueOf(icsCount), String.valueOf(imageCount), //
           String.valueOf(toList.size()) };
     }
   }
 
   private List<Entry> entryList;
+
+  private int ppIcsMessageCount;
+  private int ppFsrMessageCount;
+  private int ppFsrImageCount;
+  private int ppIcsImageCount;
 
   public ETO_2022_11_12_P2P_Aggregator() {
     super(logger);
@@ -168,6 +174,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
         var messageType = "unknown";
         var hasImageAttachment = false;
         if (message instanceof Ics213Message) {
+          ++ppIcsMessageCount;
           messageType = "ics";
           ++field.icsCount;
           ++target.icsCount;
@@ -176,14 +183,23 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
           if (hasImageAttachment) {
             ++field.imageCount;
             ++target.imageCount;
+            ++ppIcsImageCount;
           }
         } else if (message instanceof UnifiedFieldSituationMessage) {
+          ++ppFsrMessageCount;
           ++field.fsrCount;
           ++target.fsrCount;
           messageType = "fsr";
+
+          // should be zero, since image goes on ICS, not FSR
+          if (hasImageAttachment(message)) {
+            ++ppFsrImageCount;
+          }
         } else {
-          // this shouldn't happen!
-          logger.warn("unexpected messageType for messageId: " + message.messageId);
+          // this shouldn't happen, but it does, rejects, etc
+          logger
+              .debug("unexpected messageType for messageId: " + message.messageId + ", from: " + message.from + ",to: "
+                  + message.to);
         }
 
         var dateTime = makeDateTime(message.date, message.time);
@@ -207,6 +223,12 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     writeEntries(cm, entryList);
     writeUpdatedTargets();
     writeUpdatedFields();
+
+    var sb = new StringBuilder();
+    sb.append("\n\nSummary\n");
+    sb.append("total fsr messages received: " + ppFsrMessageCount + ", images: " + ppFsrImageCount + "\n");
+    sb.append("total ics messages received: " + ppIcsMessageCount + ", images: " + ppIcsImageCount + "\n");
+    logger.info(sb.toString());
   }
 
   public void writeEntries(IConfigurationManager cm, List<Entry> entryList) {
@@ -310,12 +332,12 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
   @Override
   protected BaseField makeField(String[] fields) {
     /*
-     * "Call", "Latitude", "Longitude", // "FsrTo", "FsrMiD", "FsrComment", // "IcsTo", "IcsMiD", "IcsMessage",
+     * "Call", "To" "Latitude", "Longitude", // "FsrTo", "FsrMiD", "FsrComment", // "IcsTo", "IcsMiD", "IcsMessage",
      * "IcsImageBytes", // // "Grade", "Explanation"
      */
 
-    var fsrMid = fields[4];
-    var icsMid = fields[7];
+    var fsrMid = fields[5];
+    var icsMid = fields[8];
 
     /**
      * we REQUIRE both ICS and FSR messages to qualify Field for P2P exercise
@@ -328,6 +350,7 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
 
     var index = 0;
     field.call = fields[index++];
+    field.to = fields[index++];
     var latitude = fields[index++];
     var longitude = fields[index++];
     field.location = new LatLongPair(latitude, longitude);
@@ -347,7 +370,6 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     sb.append("  ICS messages: " + field.icsCount + "\n");
     sb.append(DASHES);
     for (var m : toList) {
-      var date = m.date;
       var time = m.time;
       var to = m.to;
       var target = (Target) targetMap.get(to);
@@ -356,9 +378,9 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
       var type = m.getMessageType();
       var typeString = (type == MessageType.ICS_213) ? "ics" : "fsr";
       var hasImage = (type == MessageType.ICS_213 && hasImageAttachment(m));
-      var imageString = (hasImage) ? ", with image" : "";
+      var imageString = (hasImage) ? "+ image" : "";
       var distanceMiles = LocationUtils.computeDistanceMiles(field.location, location);
-      sb.append(date + " " + time + ", " + to + //
+      sb.append(time + ", " + to + //
           " (" + band + ", " + distanceMiles + " miles)" + ", [" + typeString + imageString + "]\n");
     }
 
@@ -378,17 +400,17 @@ public class ETO_2022_11_12_P2P_Aggregator extends AbstractBaseP2PAggregator {
     sb.append("  ICS messages: " + target.icsCount + "(with " + target.imageCount + " images)\n");
     sb.append(DASHES);
     for (var m : fromList) {
-      var date = m.date;
       var time = m.time;
       var from = m.from;
       var location = m.location;
       var type = m.getMessageType();
       var typeString = (type == MessageType.ICS_213) ? "ics" : "fsr";
       var hasImage = (type == MessageType.ICS_213 && hasImageAttachment(m));
-      var imageString = (hasImage) ? ", with image" : "";
-      var distanceMiles = LocationUtils.computeDistanceMiles(target.location, location);
-      sb.append(date + " " + time + ", " + from + //
+      var imageString = (hasImage) ? "+ image" : "";
+      var distanceMiles = location == null ? "unknown" : LocationUtils.computeDistanceMiles(target.location, location);
+      sb.append(time + ", " + from + //
           " (" + distanceMiles + " miles)" + ", [" + typeString + imageString + "]\n");
+
     }
     return sb.toString();
   }

@@ -664,10 +664,12 @@ public class WinlinkMessageMapper {
 
     var missingExpectedDestinations = new TreeSet<String>(expectedSet);
     var foundUnexpectedDestinations = new TreeSet<String>();
+    var foundExpectedSet = new TreeSet<String>();
 
     for (var to : toMap.keySet()) {
       if (expectedSet.contains(to)) {
         missingExpectedDestinations.remove(to);
+        foundExpectedSet.add(to);
       } else {
         foundUnexpectedDestinations.add(to);
       }
@@ -676,7 +678,12 @@ public class WinlinkMessageMapper {
     if (missingExpectedDestinations.size() == 0) {
       logger.info("all expected destinations found");
     } else {
-      logger.warn("missing destinations: " + String.join(",", missingExpectedDestinations));
+      logger
+          .info("only found the following " + foundExpectedSet.size() //
+              + " destinations: " + String.join(",", foundExpectedSet));
+      logger
+          .warn("missing " + missingExpectedDestinations.size() //
+              + " destinations: " + String.join(",", missingExpectedDestinations));
     }
 
     if (foundUnexpectedDestinations.size() == 0) {
@@ -686,7 +693,7 @@ public class WinlinkMessageMapper {
       for (var to : foundUnexpectedDestinations) {
         list.add(to + "(" + toMap.get(to) + ")");
       }
-      logger.warn("found unexpected destinations: " + String.join(",", list));
+      logger.warn("found " + list.size() + " unexpected destinations: " + String.join(",", list));
     }
   }
 

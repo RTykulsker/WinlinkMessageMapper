@@ -99,7 +99,7 @@ public class ExportedMessageReader {
    * @return
    */
   public List<ExportedMessage> readAll(Path filePath) {
-    logger.info("Processing file: " + filePath.getFileName());
+    logger.debug("Processing file: " + filePath.getFileName());
     List<ExportedMessage> messages = new ArrayList<>();
 
     var iNode = 0;

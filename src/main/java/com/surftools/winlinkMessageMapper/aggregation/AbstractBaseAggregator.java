@@ -91,6 +91,7 @@ public abstract class AbstractBaseAggregator implements IAggregator {
 
     // populate map of from(call) -> map(messageType ->list of messages);
     for (var message : allMessages) {
+
       var from = message.from;
       var fromMM = fromMessageMap.getOrDefault(from, new HashMap<MessageType, List<ExportedMessage>>());
       var messageType = message.getMessageType();

@@ -99,23 +99,31 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
   private Path imageBadSizePath;
   private int maxImageSize = -1;
 
-  static record Entry(String call, LatLongPair location, //
+  static record Entry(String call, String to, LatLongPair location, //
       String fsrClearinghouse, String fsrMessageId, String fsrComment, //
       String icsClearinghouse, String icsMessageId, String icsComment, int icsImageSize, //
       String grade, String explanation) {
 
     public static String[] getHeaders() {
-      return new String[] { "Call", "Latitude", "Longitude", //
+      return new String[] { "Call", "To", "Latitude", "Longitude", //
           "FsrTo", "FsrMiD", "FsrComment", //
           "IcsTo", "IcsMiD", "IcsMessage", "IcsImageBytes", //
           "Grade", "Explanation" };
     }
 
     public String[] getValues() {
-      return new String[] { call, location.getLatitude(), location.getLongitude(), //
+      var aLocation = location != null ? location : LatLongPair.ZERO_ZERO;
+      return new String[] { call, to, aLocation.getLatitude(), aLocation.getLongitude(), //
           fsrClearinghouse, fsrMessageId, fsrComment, //
           icsClearinghouse, icsMessageId, icsComment, String.valueOf(icsImageSize), //
           grade, explanation };
+    }
+
+    public Entry updateLocation(LatLongPair newLocation) {
+      return new Entry(call, to, newLocation, //
+          fsrClearinghouse, fsrMessageId, fsrComment, //
+          icsClearinghouse, icsMessageId, icsComment, icsImageSize, //
+          grade, explanation);
     }
   };
 
@@ -131,7 +139,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
     imagePassPath = FileUtils.createDirectory(Path.of(outputPath.toString(), "pass"));
     imageBadSizePath = FileUtils.createDirectory(Path.of(outputPath.toString(), "badSize"));
 
-    maxImageSize = cm.getAsInt(Key.MAX_IMAGE_SIZE, 5120);
+    maxImageSize = cm.getAsInt(Key.MAX_IMAGE_SIZE, 5500);
   }
 
   @Override
@@ -160,18 +168,21 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
 
     for (var m : aggregateMessages) {
       var from = m.from();
-      ++ppCount;
-
       if (dumpIds.contains(from)) {
         logger.info("dump: " + from);
       }
 
       var map = fromMessageMap.get(from);
+      UnifiedFieldSituationMessage fsrMessage = getFsrMessage(map);
+      Ics213Message icsMessage = getIcsMessage(map);
+      if (fsrMessage == null && icsMessage == null) {
+        logger.info("skipping messages from " + from + ", since no fsr or ics");
+        continue;
+      }
+
+      ++ppCount;
 
       var isFailure = false; // either message missing or auto-fail
-
-      UnifiedFieldSituationMessage fsrMessage = null;
-      Ics213Message icsMessage = null;
 
       String fsrMessageId = null;
       LatLongPair fsrLocation = null;
@@ -189,111 +200,94 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
       var points = 0;
       var explanations = new ArrayList<String>();
 
-      var fsrList = map.get(MessageType.UNIFIED_FIELD_SITUATION);
-      if (fsrList != null) {
-        Collections.reverse(fsrList);
-        fsrMessage = (UnifiedFieldSituationMessage) fsrList.iterator().next();
-        if (fsrMessage == null) {
-          explanations.add("FAIL because no FSR message received");
-          ++ppFailNoFsrCount;
-          isFailure = true;
-        } else {
-          points += 25;
-          ++ppFsrReceived;
-          fsrMessageId = fsrMessage.messageId;
-          fsrClearinghouse = fsrMessage.to;
-          fsrComment = fsrMessage.additionalComments;
-          fsrLocation = new LatLongPair(fsrMessage.latitude, fsrMessage.longitude);
-          if (!fsrLocation.isValid()) {
-            isFailure = true;
-            ++ppFailNoLocationCount;
-            explanations.add("FAIL because FSR location(" + fsrLocation.toString() + ") is not valid");
-          }
-
-          fsrSetup = fsrMessage.organization;
-          if (fsrSetup == null || fsrSetup.isBlank()) {
-            explanations.add("FSR setup not provided");
-          } else {
-            if (fsrSetup.equalsIgnoreCase(REQUIRED_HEADER_TEXT)) {
-              points += 25;
-              ++ppFsrSetupOk;
-            } else {
-              explanations.add("FSR setup (" + fsrSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
-            }
-          }
-
-          var box1 = fsrMessage.isHelpNeeded;
-          if (box1.equalsIgnoreCase("YES")) {
-            isFailure = true;
-            explanations.add("FAIL because FSR Box1 set to 'YES'");
-            ++ppFailFcsBox1Count;
-          }
-
-        } // end if fsr != null
-      } else {
-        explanations.add("no FSR message received");
+      if (fsrMessage == null) {
+        explanations.add("FAIL because no FSR message received");
         ++ppFailNoFsrCount;
         isFailure = true;
-      } // end if fsrList != null
-
-      var icsList = map.get(MessageType.ICS_213);
-      if (icsList != null) {
-        Collections.reverse(icsList);
-        icsMessage = (Ics213Message) icsList.iterator().next();
-        if (icsMessage == null) {
-          explanations.add("FAIL because no ICS-213 message received");
-          isFailure = true;
-          ++ppFailNoIcsCount;
-        } else {
-          ++ppIcsReceived;
-          points += 25;
-
-          icsMessageId = icsMessage.messageId;
-          icsClearinghouse = icsMessage.to;
-          icsSetup = icsMessage.organization;
-          icsComment = icsMessage.message;
-          icsLocation = icsMessage.location;
-
-          icsSetup = icsMessage.organization;
-          if (icsSetup == null || icsSetup.isBlank()) {
-            explanations.add("ICS setup not provided");
-          } else {
-            if (icsSetup.equalsIgnoreCase(REQUIRED_HEADER_TEXT)) {
-              points += 25;
-              ++ppIcsSetupOk;
-            } else {
-              explanations.add("ICS setup (" + icsSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
-            }
-          }
-
-          var imageFileName = getImageFile(icsMessage);
-          if (imageFileName != null) {
-            var bytes = icsMessage.attachments.get(imageFileName);
-            if (bytes != null) {
-              ++ppIcsImageAttachedOk;
-              icsImageSize = bytes.length;
-
-              var isImageSizeOk = false;
-              if (bytes.length <= maxImageSize) {
-                ++ppIcsImageSizeOk;
-                points += 25;
-                isImageSizeOk = true;
-                explanations.add("extra credit for attached image");
-              } else {
-                explanations.add("no extra credit too large image");
-              }
-              writeImage(icsMessage, imageFileName, bytes, isImageSizeOk);
-            }
-          } else {
-            explanations.add("no optional image attachment on ICS found");
-          }
-
-        }
       } else {
-        explanations.add("no ICS message received");
-        ++ppFailNoIcsCount;
+        points += 25;
+        ++ppFsrReceived;
+        fsrMessageId = fsrMessage.messageId;
+        fsrClearinghouse = fsrMessage.to;
+        fsrComment = fsrMessage.additionalComments;
+        fsrLocation = new LatLongPair(fsrMessage.latitude, fsrMessage.longitude);
+        if (!fsrLocation.isValid()) {
+          isFailure = true;
+          ++ppFailNoLocationCount;
+          explanations.add("FAIL because FSR location(" + fsrLocation.toString() + ") is not valid");
+          fsrLocation = LatLongPair.ZERO_ZERO;
+        }
+
+        fsrSetup = fsrMessage.organization;
+        if (fsrSetup == null || fsrSetup.isBlank()) {
+          explanations.add("FSR setup not provided");
+        } else {
+          if (fsrSetup.equalsIgnoreCase(REQUIRED_HEADER_TEXT)) {
+            points += 25;
+            ++ppFsrSetupOk;
+          } else {
+            explanations.add("FSR setup (" + fsrSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
+          }
+        }
+
+        var box1 = fsrMessage.isHelpNeeded;
+        if (box1.equalsIgnoreCase("YES")) {
+          isFailure = true;
+          explanations.add("FAIL because FSR Box1 set to 'YES'");
+          ++ppFailFcsBox1Count;
+        }
+
+      } // end if fsr != null
+
+      if (icsMessage == null) {
+        explanations.add("FAIL because no ICS-213 message received");
         isFailure = true;
-      } // end if icsList != null
+        ++ppFailNoIcsCount;
+      } else {
+        ++ppIcsReceived;
+        points += 25;
+
+        icsMessageId = icsMessage.messageId;
+        icsClearinghouse = icsMessage.to;
+        icsSetup = icsMessage.organization;
+        icsComment = icsMessage.message;
+        icsLocation = icsMessage.location;
+
+        icsSetup = icsMessage.organization;
+        if (icsSetup == null || icsSetup.isBlank()) {
+          explanations.add("ICS setup not provided");
+        } else {
+          if (icsSetup.equalsIgnoreCase(REQUIRED_HEADER_TEXT)) {
+            points += 25;
+            ++ppIcsSetupOk;
+          } else {
+            explanations.add("ICS setup (" + icsSetup + ") doesn't match required(" + REQUIRED_HEADER_TEXT + ")");
+          }
+        }
+
+        var imageFileName = getImageFile(icsMessage);
+        if (imageFileName != null) {
+          var bytes = icsMessage.attachments.get(imageFileName);
+          if (bytes != null) {
+            ++ppIcsImageAttachedOk;
+            icsImageSize = bytes.length;
+
+            var isImageSizeOk = false;
+            if (bytes.length <= maxImageSize) {
+              ++ppIcsImageSizeOk;
+              points += 25;
+              isImageSizeOk = true;
+              explanations.add("extra credit for attached image");
+            } else {
+              explanations.add("no extra credit too large image");
+            }
+            writeImage(icsMessage, imageFileName, bytes, isImageSizeOk);
+          }
+        } else {
+          explanations.add("no optional image attachment on ICS found");
+        }
+
+      }
 
       // only want folks who sent at least one of the right type of messages
       if (fsrMessage != null && icsMessage != null) {
@@ -304,11 +298,11 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
         }
 
         // this is just for fun
-        if (fsrLocation.isValid() && icsLocation.isValid()) {
+        if (icsLocation != null && icsLocation.isValid()) {
           var distanceMeters = LocationUtils.computeDistanceMeters(fsrLocation, icsLocation);
           if (distanceMeters > 10) {
             logger
-                .warn("### call: " + from + " location difference: " + distanceMeters + ", fsr: "
+                .debug("### call: " + from + " location difference: " + distanceMeters + ", fsr: "
                     + fsrLocation.toString() + ", ics: " + icsLocation.toString());
           }
         }
@@ -330,7 +324,16 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
       ++scoreCount;
       ppScoreCountMap.put(points, scoreCount);
 
-      var entry = new Entry(from, fsrLocation, //
+      var location = fsrLocation;
+      if (location == null) {
+        if (icsLocation != null && icsLocation.isValid()) {
+          location = icsLocation;
+        }
+        location = LatLongPair.ZERO_ZERO;
+      }
+
+      var to = fsrClearinghouse != null ? fsrClearinghouse : icsClearinghouse;
+      var entry = new Entry(from, to, location, //
           fsrClearinghouse, fsrMessageId, fsrComment, //
           icsClearinghouse, icsMessageId, icsComment, icsImageSize, //
           grade, explanation);
@@ -376,6 +379,28 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
 
   }
 
+  private UnifiedFieldSituationMessage getFsrMessage(Map<MessageType, List<ExportedMessage>> map) {
+    var list = map.get(MessageType.UNIFIED_FIELD_SITUATION);
+    if (list != null) {
+      Collections.reverse(list);
+      var fsrMessage = (UnifiedFieldSituationMessage) list.iterator().next();
+      return fsrMessage;
+    } else {
+      return null;
+    }
+  }
+
+  private Ics213Message getIcsMessage(Map<MessageType, List<ExportedMessage>> map) {
+    var list = map.get(MessageType.ICS_213);
+    if (list != null) {
+      Collections.reverse(list);
+      var icsMessage = (Ics213Message) list.iterator().next();
+      return icsMessage;
+    } else {
+      return null;
+    }
+  }
+
   private String formatPercent(int numerator, int denominator) {
     if (denominator == 0) {
       return "";
@@ -391,8 +416,39 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
 
   @Override
   public void output(String pathName) {
+    output(pathName, "aggregate-all.csv", makeAllList(passList, failList));
     output(pathName, "aggregate-pass.csv", passList);
     output(pathName, "aggregate-fail.csv", failList);
+  }
+
+  private List<Entry> makeAllList(List<Entry> passList, List<Entry> failList) {
+    var tmpList = new ArrayList<Entry>(passList);
+    tmpList.addAll(failList);
+
+    // TODO jitter folks at zero-zero island
+
+    var goodLocationEntries = new ArrayList<Entry>();
+    var badLocationEntries = new ArrayList<Entry>();
+
+    for (var entry : tmpList) {
+      var location = entry.location();
+      if (location == null || location == LatLongPair.ZERO_ZERO) {
+        badLocationEntries.add(entry);
+      } else {
+        goodLocationEntries.add(entry);
+      }
+    }
+
+    var nBadLocations = badLocationEntries.size();
+    var newLocations = LocationUtils.jitter(nBadLocations, LatLongPair.ZERO_ZERO, 1000);
+    for (var i = 0; i < nBadLocations; ++i) {
+      var badLocationEntry = badLocationEntries.get(i);
+      var newLocation = newLocations.get(i);
+      var newEntry = badLocationEntry.updateLocation(newLocation);
+      goodLocationEntries.add(newEntry);
+    }
+
+    return goodLocationEntries;
   }
 
   private void output(String pathName, String fileName, List<Entry> entries) {
@@ -439,7 +495,7 @@ public class ETO_2022_11_12_RMS_Aggregator extends AbstractBaseAggregator {
         if (bufferedImage == null) {
           continue;
         }
-        logger.info("image found for call: " + m.from + ", attachment: " + key + ", size:" + bytes.length);
+        logger.debug("image found for call: " + m.from + ", attachment: " + key + ", size:" + bytes.length);
         return key;
       } catch (Exception e) {
         ;
