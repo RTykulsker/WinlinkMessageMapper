@@ -344,6 +344,10 @@ public class WinlinkMessageMapper {
     Map<MessageType, List<ExportedMessage>> messageMap = new HashMap<>();
 
     for (ExportedMessage exportedMessage : exportedMessages) {
+      if (dumpIdsSet.contains(exportedMessage.from) || dumpIdsSet.contains(exportedMessage.messageId)) {
+        logger.debug("dump: " + exportedMessage.from);
+      }
+
       var messageType = getMessageType(exportedMessage);
       var processor = processorMap.get(messageType);
       ExportedMessage processedMessage = null;

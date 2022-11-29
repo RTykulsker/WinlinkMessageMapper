@@ -71,21 +71,28 @@ public class Ics213Processor extends AbstractBaseProcessor {
       var to = getStringFromXml("to_name");
       var subject = getStringFromXml("subjectline");
 
-      LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);
-      if (latLongComment == null) {
-        var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject, gridSquare);
-        return m;
-      } else {
-        LatLongPair latLong = latLongComment.latLong;
-        if (!latLong.isValid()) {
+      boolean enableGisICS213 = false;
+      if (enableGisICS213) {
+
+        LatLongComment latLongComment = getLatLongAndCommentFromXml(messageText);
+        if (latLongComment == null) {
           var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject, gridSquare);
           return m;
         } else {
-          String restOfMessage = latLongComment.comment;
-          var m = new GisIcs213Message(message, latLong.getLatitude(), latLong.getLongitude(), organization,
-              restOfMessage);
-          return m;
+          LatLongPair latLong = latLongComment.latLong;
+          if (!latLong.isValid()) {
+            var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject, gridSquare);
+            return m;
+          } else {
+            String restOfMessage = latLongComment.comment;
+            var m = new GisIcs213Message(message, latLong.getLatitude(), latLong.getLongitude(), organization,
+                restOfMessage);
+            return m;
+          }
         }
+      } else {
+        var m = new Ics213Message(message, organization, messageText, incidentName, from, to, subject, gridSquare);
+        return m;
       }
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
