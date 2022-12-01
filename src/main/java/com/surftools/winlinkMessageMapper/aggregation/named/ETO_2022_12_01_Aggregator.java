@@ -140,6 +140,9 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
     var ppScoreCountMap = new HashMap<Integer, Integer>();
     var ppForecastOfficeCountMap = new HashMap<String, Integer>();
 
+    var ppYesCount = 0;
+    var ppNoCount = 0;
+
     for (var m : aggregateMessages) {
       var from = m.from();
       if (dumpIds.contains(from)) {
@@ -147,7 +150,11 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
       }
 
       var map = fromMessageMap.get(from);
-      var wxMessage = (WxLocalMessage) map.get(MessageType.WX_LOCAL).iterator().next();
+      var wxMessages = map.get(MessageType.WX_LOCAL);
+      if (wxMessages == null || wxMessages.size() == 0) {
+        continue;
+      }
+      var wxMessage = (WxLocalMessage) wxMessages.iterator().next();
       if (wxMessage == null) {
         logger.info("skipping messages from " + from + ", since wx_local");
         continue;
@@ -270,6 +277,11 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
             if (yesno.equals("YES") || yesno.equals("NO")) {
               points += 25;
               ++ppLine2YesNoOk;
+              if (yesno.equals("YES")) {
+                ++ppYesCount;
+              } else {
+                ++ppNoCount;
+              }
             } else {
               explanations.add("line 2 of comments not YES or NO");
             }
@@ -283,7 +295,6 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
         ++ppIsUSCount;
       }
 
-      var grade = String.valueOf(points);
       var explanation = (points == 100 && explanations.size() == 0) //
           ? "Perfect Score!"
           : (points == 110 && explanations.size() == 1) ? "Perfect score, plus matched forecast office"
@@ -291,6 +302,7 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
 
       points = Math.min(100, points);
       points = Math.max(0, points);
+      var grade = String.valueOf(points);
 
       var entry = new Entry(wxMessage, grade, explanation);
       entries.add(entry);
@@ -317,6 +329,9 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
     sb.append(format("  Notes has two lines", ppNotesHasTwoLinesOk, ppCount));
     sb.append(format("  Notes line 1 looks like forecast Office", ppLine1HasCommaOk, ppCount));
     sb.append(format("  Notes line 2 YES or NO", ppLine2YesNoOk, ppCount));
+
+    sb.append(format("    Yes count: ", ppYesCount, ppLine2YesNoOk));
+    sb.append(format("    No  count: ", ppNoCount, ppLine2YesNoOk));
 
     sb.append("\nNon-scoring criteria\n");
     var avgDistanceMeters = (double) ppSumLocationDifferenceMeters / (double) ppMesssagesWithValidLocation;
