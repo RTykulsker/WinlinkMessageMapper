@@ -69,6 +69,12 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
       }
 
       String organization = getStringFromXml("title");
+
+      var location = getStringFromXml("location");
+      var city = getStringFromXml("city");
+      var state = getStringFromXml("state");
+      var county = getStringFromXml("county");
+
       String temperature = getStringFromXml("temp");
       String windspeed = getStringFromXml("windspeed");
 
@@ -79,7 +85,9 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
 
       String comments = getStringFromXml("comments");
       WxLocalMessage m = new WxLocalMessage(message, latLong.getLatitude(), latLong.getLongitude(), //
-          organization, temperature, windspeed, range, comments);
+          organization, //
+          location, city, state, county, //
+          temperature, windspeed, range, comments);
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());

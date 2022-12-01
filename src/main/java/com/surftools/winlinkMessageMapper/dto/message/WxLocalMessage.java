@@ -30,14 +30,27 @@ package com.surftools.winlinkMessageMapper.dto.message;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 
 public class WxLocalMessage extends GisMessage {
+  public final String locationString;
+  public final String city;
+  public final String state;
+  public final String county;
+
   public final String temperature;
   public final String windspeed;
   public final String range;
   public final String comments;
 
   public WxLocalMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
-      String organization, String temperature, String windspeed, String range, String comments) {
+      String organization, //
+      String location, String city, String state, String county, //
+      String temperature, String windspeed, String range, String comments) {
     super(xmlMessage, latitude, longitude, organization);
+
+    this.locationString = location;
+    this.city = city;
+    this.state = state;
+    this.county = county;
+
     this.temperature = temperature;
     this.windspeed = windspeed;
     this.range = range;
@@ -47,12 +60,20 @@ public class WxLocalMessage extends GisMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization", //
+        "Location", "City", "State", "County", //
+        "Temperature", "Windspeed", "Range", "Comments", };
+  }
+
+  public static String[] getStaticHeaders() {
+    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization", //
+        "Location", "City", "State", "County", //
         "Temperature", "Windspeed", "Range", "Comments", };
   }
 
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, organization, //
+        locationString, city, state, county, //
         temperature, windspeed, range, comments };
   }
 
