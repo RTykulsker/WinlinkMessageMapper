@@ -39,6 +39,8 @@ import com.surftools.winlinkMessageMapper.grade.GradableMessage;
 public class UnifiedFieldSituationMessage extends GisMessage implements GradableMessage {
   public final String precedence;
   public final String task;
+  public final String formTo;
+  public final String formFrom;
   public final String isHelpNeeded;
   public final String neededHelp;
   public final String city;
@@ -70,7 +72,8 @@ public class UnifiedFieldSituationMessage extends GisMessage implements Gradable
   private String explanation;
 
   public UnifiedFieldSituationMessage(ExportedMessage xmlMessage, String latitude, String longitude, //
-      String precedence, String task, String isHelpNeeded, String neededHelp, //
+      String precedence, String task, String formTo, String formFrom, //
+      String isHelpNeeded, String neededHelp, //
       String organization, String city, String county, String state, String territory, //
       String landlineStatus, String landlineComments, //
       String cellPhoneStatus, String cellPhoneComments, //
@@ -84,6 +87,8 @@ public class UnifiedFieldSituationMessage extends GisMessage implements Gradable
     super(xmlMessage, latitude, longitude, organization);
     this.precedence = precedence;
     this.task = task;
+    this.formTo = formTo;
+    this.formFrom = formFrom;
     this.isHelpNeeded = isHelpNeeded;
     this.neededHelp = neededHelp;
     this.city = city;
@@ -114,7 +119,7 @@ public class UnifiedFieldSituationMessage extends GisMessage implements Gradable
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Precedence", "Task", "IsHelpNeeded", "NeededHelp", //
+        "Precedence", "Task", "FormTo", "FormFrom", "IsHelpNeeded", "NeededHelp", //
         "Organization", "City", "County", "State", "Territory", //
         "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
         "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
@@ -125,7 +130,7 @@ public class UnifiedFieldSituationMessage extends GisMessage implements Gradable
   @Override
   public String[] getValues() {
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        precedence, task, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
+        precedence, task, formTo, formFrom, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
         landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
         tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
         noaaStatus, noaaComments, additionalComments, poc, //

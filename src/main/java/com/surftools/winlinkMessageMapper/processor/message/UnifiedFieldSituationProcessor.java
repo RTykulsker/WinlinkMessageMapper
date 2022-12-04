@@ -101,6 +101,8 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
       String organization = getStringFromXml("title");
       String precedence = getStringFromXml("precedence");
       String task = getStringFromXml("msgnr");
+      String formTo = getStringFromXml("msgto");
+      String formFrom = getStringFromXml("msgsender");
       String isHelpNeeded = getStringFromXml("safetyneed");
       String neededHelp = getStringFromXml("comm0");
 
@@ -141,7 +143,7 @@ public class UnifiedFieldSituationProcessor extends AbstractBaseProcessor {
 
       UnifiedFieldSituationMessage m = new UnifiedFieldSituationMessage(//
           message, latLong.getLatitude(), latLong.getLongitude(), //
-          precedence, task, isHelpNeeded, neededHelp, //
+          precedence, task, formTo, formFrom, isHelpNeeded, neededHelp, //
           organization, city, county, state, territory, //
           landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
           tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
