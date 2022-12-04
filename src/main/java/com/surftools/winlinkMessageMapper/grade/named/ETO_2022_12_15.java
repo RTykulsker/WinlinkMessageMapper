@@ -66,8 +66,8 @@ import com.surftools.winlinkMessageMapper.grade.GraderType;
  * @author bobt
  *
  */
-public class ETO_2022_09_29 extends DefaultGrader {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2022_09_29.class);
+public class ETO_2022_12_15 extends DefaultGrader {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2022_12_15.class);
 
   private final int MAX_ATTACHMENT_SIZE = 5120;
 
@@ -102,7 +102,7 @@ public class ETO_2022_09_29 extends DefaultGrader {
   private boolean isInitialized;
   private final List<PositionReport> allPositionReports;
 
-  public ETO_2022_09_29() {
+  public ETO_2022_12_15() {
     super(logger);
     // don't have a cm when we are constructed;
     isInitialized = false;
