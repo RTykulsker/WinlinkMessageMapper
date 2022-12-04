@@ -76,6 +76,7 @@ import com.surftools.winlinkMessageMapper.processor.message.EtoCheckInV2Processo
 import com.surftools.winlinkMessageMapper.processor.message.HospitalBedProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.IProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213Processor;
+import com.surftools.winlinkMessageMapper.processor.message.Ics213RRProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.Ics213ReplyProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.PositionProcessor;
 import com.surftools.winlinkMessageMapper.processor.message.SpotRepProcessor;
@@ -454,6 +455,7 @@ public class WinlinkMessageMapper {
 
     processorMap.put(MessageType.ACK, new AckProcessor());
     processorMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyProcessor());
+    processorMap.put(MessageType.ICS_213_RR, new Ics213RRProcessor());
 
     if (requiredMessageType != null) {
       for (MessageType messageType : processorMap.keySet()) {
@@ -624,6 +626,8 @@ public class WinlinkMessageMapper {
         return MessageType.WA_ISNAP;
       } else if (attachmentNames.contains(MessageType.ICS_213_REPLY.attachmentName())) {
         return MessageType.ICS_213_REPLY;
+      } else if (attachmentNames.contains(MessageType.ICS_213_RR.attachmentName())) {
+        return MessageType.ICS_213_RR;
       }
     }
     /**
