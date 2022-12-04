@@ -60,6 +60,10 @@ public class WxLocalProcessor extends AbstractBaseProcessor {
   @Override
   public ExportedMessage process(ExportedMessage message) {
     try {
+      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
+        logger.info("exportedMessage: " + message);
+      }
+
       String xmlString = new String(message.attachments.get(MessageType.WX_LOCAL.attachmentName()));
       makeDocument(message.messageId, xmlString);
 

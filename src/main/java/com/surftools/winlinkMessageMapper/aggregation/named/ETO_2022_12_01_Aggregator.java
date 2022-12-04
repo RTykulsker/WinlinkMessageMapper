@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
+import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.aggregation.AbstractBaseAggregator;
@@ -138,7 +139,7 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
     var ppSumLocationDifferenceMeters = 0;
 
     var ppScoreCountMap = new HashMap<Integer, Integer>();
-    var ppForecastOfficeCountMap = new HashMap<String, Integer>();
+    var ppForecastOfficeCounter = new Counter();
 
     var ppYesCount = 0;
     var ppNoCount = 0;
@@ -209,14 +210,14 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
       var latlon = new LatLongPair(latitude, longitude);
       if (latlon.isValid()) {
         var messageLocation = wxMessage.location;
-        if (messageLocation.isValid()) {
+        if (messageLocation != null && messageLocation.isValid()) {
           var distanceMeters = LocationUtils.computeDistanceMeters(latlon, wxMessage.location);
           ++ppMesssagesWithValidLocation;
           ppSumLocationDifferenceMeters += distanceMeters;
 
           if (distanceMeters > 1000) {
             logger
-                .info("sender: " + wxMessage.from + ", message loc: " + messageLocation + ", form loc: " + latlon
+                .debug("sender: " + wxMessage.from + ", message loc: " + messageLocation + ", form loc: " + latlon
                     + ", distance: " + distanceMeters + " meters");
           }
         }
@@ -257,9 +258,7 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
           points += 25;
           ++ppLine1HasCommaOk;
 
-          var count = ppForecastOfficeCountMap.getOrDefault(forecastOffice, Integer.valueOf(0));
-          ++count;
-          ppForecastOfficeCountMap.put(forecastOffice, count);
+          ppForecastOfficeCounter.increment(forecastOffice);
 
           if (forecastOfficeSet.contains(forecastOffice)) {
             ++ppMatchForecastOffice;
@@ -349,12 +348,10 @@ public class ETO_2022_12_01_Aggregator extends AbstractBaseAggregator {
       sb.append(" score: " + score + ", count: " + count + "\n");
     }
 
-    var list = new ArrayList<>(ppForecastOfficeCountMap.entrySet());
-    list.sort(java.util.Map.Entry.comparingByValue());
-    Collections.reverse(list);
-
     sb.append("\nCounts by (message) forecast Office\n");
-    for (var entry : list) {
+    var it = ppForecastOfficeCounter.getDescendingCountIterator();
+    while (it.hasNext()) {
+      var entry = it.next();
       var count = entry.getValue();
       if (count == 0) {
         break;
