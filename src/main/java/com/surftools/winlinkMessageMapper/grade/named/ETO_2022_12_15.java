@@ -32,6 +32,7 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
+import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.CheckInMessage;
@@ -92,10 +94,15 @@ public class ETO_2022_12_15 extends DefaultGrader {
   private int ppTextPresentOk;
   private int ppTextContentOk;
   private int ppTextNameOk;
+  private int ppTextLine1CallOk;
+  private int ppTextLine1CommentOk;
 
   private int ppOrganizationOk;
   private int ppCommentOk;
   private final Map<Integer, Integer> ppCommentMatchMap;
+
+  private Counter ppEtoNeighborCounter = new Counter();
+  private Counter ppAllNeighborCounter = new Counter();
 
   private Set<String> dumpIds;
 
@@ -173,7 +180,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
     CheckInMessage m = (CheckInMessage) gm;
 
     if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-      logger.info("ETO_2022_09_29 grader: " + m);
+      logger.info("ETO_2022_12_15 grader: " + m);
     }
 
     ++ppCount;
@@ -188,8 +195,13 @@ public class ETO_2022_12_15 extends DefaultGrader {
       points += 10;
 
       var isImageNameOk = false;
-      var requiredImageFileName = m.from + " Position Report 09-29-22.jpeg";
-      if (imageFileName.equalsIgnoreCase(requiredImageFileName)) {
+      var requiredImageFileName = m.from + " Position Report 12-15-2022.jpeg";
+      var altRequiredImageFileName = requiredImageFileName.replaceAll("jpeg", "jpg");
+      var requiredImageFileNameSet = new HashSet<String>();
+      requiredImageFileNameSet.add(requiredImageFileName.toUpperCase());
+      requiredImageFileNameSet.add(altRequiredImageFileName.toUpperCase());
+      // if (imageFileName.equalsIgnoreCase(requiredImageFileName)) {
+      if (requiredImageFileNameSet.contains(imageFileName.toUpperCase())) {
         ++ppImageNameOk;
         points += 10;
         isImageNameOk = true;
@@ -217,7 +229,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
       points += 10;
 
       var isTextNameOk = false;
-      var requiredTextFileName = m.from + " Position Report 09-29-22.txt";
+      var requiredTextFileName = m.from + " Position Report 12-15-2022.txt";
       if (textFileName.equalsIgnoreCase(requiredTextFileName)) {
         ++ppTextNameOk;
         points += 10;
@@ -231,30 +243,83 @@ public class ETO_2022_12_15 extends DefaultGrader {
       var list = parse(m, content);
 
       var isTextContentOk = false;
-      var requiredContent = "ETO Winlink Thursday 09/29/2022 Challenge Exercise";
+      // var originalRequiredContent = "ETO Winlink Thursday 12/15/2022 Challenge Exercise";
+      var modifiedRequiredContent = "ETO Winlink Thursday 12/15/2022";
+      // var altRequiredContent = "ETO Winlink Thursday";
+      var requiredContent = modifiedRequiredContent.toUpperCase();
 
       if (list.size() > 0) {
         allPositionReports.addAll(list);
-        var pr = list.get(0);
-        var comments = pr.comments;
+        var firstPR = list.get(0);
+        var prCall = firstPR.to;
+        var prComments = firstPR.comments;
 
-        if (comments.equalsIgnoreCase(requiredContent)) {
+        var isLine1CallOk = m.from.equalsIgnoreCase(prCall);
+        var isLine1ContentOk = prComments.toUpperCase().startsWith(requiredContent);
+
+        if (isLine1CallOk) {
+          ++ppTextLine1CallOk;
+        }
+
+        if (isLine1ContentOk) {
+          ++ppTextLine1CommentOk;
+        }
+
+        if (isLine1CallOk && isLine1ContentOk) {
           points += 10;
           isTextContentOk = true;
         } else {
-          explanations.add("required content: '" + requiredContent + "' not found as first comment");
+          if (!isLine1CallOk && !isLine1ContentOk) {
+          } else if (!isLine1CallOk) {
+            explanations.add("Line 1 of Position Report should include <YOURCALL>");
+          } else if (!isLine1ContentOk) {
+            explanations.add("Line 1 of Position Report doesn't have required comment: " + requiredContent);
+          }
         }
 
         if (list.size() == 30) {
           points += 10;
+          ++ppTextContentOk;
         } else {
-          explanations.add("expected to find 30 Position Reports in text, only found " + list.size());
+          explanations.add("expected to find 30 Position Reports in text, found " + list.size());
         }
 
-        commentMatchCount = (int) list.stream().filter(o -> o.comments.equalsIgnoreCase(requiredContent)).count();
+        var doDebug = true;
+        if (doDebug && m.from.equals("KM6SO")) {
+          var lineNumber = 0;
+          var matchCount = 0;
+          var sb = new StringBuilder();
+          sb.append("\nComment match test for: " + m.from + "\n");
+          for (var l : list) {
+            ++lineNumber;
+            var isMatched = l.comments.toUpperCase().startsWith(requiredContent);
+            matchCount += isMatched ? 1 : 0;
+            sb.append("   ");
+            sb.append(isMatched ? "###" : "   ");
+            sb.append(" line: " + lineNumber);
+            sb.append(", comment: " + l.comments);
+            sb.append("\n");
+          }
+          sb.append("matchCount: " + matchCount + "\n");
+          logger.info(sb.toString());
+        }
+
+        commentMatchCount = (int) list
+            .stream()
+              .filter(o -> o.comments.toUpperCase().startsWith(requiredContent))
+              .count();
         var mapCount = ppCommentMatchMap.getOrDefault(commentMatchCount, Integer.valueOf(0));
         ++mapCount;
         ppCommentMatchMap.put(commentMatchCount, mapCount);
+
+        // to find the reportees that have the most neighbors
+        for (var pr : list) {
+          var isEto = pr.comments().toUpperCase().startsWith(requiredContent);
+          if (isEto) {
+            ppEtoNeighborCounter.increment(pr.to);
+          }
+          ppAllNeighborCounter.increment(pr.to);
+        }
       }
 
       writeText(m, textFileName, bytes, isTextNameOk, isTextContentOk);
@@ -263,7 +328,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
     }
 
     var organization = m.organization;
-    var requiredOrganization = "ETO Winlink Thursday 09/29/2022 Challenge Exercise";
+    var requiredOrganization = "ETO Winlink Thursday 12/15/2022 Challenge Exercise";
     if (organization != null && organization.equalsIgnoreCase(requiredOrganization)) {
       ++ppOrganizationOk;
       points += 10;
@@ -275,11 +340,12 @@ public class ETO_2022_12_15 extends DefaultGrader {
     if (comments != null) {
       comments = comments.trim();
       if (comments.isEmpty()) {
-        explanations.add("comments should be: " + commentMatchCount);
+        explanations.add("no comments, should be: " + commentMatchCount);
       } else {
         try {
           var commentCount = Integer.valueOf(comments);
           if (commentCount == commentMatchCount) {
+            ++ppCommentOk;
             points += 10;
           } else {
             explanations.add("comments should be: " + commentMatchCount + ", not " + commentCount);
@@ -289,7 +355,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
         }
       }
     } else {
-      explanations.add("comments should be: " + commentMatchCount);
+      explanations.add("no comments, should be: " + commentMatchCount);
     }
 
     points = Math.min(100, points);
@@ -305,9 +371,10 @@ public class ETO_2022_12_15 extends DefaultGrader {
   }
 
   private List<PositionReport> parse(ExportedMessage m, String content) {
+    content = content.trim();
     var list = new ArrayList<PositionReport>();
     if (!content.startsWith("CALL")) {
-      logger.error("could not parse text from " + m.from + ", content: " + content);
+      logger.debug("could not parse text from " + m.from + ", content: " + content);
       return list;
     }
 
@@ -333,6 +400,10 @@ public class ETO_2022_12_15 extends DefaultGrader {
       // W7OWO 0.0 @ 000 45-17.80N 123-00.70W 2022/08/20 17:11 Winlink Thursday 09/29/2022 Challenge
 
       var from = messageFrom;
+
+      if (fields.size() == 0) {
+        continue;
+      }
       var to = fields.get(0);
       var nauticalMilesString = fields.get(1);
       var statuteMilesString = "0";
@@ -359,7 +430,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
       var comment = sb.toString().trim();
       var pr = new PositionReport(from, to, statuteMilesString, bearing, latitude, longitude, date, time, comment);
       list.add(pr);
-    }
+    } // end loop over lines
     return list;
   }
 
@@ -403,7 +474,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
         if (bufferedImage == null) {
           continue;
         }
-        logger.info("image found for call: " + m.from + ", attachment: " + key + ", size:" + bytes.length);
+        logger.debug("image found for call: " + m.from + ", attachment: " + key + ", size:" + bytes.length);
         return key;
       } catch (Exception e) {
         ;
@@ -429,23 +500,27 @@ public class ETO_2022_12_15 extends DefaultGrader {
     }
 
     writeAllPositionReports(allPositionReports);
+    writeCounter(ppEtoNeighborCounter, "eto");
+    writeCounter(ppAllNeighborCounter, "all");
 
     var defaultReport = DefaultGrader.defaultPostProcessReport(messages);
     var sb = new StringBuilder(defaultReport);
-    sb.append("\nETO-2022-09-29 Grading Report: graded " + ppCount + " Winlink Check In messages\n");
+    sb.append("\nETO-2022-12-15 Grading Report: graded " + ppCount + " Winlink Check In messages\n");
+
+    sb.append(formatPP("agency/group name", ppOrganizationOk));
     sb.append(formatPP("image attached", ppImagePresentOk));
     sb.append(formatPP("image size", ppImageSizeOk));
     sb.append(formatPP("image name", ppImageNameOk));
 
     sb.append(formatPP("text report attached", ppTextPresentOk));
     sb.append(formatPP("text name", ppTextNameOk));
-    sb.append(formatPP("text content", ppTextContentOk));
-
-    sb.append(formatPP("agency/group name", ppOrganizationOk));
-    sb.append(formatPP("comments match text count", ppCommentOk));
+    sb.append(formatPP("text line1 call", ppTextLine1CallOk));
+    sb.append(formatPP("text line1 comment", ppTextLine1CommentOk));
+    sb.append(formatPP("text file content", ppTextContentOk));
+    sb.append(formatPP("Check-in comments count matches text count", ppCommentOk));
 
     var totalMatches = ppCommentMatchMap.values().stream().reduce(0, Integer::sum);
-    sb.append("\nCounts by comment match:\n");
+    sb.append("\nCounts of nearby ETO participants:\n");
     for (var nMatches : ppCommentMatchMap.keySet()) {
       var count = ppCommentMatchMap.get(nMatches);
       sb.append(formatCounts(nMatches, count, totalMatches));
@@ -465,6 +540,26 @@ public class ETO_2022_12_15 extends DefaultGrader {
       }
       writer.close();
       logger.info("wrote " + list.size() + " positionReports to file: " + outputPath);
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  private void writeCounter(Counter counter, String label) {
+    var outputPath = Path.of(cm.getAsString(Key.PATH), "output", "graded", label + "-positionCounts.csv");
+
+    try {
+      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
+      writer.writeNext(new String[] { "Call", "Count" });
+      var it = counter.getDescendingCountIterator();
+      while (it.hasNext()) {
+        var entry = it.next();
+        writer.writeNext(new String[] { (String) entry.getKey(), String.valueOf((entry.getValue())) });
+      }
+      writer.close();
+      logger
+          .info("wrote " + counter.getKeyCount() + " position Counts, with " + counter.getValueTotal()
+              + " total neighbors to file: " + outputPath);
     } catch (Exception e) {
       logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
     }
@@ -521,6 +616,7 @@ public class ETO_2022_12_15 extends DefaultGrader {
   private void writeText(CheckInMessage m, String textFileName, byte[] bytes, boolean isTextNameOk,
       boolean isTextContentOk) {
 
+    textFileName = m.from + " -- " + textFileName;
     try {
       // write the file
       var allTextPath = Path.of(textAllPath.toString(), textFileName);
