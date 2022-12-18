@@ -27,11 +27,14 @@ SOFTWARE.
 
 package com.surftools.winlinkMessageMapper.processor.message;
 
+import java.util.ArrayList;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.Ics213RRMessage;
+import com.surftools.winlinkMessageMapper.dto.message.Ics213RRMessage.LineItem;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 import com.surftools.winlinkMessageMapper.dto.other.RejectType;
 
@@ -57,13 +60,19 @@ public class Ics213RRProcessor extends AbstractBaseProcessor {
       var activityDateTime = getStringFromXml("activitydatetime1");
       var requestNumber = getStringFromXml("reqnum");
 
-      var quantity1 = getStringFromXml("qty1");
-      var kind1 = getStringFromXml("kind1");
-      var type1 = getStringFromXml("type1");
-      var item1 = getStringFromXml("item1");
-      var requestedDateTime1 = getStringFromXml("reqdatetime1");
-      var estimatedDateTime1 = getStringFromXml("estdatetime1");
-      var cost1 = getStringFromXml("cost1");
+      var lineItems = new ArrayList<LineItem>();
+
+      for (var i = 1; i <= 8; ++i) {
+        var quantity = getStringFromXml("qty" + String.valueOf(i));
+        var kind = getStringFromXml("kind" + String.valueOf(i));
+        var type = getStringFromXml("type" + String.valueOf(i));
+        var item = getStringFromXml("item" + String.valueOf(i));
+        var requestedDateTime = getStringFromXml("reqdatetime" + String.valueOf(i));
+        var estimatedDateTime = getStringFromXml("estdatetime" + String.valueOf(i));
+        var cost = getStringFromXml("cost" + String.valueOf(i));
+        var lineItem = new LineItem(quantity, kind, type, item, requestedDateTime, estimatedDateTime, cost);
+        lineItems.add(lineItem);
+      }
 
       var delivery = getStringFromXml("delivery");
       var substitutes = getStringFromXml("subs1");
@@ -71,9 +80,28 @@ public class Ics213RRProcessor extends AbstractBaseProcessor {
       var priority = getStringFromXml("priority");
       var approvedBy = getStringFromXml("secapp");
 
+      var logisticsOrderNumber = getStringFromXml("lognum");
+      var supplierInfo = getStringFromXml("supinfo");
+      var supplierName = getStringFromXml("supname");
+      var supplierPointOfContact = getStringFromXml("poc");
+      var supplyNotes = getStringFromXml("notes");
+      var logisticsAuthorizer = getStringFromXml("authsig");
+      var logisticsDateTime = getStringFromXml("activitydatetime2");
+      var orderedBy = getStringFromXml("orderby");
+
+      var financeComments = getStringFromXml("fincomm");
+      var financeName = getStringFromXml("finrepname");
+      var financeDateTime = getStringFromXml("activitydatetime3");
+
       var m = new Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
-          quantity1, kind1, type1, item1, requestedDateTime1, estimatedDateTime1, cost1, //
-          delivery, substitutes, requestedBy, priority, approvedBy);
+          lineItems, //
+          delivery, substitutes, requestedBy, priority, approvedBy, //
+          logisticsOrderNumber, supplierInfo, supplierName, //
+          supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
+          logisticsDateTime, orderedBy, //
+          financeComments, financeName, financeDateTime
+
+      );
 
       return m;
 
