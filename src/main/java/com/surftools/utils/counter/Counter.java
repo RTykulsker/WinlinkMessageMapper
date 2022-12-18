@@ -89,4 +89,14 @@ public class Counter implements ICounter {
     list.sort(java.util.Map.Entry.comparingByKey());
     return list.iterator();
   }
+
+  @Override
+  public int getKeyCount() {
+    return map.size();
+  }
+
+  @Override
+  public int getValueTotal() {
+    return map.values().stream().reduce(0, Integer::sum);
+  }
 }

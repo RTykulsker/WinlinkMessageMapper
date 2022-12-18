@@ -62,6 +62,20 @@ public interface ICounter<K extends Comparable<K>> {
   public Integer getCount(K key);
 
   /**
+   * get number of distinct keys
+   *
+   * @return
+   */
+  public int getKeyCount();
+
+  /**
+   * get sum of amounts
+   *
+   * @return
+   */
+  public int getValueTotal();
+
+  /**
    * return an iterator in descending-count order
    *
    * @return
