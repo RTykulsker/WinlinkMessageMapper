@@ -188,8 +188,12 @@ public class ExportedMessageReader {
   /**
    * Winlink 1.7.2.0 introduced the optional <location> tag
    *
+   * Winlink 1.7.3.1 introduced a source subfield
+   *
    * @param locationString,
    *          for example: 47.537232N, 122.238887W
+   *
+   *          for example: 47.537232N, 122.238887W (GPS)
    *
    * @return LatLongPair or null
    */
@@ -208,8 +212,9 @@ public class ExportedMessageReader {
       latString = "-" + latString.trim();
     }
 
-    var lonString = fields[1].substring(0, fields[1].length() - 1);
-    if (fields[1].endsWith("W")) {
+    var subfields = fields[1].trim().split(" ");
+    var lonString = subfields[0].substring(0, subfields[0].length() - 1);
+    if (subfields[0].endsWith("W")) {
       lonString = "-" + lonString.trim();
     }
 
