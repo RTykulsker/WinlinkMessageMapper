@@ -66,9 +66,12 @@ import com.surftools.winlinkMessageMapper.dto.other.MessageType;
 public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2022_12_22_Aggregator.class);
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+  public static final String DATE_TIME_NOT = "2022-12-31 06:00";
 
-  public static final int DEFAULT_AF_POINTS = 1;
-  public static final int DEFAULT_NAF_POINTS = 0;
+  public static final int SCORABLE_FIELD_POINTS = 1;
+  public static final int NON_SCORABLE_FIELD_POINTS = 0;
+  public static final int FP1 = SCORABLE_FIELD_POINTS;
+  public static final int FP0 = NON_SCORABLE_FIELD_POINTS;
   public static final boolean ENABLE_NON_ACTIONABLE_FIELDS = false;
 
   static record Result(Ics213RRMessage message, LatLongPair location, String grade, String explanation) {
@@ -89,67 +92,66 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     }
   };
 
-  static enum AFType {
+  enum FormFieldType {
     REQUIRED, REQUIRED_NOT, OPTIONAL, OPTIONAL_NOT, DATE_TIME, DATE_TIME_NOT, EMPTY, SPECIFIED
   };
 
-  static class ActionableField {
-    public final String explanation;
-    public final String summaryText;
+  static class FormField {
+    public final String label;
     public final String placeholderValue;
-    public final AFType type;
-    public int points;
+    public final FormFieldType type;
+    public final int points;
     public int count;
 
-    public ActionableField(AFType type, String explanation, String summaryText, String placeholderValue) {
+    public FormField(FormFieldType type, String label, String placeholderValue, int points) {
       this.type = type;
-      this.explanation = explanation;
-      this.summaryText = summaryText;
-      this.placeholderValue = placeholderValue;
-      this.points = DEFAULT_AF_POINTS;
-    }
-
-    public ActionableField(AFType type, String explanation, String summaryText, String placeholderValue, int points) {
-      this.type = type;
-      this.explanation = explanation;
-      this.summaryText = summaryText;
+      this.label = label;
       this.placeholderValue = placeholderValue;
       this.points = points;
     }
 
     public int test(String value, ArrayList<String> explanations) {
-      if (!ENABLE_NON_ACTIONABLE_FIELDS && points == DEFAULT_NAF_POINTS) {
-        return DEFAULT_NAF_POINTS;
+      if (!ENABLE_NON_ACTIONABLE_FIELDS && points == NON_SCORABLE_FIELD_POINTS) {
+        return NON_SCORABLE_FIELD_POINTS;
       }
 
       var isOk = false;
-      var explanationString = explanation;
-      var returnPoints = 0;
+      var explanation = "";
 
       switch (type) {
       case DATE_TIME:
-        try {
-          LocalDateTime.parse(value, FORMATTER);
-          isOk = true;
-        } catch (Exception e) {
-          ;
+        if (value == null) {
+          explanation = label + " must be supplied";
+        } else {
+          try {
+            LocalDateTime.parse(value, FORMATTER);
+            isOk = true;
+          } catch (Exception e) {
+            explanation = label + "(" + value + ") is not a valid Date/Time";
+          }
         }
         break;
 
       case DATE_TIME_NOT:
-        try {
-          var valueDT = LocalDateTime.parse(value, FORMATTER);
-          var defaultDT = LocalDateTime.parse(placeholderValue, FORMATTER);
-          if (valueDT.compareTo(defaultDT) != 0) {
+        if (value == null) {
+          explanation = label + " must be supplied";
+        } else if (value.equalsIgnoreCase(placeholderValue)) {
+          explanation = label + "(" + value + ") must not be " + placeholderValue;
+        } else {
+          try {
+            LocalDateTime.parse(value, FORMATTER);
             isOk = true;
+          } catch (Exception e) {
+            explanation = label + "(" + value + ") is not a valid Date/Time";
           }
-        } catch (Exception e) {
-          ;
         }
         break;
 
       case EMPTY:
         isOk = value == null || value.isBlank();
+        if (!isOk) {
+          explanation = label + "(" + value + ") must be blank";
+        }
         break;
 
       case OPTIONAL:
@@ -157,49 +159,65 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
         break;
 
       case OPTIONAL_NOT:
-        isOk = true;
-        if (value != null) {
-          isOk = !value.equals(placeholderValue);
+        if (value != null && value.equalsIgnoreCase(placeholderValue)) {
+          explanation = label + "(" + value + ") must not be " + placeholderValue;
         } else {
           isOk = true;
         }
         break;
 
       case REQUIRED:
-        isOk = value != null && !value.isBlank();
+        if (value == null) {
+          explanation = label + " must be supplied";
+        } else if (value.isBlank()) {
+          explanation = label + "(" + value + ") must not be blank";
+        } else {
+          isOk = true;
+        }
         break;
 
       case REQUIRED_NOT:
-        isOk = value != null && !value.isBlank() && !value.equals(placeholderValue);
+        if (value == null) {
+          explanation = label + " must be supplied";
+        } else if (value.isBlank()) {
+          explanation = label + "(" + value + ") must not be blank";
+        } else if (value.equalsIgnoreCase(placeholderValue)) {
+          isOk = false;
+          explanation = label + "(" + value + ") must not be " + placeholderValue;
+        } else {
+          isOk = true;
+        }
+
         break;
 
       case SPECIFIED:
-        isOk = value != null && value.equalsIgnoreCase(placeholderValue);
+        if (value == null) {
+          explanation = label + " must be " + placeholderValue;
+        } else if (!value.equalsIgnoreCase(placeholderValue)) {
+          explanation = label + "(" + value + ") must be " + placeholderValue;
+        } else {
+          isOk = true;
+        }
         break;
 
       default:
         throw new RuntimeException("unhandled type: " + type.toString());
       }
 
+      var returnPoints = 0;
       if (isOk) {
         ++count;
         returnPoints = points;
       } else {
-        if (value != null) {
-          explanationString = explanationString.replaceAll("VALUE", value);
-        }
-        if (placeholderValue != null) {
-          explanationString = explanationString.replaceAll("DEFAULT", placeholderValue);
-        }
-        explanations.add(explanationString);
+        explanations.add(explanation);
       }
 
       return returnPoints;
     }
   };
 
-  private Map<String, ActionableField> afMap = new LinkedHashMap<>(); // scoreable
-  private Map<String, ActionableField> nafMap = new LinkedHashMap<>(); // non-scorable
+  private Map<String, FormField> sfMap = new LinkedHashMap<>(); // scoreableFieldMap
+  private Map<String, FormField> nsfMap = new LinkedHashMap<>(); // nonScorableFieldMap
 
   private List<Result> results = new ArrayList<Result>();
 
@@ -223,140 +241,98 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     maxImageSize = cm.getAsInt(Key.MAX_IMAGE_SIZE, 5500);
 
     // header
-    nafMap
-        .put("organization", new ActionableField(AFType.SPECIFIED, "agency/group name (VALUE) not (DEFAULT)",
-            "Agency/Group name", "ETO ICS-213RR Santa Purchase Request", DEFAULT_NAF_POINTS));
+    nsfMap
+        .put("organization",
+            new FormField(FormFieldType.SPECIFIED, "Agency/Group name", "ETO ICS-213RR Santa Purchase Request", FP1));
 
-    afMap
-        .put("activityDateTime", new ActionableField(AFType.DATE_TIME_NOT, "Box 2 (VALUE) not a valid date/time",
-            "Box 2 Date/Time", "2022-12-22 06:00"));
+    sfMap.put("activityDateTime", new FormField(FormFieldType.DATE_TIME_NOT, "Box 2 Date/Time", DATE_TIME_NOT, FP1));
 
-    nafMap
-        .put("requestNumber", new ActionableField(AFType.SPECIFIED, "Resource Request Number (VALUE) not (DEFAULT)",
-            "Resource Request Number", "12-22-22-ETO-SR1", DEFAULT_NAF_POINTS));
+    nsfMap
+        .put("requestNumber",
+            new FormField(FormFieldType.SPECIFIED, "Resource Request Number", "12-22-22-ETO-SR1", FP0));
 
     // line 1
-    afMap
-        .put("quantity1",
-            new ActionableField(AFType.REQUIRED_NOT, "Item Quantity#1 not provided", "Item Quantity#1", "REQ"));
+    sfMap.put("quantity1", new FormField(FormFieldType.REQUIRED_NOT, "Item Quantity#1", "REQ", FP1));
 
-    nafMap
-        .put("type1",
-            new ActionableField(AFType.EMPTY, "Item Type#1 should be blank", "Item Type#1", null, DEFAULT_NAF_POINTS));
+    nsfMap.put("type1", new FormField(FormFieldType.EMPTY, "Item Type#1", null, FP0));
 
-    nafMap
-        .put("kind1",
-            new ActionableField(AFType.EMPTY, "Item Kind#1 should be blank", "Item Kind#1", null, DEFAULT_NAF_POINTS));
+    nsfMap.put("kind1", new FormField(FormFieldType.EMPTY, "Item Kind#1", null, FP0));
 
-    afMap
-        .put("item1", new ActionableField(AFType.REQUIRED_NOT, "Item Description#1 not provided", "Item Description#1",
-            "REQUIRED"));
+    sfMap.put("item1", new FormField(FormFieldType.REQUIRED_NOT, "Item Description#1", "REQUIRED", FP1));
 
-    afMap
-        .put("requestedDateTime1", new ActionableField(AFType.DATE_TIME_NOT,
-            "Requested Date/Time#1 not a valid date/time", "Requested Date/Time#1", "2022-12-22 06:00"));
+    sfMap
+        .put("requestedDateTime1",
+            new FormField(FormFieldType.DATE_TIME_NOT, "Requested Date/Time#1", DATE_TIME_NOT, FP1));
 
-    nafMap
-        .put("estimatedDateTime1", new ActionableField(AFType.EMPTY, "Estimated Date/Time#1 should be blank",
-            "Estimated Date/Time#1", null, DEFAULT_NAF_POINTS));
+    nsfMap.put("estimatedDateTime1", new FormField(FormFieldType.EMPTY, "Estimated Date/Time#1", null, FP0));
 
-    afMap.put("cost1", new ActionableField(AFType.REQUIRED_NOT, "Item Cost#1 not provided", "Item Cost#1", "REQUIRED"));
+    sfMap.put("cost1", new FormField(FormFieldType.REQUIRED_NOT, "Item Cost#1", "REQUIRED", FP1));
 
     // line 2-8
     for (int i = 2; i <= 8; ++i) {
-      nafMap
-          .put("quantity" + i, new ActionableField(AFType.EMPTY, "Item Quantity#" + i + " should be blank",
-              "Item Quantity#" + i, null, DEFAULT_NAF_POINTS));
-
-      nafMap
-          .put("type" + i, new ActionableField(AFType.EMPTY, "Item Type#" + i + " should be blank", "Item Type#" + i,
-              null, DEFAULT_NAF_POINTS));
-
-      nafMap
-          .put("kind" + i, new ActionableField(AFType.EMPTY, "Item Kind#" + i + " should be blank", "Item Kind#" + i,
-              null, DEFAULT_NAF_POINTS));
-
-      nafMap
-          .put("item" + i, new ActionableField(AFType.EMPTY, "Item Description#" + i + " should be blank",
-              "Item Description#" + i, null, DEFAULT_NAF_POINTS));
-
-      nafMap
-          .put("requestedDateTime" + i, new ActionableField(AFType.EMPTY,
-              "Requested Date/Time#" + i + " should be blank", "Requested Date/Time#" + i, null, DEFAULT_NAF_POINTS));
-
-      nafMap
-          .put("estimatedDateTime" + i, new ActionableField(AFType.EMPTY,
-              "Estimated Date/Time#" + i + " should be blank", "Estimated Date/Time#" + i, null, DEFAULT_NAF_POINTS));
-
-      nafMap
-          .put("cost" + i, new ActionableField(AFType.EMPTY, "Item Cost#" + i + " should be blank", "Item Cost#" + i,
-              null, DEFAULT_NAF_POINTS));
+      nsfMap.put("quantity" + i, new FormField(FormFieldType.EMPTY, "Item Quantity#" + i, null, FP0));
+      nsfMap.put("type" + i, new FormField(FormFieldType.EMPTY, "Item Type#" + i, null, FP0));
+      nsfMap.put("kind" + i, new FormField(FormFieldType.EMPTY, "Item Kind#" + i, null, FP0));
+      nsfMap.put("item" + i, new FormField(FormFieldType.EMPTY, "Item Description#" + i, null, FP0));
+      nsfMap.put("requestedDateTime" + i, new FormField(FormFieldType.EMPTY, "Requested Date/Time#" + i, null, FP0));
+      nsfMap.put("estimatedDateTime" + i, new FormField(FormFieldType.EMPTY, "Estimated Date/Time#" + i, null, FP0));
+      nsfMap.put("cost" + i, new FormField(FormFieldType.EMPTY, "Item Cost#" + i, null, FP0));
     }
 
     // rest of request
-    afMap
-        .put("delivery", new ActionableField(AFType.REQUIRED, "Deliver/Reporting location not provided",
-            "Delivery/Reporting Location", null));
+    sfMap
+        .put("delivery", new FormField(FormFieldType.REQUIRED_NOT, "Delivery/Reporting Location",
+            "YOUR GPS COORDINATES - in decimal degrees - REQUIRED", FP1));
 
-    afMap
-        .put("substitutes", new ActionableField(AFType.OPTIONAL_NOT, "Substitutes not provided", "Substitutes",
-            "OPTIONAL - MAKE BLANK IF NO ENTRY"));
+    sfMap
+        .put("substitutes",
+            new FormField(FormFieldType.OPTIONAL_NOT, "Substitutes", "OPTIONAL - MAKE BLANK IF NO ENTRY", FP1));
 
-    afMap
-        .put("requestedBy", new ActionableField(AFType.REQUIRED_NOT, "Requested By not provided", "Requested By",
-            "Your Name & Call Sign - then select PRIORITY----->"));
+    sfMap
+        .put("requestedBy", new FormField(FormFieldType.REQUIRED_NOT, "Requested By",
+            "Your Name & Call Sign - then select PRIORITY----->", FP1));
 
-    afMap.put("priority", new ActionableField(AFType.REQUIRED, "Priority not provided", "Priority", null));
+    sfMap.put("priority", new FormField(FormFieldType.REQUIRED, "Priority", null, FP1));
 
-    nafMap
-        .put("approvedBy", new ActionableField(AFType.SPECIFIED, "Section Chief (VALUE) not (DEFAULT)", "Section Chief",
-            "David Rudolph Rednose", DEFAULT_NAF_POINTS));
+    nsfMap.put("approvedBy", new FormField(FormFieldType.SPECIFIED, "Section Chief", "David Rudolph Rednose", FP0));
 
     // logistics
-    afMap
-        .put("logisticsOrderNumber", new ActionableField(AFType.REQUIRED_NOT, "Log Order Number not provided",
-            "Log Order Number", "MAKE ONE UP", DEFAULT_AF_POINTS));
+    sfMap
+        .put("logisticsOrderNumber", new FormField(FormFieldType.REQUIRED_NOT, "Log Order Number", "MAKE ONE UP", FP1));
 
-    afMap
-        .put("supplierInfo", new ActionableField(AFType.REQUIRED_NOT, "Supplier Info not provided", "Supplier Info",
-            "MAKE UP or USE A REAL PHONE NUMBER FOR YOUR FAVORITE AMATEUR RADIO SUPPLIER", DEFAULT_AF_POINTS));
+    sfMap
+        .put("supplierInfo", new FormField(FormFieldType.REQUIRED_NOT, "Supplier Info",
+            "MAKE UP or USE A REAL PHONE NUMBER FOR YOUR FAVORITE AMATEUR RADIO SUPPLIER", FP1));
 
-    afMap
-        .put("supplierName", new ActionableField(AFType.REQUIRED_NOT, "Supplier Name not provided", "Supplier Name",
-            "NAME OF FAVORITE AMATEUR RADIO SUPPLIER", DEFAULT_AF_POINTS));
+    sfMap
+        .put("supplierName",
+            new FormField(FormFieldType.REQUIRED_NOT, "Supplier Name", "NAME OF FAVORITE AMATEUR RADIO SUPPLIER", FP1));
 
-    afMap
-        .put("supplierPointOfContact", new ActionableField(AFType.REQUIRED_NOT, "Point of Contact not provided",
-            "Point of Contact", "MAKE ONE UP", DEFAULT_AF_POINTS));
+    sfMap
+        .put("supplierPointOfContact",
+            new FormField(FormFieldType.REQUIRED_NOT, "Point of Contact", "MAKE ONE UP", FP1));
 
-    afMap
-        .put("supplyNotes", new ActionableField(AFType.REQUIRED_NOT, "Notes not provided", "Notes",
-            "OPTIONAL - ADD ACCESSORIES OR MAKE BLANK IF NO ENTRY", DEFAULT_AF_POINTS));
+    sfMap
+        .put("supplyNotes", new FormField(FormFieldType.OPTIONAL_NOT, "Notes",
+            "OPTIONAL - ADD ACCESSORIES OR MAKE BLANK IF NO ENTRY", FP1));
 
-    afMap
-        .put("logisticsAuthorizer", new ActionableField(AFType.REQUIRED_NOT, "Logistics Rep not provided",
-            "Logistics Rep", "MAKE ONE UP              UPDATE DATE/TIME -->", DEFAULT_AF_POINTS));
+    sfMap
+        .put("logisticsAuthorizer", new FormField(FormFieldType.REQUIRED_NOT, "Logistics Rep",
+            "MAKE ONE UP              UPDATE DATE/TIME -->", FP1));
 
-    afMap
-        .put("logisticsDateTime", new ActionableField(AFType.DATE_TIME_NOT, "Logististics Date/Time not provided",
-            "Logistics Date/Time", "2022-12-22 06:00", DEFAULT_AF_POINTS));
+    sfMap
+        .put("logisticsDateTime",
+            new FormField(FormFieldType.DATE_TIME_NOT, "Logistics Date/Time", DATE_TIME_NOT, FP1));
 
-    afMap
-        .put("orderedBy", new ActionableField(AFType.REQUIRED_NOT, "Ordered By not provided", "Ordered By",
-            "YOUR NAME AND CALL SIGN", DEFAULT_AF_POINTS));
+    sfMap.put("orderedBy", new FormField(FormFieldType.REQUIRED_NOT, "Ordered By", "YOUR NAME AND CALL SIGN", FP1));
 
     // finance
-    nafMap
-        .put("financeComments", new ActionableField(AFType.SPECIFIED, "Finance Comments (VALUE) not (DEFAULT)",
-            "Finance Comments", "HAPPY HOLIDAYS !!", DEFAULT_NAF_POINTS));
+    nsfMap.put("financeComments", new FormField(FormFieldType.SPECIFIED, "Finance Comments", "HAPPY HOLIDAYS !!", FP0));
 
-    afMap
-        .put("financeName", new ActionableField(AFType.REQUIRED_NOT, "Finance Chief not provided", "Finance Chief",
-            "MAKE ONE UP OR SPOUSE", DEFAULT_AF_POINTS));
+    sfMap.put("financeName", new FormField(FormFieldType.REQUIRED_NOT, "Finance Chief", "MAKE ONE UP OR SPOUSE", FP1));
 
-    afMap
-        .put("financeDateTime", new ActionableField(AFType.DATE_TIME_NOT, "Finance Date/Time not provided",
-            "Finance Date/Time By", "2022-12-22 06:00", DEFAULT_AF_POINTS));
+    sfMap
+        .put("financeDateTime", new FormField(FormFieldType.DATE_TIME_NOT, "Finance Date/Time By", DATE_TIME_NOT, FP1));
 
   }
 
@@ -376,6 +352,8 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     var ppLatLongOk = 0;
 
     var ppScoreCounter = new Counter();
+    var ppItemCounter = new Counter();
+    var ppCostCounter = new Counter();
 
     for (var m : aggregateMessages) {
       ++ppAllParticipantCount;
@@ -433,64 +411,67 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
         }
       }
 
-      // "actionable fields"
-      var afPoints = 0;
-      var nafPoints = 0;
-      nafPoints += nafMap.get("organization").test(message.organization, explanations);
-      afPoints += afMap.get("activityDateTime").test(message.activityDateTime, explanations);
-      nafPoints += nafMap.get("requestNumber").test(message.requestNumber, explanations);
+      // scorable and non-scorable fields
+      var sfPoints = 0;
+      var nsfPoints = 0;
+      nsfPoints += nsfMap.get("organization").test(message.organization, explanations);
+      sfPoints += sfMap.get("activityDateTime").test(message.activityDateTime, explanations);
+      nsfPoints += nsfMap.get("requestNumber").test(message.requestNumber, explanations);
 
       var lineItem = message.lineItems.get(0);
-      afPoints += afMap.get("quantity1").test(lineItem.quantity(), explanations);
-      nafPoints += nafMap.get("kind1").test(lineItem.kind(), explanations);
-      nafPoints += nafMap.get("type1").test(lineItem.type(), explanations);
-      afPoints += afMap.get("item1").test(lineItem.item(), explanations);
-      afPoints += afMap.get("requestedDateTime1").test(lineItem.requestedDateTime(), explanations);
-      nafPoints += nafMap.get("estimatedDateTime1").test(lineItem.estimatedDateTime(), explanations);
-      afPoints += afMap.get("cost1").test(lineItem.cost(), explanations);
+      sfPoints += sfMap.get("quantity1").test(lineItem.quantity(), explanations);
+      nsfPoints += nsfMap.get("kind1").test(lineItem.kind(), explanations);
+      nsfPoints += nsfMap.get("type1").test(lineItem.type(), explanations);
+      sfPoints += sfMap.get("item1").test(lineItem.item(), explanations);
+      sfPoints += sfMap.get("requestedDateTime1").test(lineItem.requestedDateTime(), explanations);
+      nsfPoints += nsfMap.get("estimatedDateTime1").test(lineItem.estimatedDateTime(), explanations);
+      sfPoints += sfMap.get("cost1").test(lineItem.cost(), explanations);
+
+      ppItemCounter.increment(lineItem.item());
+      ppCostCounter.increment(lineItem.cost());
 
       for (int i = 2; i <= 8; ++i) {
         lineItem = message.lineItems.get(i - 1);
         try {
-          nafPoints += nafMap.get("quantity" + String.valueOf(i)).test(lineItem.quantity(), explanations);
-          nafPoints += nafMap.get("kind" + String.valueOf(i)).test(lineItem.kind(), explanations);
-          nafPoints += nafMap.get("type" + String.valueOf(i)).test(lineItem.type(), explanations);
-          nafPoints += nafMap.get("item" + String.valueOf(i)).test(lineItem.item(), explanations);
-          nafPoints += nafMap
+          nsfPoints += nsfMap.get("quantity" + String.valueOf(i)).test(lineItem.quantity(), explanations);
+          nsfPoints += nsfMap.get("kind" + String.valueOf(i)).test(lineItem.kind(), explanations);
+          nsfPoints += nsfMap.get("type" + String.valueOf(i)).test(lineItem.type(), explanations);
+          nsfPoints += nsfMap.get("item" + String.valueOf(i)).test(lineItem.item(), explanations);
+          nsfPoints += nsfMap
               .get("requestedDateTime" + String.valueOf(i))
                 .test(lineItem.requestedDateTime(), explanations);
-          nafPoints += nafMap
+          nsfPoints += nsfMap
               .get("estimatedDateTime" + String.valueOf(i))
                 .test(lineItem.estimatedDateTime(), explanations);
-          nafPoints += nafMap.get("cost" + String.valueOf(i)).test(lineItem.cost(), explanations);
+          nsfPoints += nsfMap.get("cost" + String.valueOf(i)).test(lineItem.cost(), explanations);
         } catch (Exception e) {
           logger.error("expection processing for call: " + m.from() + ", line: " + i + ", " + e.getLocalizedMessage());
         }
       }
 
-      afPoints += afMap.get("delivery").test(message.delivery, explanations);
-      afPoints += afMap.get("substitutes").test(message.substitutes, explanations);
-      afPoints += afMap.get("requestedBy").test(message.requestedBy, explanations);
-      afPoints += afMap.get("priority").test(message.priority, explanations);
-      nafPoints += nafMap.get("approvedBy").test(message.approvedBy, explanations);
+      sfPoints += sfMap.get("delivery").test(message.delivery, explanations);
+      sfPoints += sfMap.get("substitutes").test(message.substitutes, explanations);
+      sfPoints += sfMap.get("requestedBy").test(message.requestedBy, explanations);
+      sfPoints += sfMap.get("priority").test(message.priority, explanations);
+      nsfPoints += nsfMap.get("approvedBy").test(message.approvedBy, explanations);
 
       // logistics
-      afPoints += afMap.get("logisticsOrderNumber").test(message.logisticsOrderNumber, explanations);
-      afPoints += afMap.get("supplierInfo").test(message.supplierInfo, explanations);
-      afPoints += afMap.get("supplierName").test(message.supplierName, explanations);
-      afPoints += afMap.get("supplierPointOfContact").test(message.supplierPointOfContact, explanations);
-      afPoints += afMap.get("supplyNotes").test(message.supplyNotes, explanations);
-      afPoints += afMap.get("logisticsAuthorizer").test(message.logisticsAuthorizer, explanations);
-      afPoints += afMap.get("logisticsDateTime").test(message.logisticsDateTime, explanations);
-      afPoints += afMap.get("orderedBy").test(message.orderedBy, explanations);
+      sfPoints += sfMap.get("logisticsOrderNumber").test(message.logisticsOrderNumber, explanations);
+      sfPoints += sfMap.get("supplierInfo").test(message.supplierInfo, explanations);
+      sfPoints += sfMap.get("supplierName").test(message.supplierName, explanations);
+      sfPoints += sfMap.get("supplierPointOfContact").test(message.supplierPointOfContact, explanations);
+      sfPoints += sfMap.get("supplyNotes").test(message.supplyNotes, explanations);
+      sfPoints += sfMap.get("logisticsAuthorizer").test(message.logisticsAuthorizer, explanations);
+      sfPoints += sfMap.get("logisticsDateTime").test(message.logisticsDateTime, explanations);
+      sfPoints += sfMap.get("orderedBy").test(message.orderedBy, explanations);
 
       // finance
-      nafPoints += nafMap.get("financeComments").test(message.financeComments, explanations);
-      afPoints += afMap.get("financeName").test(message.financeName, explanations);
-      afPoints += afMap.get("financeDateTime").test(message.financeDateTime, explanations);
+      nsfPoints += nsfMap.get("financeComments").test(message.financeComments, explanations);
+      sfPoints += sfMap.get("financeName").test(message.financeName, explanations);
+      sfPoints += sfMap.get("financeDateTime").test(message.financeDateTime, explanations);
 
-      points += 25 * (afPoints / (double) afMap.size());
-      points += 0 * (nafPoints / (double) nafMap.size());
+      points += 25 * (sfPoints / (double) sfMap.size());
+      points += 0 * (nsfPoints / (double) nsfMap.size());
 
       points = Math.min(100, points);
       points = Math.max(0, points);
@@ -516,16 +497,16 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     sb.append(formatPP("  Delivery location", ppLatLongOk, ppCount));
 
     sb.append("\nScorable Actionable Fields\n");
-    for (var key : afMap.keySet()) {
-      var af = afMap.get(key);
-      sb.append("  " + formatPP(af.summaryText, af.count, ppCount));
+    for (var key : sfMap.keySet()) {
+      var af = sfMap.get(key);
+      sb.append("  " + formatPP(af.label, af.count, ppCount));
     }
 
     if (ENABLE_NON_ACTIONABLE_FIELDS) {
       sb.append("\nNon-Scorable Actionable Fields\n");
-      for (var key : nafMap.keySet()) {
-        var af = nafMap.get(key);
-        sb.append(" " + formatPP(af.summaryText, af.count, ppCount));
+      for (var key : nsfMap.keySet()) {
+        var af = nsfMap.get(key);
+        sb.append(" " + formatPP(af.label, af.count, ppCount));
       }
     }
 
@@ -535,6 +516,22 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
       @SuppressWarnings("unchecked")
       var entry = (Entry<Integer, Integer>) it.next();
       sb.append(" score: " + entry.getKey() + ", count: " + entry.getValue() + "\n");
+    }
+
+    sb.append("\nMost requested Items: \n");
+    it = ppItemCounter.getDescendingKeyIterator();
+    while (it.hasNext()) {
+      @SuppressWarnings("unchecked")
+      var entry = (Entry<Integer, Integer>) it.next();
+      sb.append(" item: " + entry.getKey() + ", count: " + entry.getValue() + "\n");
+    }
+
+    sb.append("\nMost common Costs: \n");
+    it = ppCostCounter.getDescendingKeyIterator();
+    while (it.hasNext()) {
+      @SuppressWarnings("unchecked")
+      var entry = (Entry<Integer, Integer>) it.next();
+      sb.append(" item: " + entry.getKey() + ", count: " + entry.getValue() + "\n");
     }
 
     logger.info(sb.toString());
