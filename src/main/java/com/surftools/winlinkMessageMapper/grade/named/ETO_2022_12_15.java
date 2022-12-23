@@ -109,6 +109,9 @@ public class ETO_2022_12_15 extends DefaultGrader {
   private boolean isInitialized;
   private final List<PositionReport> allPositionReports;
 
+  private boolean doMatchResults = true;
+  private StringBuilder mr = new StringBuilder(); // match results
+
   public ETO_2022_12_15() {
     super(logger);
     // don't have a cm when we are constructed;
@@ -284,26 +287,6 @@ public class ETO_2022_12_15 extends DefaultGrader {
           explanations.add("expected to find 30 Position Reports in text, found " + list.size());
         }
 
-        var doDebug = true;
-        if (doDebug && m.from.equals("KM6SO")) {
-          var lineNumber = 0;
-          var matchCount = 0;
-          var sb = new StringBuilder();
-          sb.append("\nComment match test for: " + m.from + "\n");
-          for (var l : list) {
-            ++lineNumber;
-            var isMatched = l.comments.toUpperCase().startsWith(requiredContent);
-            matchCount += isMatched ? 1 : 0;
-            sb.append("   ");
-            sb.append(isMatched ? "###" : "   ");
-            sb.append(" line: " + lineNumber);
-            sb.append(", comment: " + l.comments);
-            sb.append("\n");
-          }
-          sb.append("matchCount: " + matchCount + "\n");
-          logger.info(sb.toString());
-        }
-
         commentMatchCount = (int) list
             .stream()
               .filter(o -> o.comments.toUpperCase().startsWith(requiredContent))
@@ -311,6 +294,37 @@ public class ETO_2022_12_15 extends DefaultGrader {
         var mapCount = ppCommentMatchMap.getOrDefault(commentMatchCount, Integer.valueOf(0));
         ++mapCount;
         ppCommentMatchMap.put(commentMatchCount, mapCount);
+
+        if (doMatchResults) {
+          var messageComment = m.comments;
+          var reportedCount = 0;
+          if (messageComment != null) {
+            try {
+              reportedCount = Integer.parseInt(messageComment.trim());
+            } catch (Exception e) {
+              ;
+            }
+          }
+
+          mr.append("\ncall: " + m.from + //
+              ", reported Count: " + reportedCount + ", actual Count: " + commentMatchCount + "\n");
+          var lineNumber = 0;
+          var matchCount = 0;
+          for (var l : list) {
+            ++lineNumber;
+            var isMatched = l.comments.toUpperCase().startsWith(requiredContent);
+            if (isMatched) {
+              ++matchCount;
+            }
+            mr.append("   ");
+            mr.append(isMatched ? String.format("(%-2d)", matchCount) : "    ");
+            mr.append(" line: " + ((lineNumber <= 9) ? " " : "") + lineNumber);
+            mr.append(", call: " + String.format("%-9s", l.to + ", "));
+            mr.append("comment: " + l.comments);
+            mr.append("\n");
+          }
+          mr.append("\n");
+        }
 
         // to find the reportees that have the most neighbors
         for (var pr : list) {
@@ -503,6 +517,10 @@ public class ETO_2022_12_15 extends DefaultGrader {
     writeCounter(ppEtoNeighborCounter, "eto");
     writeCounter(ppAllNeighborCounter, "all");
 
+    if (doMatchResults) {
+      writeMatchResults(mr);
+    }
+
     var defaultReport = DefaultGrader.defaultPostProcessReport(messages);
     var sb = new StringBuilder(defaultReport);
     sb.append("\nETO-2022-12-15 Grading Report: graded " + ppCount + " Winlink Check In messages\n");
@@ -527,6 +545,16 @@ public class ETO_2022_12_15 extends DefaultGrader {
     }
 
     return sb.toString();
+  }
+
+  private void writeMatchResults(StringBuilder mr) {
+    var outputPath = Path.of(cm.getAsString(Key.PATH), "output", "graded", "match-results.txt");
+
+    try {
+      Files.write(outputPath, mr.toString().getBytes());
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
   }
 
   private void writeAllPositionReports(List<PositionReport> list) {
