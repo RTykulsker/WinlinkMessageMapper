@@ -46,6 +46,14 @@ public class Counter implements ICounter {
   }
 
   @Override
+  public void incrementNullSafe(Comparable key) {
+    key = key == null ? "(null)" : key;
+    var value = map.getOrDefault(key, Integer.valueOf(0));
+    ++value;
+    map.put(key, value);
+  }
+
+  @Override
   public void increment(Comparable key, int amount) {
     var value = map.getOrDefault(key, Integer.valueOf(0));
     value += amount;

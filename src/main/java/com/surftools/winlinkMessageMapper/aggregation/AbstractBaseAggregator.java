@@ -33,14 +33,18 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.slf4j.Logger;
 
 import com.opencsv.CSVWriter;
 import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.utils.counter.Counter;
+import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.GisMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
@@ -235,6 +239,46 @@ public abstract class AbstractBaseAggregator implements IAggregator {
       }
     }
     return maxType;
+  }
+
+  @SuppressWarnings("rawtypes")
+  protected String formatCounter(Iterator<Entry<Comparable, Integer>> it, String keyLabel, String countLabel) {
+    return formatCounter(it, keyLabel, countLabel, Integer.MAX_VALUE);
+
+  }
+
+  @SuppressWarnings("rawtypes")
+  protected String formatCounter(Iterator<Entry<Comparable, Integer>> it, String keyLabel, String countLabel,
+      int maxItems) {
+    var sb = new StringBuilder();
+    int count = 0;
+    while (it.hasNext()) {
+      var entry = it.next();
+      sb.append(" " + keyLabel + ": " + entry.getKey() + ", " + countLabel + ": " + entry.getValue() + "\n");
+      ++count;
+      if (count == maxItems) {
+        break;
+      }
+    }
+    return sb.toString();
+  }
+
+  protected void writeCounter(Counter counter, String fileName) {
+    var outputPath = Path.of(cm.getAsString(Key.PATH), "output", fileName);
+
+    try {
+      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
+      writer.writeNext(new String[] { "Value", "Count" });
+      var it = counter.getDescendingCountIterator();
+      while (it.hasNext()) {
+        var entry = it.next();
+        writer.writeNext(new String[] { (String) entry.getKey(), String.valueOf((entry.getValue())) });
+      }
+      writer.close();
+      logger.info("wrote " + counter.getKeyCount() + " counts to file: " + outputPath);
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+    }
   }
 
 }

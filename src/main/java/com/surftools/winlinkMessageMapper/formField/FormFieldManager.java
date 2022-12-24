@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class FormFieldManager {
 
@@ -41,6 +42,10 @@ public class FormFieldManager {
   private List<String> explanations;
   private boolean isEnabled = true;
   private int points = 0;
+
+  public void add(String key, FormField field) {
+    map.put(key, field);
+  }
 
   public void reset(List<String> explanations) {
     this.explanations = explanations;
@@ -55,6 +60,25 @@ public class FormFieldManager {
     this.isEnabled = isEnabled;
   }
 
+  public double size() {
+    return map.size();
+  }
+
+  public Set<String> keySet() {
+    return map.keySet();
+  }
+
+  public FormField get(String key) {
+    return map.get(key);
+  }
+
+  /**
+   * test if the supplied value scores points, or not
+   *
+   * @param key
+   * @param value
+   * @return
+   */
   public int test(String key, String value) {
     if (!isEnabled) {
       return 0;
@@ -159,7 +183,7 @@ public class FormFieldManager {
     var returnPoints = 0;
     if (isOk) {
       ++field.count;
-      returnPoints = points;
+      returnPoints = field.points;
     } else {
       explanations.add(explanation);
     }
@@ -167,4 +191,5 @@ public class FormFieldManager {
     points += returnPoints;
     return returnPoints;
   }
+
 }

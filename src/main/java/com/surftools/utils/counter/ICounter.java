@@ -46,6 +46,13 @@ public interface ICounter<K extends Comparable<K>> {
   public void increment(K key);
 
   /**
+   * increment the count by 1
+   *
+   * @param key
+   */
+  public void incrementNullSafe(K key);
+
+  /**
    * increment the count by the amount
    *
    * @param key

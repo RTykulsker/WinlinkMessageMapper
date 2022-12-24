@@ -32,14 +32,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
@@ -50,12 +47,16 @@ import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.winlinkMessageMapper.aggregation.AbstractBaseAggregator;
 import com.surftools.winlinkMessageMapper.aggregation.AggregateMessage;
 import com.surftools.winlinkMessageMapper.configuration.Key;
 import com.surftools.winlinkMessageMapper.dto.message.ExportedMessage;
 import com.surftools.winlinkMessageMapper.dto.message.Ics213RRMessage;
 import com.surftools.winlinkMessageMapper.dto.other.MessageType;
+import com.surftools.winlinkMessageMapper.formField.FormField;
+import com.surftools.winlinkMessageMapper.formField.FormFieldManager;
+import com.surftools.winlinkMessageMapper.formField.FormFieldType;
 
 /**
  * Aggregator for 2022-12-22 Exercise: one ICS-213-RR with image
@@ -74,12 +75,17 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
   public static final int FP0 = NON_SCORABLE_FIELD_POINTS;
   public static final boolean ENABLE_NON_ACTIONABLE_FIELDS = false;
 
-  static record Result(Ics213RRMessage message, LatLongPair location, String grade, String explanation) {
+  public static final String[] gradeBands = new String[] { //
+      "0-9%", "10-19%", "20-29%", "30-39%", "40-49%", "50-59%", "60-69%", "70-79%", "80-89%", "90-99%", "100%" };
+
+  static record Result(Ics213RRMessage message, LatLongPair location, String grade, String gradeBand,
+      String explanation) {
 
     public static String[] getHeaders() {
       var resultList = new ArrayList<String>(Ics213RRMessage.getStaticHeaders().length + 4);
       Collections.addAll(resultList, Ics213RRMessage.getStaticHeaders());
-      Collections.addAll(resultList, new String[] { "FormLatitude", "FormLongitude", "Grade", "Explanation" });
+      Collections
+          .addAll(resultList, new String[] { "FormLatitude", "FormLongitude", "Grade", "GradeBand", "Explanation" });
       return resultList.toArray(new String[resultList.size()]);
     }
 
@@ -87,137 +93,14 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
       var loc = location != null ? location : LatLongPair.ZERO_ZERO;
       var resultList = new ArrayList<String>(Ics213RRMessage.getStaticHeaders().length + 4);
       Collections.addAll(resultList, message.getValues());
-      Collections.addAll(resultList, new String[] { loc.getLatitude(), loc.getLongitude(), grade, explanation });
+      Collections
+          .addAll(resultList, new String[] { loc.getLatitude(), loc.getLongitude(), grade, gradeBand, explanation });
       return resultList.toArray(new String[resultList.size()]);
     }
   };
 
-  enum FormFieldType {
-    REQUIRED, REQUIRED_NOT, OPTIONAL, OPTIONAL_NOT, DATE_TIME, DATE_TIME_NOT, EMPTY, SPECIFIED
-  };
-
-  static class FormField {
-    public final String label;
-    public final String placeholderValue;
-    public final FormFieldType type;
-    public final int points;
-    public int count;
-
-    public FormField(FormFieldType type, String label, String placeholderValue, int points) {
-      this.type = type;
-      this.label = label;
-      this.placeholderValue = placeholderValue;
-      this.points = points;
-    }
-
-    public int test(String value, ArrayList<String> explanations) {
-      if (!ENABLE_NON_ACTIONABLE_FIELDS && points == NON_SCORABLE_FIELD_POINTS) {
-        return NON_SCORABLE_FIELD_POINTS;
-      }
-
-      var isOk = false;
-      var explanation = "";
-
-      switch (type) {
-      case DATE_TIME:
-        if (value == null) {
-          explanation = label + " must be supplied";
-        } else {
-          try {
-            LocalDateTime.parse(value, FORMATTER);
-            isOk = true;
-          } catch (Exception e) {
-            explanation = label + "(" + value + ") is not a valid Date/Time";
-          }
-        }
-        break;
-
-      case DATE_TIME_NOT:
-        if (value == null) {
-          explanation = label + " must be supplied";
-        } else if (value.equalsIgnoreCase(placeholderValue)) {
-          explanation = label + "(" + value + ") must not be " + placeholderValue;
-        } else {
-          try {
-            LocalDateTime.parse(value, FORMATTER);
-            isOk = true;
-          } catch (Exception e) {
-            explanation = label + "(" + value + ") is not a valid Date/Time";
-          }
-        }
-        break;
-
-      case EMPTY:
-        isOk = value == null || value.isBlank();
-        if (!isOk) {
-          explanation = label + "(" + value + ") must be blank";
-        }
-        break;
-
-      case OPTIONAL:
-        isOk = true;
-        break;
-
-      case OPTIONAL_NOT:
-        if (value != null && value.equalsIgnoreCase(placeholderValue)) {
-          explanation = label + "(" + value + ") must not be " + placeholderValue;
-        } else {
-          isOk = true;
-        }
-        break;
-
-      case REQUIRED:
-        if (value == null) {
-          explanation = label + " must be supplied";
-        } else if (value.isBlank()) {
-          explanation = label + "(" + value + ") must not be blank";
-        } else {
-          isOk = true;
-        }
-        break;
-
-      case REQUIRED_NOT:
-        if (value == null) {
-          explanation = label + " must be supplied";
-        } else if (value.isBlank()) {
-          explanation = label + "(" + value + ") must not be blank";
-        } else if (value.equalsIgnoreCase(placeholderValue)) {
-          isOk = false;
-          explanation = label + "(" + value + ") must not be " + placeholderValue;
-        } else {
-          isOk = true;
-        }
-
-        break;
-
-      case SPECIFIED:
-        if (value == null) {
-          explanation = label + " must be " + placeholderValue;
-        } else if (!value.equalsIgnoreCase(placeholderValue)) {
-          explanation = label + "(" + value + ") must be " + placeholderValue;
-        } else {
-          isOk = true;
-        }
-        break;
-
-      default:
-        throw new RuntimeException("unhandled type: " + type.toString());
-      }
-
-      var returnPoints = 0;
-      if (isOk) {
-        ++count;
-        returnPoints = points;
-      } else {
-        explanations.add(explanation);
-      }
-
-      return returnPoints;
-    }
-  };
-
-  private Map<String, FormField> sfMap = new LinkedHashMap<>(); // scoreableFieldMap
-  private Map<String, FormField> nsfMap = new LinkedHashMap<>(); // nonScorableFieldMap
+  private FormFieldManager sfMgr = new FormFieldManager();
+  private FormFieldManager nsfMgr = new FormFieldManager();
 
   private List<Result> results = new ArrayList<Result>();
 
@@ -241,109 +124,108 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     maxImageSize = cm.getAsInt(Key.MAX_IMAGE_SIZE, 5500);
 
     // header
-    nsfMap
-        .put("organization",
+    nsfMgr
+        .add("organization",
             new FormField(FormFieldType.SPECIFIED, "Agency/Group name", "ETO ICS-213RR Santa Purchase Request", FP1));
 
-    sfMap.put("activityDateTime", new FormField(FormFieldType.DATE_TIME_NOT, "Box 2 Date/Time", DATE_TIME_NOT, FP1));
+    sfMgr.add("activityDateTime", new FormField(FormFieldType.DATE_TIME_NOT, "Box 2 Date/Time", DATE_TIME_NOT, FP1));
 
-    nsfMap
-        .put("requestNumber",
+    nsfMgr
+        .add("requestNumber",
             new FormField(FormFieldType.SPECIFIED, "Resource Request Number", "12-22-22-ETO-SR1", FP0));
 
     // line 1
-    sfMap.put("quantity1", new FormField(FormFieldType.REQUIRED_NOT, "Item Quantity#1", "REQ", FP1));
+    sfMgr.add("quantity1", new FormField(FormFieldType.REQUIRED_NOT, "Item Quantity#1", "REQ", FP1));
 
-    nsfMap.put("type1", new FormField(FormFieldType.EMPTY, "Item Type#1", null, FP0));
+    nsfMgr.add("type1", new FormField(FormFieldType.EMPTY, "Item Type#1", null, FP0));
 
-    nsfMap.put("kind1", new FormField(FormFieldType.EMPTY, "Item Kind#1", null, FP0));
+    nsfMgr.add("kind1", new FormField(FormFieldType.EMPTY, "Item Kind#1", null, FP0));
 
-    sfMap.put("item1", new FormField(FormFieldType.REQUIRED_NOT, "Item Description#1", "REQUIRED", FP1));
+    sfMgr.add("item1", new FormField(FormFieldType.REQUIRED_NOT, "Item Description#1", "REQUIRED", FP1));
 
-    sfMap
-        .put("requestedDateTime1",
+    sfMgr
+        .add("requestedDateTime1",
             new FormField(FormFieldType.DATE_TIME_NOT, "Requested Date/Time#1", DATE_TIME_NOT, FP1));
 
-    nsfMap.put("estimatedDateTime1", new FormField(FormFieldType.EMPTY, "Estimated Date/Time#1", null, FP0));
+    nsfMgr.add("estimatedDateTime1", new FormField(FormFieldType.EMPTY, "Estimated Date/Time#1", null, FP0));
 
-    sfMap.put("cost1", new FormField(FormFieldType.REQUIRED_NOT, "Item Cost#1", "REQUIRED", FP1));
+    sfMgr.add("cost1", new FormField(FormFieldType.REQUIRED_NOT, "Item Cost#1", "REQUIRED", FP1));
 
     // line 2-8
     for (int i = 2; i <= 8; ++i) {
-      nsfMap.put("quantity" + i, new FormField(FormFieldType.EMPTY, "Item Quantity#" + i, null, FP0));
-      nsfMap.put("type" + i, new FormField(FormFieldType.EMPTY, "Item Type#" + i, null, FP0));
-      nsfMap.put("kind" + i, new FormField(FormFieldType.EMPTY, "Item Kind#" + i, null, FP0));
-      nsfMap.put("item" + i, new FormField(FormFieldType.EMPTY, "Item Description#" + i, null, FP0));
-      nsfMap.put("requestedDateTime" + i, new FormField(FormFieldType.EMPTY, "Requested Date/Time#" + i, null, FP0));
-      nsfMap.put("estimatedDateTime" + i, new FormField(FormFieldType.EMPTY, "Estimated Date/Time#" + i, null, FP0));
-      nsfMap.put("cost" + i, new FormField(FormFieldType.EMPTY, "Item Cost#" + i, null, FP0));
+      nsfMgr.add("quantity" + i, new FormField(FormFieldType.EMPTY, "Item Quantity#" + i, null, FP0));
+      nsfMgr.add("type" + i, new FormField(FormFieldType.EMPTY, "Item Type#" + i, null, FP0));
+      nsfMgr.add("kind" + i, new FormField(FormFieldType.EMPTY, "Item Kind#" + i, null, FP0));
+      nsfMgr.add("item" + i, new FormField(FormFieldType.EMPTY, "Item Description#" + i, null, FP0));
+      nsfMgr.add("requestedDateTime" + i, new FormField(FormFieldType.EMPTY, "Requested Date/Time#" + i, null, FP0));
+      nsfMgr.add("estimatedDateTime" + i, new FormField(FormFieldType.EMPTY, "Estimated Date/Time#" + i, null, FP0));
+      nsfMgr.add("cost" + i, new FormField(FormFieldType.EMPTY, "Item Cost#" + i, null, FP0));
     }
 
     // rest of request
-    sfMap
-        .put("delivery", new FormField(FormFieldType.REQUIRED_NOT, "Delivery/Reporting Location",
+    sfMgr
+        .add("delivery", new FormField(FormFieldType.REQUIRED_NOT, "Delivery/Reporting Location",
             "YOUR GPS COORDINATES - in decimal degrees - REQUIRED", FP1));
 
-    sfMap
-        .put("substitutes",
+    sfMgr
+        .add("substitutes",
             new FormField(FormFieldType.OPTIONAL_NOT, "Substitutes", "OPTIONAL - MAKE BLANK IF NO ENTRY", FP1));
 
-    sfMap
-        .put("requestedBy", new FormField(FormFieldType.REQUIRED_NOT, "Requested By",
+    sfMgr
+        .add("requestedBy", new FormField(FormFieldType.REQUIRED_NOT, "Requested By",
             "Your Name & Call Sign - then select PRIORITY----->", FP1));
 
-    sfMap.put("priority", new FormField(FormFieldType.REQUIRED, "Priority", null, FP1));
+    sfMgr.add("priority", new FormField(FormFieldType.REQUIRED, "Priority", null, FP1));
 
-    nsfMap.put("approvedBy", new FormField(FormFieldType.SPECIFIED, "Section Chief", "David Rudolph Rednose", FP0));
+    nsfMgr.add("approvedBy", new FormField(FormFieldType.SPECIFIED, "Section Chief", "David Rudolph Rednose", FP0));
 
     // logistics
-    sfMap
-        .put("logisticsOrderNumber", new FormField(FormFieldType.REQUIRED_NOT, "Log Order Number", "MAKE ONE UP", FP1));
+    sfMgr
+        .add("logisticsOrderNumber", new FormField(FormFieldType.REQUIRED_NOT, "Log Order Number", "MAKE ONE UP", FP1));
 
-    sfMap
-        .put("supplierInfo", new FormField(FormFieldType.REQUIRED_NOT, "Supplier Info",
+    sfMgr
+        .add("supplierInfo", new FormField(FormFieldType.REQUIRED_NOT, "Supplier Info",
             "MAKE UP or USE A REAL PHONE NUMBER FOR YOUR FAVORITE AMATEUR RADIO SUPPLIER", FP1));
 
-    sfMap
-        .put("supplierName",
+    sfMgr
+        .add("supplierName",
             new FormField(FormFieldType.REQUIRED_NOT, "Supplier Name", "NAME OF FAVORITE AMATEUR RADIO SUPPLIER", FP1));
 
-    sfMap
-        .put("supplierPointOfContact",
+    sfMgr
+        .add("supplierPointOfContact",
             new FormField(FormFieldType.REQUIRED_NOT, "Point of Contact", "MAKE ONE UP", FP1));
 
-    sfMap
-        .put("supplyNotes", new FormField(FormFieldType.OPTIONAL_NOT, "Notes",
+    sfMgr
+        .add("supplyNotes", new FormField(FormFieldType.OPTIONAL_NOT, "Notes",
             "OPTIONAL - ADD ACCESSORIES OR MAKE BLANK IF NO ENTRY", FP1));
 
-    sfMap
-        .put("logisticsAuthorizer", new FormField(FormFieldType.REQUIRED_NOT, "Logistics Rep",
+    sfMgr
+        .add("logisticsAuthorizer", new FormField(FormFieldType.REQUIRED_NOT, "Logistics Rep",
             "MAKE ONE UP              UPDATE DATE/TIME -->", FP1));
 
-    sfMap
-        .put("logisticsDateTime",
+    sfMgr
+        .add("logisticsDateTime",
             new FormField(FormFieldType.DATE_TIME_NOT, "Logistics Date/Time", DATE_TIME_NOT, FP1));
 
-    sfMap.put("orderedBy", new FormField(FormFieldType.REQUIRED_NOT, "Ordered By", "YOUR NAME AND CALL SIGN", FP1));
+    sfMgr.add("orderedBy", new FormField(FormFieldType.REQUIRED_NOT, "Ordered By", "YOUR NAME AND CALL SIGN", FP1));
 
     // finance
-    nsfMap.put("financeComments", new FormField(FormFieldType.SPECIFIED, "Finance Comments", "HAPPY HOLIDAYS !!", FP0));
+    nsfMgr.add("financeComments", new FormField(FormFieldType.SPECIFIED, "Finance Comments", "HAPPY HOLIDAYS !!", FP0));
 
-    sfMap.put("financeName", new FormField(FormFieldType.REQUIRED_NOT, "Finance Chief", "MAKE ONE UP OR SPOUSE", FP1));
+    sfMgr.add("financeName", new FormField(FormFieldType.REQUIRED_NOT, "Finance Chief", "MAKE ONE UP OR SPOUSE", FP1));
 
-    sfMap
-        .put("financeDateTime", new FormField(FormFieldType.DATE_TIME_NOT, "Finance Date/Time By", DATE_TIME_NOT, FP1));
+    sfMgr
+        .add("financeDateTime", new FormField(FormFieldType.DATE_TIME_NOT, "Finance Date/Time By", DATE_TIME_NOT, FP1));
 
+    nsfMgr.setIsEnabled(ENABLE_NON_ACTIONABLE_FIELDS);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void aggregate(Map<MessageType, List<ExportedMessage>> messageMap) {
     initialize();
 
     super.aggregate(messageMap);
-
-    var points = 0;
-    var explanations = new ArrayList<String>();
 
     var ppAllParticipantCount = 0;
     var ppCount = 0;
@@ -352,10 +234,15 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     var ppLatLongOk = 0;
 
     var ppScoreCounter = new Counter();
+    var ppGradeBandCounter = new Counter();
     var ppItemCounter = new Counter();
     var ppCostCounter = new Counter();
+    var ppPriorityCounter = new Counter();
 
     for (var m : aggregateMessages) {
+      var points = 0;
+      var explanations = new ArrayList<String>();
+
       ++ppAllParticipantCount;
       var from = m.from();
       if (dumpIds.contains(from)) {
@@ -392,98 +279,91 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
         explanations.add("no image attachment found");
       }
 
-      LatLongPair location = null;
-      var locationString = message.delivery;
-      if (locationString == null || locationString.isBlank()) {
-        explanations.add("no Delivery/Reporting Location");
+      var resultArray = getLocation(message);
+      LatLongPair location = (LatLongPair) resultArray[0];
+      String explanation = (String) resultArray[1];
+      if (explanation != null) {
+        explanations.add(explanation);
       } else {
-        var llFields = locationString.split(",");
-        if (llFields.length != 2) {
-          explanations.add("can not parse Delivery/Reporting Location: " + locationString);
-        } else {
-          location = new LatLongPair(llFields[0], llFields[1]);
-          if (location == null || !location.isValid()) {
-            explanations.add("can not parse Delivery/Reporting Location: " + locationString);
-          } else {
-            points += 25;
-            ++ppLatLongOk;
-          }
-        }
+        points += 25;
+        ++ppLatLongOk;
       }
 
       // scorable and non-scorable fields
-      var sfPoints = 0;
-      var nsfPoints = 0;
-      nsfPoints += nsfMap.get("organization").test(message.organization, explanations);
-      sfPoints += sfMap.get("activityDateTime").test(message.activityDateTime, explanations);
-      nsfPoints += nsfMap.get("requestNumber").test(message.requestNumber, explanations);
+      sfMgr.reset(explanations);
+      nsfMgr.reset(explanations);
+
+      nsfMgr.test("organization", message.organization);
+      sfMgr.test("activityDateTime", message.activityDateTime);
+      nsfMgr.test("requestNumber", message.requestNumber);
 
       var lineItem = message.lineItems.get(0);
-      sfPoints += sfMap.get("quantity1").test(lineItem.quantity(), explanations);
-      nsfPoints += nsfMap.get("kind1").test(lineItem.kind(), explanations);
-      nsfPoints += nsfMap.get("type1").test(lineItem.type(), explanations);
-      sfPoints += sfMap.get("item1").test(lineItem.item(), explanations);
-      sfPoints += sfMap.get("requestedDateTime1").test(lineItem.requestedDateTime(), explanations);
-      nsfPoints += nsfMap.get("estimatedDateTime1").test(lineItem.estimatedDateTime(), explanations);
-      sfPoints += sfMap.get("cost1").test(lineItem.cost(), explanations);
+      sfMgr.test("quantity1", lineItem.quantity());
+      nsfMgr.test("kind1", lineItem.kind());
+      nsfMgr.test("type1", lineItem.type());
+      sfMgr.test("item1", lineItem.item());
+      sfMgr.test("requestedDateTime1", lineItem.requestedDateTime());
+      nsfMgr.test("estimatedDateTime1", lineItem.estimatedDateTime());
+      sfMgr.test("cost1", lineItem.cost());
 
-      ppItemCounter.increment(lineItem.item());
-      ppCostCounter.increment(lineItem.cost());
+      ppItemCounter.incrementNullSafe(lineItem.item());
+      ppCostCounter.incrementNullSafe(lineItem.cost());
+      ppPriorityCounter.increment(message.priority);
 
       for (int i = 2; i <= 8; ++i) {
         lineItem = message.lineItems.get(i - 1);
         try {
-          nsfPoints += nsfMap.get("quantity" + String.valueOf(i)).test(lineItem.quantity(), explanations);
-          nsfPoints += nsfMap.get("kind" + String.valueOf(i)).test(lineItem.kind(), explanations);
-          nsfPoints += nsfMap.get("type" + String.valueOf(i)).test(lineItem.type(), explanations);
-          nsfPoints += nsfMap.get("item" + String.valueOf(i)).test(lineItem.item(), explanations);
-          nsfPoints += nsfMap
-              .get("requestedDateTime" + String.valueOf(i))
-                .test(lineItem.requestedDateTime(), explanations);
-          nsfPoints += nsfMap
-              .get("estimatedDateTime" + String.valueOf(i))
-                .test(lineItem.estimatedDateTime(), explanations);
-          nsfPoints += nsfMap.get("cost" + String.valueOf(i)).test(lineItem.cost(), explanations);
+          nsfMgr.test("quantity" + String.valueOf(i), lineItem.quantity());
+          nsfMgr.test("kind" + String.valueOf(i), lineItem.kind());
+          nsfMgr.test("type" + String.valueOf(i), lineItem.type());
+          nsfMgr.test("item" + String.valueOf(i), lineItem.item());
+          nsfMgr.test("requestedDateTime" + String.valueOf(i), lineItem.requestedDateTime());
+          nsfMgr.test("estimatedDateTime" + String.valueOf(i), lineItem.estimatedDateTime());
+          nsfMgr.test("cost" + String.valueOf(i), lineItem.cost());
         } catch (Exception e) {
           logger.error("expection processing for call: " + m.from() + ", line: " + i + ", " + e.getLocalizedMessage());
         }
       }
 
-      sfPoints += sfMap.get("delivery").test(message.delivery, explanations);
-      sfPoints += sfMap.get("substitutes").test(message.substitutes, explanations);
-      sfPoints += sfMap.get("requestedBy").test(message.requestedBy, explanations);
-      sfPoints += sfMap.get("priority").test(message.priority, explanations);
-      nsfPoints += nsfMap.get("approvedBy").test(message.approvedBy, explanations);
+      sfMgr.test("delivery", message.delivery);
+      sfMgr.test("substitutes", message.substitutes);
+      sfMgr.test("requestedBy", message.requestedBy);
+      sfMgr.test("priority", message.priority);
+      nsfMgr.test("approvedBy", message.approvedBy);
 
       // logistics
-      sfPoints += sfMap.get("logisticsOrderNumber").test(message.logisticsOrderNumber, explanations);
-      sfPoints += sfMap.get("supplierInfo").test(message.supplierInfo, explanations);
-      sfPoints += sfMap.get("supplierName").test(message.supplierName, explanations);
-      sfPoints += sfMap.get("supplierPointOfContact").test(message.supplierPointOfContact, explanations);
-      sfPoints += sfMap.get("supplyNotes").test(message.supplyNotes, explanations);
-      sfPoints += sfMap.get("logisticsAuthorizer").test(message.logisticsAuthorizer, explanations);
-      sfPoints += sfMap.get("logisticsDateTime").test(message.logisticsDateTime, explanations);
-      sfPoints += sfMap.get("orderedBy").test(message.orderedBy, explanations);
+      sfMgr.test("logisticsOrderNumber", message.logisticsOrderNumber);
+      sfMgr.test("supplierInfo", message.supplierInfo);
+      sfMgr.test("supplierName", message.supplierName);
+      sfMgr.test("supplierPointOfContact", message.supplierPointOfContact);
+      sfMgr.test("supplyNotes", message.supplyNotes);
+      sfMgr.test("logisticsAuthorizer", message.logisticsAuthorizer);
+      sfMgr.test("logisticsDateTime", message.logisticsDateTime);
+      sfMgr.test("orderedBy", message.orderedBy);
 
       // finance
-      nsfPoints += nsfMap.get("financeComments").test(message.financeComments, explanations);
-      sfPoints += sfMap.get("financeName").test(message.financeName, explanations);
-      sfPoints += sfMap.get("financeDateTime").test(message.financeDateTime, explanations);
+      nsfMgr.test("financeComments", message.financeComments);
+      sfMgr.test("financeName", message.financeName);
+      sfMgr.test("financeDateTime", message.financeDateTime);
 
-      points += 25 * (sfPoints / (double) sfMap.size());
-      points += 0 * (nsfPoints / (double) nsfMap.size());
+      points += 25 * (sfMgr.getPoints() / sfMgr.size());
+      points += 0 * (nsfMgr.getPoints() / nsfMgr.size());
 
       points = Math.min(100, points);
       points = Math.max(0, points);
 
       var grade = String.valueOf(points);
-      var explanation = (points == 100 && explanations.size() == 0) //
+      explanation = (points == 100 && explanations.size() == 0) //
           ? "Perfect Score!"
           : String.join("\n", explanations);
 
       ppScoreCounter.increment(points);
 
-      var result = new Result(message, location, grade, explanation);
+      var gradeIndex = points / 10;
+      var gradeBand = gradeBands[gradeIndex];
+      ppGradeBandCounter.increment(gradeBand);
+
+      var result = new Result(message, location, grade, gradeBand, explanation);
       results.add(result);
     } // end loop over for
 
@@ -497,44 +377,138 @@ public class ETO_2022_12_22_Aggregator extends AbstractBaseAggregator {
     sb.append(formatPP("  Delivery location", ppLatLongOk, ppCount));
 
     sb.append("\nScorable Actionable Fields\n");
-    for (var key : sfMap.keySet()) {
-      var af = sfMap.get(key);
+    for (var key : sfMgr.keySet()) {
+      var af = sfMgr.get(key);
       sb.append("  " + formatPP(af.label, af.count, ppCount));
     }
 
     if (ENABLE_NON_ACTIONABLE_FIELDS) {
       sb.append("\nNon-Scorable Actionable Fields\n");
-      for (var key : nsfMap.keySet()) {
-        var af = nsfMap.get(key);
+      for (var key : nsfMgr.keySet()) {
+        var af = nsfMgr.get(key);
         sb.append(" " + formatPP(af.label, af.count, ppCount));
       }
     }
 
-    sb.append("\nscores: \n");
-    var it = ppScoreCounter.getDescendingKeyIterator();
-    while (it.hasNext()) {
-      @SuppressWarnings("unchecked")
-      var entry = (Entry<Integer, Integer>) it.next();
-      sb.append(" score: " + entry.getKey() + ", count: " + entry.getValue() + "\n");
-    }
+    sb.append("\nScores: \n" + formatCounter(ppScoreCounter.getDescendingKeyIterator(), "score", "count"));
 
-    sb.append("\nMost requested Items: \n");
-    it = ppItemCounter.getDescendingKeyIterator();
-    while (it.hasNext()) {
-      @SuppressWarnings("unchecked")
-      var entry = (Entry<Integer, Integer>) it.next();
-      sb.append(" item: " + entry.getKey() + ", count: " + entry.getValue() + "\n");
-    }
+    sb.append("\nScores: \n" + formatCounter(ppGradeBandCounter.getDescendingKeyIterator(), "band", "count"));
 
-    sb.append("\nMost common Costs: \n");
-    it = ppCostCounter.getDescendingKeyIterator();
-    while (it.hasNext()) {
-      @SuppressWarnings("unchecked")
-      var entry = (Entry<Integer, Integer>) it.next();
-      sb.append(" item: " + entry.getKey() + ", count: " + entry.getValue() + "\n");
-    }
+    var topItemCount = 20;
+    sb
+        .append("\nTop " + topItemCount + " requested Items: \n"
+            + formatCounter(ppItemCounter.getDescendingCountIterator(), "item", "count", topItemCount));
+
+    var topCostCount = 20;
+    sb
+        .append("\nTop " + topCostCount + " requested Costs: \n"
+            + formatCounter(ppCostCounter.getDescendingCountIterator(), "cost", "count", topCostCount));
+
+    sb.append("\nPriorities: \n" + formatCounter(ppPriorityCounter.getDescendingKeyIterator(), "priority", "count"));
 
     logger.info(sb.toString());
+
+    writeCounter(ppItemCounter, "counted-items.csv");
+    writeCounter(ppCostCounter, "counted-costs.csv");
+    writeCounter(ppPriorityCounter, "counted-priorities.csv");
+  }
+
+  /**
+   * try to get location from the delivery string.
+   *
+   * Alas, the instructions were ambiguous about the delimiter between latitude and longitude
+   *
+   * If we can't get from the delivery string, return an error explanation, but try to get from the ExportedMessage for
+   * the purposes of plotting.
+   *
+   * @param message
+   * @return an array of [LatLongPair, String(explanation if any)
+   */
+  private Object[] getLocation(Ics213RRMessage message) {
+    LatLongPair location = null;
+    String explanation = null;
+
+    // var debug = false;
+    // var dumpList = new String[] { "NK8B" };
+    // var dumpSet = new HashSet<String>();
+    // dumpSet.addAll(Arrays.asList(dumpList));
+    // if (dumpSet.contains(message.from)) {
+    // debug = true;
+    // }
+
+    var locationString = (message.delivery == null) ? null : new String(message.delivery);
+    if (locationString != null && !locationString.isBlank()) {
+      var stopWords = new String[] { // longest strings first!
+          "Latitude : ", "Latitude:", "LATITUDE.", "Latitude", "latitude", "LAT:", "Lat:", "lat:", "LAT", "lat", "Lat", //
+          "Longitude : ", "Longitude:", "LAT:", "LAT", "LONGITUDE", "Longitude", "longitude", "long.", "long", "Long",
+          "LON:", "Lon:", "lon:", "LON", "lon", "Lon", //
+          "N", "S", "E", "W", //
+          "Â", "°", "'" };
+
+      for (var stopWord : stopWords) {
+        locationString = locationString.replaceAll(stopWord, "");
+      }
+
+      // trim multiple embedded spaces
+      locationString = locationString.replaceAll("\\s{2,}", " ").trim();
+
+      // trim trailing period
+      if (locationString.endsWith(".")) {
+        locationString = locationString.substring(0, locationString.length() - 1);
+      }
+
+      var delimiters = new String[] { ",", " ", ";", "/", "x", "|" };
+      for (var delimiter : delimiters) {
+        var llFields = locationString.split(delimiter);
+        if (llFields.length == 2) {
+          location = new LatLongPair(llFields[0].trim(), llFields[1].trim());
+          if (location != null && location.isValid()) {
+
+            // 42-50.10N 078-45.40E and his message location is stuffed up too
+            if (message.from.equals("KD2MIC")) {
+              return new Object[] { location, explanation };
+            }
+
+            // last-ditch effort to prevent bad parsing of DD/MM/SS type data
+            var lat = location.getLatitudeAsDouble();
+            if (lat > 0 && lat <= 4) {
+              location = message.location;
+              explanation = "can not parse Delivery/Reporting Location: " + message.delivery;
+              return new Object[] { location, explanation };
+            }
+
+            // last ditch effort to correct for losing the sign of longitude
+            var lon = location.getLongitudeAsDouble();
+            if (lon > 0 && message.delivery.endsWith("W")) {
+              return new Object[] { new LatLongPair(location.getLatitude(), "-" + location.getLongitude()), null };
+            }
+
+            var messageLocation = message.location;
+            if (messageLocation != null && messageLocation.isValid()) {
+              var distanceMiles = LocationUtils.computeDistanceMiles(location, messageLocation);
+              if (distanceMiles >= 10
+                  && (location.getLongitudeAsDouble() > 0 && messageLocation.getLongitudeAsDouble() < 0)) {
+                return new Object[] { messageLocation, null };
+              }
+            }
+
+            return new Object[] { location, null };
+          } // end if valid location from locationString
+        } // end if at least 2 fields from delimited-splitting
+      } // end loop over delimiters
+      explanation = "can not parse Delivery/Reporting Location: " + message.delivery;
+    } else
+
+    {
+      explanation = "no Delivery/Reporting Location";
+    } // end if locationString present
+
+    // try to get a location from the message itself
+    location = message.location;
+    if (location == null) {
+      location = LatLongPair.ZERO_ZERO;
+    }
+    return new Object[] { location, explanation };
   }
 
   private Ics213RRMessage getIcs213RRMessage(Map<MessageType, List<ExportedMessage>> map) {
