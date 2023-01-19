@@ -180,43 +180,45 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
     // build to/from lists
     for (var messageType : requiredMessageTypeSet) {
       var exportedMessages = mm.getMessagesForType(messageType);
-      for (var m : exportedMessages) {
+      if (exportedMessages != null) {
+        for (var m : exportedMessages) {
 
-        var from = m.from;
-        var to = m.to;
+          var from = m.from;
+          var to = m.to;
 
-        if (dumpIds.contains(from) || dumpIds.contains(to) || dumpIds.contains(m.messageId)) {
-          logger.info("dump: from " + from + ", to: " + to + ", mId: " + m.messageId);
-        }
+          if (dumpIds.contains(from) || dumpIds.contains(to) || dumpIds.contains(m.messageId)) {
+            logger.info("dump: from " + from + ", to: " + to + ", mId: " + m.messageId);
+          }
 
-        var field = fieldMap.get(from);
-        if (field == null) {
-          logger.debug("### unexpected message from: " + from + ", not in field map");
-          continue;
-        }
+          var field = fieldMap.get(from);
+          if (field == null) {
+            logger.debug("### unexpected message from: " + from + ", not in field map");
+            continue;
+          }
 
-        var target = targetMap.get(to);
-        if (target == null) {
-          logger.debug("### unexpected message to: " + to + ", not in target map");
-          continue;
-        }
+          var target = targetMap.get(to);
+          if (target == null) {
+            logger.debug("### unexpected message to: " + to + ", not in target map");
+            continue;
+          }
 
-        var toList = field.toList;
-        if (targetMap.containsKey(to)) {
-          toList.add(m);
-        } else {
-          logger.warn("### skipping message: " + m + " because to(" + to + ") not in targets");
-          notValidTargetCounter.increment(to);
-        }
+          var toList = field.toList;
+          if (targetMap.containsKey(to)) {
+            toList.add(m);
+          } else {
+            logger.warn("### skipping message: " + m + " because to(" + to + ") not in targets");
+            notValidTargetCounter.increment(to);
+          }
 
-        var fromList = target.fromList;
-        if (fieldMap.containsKey(from)) {
-          fromList.add(m);
-        } else {
-          logger.warn("### skipping message: " + m + " because from(" + from + ") not in fields");
-          notValidFieldCounter.increment(from);
-        }
-      } // end loop over messages in exportedMesssage list
+          var fromList = target.fromList;
+          if (fieldMap.containsKey(from)) {
+            fromList.add(m);
+          } else {
+            logger.warn("### skipping message: " + m + " because from(" + from + ") not in fields");
+            notValidFieldCounter.increment(from);
+          }
+        } // end loop over messages in exportedMesssage list
+      } // end if non-null list of exported messages
     } // end loop over messageTypes
 
     logger.info("messages skipped for unsupported Field station: " + notValidFieldCounter.getValueTotal());

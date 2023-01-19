@@ -45,10 +45,7 @@ import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 
 /**
- * Operation Ashfall (247 lines)
- *
- * @param m
- * @return
+ * Operation Ashfall
  */
 public class ETO_2022_05_14_RMS extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2022_05_14_RMS.class);

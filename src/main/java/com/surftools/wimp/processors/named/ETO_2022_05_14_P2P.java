@@ -45,7 +45,7 @@ import com.surftools.wimp.processors.std.AbstractBaseP2PProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 
 /**
- * processor for the P2P component of the 2022-02-24 exercise
+ * processor for the P2P component of the 2022-05-14 drill
  *
  * @author bobt
  *
