@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.surftools</groupId>
 	<artifactId>wimp</artifactId>
-	<version>1.1.0</version>
+	<version>2.0.0</version>
 
-	<name>WinlinkMessageMapper</name>
+	<name>Wimp-TLG</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>

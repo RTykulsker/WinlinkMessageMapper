@@ -110,4 +110,10 @@ public interface ICounter<K extends Comparable<K>> {
    */
   public Iterator<Entry<K, Integer>> getAscendingKeyIterator();
 
+  /**
+   * merge in all value from subCounter
+   *
+   * @param subCounter
+   */
+  public void merge(Counter subCounter);
 }

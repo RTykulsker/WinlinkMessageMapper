@@ -107,4 +107,18 @@ public class Counter implements ICounter {
   public int getValueTotal() {
     return map.values().stream().reduce(0, Integer::sum);
   }
+
+  @Override
+  public void merge(Counter subCounter) {
+    if (subCounter == null) {
+      return;
+    }
+
+    for (var entry : subCounter.map.entrySet()) {
+      var key = entry.getKey();
+      var value = entry.getValue();
+      increment(key, value);
+    }
+
+  }
 }
