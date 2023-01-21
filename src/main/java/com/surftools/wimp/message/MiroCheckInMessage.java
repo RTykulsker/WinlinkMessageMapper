@@ -47,9 +47,13 @@ public class MiroCheckInMessage extends ExportedMessage {
   public final String comments;
   public final String version;
 
+  public final String rfPower;
+  public final String rmsGateway;
+  public final String distanceMiles;
+
   public MiroCheckInMessage(ExportedMessage exportedMessage, LocalDateTime formDateTime, LatLongPair formLocation,
       String power, String band, String mode, String radio, String antenna, String portable, String comments,
-      String version) {
+      String version, String rfPower, String rmsGateway, String distanceMiles) {
     super(exportedMessage);
 
     this.formDateTime = formDateTime;
@@ -65,6 +69,10 @@ public class MiroCheckInMessage extends ExportedMessage {
     this.comments = comments;
     this.version = version;
 
+    this.rfPower = rfPower;
+    this.rmsGateway = rmsGateway;
+    this.distanceMiles = distanceMiles;
+
     if (formDateTime != null) {
       setSortDateTime(formDateTime);
     }
@@ -78,7 +86,7 @@ public class MiroCheckInMessage extends ExportedMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "Date", "Time", "Latitude", "Longitude", //
         "Power", "Band", "Mode", "Radio", "Antenna", "Portable", //
-        "Comments", "Version" };
+        "Comments", "Version", "RF Power", "RMS Gateway", "Distance(miles)" };
   }
 
   @Override
@@ -90,7 +98,7 @@ public class MiroCheckInMessage extends ExportedMessage {
 
     return new String[] { messageId, from, date, time, latitude, longitude, //
         power, band, mode, radio, antenna, portable, comments, //
-        version };
+        version, rfPower, rmsGateway, distanceMiles };
   }
 
   @Override

@@ -51,7 +51,7 @@ import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
 
 /**
- * compute documented diversity, based on {@link com.surftools.wimp.message.MiroCheckinMessage}
+ * compute documented resilience, based on {@link com.surftools.wimp.message.MiroCheckinMessage}
  *
  *
  * @author bobt
@@ -61,6 +61,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
   private static Logger logger = LoggerFactory.getLogger(MiroProcessor.class);
 
   private static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+  private static final boolean FLAG_INCLUDE_RMS_GATEWAY_IN_RESILIENCY = false;
+  private static final boolean FLAG_INCLUDE_RF_POWER_IN_RESILIENCY = false;
 
   public static class GradedMiroMessage implements IWritableTable {
     public String messageId;
@@ -73,11 +76,14 @@ public class MiroProcessor extends AbstractBaseProcessor {
     public String radio;
     public String antenna;
     public String isPortable;
+    public String rfPower;
+    public String rmsGateway;
+    public String distanceMiles;
     public String comments;
     public String version;
-    public String isDiverse;
+    public String isResilient;
     public String explanation;
-    public String diversityScore;
+    public String resiliencyScore;
 
     public GradedMiroMessage(MiroCheckInMessage m) {
       this.messageId = m.messageId;
@@ -91,8 +97,21 @@ public class MiroProcessor extends AbstractBaseProcessor {
       this.radio = radioMap.getOrDefault(m.radio, m.radio);
       this.antenna = antennaMap.getOrDefault(m.antenna, m.antenna);
       this.isPortable = m.portable;
+      this.rfPower = rfPowerMap.getOrDefault(m.rfPower, m.rfPower);
+      this.rmsGateway = m.rmsGateway;
+      this.distanceMiles = m.distanceMiles;
       this.comments = m.comments;
       this.version = m.version;
+
+      if (mode.equalsIgnoreCase("Telnet")) {
+        final var na = "n/a";
+        band = na;
+        radio = na;
+        antenna = na;
+        rfPower = na;
+        rmsGateway = na;
+        distanceMiles = na;
+      }
     }
 
     public GradedMiroMessage(String[] fields) {
@@ -113,14 +132,17 @@ public class MiroProcessor extends AbstractBaseProcessor {
       this.radio = fields[9];
       this.antenna = fields[10];
       this.isPortable = fields[11];
-      this.comments = fields[12];
-      this.version = fields[13];
-      this.isDiverse = fields[14];
-      this.explanation = fields[15];
-      this.diversityScore = fields[16];
+      this.rfPower = fields[12];
+      this.rmsGateway = fields[13];
+      this.distanceMiles = fields[14];
+      this.comments = fields[15];
+      this.version = fields[16];
+      this.isResilient = fields[17];
+      this.explanation = fields[18];
+      this.resiliencyScore = fields[19];
     }
 
-    public boolean isDiverseFrom(GradedMiroMessage other) {
+    public boolean isResilientFrom(GradedMiroMessage other) {
       int cmp = power.compareTo(other.power);
       if (cmp == 0) {
         cmp = band.compareTo(other.band);
@@ -138,6 +160,18 @@ public class MiroProcessor extends AbstractBaseProcessor {
         cmp = isPortable.compareTo(other.isPortable);
       }
 
+      if (cmp == 0) {
+        if (FLAG_INCLUDE_RF_POWER_IN_RESILIENCY) {
+          cmp = rfPower.compareTo(other.rfPower);
+        }
+      }
+
+      if (cmp == 0) {
+        if (FLAG_INCLUDE_RMS_GATEWAY_IN_RESILIENCY) {
+          cmp = rmsGateway.compareTo(other.rmsGateway);
+        }
+      }
+
       return (cmp != 0);
     }
 
@@ -146,8 +180,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
       return new String[] { //
           "MessageId", "From", "Date", "Time", "Latitude", "Longitude", //
           "Power", "Band", "Mode", "Radio", "Antenna", "Portable", //
+          "RF Power", "RMS Gateway", "Distance (miles)", //
           "Comments", "Version", //
-          "IsDiverse?", "Explanation", "Diversity Score" };
+          "IsResilient?", "Explanation", "Resiliency Score" };
     }
 
     @Override
@@ -158,8 +193,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
       var lon = location == null ? "" : location.getLongitude();
       return new String[] { messageId, from, date, time, lat, lon, //
           power, band, mode, radio, antenna, isPortable, //
+          rfPower, rmsGateway, distanceMiles, //
           comments, version, //
-          isDiverse, explanation, diversityScore };
+          isResilient, explanation, resiliencyScore };
     }
 
     @Override
@@ -180,7 +216,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
       radioMap = Map.of("B", "Base", "H", "Handheld", "M", "Mobile");
       antennaMap = Map
           .of("B", "Beam", "D", "Dipole", "E", "Endfed", "H", "Handheld", "N", "NVIS", "O", "Other", "V", "Vertical");
-
+      rfPowerMap = Map
+          .of("P0", "n/a", "P1", "very low (0-5 W)", "P2", "low (5-30 W)", "P3", "medium (30-50 W)", "high",
+              "(50-100 W)", "P4", "(100W to legal limit)");
     }
 
     private static final Map<String, String> powerMap;
@@ -188,7 +226,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
     private static final Map<String, String> modeMap;
     private static final Map<String, String> radioMap;
     private static final Map<String, String> antennaMap;
-
+    private static final Map<String, String> rfPowerMap;
   }
 
   private Map<String, List<GradedMiroMessage>> oldMessages;
@@ -206,9 +244,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
     var results = new ArrayList<IWritableTable>();
     var scoreCounter = new Counter();
     var ppCount = 0;
-    var ppDiverseCount = 0;
+    var ppResilienceCount = 0;
 
-    var allGradedMessages = new ArrayList<GradedMiroMessage>();
+    var allGradedMessages = new ArrayList<IWritableTable>();
     var messages = mm.getMessagesForType(MessageType.MIRO_CHECK_IN);
     if (messages != null) {
       for (var message : messages) {
@@ -220,29 +258,29 @@ public class MiroProcessor extends AbstractBaseProcessor {
         var from = message.from;
         var list = oldMessages.getOrDefault(from, new ArrayList<GradedMiroMessage>());
         var oldExerciseCount = list.size();
-        long oldDiverseCount = list.stream().filter(msg -> msg.isDiverse.equals("Yes")).count();
+        long oldDiverseCount = list.stream().filter(msg -> msg.isResilient.equals("Yes")).count();
 
         var explanations = new ArrayList<String>();
         for (var old : list) {
-          if (!newGradedMessage.isDiverseFrom(old)) {
+          if (!newGradedMessage.isResilientFrom(old)) {
             explanations.add(old.messageId);
           }
         }
 
-        var isDiverse = "Yes";
+        var isResilient = "Yes";
         var explanation = "";
         if (explanations.size() != 0) {
           explanation = "same path as messageId(s): " + String.join(",", explanations);
-          isDiverse = "No";
+          isResilient = "No";
         }
 
         var newExerciseCount = 1 + oldExerciseCount;
-        var newDiverseCount = (isDiverse.equals("Yes") ? 1 : 0) + oldDiverseCount;
-        var diversityScore = Math.round(100d * (newDiverseCount) / newExerciseCount);
+        var newResilientCount = (isResilient.equals("Yes") ? 1 : 0) + oldDiverseCount;
+        var resiliencyScore = Math.round(100d * (newResilientCount) / newExerciseCount);
 
-        newGradedMessage.isDiverse = isDiverse;
+        newGradedMessage.isResilient = isResilient;
         newGradedMessage.explanation = explanation;
-        newGradedMessage.diversityScore = String.valueOf(diversityScore);
+        newGradedMessage.resiliencyScore = String.valueOf(resiliencyScore);
         list.add(newGradedMessage);
         Collections.sort(list);
         oldMessages.put(from, list);
@@ -253,9 +291,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
 
     var sb = new StringBuilder();
     sb.append("\nMiro Check In messages: " + ppCount + "\n");
-    sb.append(formatPP("Messages with diverse channel", ppDiverseCount, ppCount));
+    sb.append(formatPP("Messages with resilient channel", ppResilienceCount, ppCount));
 
-    sb.append("\nDiversity: \n" + formatCounter(scoreCounter.getDescendingKeyIterator(), "diversity", "count"));
+    sb.append("\nResiliency: \n" + formatCounter(scoreCounter.getDescendingKeyIterator(), "resiliency", "count"));
     writeTable("exercise-miro_check_in.csv", results);
 
     Collections.sort(allGradedMessages);

@@ -71,11 +71,20 @@ public class MiroCheckInParser extends AbstractBaseParser {
         var comments = fields[12];
         var version = fields[13];
 
+        var rfPower = "";
+        var rmsGateway = "";
+        var distanceMiles = "";
+        if (fields.length >= 17) {
+          rfPower = fields[14];
+          rmsGateway = fields[15];
+          distanceMiles = fields[16];
+        }
+
         var formDateTime = LocalDateTime.parse(formDate + " " + formTime, DT_FORMATTER);
         var formLocation = new LatLongPair(formLatitude, formLongitude);
 
         var m = new MiroCheckInMessage(message, formDateTime, formLocation, //
-            power, band, mode, radio, antenna, portable, comments, version);
+            power, band, mode, radio, antenna, portable, comments, version, rfPower, rmsGateway, distanceMiles);
 
         return m;
       } else {
