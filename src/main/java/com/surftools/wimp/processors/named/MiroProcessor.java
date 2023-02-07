@@ -246,7 +246,6 @@ public class MiroProcessor extends AbstractBaseProcessor {
     var ppCount = 0;
     var ppResilienceCount = 0;
 
-    var allGradedMessages = new ArrayList<IWritableTable>();
     var messages = mm.getMessagesForType(MessageType.MIRO_CHECK_IN);
     if (messages != null) {
       for (var message : messages) {
@@ -285,7 +284,6 @@ public class MiroProcessor extends AbstractBaseProcessor {
         Collections.sort(list);
         oldMessages.put(from, list);
         results.add(newGradedMessage);
-        allGradedMessages.addAll(list);
       }
     }
 
@@ -296,6 +294,10 @@ public class MiroProcessor extends AbstractBaseProcessor {
     sb.append("\nResiliency: \n" + formatCounter(scoreCounter.getDescendingKeyIterator(), "resiliency", "count"));
     writeTable("exercise-miro_check_in.csv", results);
 
+    var allGradedMessages = new ArrayList<IWritableTable>();
+    for (var list : oldMessages.values()) {
+      allGradedMessages.addAll(list);
+    }
     Collections.sort(allGradedMessages);
     var writables = new ArrayList<IWritableTable>();
     writables.addAll(allGradedMessages);
