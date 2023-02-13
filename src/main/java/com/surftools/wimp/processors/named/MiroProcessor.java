@@ -62,6 +62,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
 
   private static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+  private static final boolean FLAG_INCLUDE_ANTENNA_IN_RESILIENCY = false;
   private static final boolean FLAG_INCLUDE_RMS_GATEWAY_IN_RESILIENCY = false;
   private static final boolean FLAG_INCLUDE_RF_POWER_IN_RESILIENCY = false;
 
@@ -83,7 +84,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
     public String version;
     public String isResilient;
     public String explanation;
-    public String resiliencyScore;
+    public int resiliencyCount;
+    public int exerciseCount;
+    public int resiliencyPercent;
 
     public GradedMiroMessage(MiroCheckInMessage m) {
       this.messageId = m.messageId;
@@ -130,8 +133,8 @@ public class MiroProcessor extends AbstractBaseProcessor {
       this.band = fields[7];
       this.mode = fields[8];
       this.radio = fields[9];
-      this.antenna = fields[10];
-      this.isPortable = fields[11];
+      this.isPortable = fields[10];
+      this.antenna = fields[11];
       this.rfPower = fields[12];
       this.rmsGateway = fields[13];
       this.distanceMiles = fields[14];
@@ -139,23 +142,32 @@ public class MiroProcessor extends AbstractBaseProcessor {
       this.version = fields[16];
       this.isResilient = fields[17];
       this.explanation = fields[18];
-      this.resiliencyScore = fields[19];
+      this.resiliencyCount = Integer.valueOf(fields[19]);
+      this.exerciseCount = Integer.valueOf(fields[20]);
+      this.resiliencyPercent = Integer.valueOf(fields[21]);
     }
 
     public boolean isResilientFrom(GradedMiroMessage other) {
       int cmp = power.compareTo(other.power);
+
       if (cmp == 0) {
         cmp = band.compareTo(other.band);
       }
+
       if (cmp == 0) {
         cmp = mode.compareTo(other.mode);
       }
+
       if (cmp == 0) {
         cmp = radio.compareTo(other.radio);
       }
+
       if (cmp == 0) {
-        cmp = antenna.compareTo(other.antenna);
+        if (FLAG_INCLUDE_ANTENNA_IN_RESILIENCY) {
+          cmp = antenna.compareTo(other.antenna);
+        }
       }
+
       if (cmp == 0) {
         cmp = isPortable.compareTo(other.isPortable);
       }
@@ -179,10 +191,10 @@ public class MiroProcessor extends AbstractBaseProcessor {
     public String[] getHeaders() {
       return new String[] { //
           "MessageId", "From", "Date", "Time", "Latitude", "Longitude", //
-          "Power", "Band", "Mode", "Radio", "Antenna", "Portable", //
-          "RF Power", "RMS Gateway", "Distance (miles)", //
+          "POWER", "BAND", "MODE", "RADIO", "PORTABLE", //
+          "Antenna", "RF Power", "RMS Gateway", "Distance (miles)", //
           "Comments", "Version", //
-          "IsResilient?", "Explanation", "Resiliency Score" };
+          "IsResilient?", "Explanation", "Exercise Count", "Resiliency Score", "Resiliency Percent" };
     }
 
     @Override
@@ -192,10 +204,11 @@ public class MiroProcessor extends AbstractBaseProcessor {
       var lat = location == null ? "" : location.getLatitude();
       var lon = location == null ? "" : location.getLongitude();
       return new String[] { messageId, from, date, time, lat, lon, //
-          power, band, mode, radio, antenna, isPortable, //
-          rfPower, rmsGateway, distanceMiles, //
+          power, band, mode, radio, isPortable, //
+          antenna, rfPower, rmsGateway, distanceMiles, //
           comments, version, //
-          isResilient, explanation, resiliencyScore };
+          isResilient, explanation, String.valueOf(resiliencyCount), String.valueOf(exerciseCount),
+          String.valueOf(resiliencyPercent) };
     }
 
     @Override
@@ -257,7 +270,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
         var from = message.from;
         var list = oldMessages.getOrDefault(from, new ArrayList<GradedMiroMessage>());
         var oldExerciseCount = list.size();
-        long oldDiverseCount = list.stream().filter(msg -> msg.isResilient.equals("Yes")).count();
+        long oldResilienceCount = list.stream().filter(msg -> msg.isResilient.equals("Yes")).count();
 
         var explanations = new ArrayList<String>();
         for (var old : list) {
@@ -274,12 +287,14 @@ public class MiroProcessor extends AbstractBaseProcessor {
         }
 
         var newExerciseCount = 1 + oldExerciseCount;
-        var newResilientCount = (isResilient.equals("Yes") ? 1 : 0) + oldDiverseCount;
-        var resiliencyScore = Math.round(100d * (newResilientCount) / newExerciseCount);
+        var newResilientCount = (int) ((isResilient.equals("Yes") ? 1 : 0) + oldResilienceCount);
+        var resiliencyPercent = (int) Math.round(100d * (newResilientCount) / newExerciseCount);
 
         newGradedMessage.isResilient = isResilient;
         newGradedMessage.explanation = explanation;
-        newGradedMessage.resiliencyScore = String.valueOf(resiliencyScore);
+        newGradedMessage.resiliencyCount = newResilientCount;
+        newGradedMessage.exerciseCount = newExerciseCount;
+        newGradedMessage.resiliencyPercent = resiliencyPercent;
         list.add(newGradedMessage);
         Collections.sort(list);
         oldMessages.put(from, list);
@@ -292,6 +307,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
     sb.append(formatPP("Messages with resilient channel", ppResilienceCount, ppCount));
 
     sb.append("\nResiliency: \n" + formatCounter(scoreCounter.getDescendingKeyIterator(), "resiliency", "count"));
+    Collections.sort(results);
     writeTable("exercise-miro_check_in.csv", results);
 
     var allGradedMessages = new ArrayList<IWritableTable>();
