@@ -240,6 +240,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
     private static final Map<String, String> radioMap;
     private static final Map<String, String> antennaMap;
     private static final Map<String, String> rfPowerMap;
+
   }
 
   private Map<String, List<GradedMiroMessage>> oldMessages;

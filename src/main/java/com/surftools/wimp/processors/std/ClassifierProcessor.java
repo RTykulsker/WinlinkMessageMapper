@@ -155,7 +155,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     } else if (subject.startsWith("ETO Winlink Thursday Check-In")
         || subject.startsWith("Re: ETO Winlink Thursday Check-In")) {
       return MessageType.ETO_CHECK_IN_V2;
-    } else if (subject.equals("MIRO Check In")) {
+    } else if (subject.equals("MIRO Check In") || subject.startsWith("MIRO Winlink Check In")) {
       return MessageType.MIRO_CHECK_IN;
     } else if (subject.equals("Position Report")) {
       return MessageType.POSITION;
