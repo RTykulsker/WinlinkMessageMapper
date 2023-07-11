@@ -54,6 +54,7 @@ import com.surftools.wimp.parser.MiroCheckInParser;
 import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
 import com.surftools.wimp.parser.SpotRepParser;
+import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
 import com.surftools.wimp.parser.WxLocalParser;
 import com.surftools.wimp.parser.WxSevereParser;
@@ -140,6 +141,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.ICS_213_REPLY;
       } else if (attachmentNames.contains(MessageType.ICS_213_RR.attachmentName())) {
         return MessageType.ICS_213_RR;
+      } else if (attachmentNames.contains(MessageType.DAMAGE_ASSESSMENT.attachmentName())) {
+        return MessageType.DAMAGE_ASSESSMENT;
       }
     }
     /**
@@ -197,6 +200,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInParser());
     parserMap.put(MessageType.ETO_CHECK_IN_V2, new EtoCheckInV2Parser());
     parserMap.put(MessageType.MIRO_CHECK_IN, new MiroCheckInParser());
+
+    parserMap.put(MessageType.DAMAGE_ASSESSMENT, new WindshieldDamageParser());
 
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);

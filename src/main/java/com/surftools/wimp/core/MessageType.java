@@ -63,6 +63,8 @@ public enum MessageType {
   ETO_CHECK_IN_V2("eto_check_in_v2"), //
   MIRO_CHECK_IN("miro_check_in"), //
 
+  DAMAGE_ASSESSMENT("windshield_damage_assessment", "RMS_Express_Form_Damage_Assessment_Viewer.xml"), //
+
   ;
 
   /**
