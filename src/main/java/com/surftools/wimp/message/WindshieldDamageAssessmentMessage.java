@@ -144,4 +144,21 @@ public class WindshieldDamageAssessmentMessage extends ExportedMessage {
   public String getMultiMessageComment() {
     return comments;
   };
+
+  public record DamageEntry(String description, String affected, String minor, String major, String destroyed,
+      String total, String lossString, String lossAmount) {
+
+    private static String[] names = { "n/a", "Houses", "Apt Complexes", "Mobile Homes", //
+        "Residential High Rise", "Commercial High Rise", "Public Blgs", "Small Businesses", //
+        "Factories/Industrial Complexes", "Roads", "Bridges", "Electrical Distribution", //
+        "Schools"//
+    };
+
+    public static String getName(int index) {
+      if (index < 0 || index >= names.length) {
+        throw new IllegalArgumentException("index: " + index + " out of range");
+      }
+      return names[index];
+    }
+  }
 }

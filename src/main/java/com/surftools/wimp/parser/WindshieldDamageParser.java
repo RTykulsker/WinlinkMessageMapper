@@ -35,9 +35,9 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
-import com.surftools.wimp.message.DamageEntry;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.WindshieldDamageAssessmentMessage;
+import com.surftools.wimp.message.WindshieldDamageAssessmentMessage.DamageEntry;
 
 /**
  * parser for ETO's favorite message type
