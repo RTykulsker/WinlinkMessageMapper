@@ -47,12 +47,14 @@ import com.surftools.wimp.parser.EtoCheckInParser;
 import com.surftools.wimp.parser.EtoCheckInV2Parser;
 import com.surftools.wimp.parser.FieldSituationParser;
 import com.surftools.wimp.parser.HospitalBedParser;
+import com.surftools.wimp.parser.Ics205Parser;
 import com.surftools.wimp.parser.Ics213Parser;
 import com.surftools.wimp.parser.Ics213RRParser;
 import com.surftools.wimp.parser.Ics213ReplyParser;
 import com.surftools.wimp.parser.MiroCheckInParser;
 import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
+import com.surftools.wimp.parser.QuickParser;
 import com.surftools.wimp.parser.SpotRepParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
@@ -143,6 +145,10 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.ICS_213_RR;
       } else if (attachmentNames.contains(MessageType.DAMAGE_ASSESSMENT.attachmentName())) {
         return MessageType.DAMAGE_ASSESSMENT;
+      } else if (attachmentNames.contains(MessageType.QUICK.attachmentName())) {
+        return MessageType.QUICK;
+      } else if (attachmentNames.contains(MessageType.ICS_205_RADIO_PLAN.attachmentName())) {
+        return MessageType.ICS_205_RADIO_PLAN;
       }
     }
     /**
@@ -202,7 +208,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.MIRO_CHECK_IN, new MiroCheckInParser());
 
     parserMap.put(MessageType.DAMAGE_ASSESSMENT, new WindshieldDamageParser());
-
+    parserMap.put(MessageType.QUICK, new QuickParser());
+    parserMap.put(MessageType.ICS_205_RADIO_PLAN, new Ics205Parser());
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
     }

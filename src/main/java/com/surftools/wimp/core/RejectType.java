@@ -47,7 +47,7 @@ public enum RejectType {
   SAME_CALL(9, "same call, earlier time"), //
   UNSUPPORTED_TYPE(10, "unsupported type"), //
   CANT_PARSE_ETO_JSON(11, "can't parse ETO json"), //
-  ;
+  CANT_PARSE_DATE_TIME(12, "can't parse date/time");
 
   /**
    * id serves NO purpose other than to discourage re-ordering of values

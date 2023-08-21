@@ -33,8 +33,13 @@ public enum FFType {
   OPTIONAL, // field may or may not (null/empty) be presnet
   OPTIONAL_NOT, // field may or may not be present, but if present, must NOT be value held by placeholder value
   CONTAINS, // field must be present and contain the placeholder value
+  CONTAINED_BY, // field must be present and within the placeholder value
   DATE_TIME, // field must be parsable as a LocalDateTime
   DATE_TIME_NOT, // field must be parsable as a LocalDateTime, but NOT value held by placeholder value
   EMPTY, // field must be null or empty
-  SPECIFIED // field my be exactly as specified by placeholder value
+  SPECIFIED, // field must be exactly as specified by placeholder value (case-independent)
+  EQUALS, // same as specified
+  EQUALS_IGNORE_CASE, // field must case-independently equal to placeholder value
+  LIST, // field must be present in list
+  DOUBLE // field must be present, and parsable as a double
 }

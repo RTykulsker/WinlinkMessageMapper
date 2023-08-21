@@ -40,7 +40,7 @@ import com.surftools.wimp.message.WindshieldDamageAssessmentMessage;
 import com.surftools.wimp.message.WindshieldDamageAssessmentMessage.DamageEntry;
 
 /**
- * parser for ETO's favorite message type
+ * parser for Windshield Damage
  *
  * @author bobt
  *

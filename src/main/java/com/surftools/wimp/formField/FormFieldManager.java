@@ -113,6 +113,7 @@ public class FormFieldManager {
     var counter = field.counter;
 
     counter.incrementNullSafe(value);
+    value = value == null ? null : value.strip();
 
     switch (field.type) {
     case DATE_TIME:
@@ -196,6 +197,15 @@ public class FormFieldManager {
       }
       break;
 
+    case CONTAINED_BY:
+      if (value == null) {
+        explanation = label + " not in " + placeholderValue;
+      } else if (!placeholderValue.toLowerCase().contains(value.toLowerCase())) {
+        explanation = label + "(" + value + ") not in " + placeholderValue;
+      } else {
+        isOk = true;
+      }
+      break;
     case SPECIFIED:
       if (value == null) {
         explanation = label + " must be " + placeholderValue;
@@ -203,6 +213,56 @@ public class FormFieldManager {
         explanation = label + "(" + value + ") must be " + placeholderValue;
       } else {
         isOk = true;
+      }
+      break;
+
+    case EQUALS:
+      if (value == null) {
+        explanation = label + " must be " + placeholderValue;
+      } else if (!value.equals(placeholderValue)) {
+        explanation = label + "(" + value + ") must be " + placeholderValue;
+      } else {
+        isOk = true;
+      }
+      break;
+
+    case EQUALS_IGNORE_CASE:
+      if (value == null) {
+        explanation = label + " must be " + placeholderValue;
+      } else if (!value.equalsIgnoreCase(placeholderValue)) {
+        explanation = label + "(" + value + ") must be " + placeholderValue;
+      } else {
+        isOk = true;
+      }
+      break;
+
+    case LIST:
+      if (value == null) {
+        explanation = label + " must be in list " + placeholderValue;
+      } else {
+        if (!field.set.contains(value)) {
+          explanation = label + "(" + value + ") must contain one of " + placeholderValue;
+        } else {
+          isOk = true;
+        }
+      }
+      break;
+
+    case DOUBLE:
+      if (value == null) {
+        explanation = label + " must be " + placeholderValue;
+      } else {
+        try {
+          Double doubleValue = Double.parseDouble(value);
+          Double placeholderDoubleValue = Double.parseDouble(placeholderValue);
+          if (Double.compare(doubleValue, placeholderDoubleValue) != 0) {
+            explanation = label + "(" + value + ") must be " + placeholderValue;
+          } else {
+            isOk = true;
+          }
+        } catch (Exception e) {
+          explanation = label + "(" + value + ") must be " + placeholderValue;
+        }
       }
       break;
 

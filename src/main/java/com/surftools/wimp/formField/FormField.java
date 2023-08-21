@@ -27,6 +27,10 @@ SOFTWARE.
 
 package com.surftools.wimp.formField;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.surftools.utils.counter.Counter;
 
 public class FormField {
@@ -38,6 +42,7 @@ public class FormField {
   public final int points;
   public int count;
   public Counter counter;
+  public final Set<String> set;
 
   public FormField(FFType type, String label, String placeholderValue, int points) {
     this.type = type;
@@ -45,6 +50,13 @@ public class FormField {
     this.placeholderValue = placeholderValue;
     this.points = points;
     this.counter = new Counter();
+
+    if (placeholderValue == null) {
+      set = new HashSet<String>();
+    } else {
+      var array = placeholderValue.split(",");
+      set = new HashSet<String>(Arrays.asList(array));
+    }
   }
 
 };
