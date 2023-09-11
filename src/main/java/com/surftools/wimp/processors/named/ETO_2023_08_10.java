@@ -127,59 +127,61 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
     ffm.add("function-1", new FormField(FFType.SPECIFIED, "line 1-Function", "Interoperability", 0));
     ffm.add("channelName-1", new FormField(FFType.SPECIFIED, "line 1-Channel Name", "VTAC13", 0));
     ffm.add("assignment-1", new FormField(FFType.SPECIFIED, "line 1" + "-Assignment", "Talk-in / Tactical", 0));
-    ffm.add("rxFreq-1", new FormField(FFType.DOUBLE, "line 1" + "-RxFreq", "158.7375", 0));
-    ffm.add("rwNW-1", new FormField(FFType.SPECIFIED, "line 1" + "-RxNW", "N", 0));
-    ffm.add("rxTone-1", new FormField(FFType.SPECIFIED, "line 1" + "-RxTone", "156.7", 0));
-    ffm.add("txFreq-1", new FormField(FFType.DOUBLE, "line 1" + "-TxFreq", "158.7375", 0));
-    ffm.add("txNW-1", new FormField(FFType.SPECIFIED, "line 1" + "-TxNW", "N", 0));
-    ffm.add("txTone-1", new FormField(FFType.SPECIFIED, "line 1" + "-TxTone", "156.7", 0));
-    ffm.add("mode-1", new FormField(FFType.SPECIFIED, "line 1" + "-Mode", "A", 0));
+    ffm.add("rxFreq-1", new FormField(FFType.DOUBLE, "line 1" + "-RxFreq", "158.7375", 0, 2));
+    ffm.add("rwNW-1", new FormField(FFType.SPECIFIED, "line 1" + "-RxNW", "N", 0, 2));
+    ffm.add("rxTone-1", new FormField(FFType.SPECIFIED, "line 1" + "-RxTone", "156.7", 0, 2));
+    ffm.add("txFreq-1", new FormField(FFType.DOUBLE, "line 1" + "-TxFreq", "158.7375", 0, 2));
+    ffm.add("txNW-1", new FormField(FFType.SPECIFIED, "line 1" + "-TxNW", "N", 0, 2));
+    ffm.add("txTone-1", new FormField(FFType.SPECIFIED, "line 1" + "-TxTone", "156.7", 0, 2));
+    ffm.add("mode-1", new FormField(FFType.SPECIFIED, "line 1" + "-Mode", "A", 0, 2));
     ffm.add("remarks-1", new FormField(FFType.SPECIFIED, "line 1" + "-remarks", "See Note 1", 0));
 
     ffm.add("function-2", new FormField(FFType.SPECIFIED, "line 2-Function", "Interoperability", 0));
     ffm.add("channelName-2", new FormField(FFType.SPECIFIED, "line 2-Channel Name", "VTAC36", 0));
     ffm.add("assignment-2", new FormField(FFType.SPECIFIED, "line 2" + "-Assignment", "Talk-in / Tactical", 0));
-    ffm.add("rxFreq-2", new FormField(FFType.DOUBLE, "line 2" + "-RxFreq", "151.1375", 0));
-    ffm.add("rwNW-2", new FormField(FFType.SPECIFIED, "line 2" + "-RxNW", "N", 0));
-    ffm.add("rxTone-2", new FormField(FFType.SPECIFIED, "line 2" + "-RxTone", "156.7", 0));
-    ffm.add("txFreq-2", new FormField(FFType.DOUBLE, "line 2" + "-TxFreq", "159.4725", 0));
-    ffm.add("txNW-2", new FormField(FFType.SPECIFIED, "line 2" + "-TxNW", "N", 0));
-    ffm.add("txTone-2", new FormField(FFType.SPECIFIED, "line 2" + "-TxTone", "136.5", 0));
-    ffm.add("mode-2", new FormField(FFType.SPECIFIED, "line 2" + "-Mode", "A", 0));
+    ffm.add("rxFreq-2", new FormField(FFType.DOUBLE, "line 2" + "-RxFreq", "151.1375", 0, 2));
+    ffm.add("rwNW-2", new FormField(FFType.SPECIFIED, "line 2" + "-RxNW", "N", 0, 2));
+    ffm.add("rxTone-2", new FormField(FFType.SPECIFIED, "line 2" + "-RxTone", "156.7", 0, 2));
+    ffm.add("txFreq-2", new FormField(FFType.DOUBLE, "line 2" + "-TxFreq", "159.4725", 0, 2));
+    ffm.add("txNW-2", new FormField(FFType.SPECIFIED, "line 2" + "-TxNW", "N", 0, 2));
+    ffm.add("txTone-2", new FormField(FFType.SPECIFIED, "line 2" + "-TxTone", "136.5", 0, 2));
+    ffm.add("mode-2", new FormField(FFType.SPECIFIED, "line 2" + "-Mode", "A", 0, 2));
     ffm.add("remarks-2", new FormField(FFType.SPECIFIED, "line 2" + "-remarks", "See Note 1", 0));
 
     ffm.add("function-3", new FormField(FFType.SPECIFIED, "line 3-Function", "Amateur Service", 0));
     ffm.add("channelName-3", new FormField(FFType.SPECIFIED, "line 3-Channel Name", "K0DCA VHF", 0));
     ffm.add("assignment-3", new FormField(FFType.SPECIFIED, "line 3" + "-Assignment", "EOC/911 Interop", 0));
-    ffm.add("rxFreq-3", new FormField(FFType.DOUBLE, "line 3" + "-RxFreq", "145.1500", 0));
-    ffm.add("rwNW-3", new FormField(FFType.SPECIFIED, "line 3" + "-RxNW", "W", 0));
+    ffm.add("rxFreq-3", new FormField(FFType.DOUBLE, "line 3" + "-RxFreq", "145.1500", 0, 2));
+    ffm.add("rwNW-3", new FormField(FFType.SPECIFIED, "line 3" + "-RxNW", "W", 0, 2));
     ffm.add("rxTone-3", new FormField(FFType.EMPTY, "line 3" + "-RxTone", null, 0));
-    ffm.add("txFreq-3", new FormField(FFType.DOUBLE, "line 3" + "-TxFreq", "144.5500", 0));
-    ffm.add("txNW-3", new FormField(FFType.SPECIFIED, "line 3" + "-TxNW", "W", 0));
+    ffm.add("txFreq-3", new FormField(FFType.DOUBLE, "line 3" + "-TxFreq", "144.5500", 0, 2));
+    ffm.add("txNW-3", new FormField(FFType.SPECIFIED, "line 3" + "-TxNW", "W", 0, 2));
     ffm.add("txTone-3", new FormField(FFType.SPECIFIED, "line 3" + "-TxTone", "162.2", 0));
-    ffm.add("mode-3", new FormField(FFType.SPECIFIED, "line 3" + "-Mode", "A", 0));
+    ffm.add("mode-3", new FormField(FFType.SPECIFIED, "line 3" + "-Mode", "A", 0, 2));
     ffm.add("remarks-3", new FormField(FFType.EMPTY, "line 3" + "-remarks", null, 0));
 
     ffm.add("function-4", new FormField(FFType.SPECIFIED, "line 4-Function", "Amateur Service", 0));
     ffm.add("channelName-4", new FormField(FFType.SPECIFIED, "line 4-Channel Name", "K0DCA UHF", 0));
     ffm.add("assignment-4", new FormField(FFType.SPECIFIED, "line 4" + "-Assignment", "EOC/911 Interop", 0));
-    ffm.add("rxFreq-4", new FormField(FFType.DOUBLE, "line 4" + "-RxFreq", "443.9250", 0));
-    ffm.add("rwNW-4", new FormField(FFType.SPECIFIED, "line 4" + "-RxNW", "W", 0));
+    ffm.add("rxFreq-4", new FormField(FFType.DOUBLE, "line 4" + "-RxFreq", "443.9250", 0, 2));
+    ffm.add("rwNW-4", new FormField(FFType.SPECIFIED, "line 4" + "-RxNW", "W", 0, 2));
     ffm.add("rxTone-4", new FormField(FFType.EMPTY, "line 4" + "-RxTone", null, 0));
-    ffm.add("txFreq-4", new FormField(FFType.DOUBLE, "line 4" + "-TxFreq", "448.9250", 0));
-    ffm.add("txNW-4", new FormField(FFType.SPECIFIED, "line 4" + "-TxNW", "W", 0));
+    ffm.add("txFreq-4", new FormField(FFType.DOUBLE, "line 4" + "-TxFreq", "448.9250", 0, 2));
+    ffm.add("txNW-4", new FormField(FFType.SPECIFIED, "line 4" + "-TxNW", "W", 0, 2));
     ffm.add("txTone-4", new FormField(FFType.SPECIFIED, "line 4" + "-TxTone", "162.2", 0));
-    ffm.add("mode-4", new FormField(FFType.SPECIFIED, "line 4" + "-Mode", "A", 0));
+    ffm.add("mode-4", new FormField(FFType.SPECIFIED, "line 4" + "-Mode", "A", 0, 2));
     ffm.add("remarks-4", new FormField(FFType.EMPTY, "line 4" + "-remarks", null, 0));
 
     ffm.add("function-5", new FormField(FFType.SPECIFIED, "line 5-Function", "NWS Weather Info", 0));
     ffm.add("channelName-5", new FormField(FFType.LIST, "line 5-Channel Name", "KZZ43,WXJ61,WXL46", 0));
     ffm.add("assignment-5", new FormField(FFType.SPECIFIED, "line 5" + "-Assignment", "All units / agencies", 0));
-    ffm.add("rxFreq-5", new FormField(FFType.CONTAINED_BY, "line 5" + "-RxFreq", "162.55000,162.42500,162.40000", 0));
-    ffm.add("rwNW-5", new FormField(FFType.SPECIFIED, "line 5" + "-RxNW", "W", 0));
+    ffm
+        .add("rxFreq-5",
+            new FormField(FFType.CONTAINED_BY, "line 5" + "-RxFreq", "162.55000,162.42500,162.40000", 0, 2));
+    ffm.add("rwNW-5", new FormField(FFType.SPECIFIED, "line 5" + "-RxNW", "W", 0, 2));
     ffm.add("rxTone-5", new FormField(FFType.EMPTY, "line 5" + "-RxTone", null, 0));
-    ffm.add("txFreq-5", new FormField(FFType.EMPTY, "line 5" + "-TxFreq", null, 0));
-    ffm.add("txNW-5", new FormField(FFType.EMPTY, "line 5" + "-TxNW", null, 0));
+    ffm.add("txFreq-5", new FormField(FFType.EMPTY, "line 5" + "-TxFreq", null, 0, 2));
+    ffm.add("txNW-5", new FormField(FFType.EMPTY, "line 5" + "-TxNW", null, 0, 2));
     ffm.add("txTone-5", new FormField(FFType.EMPTY, "line 5" + "-TxTone", null, 0));
     ffm.add("mode-5", new FormField(FFType.EMPTY, "line 5" + "-Mode", null, 0));
     ffm.add("remarks-5", new FormField(FFType.SPECIFIED, "line 5" + "-remarks", "Springfield NOAA Weather Radio", 0));
@@ -275,6 +277,7 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
       ffm.test("to", message.to);
       ffm.test("org", message.organization);
       ffm.test("incidentName", message.incidentName);
+
       ffm.test("opDateFrom", message.dateFrom);
       ffm.test("opDateTo", message.dateTo);
 
@@ -504,6 +507,7 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
     return formatPP("  " + label, value, N);
   }
 
+  @SuppressWarnings("unused")
   private String formatCounter(FormFieldManager ffm, String key) {
     var field = ffm.get(key);
     return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");

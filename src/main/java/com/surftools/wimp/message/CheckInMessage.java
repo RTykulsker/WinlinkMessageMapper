@@ -48,16 +48,18 @@ public class CheckInMessage extends ExportedMessage {
   public final String mode;
   public final String comments;
   public final String version;
+  public final String service;
 
   public CheckInMessage(ExportedMessage exportedMessage, String organization, //
       LatLongPair formLocation, LocalDateTime formDateTime, //
-      String status, String band, String mode, String comments, String version) {
+      String status, String service, String band, String mode, String comments, String version) {
     super(exportedMessage);
     this.organization = organization;
     this.formLocation = formLocation;
     this.formDateTime = formDateTime;
 
     this.status = status;
+    this.service = service;
     this.band = band;
     this.mode = mode;
     this.comments = comments;
@@ -74,9 +76,7 @@ public class CheckInMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
-        "Latitude", "Longitude", "Organization", //
-        "Status", "Band", "Mode", "Comments", "Version" };
+    return getStaticHeaders();
   }
 
   @Override
@@ -88,7 +88,7 @@ public class CheckInMessage extends ExportedMessage {
 
     return new String[] { messageId, from, to, subject, //
         date, time, latitude, longitude, organization, //
-        status, band, mode, comments, version };
+        status, service, band, mode, comments, version };
   }
 
   @Override
@@ -99,6 +99,12 @@ public class CheckInMessage extends ExportedMessage {
   @Override
   public String getMultiMessageComment() {
     return comments;
+  }
+
+  public static String[] getStaticHeaders() {
+    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
+        "Latitude", "Longitude", "Organization", //
+        "Status", "Service", "Band", "Mode", "Comments", "Version" };
   }
 
 }

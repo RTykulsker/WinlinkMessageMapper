@@ -46,10 +46,11 @@ public class FormFieldManager {
   private int points = 0;
 
   private static final Set<FFType> needsPlaceholderSet = Set
-      .of(FFType.DATE_TIME_NOT, FFType.OPTIONAL_NOT, FFType.REQUIRED_NOT, FFType.SPECIFIED, FFType.CONTAINS);
+      .of(FFType.DATE_TIME, FFType.DATE_TIME_NOT, FFType.OPTIONAL_NOT, FFType.REQUIRED_NOT, FFType.SPECIFIED,
+          FFType.CONTAINS, FFType.EQUALS, FFType.EQUALS_IGNORE_CASE, FFType.LIST, FFType.DOUBLE, FFType.ALPHANUMERIC,
+          FFType.IGNORE_WHITESPACE);
 
-  private static final Set<FFType> noPlaceholderSet = Set
-      .of(FFType.DATE_TIME, FFType.EMPTY, FFType.OPTIONAL, FFType.REQUIRED);
+  private static final Set<FFType> noPlaceholderSet = Set.of(FFType.EMPTY, FFType.OPTIONAL, FFType.REQUIRED);
 
   public void add(String key, FormField field) {
     // fail fast if placeholder provided when none should be and vice-versa
@@ -110,6 +111,7 @@ public class FormFieldManager {
     var explanation = "";
     var label = field.label;
     var placeholderValue = field.placeholderValue;
+    var data = field.data;
     var counter = field.counter;
 
     counter.incrementNullSafe(value);
@@ -121,7 +123,8 @@ public class FormFieldManager {
         explanation = label + " must be supplied";
       } else {
         try {
-          LocalDateTime.parse(value, FORMATTER);
+          var formatter = (DateTimeFormatter) data;
+          LocalDateTime.parse(value, formatter);
           isOk = true;
         } catch (Exception e) {
           explanation = label + "(" + value + ") is not a valid Date/Time";
@@ -136,7 +139,8 @@ public class FormFieldManager {
         explanation = label + "(" + value + ") must not be " + placeholderValue;
       } else {
         try {
-          LocalDateTime.parse(value, FORMATTER);
+          var formatter = (DateTimeFormatter) data;
+          LocalDateTime.parse(value, formatter);
           isOk = true;
         } catch (Exception e) {
           explanation = label + "(" + value + ") is not a valid Date/Time";
@@ -240,7 +244,9 @@ public class FormFieldManager {
       if (value == null) {
         explanation = label + " must be in list " + placeholderValue;
       } else {
-        if (!field.set.contains(value)) {
+        @SuppressWarnings("unchecked")
+        var set = (Set<String>) data;
+        if (!set.contains(value)) {
           explanation = label + "(" + value + ") must contain one of " + placeholderValue;
         } else {
           isOk = true;
@@ -266,6 +272,30 @@ public class FormFieldManager {
       }
       break;
 
+    case ALPHANUMERIC:
+      if (value == null) {
+        explanation = label + " must be " + placeholderValue;
+      } else {
+        if (!value.replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase((String) data)) {
+          explanation = label + "(" + value + ") must be " + placeholderValue;
+        } else {
+          isOk = true;
+        }
+      }
+      break;
+
+    case IGNORE_WHITESPACE:
+      if (value == null) {
+        explanation = label + " must be " + placeholderValue;
+      } else {
+        if (!value.replaceAll("\\s+", "").equalsIgnoreCase((String) data)) {
+          explanation = label + "(" + value + ") must be " + placeholderValue;
+        } else {
+          isOk = true;
+        }
+      }
+      break;
+
     default:
       throw new RuntimeException("unhandled type: " + field.type.toString());
     }
@@ -275,11 +305,19 @@ public class FormFieldManager {
       ++field.count;
       returnPoints = field.points;
     } else {
-      explanations.add(explanation);
+      explanations.add(importance(field) + explanation);
     }
 
     points += returnPoints;
     return returnPoints;
+  }
+
+  private String importance(FormField field) {
+    final var map = Map.of(0, "", 1, "!", 2, "!!", 3, "!!!");
+    var index = 0;
+    index = Math.min(map.size() - 1, field.importance);
+    var value = map.getOrDefault(index, "");
+    return (value.length() == 0) ? "" : value + " ";
   }
 
   public String formatCounters() {

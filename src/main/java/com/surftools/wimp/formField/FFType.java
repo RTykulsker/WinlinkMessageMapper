@@ -41,5 +41,7 @@ public enum FFType {
   EQUALS, // same as specified
   EQUALS_IGNORE_CASE, // field must case-independently equal to placeholder value
   LIST, // field must be present in list
-  DOUBLE // field must be present, and parsable as a double
+  DOUBLE, // field must be present, and parsable as a double
+  ALPHANUMERIC, // field must be present, case-independent, but only alphanumeric characters
+  IGNORE_WHITESPACE, // field must be present, case-independent, stripped of white space characters
 }

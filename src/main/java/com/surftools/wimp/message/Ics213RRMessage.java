@@ -52,7 +52,7 @@ public class Ics213RRMessage extends ExportedMessage {
       "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
       "Finance Comments", "Finance Chief", "Finance Date/Time", };
 
-  public static int lineItemsToDisplay = 1;
+  public static int lineItemsToDisplay = 8;
 
   public final String organization;
   public final String incidentName;

@@ -88,6 +88,7 @@ public class CheckInParser extends AbstractBaseParser {
       var organization = getStringFromXml("organization");
       var band = getStringFromXml("band");
       var status = getStringFromXml("status");
+      var service = getStringFromXml("service");
       var mode = getStringFromXml("session");
       var comments = getStringFromXml("comments");
 
@@ -116,10 +117,10 @@ public class CheckInParser extends AbstractBaseParser {
       CheckInMessage m = null;
       if (messageType == MessageType.CHECK_IN) {
         m = new CheckInMessage(message, organization, //
-            formLocation, formDateTime, status, band, mode, comments, version);
+            formLocation, formDateTime, status, service, band, mode, comments, version);
       } else if (messageType == MessageType.CHECK_OUT) {
         m = new CheckOutMessage(message, organization, //
-            formLocation, formDateTime, status, band, mode, comments, version);
+            formLocation, formDateTime, status, service, band, mode, comments, version);
       } else {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
       }

@@ -36,10 +36,10 @@ public class CheckOutMessage extends CheckInMessage {
 
   public CheckOutMessage(ExportedMessage exportedMessage, String organization, //
       LatLongPair formLocation, LocalDateTime formDateTime, //
-      String status, String band, String mode, String comments, String version) {
+      String status, String service, String band, String mode, String comments, String version) {
     super(exportedMessage, organization, //
         formLocation, formDateTime, //
-        status, band, mode, comments, version);
+        status, service, band, mode, comments, version);
   }
 
   @Override

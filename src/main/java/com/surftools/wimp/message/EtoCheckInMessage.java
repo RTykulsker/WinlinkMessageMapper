@@ -37,7 +37,7 @@ public class EtoCheckInMessage extends CheckInMessage {
   public EtoCheckInMessage(ExportedMessage exportedMessage, String organization, //
       LatLongPair formLocation, LocalDateTime formDateTime, //
       String status, String band, String mode, String comments, String version) {
-    super(exportedMessage, organization, formLocation, formDateTime, status, band, mode, comments, version);
+    super(exportedMessage, organization, formLocation, formDateTime, status, null, band, mode, comments, version);
   }
 
   @Override

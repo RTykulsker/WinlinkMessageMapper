@@ -33,6 +33,7 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 
 public class DyfiMessage extends ExportedMessage {
+
   public final String exerciseId;
   public final boolean isRealEvent;
   public final boolean isFelt;
@@ -41,10 +42,15 @@ public class DyfiMessage extends ExportedMessage {
   public final String location;
   public final LatLongPair formLocation;
 
+  // LOW DetailLevel
   public final String response;
   public final String comments;
   public final String intensity;
   public final String formVersion;
+
+  // MEDIUM DetailLevel;
+
+  // HIGH DetailLevel
 
   public DyfiMessage(ExportedMessage exportedMessage, //
       String exerciseId, boolean isRealEvent, boolean isFelt, //
@@ -77,9 +83,13 @@ public class DyfiMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
+    return getStaticHeaders();
+  }
+
+  public static String[] getStaticHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
-        "Latitude", "Longitude", "ExerciseId", //
-        "Location", "IsRealEvent", "IsFelt", "Response", "Comments", "Intensity", "FormVersion" };
+        "Latitude", "Longitude", //
+        "ExerciseId", "Location", "IsRealEvent", "IsFelt", "Response", "Comments", "Intensity", "FormVersion" };
   }
 
   @Override
@@ -90,8 +100,9 @@ public class DyfiMessage extends ExportedMessage {
     var lon = mapLocation == null ? "" : mapLocation.getLongitude();
 
     return new String[] { messageId, from, to, subject, date, time, //
-        lat, lon, exerciseId, location, //
-        Boolean.toString(isRealEvent), Boolean.toString(isFelt), response, comments, intensity, formVersion };
+        lat, lon, //
+        exerciseId, location, Boolean.toString(isRealEvent), Boolean.toString(isFelt), response, comments, intensity,
+        formVersion };
   }
 
   @Override
