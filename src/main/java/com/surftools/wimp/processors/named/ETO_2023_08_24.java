@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
-import com.surftools.utils.counter.ICounter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
@@ -376,34 +375,8 @@ public class ETO_2023_08_24 extends AbstractBaseProcessor {
     sb.append(formatPP("Before exercise window opened", ppBeforeExercise, true, N));
     sb.append(formatPP("After exercise window closed", ppAfterExercise, true, N));
 
-    var doImplicitFormFieldOrdering = true;
-    if (doImplicitFormFieldOrdering) {
-      for (var key : ffm.keySet()) {
-        sb.append(formatField(key, false, N));
-      }
-    } else {
-      sb.append(formatField("to", false, N));
-      sb.append(formatField("org", false, N));
-      sb.append(formatField("incidentName", false, N));
-      sb.append(formatField("dateTimePrepared", false, N));
-      sb.append(formatField("opDateFrom", false, N));
-      sb.append(formatField("opDateTo", false, N));
-      sb.append(formatField("opTimeFrom", false, N));
-      sb.append(formatField("opTimeTo", false, N));
-
-      var fields = new String[] { "zone-", "channel#-", "function-", "channelName-", "assignment-", "rxFreq-", "rwNW-",
-          "rxTone-", "txFreq-", "txNW-", "txTone-", "mode-", "remarks-", };
-      for (var line : new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }) {
-        for (var field : fields) {
-          sb.append(formatField(field + line, false, N));
-        }
-      }
-
-      sb.append(formatField("specialInstructions", false, N));
-
-      sb.append(formatField("approvedBy", false, N));
-      sb.append(formatField("dateTimeApproved", false, N));
-      sb.append(formatField("iapPage", false, N));
+    for (var key : ffm.keySet()) {
+      sb.append(formatField(ffm, key, false, N));
     }
 
     sb.append("\n-------------------Histograms---------------------\n");
@@ -436,25 +409,4 @@ public class ETO_2023_08_24 extends AbstractBaseProcessor {
     WriteProcessor.writeTable(results, Path.of(outputPathName, "ics-205-with-feedback.csv"));
   }
 
-  private String formatField(String key, boolean invert, int N) {
-    var field = ffm.get(key);
-    var value = invert ? N - field.count : field.count;
-    return (value == N) ? "" : formatPP("  " + field.label, value, N);
-  }
-
-  private String formatPP(String label, int count, boolean invert, int N) {
-    var value = invert ? N - count : count;
-    return formatPP("  " + label, value, N);
-  }
-
-  @SuppressWarnings("unused")
-  private String formatCounter(FormFieldManager ffm, String key) {
-    var field = ffm.get(key);
-    return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
-  }
-
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  private String formatCounter(String label, ICounter counter) {
-    return ("\n" + label + ":\n" + formatCounter(counter.getDescendingCountIterator(), "value", "count"));
-  }
 }

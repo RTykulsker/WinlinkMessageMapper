@@ -46,9 +46,9 @@ public class FormFieldManager {
   private int points = 0;
 
   private static final Set<FFType> needsPlaceholderSet = Set
-      .of(FFType.DATE_TIME, FFType.DATE_TIME_NOT, FFType.OPTIONAL_NOT, FFType.REQUIRED_NOT, FFType.SPECIFIED,
-          FFType.CONTAINS, FFType.EQUALS, FFType.EQUALS_IGNORE_CASE, FFType.LIST, FFType.DOUBLE, FFType.ALPHANUMERIC,
-          FFType.IGNORE_WHITESPACE);
+      .of(FFType.DATE_TIME, FFType.DATE_TIME_NOT, FFType.DATE_TIME_ON_OR_BEFORE, FFType.DATE_TIME_ON_OR_AFTER,
+          FFType.OPTIONAL_NOT, FFType.REQUIRED_NOT, FFType.SPECIFIED, FFType.CONTAINS, FFType.EQUALS,
+          FFType.EQUALS_IGNORE_CASE, FFType.LIST, FFType.DOUBLE, FFType.ALPHANUMERIC, FFType.IGNORE_WHITESPACE);
 
   private static final Set<FFType> noPlaceholderSet = Set.of(FFType.EMPTY, FFType.OPTIONAL, FFType.REQUIRED);
 
@@ -142,6 +142,40 @@ public class FormFieldManager {
           var formatter = (DateTimeFormatter) data;
           LocalDateTime.parse(value, formatter);
           isOk = true;
+        } catch (Exception e) {
+          explanation = label + "(" + value + ") is not a valid Date/Time";
+        }
+      }
+      break;
+
+    case DATE_TIME_ON_OR_BEFORE:
+      if (value == null) {
+        explanation = label + " must be supplied";
+      } else {
+        try {
+          var valueDT = LocalDateTime.parse(value, FORMATTER);
+          var placeholderDT = LocalDateTime.parse(placeholderValue, FORMATTER);
+          isOk = valueDT.compareTo(placeholderDT) <= 0;
+          if (!isOk) {
+            explanation = label + "(" + value + ") must be before or on " + placeholderValue;
+          }
+        } catch (Exception e) {
+          explanation = label + "(" + value + ") is not a valid Date/Time";
+        }
+      }
+      break;
+
+    case DATE_TIME_ON_OR_AFTER:
+      if (value == null) {
+        explanation = label + " must be supplied";
+      } else {
+        try {
+          var valueDT = LocalDateTime.parse(value, FORMATTER);
+          var placeholderDT = LocalDateTime.parse(placeholderValue, FORMATTER);
+          isOk = valueDT.compareTo(placeholderDT) >= 0;
+          if (!isOk) {
+            explanation = label + "(" + value + ") must be after or on " + placeholderValue;
+          }
         } catch (Exception e) {
           explanation = label + "(" + value + ") is not a valid Date/Time";
         }

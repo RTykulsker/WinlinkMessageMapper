@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
-import com.surftools.utils.counter.ICounter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
@@ -441,12 +440,12 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
     sb.append(formatPP("NO Missing or Invalid Locations", ppMissingLocationCounter, true, N));
     sb.append(formatPP("Before exercise window opened", ppBeforeExercise, true, N));
     sb.append(formatPP("After exercise window closed", ppAfterExercise, true, N));
-    sb.append(formatField("to", false, N));
-    sb.append(formatField("org", false, N));
-    sb.append(formatField("incidentName", false, N));
+    sb.append(formatField(ffm, "to", false, N));
+    sb.append(formatField(ffm, "org", false, N));
+    sb.append(formatField(ffm, "incidentName", false, N));
     sb.append(formatPP("Valid Date/Time Prepared", ppDateTimePreparedCounter.getValueTotal(), true, N));
-    sb.append(formatField("opDateFrom", true, N));
-    sb.append(formatField("opDateTo", true, N));
+    sb.append(formatField(ffm, "opDateFrom", true, N));
+    sb.append(formatField(ffm, "opDateTo", true, N));
 
     sb.append(formatPP("Op Time From", ppTimeFromCounter.getKeyCount(), true, N));
     sb.append(formatPP("Op Time To", ppTimeToCounter.getKeyCount(), true, N));
@@ -455,16 +454,16 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
         "rxTone-", "txFreq-", "txNW-", "txTone-", "mode-", "remarks-", };
     for (var line : new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }) {
       for (var field : fields) {
-        sb.append(formatField(field + line, false, N));
+        sb.append(formatField(ffm, field + line, false, N));
       }
     }
 
     // sb.append(formatField("specialInstructions", false, N));
     sb.append(formatPP("Special Instructions", ppSpecialInstructionsCounter.getValueTotal(), true, N));
 
-    sb.append(formatField("approvedBy", false, N));
+    sb.append(formatField(ffm, "approvedBy", false, N));
     sb.append(formatPP("Valid Date/Time Approved", ppDateTimeApprovedCounter.getKeyCount(), true, N));
-    sb.append(formatField("iapPage", false, N));
+    sb.append(formatField(ffm, "iapPage", false, N));
 
     sb.append("\n-------------------Histograms---------------------\n");
     sb.append(formatCounter("Feedback items", ppFeedBackCounter));
@@ -496,25 +495,4 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
     WriteProcessor.writeTable(results, Path.of(outputPathName, "ics-205-with-feedback.csv"));
   }
 
-  private String formatField(String key, boolean invert, int N) {
-    var field = ffm.get(key);
-    var value = invert ? N - field.count : field.count;
-    return (value == N) ? "" : formatPP("  " + field.label, value, N);
-  }
-
-  private String formatPP(String label, int count, boolean invert, int N) {
-    var value = invert ? N - count : count;
-    return formatPP("  " + label, value, N);
-  }
-
-  @SuppressWarnings("unused")
-  private String formatCounter(FormFieldManager ffm, String key) {
-    var field = ffm.get(key);
-    return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
-  }
-
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  private String formatCounter(String label, ICounter counter) {
-    return ("\n" + label + ":\n" + formatCounter(counter.getDescendingCountIterator(), "value", "count"));
-  }
 }

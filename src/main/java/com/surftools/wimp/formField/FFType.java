@@ -36,6 +36,8 @@ public enum FFType {
   CONTAINED_BY, // field must be present and within the placeholder value
   DATE_TIME, // field must be parsable as a LocalDateTime
   DATE_TIME_NOT, // field must be parsable as a LocalDateTime, but NOT value held by placeholder value
+  DATE_TIME_ON_OR_BEFORE, // field must be parsable as a LocalDateTime, and before or on placeholder value
+  DATE_TIME_ON_OR_AFTER, // field must be parsable as a LocalDateTime, and on or after placeholder value
   EMPTY, // field must be null or empty
   SPECIFIED, // field must be exactly as specified by placeholder value (case-independent)
   EQUALS, // same as specified

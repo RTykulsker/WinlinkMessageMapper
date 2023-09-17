@@ -84,6 +84,11 @@ public class FormField {
       data = DateTimeFormatter.ofPattern(placeholderValue);
       break;
 
+    case DATE_TIME_ON_OR_BEFORE:
+    case DATE_TIME_ON_OR_AFTER:
+      data = FormFieldManager.FORMATTER.parse(placeholderValue);
+      break;
+
     case LIST:
       data = new HashSet<String>(Arrays.asList(placeholderValue.split(",")));
       break;

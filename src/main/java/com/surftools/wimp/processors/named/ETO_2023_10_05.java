@@ -27,7 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.named;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,10 +36,10 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
-import com.surftools.utils.counter.ICounter;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.CheckInMessage;
@@ -97,19 +96,22 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
     var ppMessageCorrectCount = 0;
     var ppExplicitBadLocationCounter = 0;
     var ppMissingLocationCounter = 0;
-    var ppBeforeExercise = 0;
-    var ppAfterExercise = 0;
 
     var ppVersionCountOk = 0;
 
     var ppFeedBackCounter = new Counter();
     var ppVersionCounter = new Counter();
-    var ppTypeCounter = new Counter();
-    var ppServiceCounter = new Counter();
-    var ppBandCounter = new Counter();
-    var ppSessionCounter = new Counter();
 
-    ffm.add("org", new FormField("Agency/Group name", "EmComm Training WLT"));
+    ffm.add("org", new FormField("Agency/Group name", "EmComm Training Organization"));
+    ffm.add("type", new FormField("Session Type", "EXERCISE"));
+    ffm.add("band", new FormField(FFType.REQUIRED, "Session Band"));
+    ffm.add("service", new FormField(FFType.REQUIRED, "Session Service"));
+    ffm.add("mode", new FormField(FFType.REQUIRED, "Session/Mode"));
+    ffm.add("location", new FormField(FFType.REQUIRED, "Location"));
+    ffm.add("comments", new FormField(FFType.LIST, "Comments", "GENERAL,MAPPING-GIS"));
+
+    ffm.add("windowOpen", new FormField(FFType.DATE_TIME_ON_OR_AFTER, "Message sent too early", "2023-10-05 00:00"));
+    ffm.add("windowClose", new FormField(FFType.DATE_TIME_ON_OR_BEFORE, "Message sent too late", "2023-10-06 15:00"));
 
     var results = new ArrayList<IWritableTable>();
     for (var message : mm.getMessagesForType(MessageType.CHECK_IN)) {
@@ -123,31 +125,19 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
       var explanations = new ArrayList<String>();
       ffm.reset(explanations);
 
+      ffm.test("windowOpen", FormFieldManager.FORMATTER.format(message.msgDateTime));
+      ffm.test("windowClose", FormFieldManager.FORMATTER.format(message.msgDateTime));
+
       ffm.test("org", m.organization);
 
-      ppTypeCounter.increment(m.status);
-      ppServiceCounter.increment(m.service);
-      ppBandCounter.increment(m.band);
-      ppSessionCounter.increment(m.mode);
+      ffm.test("type", m.status);
+      ffm.test("service", m.service);
+      ffm.test("band", m.band);
+      ffm.test("mode", m.mode);
 
-      // exercise window
-      {
-        var beginExerciseWindow = LocalDateTime.of(2023, 10, 5, 0, 0);
+      ffm.test("location", m.formLocation.toString());
 
-        var messageDateTime = message.msgDateTime;
-        if (messageDateTime.isBefore(beginExerciseWindow)) {
-          explanations
-              .add("!!!message sent (" + messageDateTime.format(DT_FORMATTER) + ") before exercise window opened");
-          ++ppBeforeExercise;
-        }
-
-        var endExerciseWindow = LocalDateTime.of(2023, 10, 6, 15, 0);
-        if (messageDateTime.isAfter(endExerciseWindow)) {
-          explanations
-              .add("!!!message sent (" + messageDateTime.format(DT_FORMATTER) + ") after exercise window closed");
-          ++ppAfterExercise;
-        }
-      }
+      ffm.test("comments", m.comments.toUpperCase());
 
       // version
       {
@@ -192,47 +182,24 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
     sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
     sb.append(formatPP("NO Explicit Bad Locations", ppExplicitBadLocationCounter, true, N));
     sb.append(formatPP("NO Missing or Invalid Locations", ppMissingLocationCounter, true, N));
-    sb.append(formatPP("Before exercise window opened", ppBeforeExercise, true, N));
-    sb.append(formatPP("After exercise window closed", ppAfterExercise, true, N));
     sb.append(formatPP("Version >= 5", ppVersionCountOk, false, N));
 
     for (var key : ffm.keySet()) {
-      sb.append(formatField(key, false, N));
+      sb.append(formatField(ffm, key, false, N));
     }
 
     sb.append("\n-------------------Histograms---------------------\n");
     sb.append(formatCounter("Feedback items", ppFeedBackCounter));
     sb.append(formatCounter("Version", ppVersionCounter));
-    sb.append(formatCounter("Type", ppTypeCounter));
-    sb.append(formatCounter("Service", ppServiceCounter));
-    sb.append(formatCounter("Band", ppBandCounter));
-    sb.append(formatCounter("Session", ppSessionCounter));
+    sb.append(formatCounter("Type", ffm.get("type").counter));
+    sb.append(formatCounter("Service", ffm.get("service").counter));
+    sb.append(formatCounter("Band", ffm.get("band").counter));
+    sb.append(formatCounter("Session Mode", ffm.get("mode").counter));
+    sb.append(formatCounter("Comments", ffm.get("comments").counter));
 
     logger.info(sb.toString());
 
     writeTable("check-in-with-feedback.csv", results);
-  }
-
-  private String formatField(String key, boolean invert, int N) {
-    var field = ffm.get(key);
-    var value = invert ? N - field.count : field.count;
-    return (value == N) ? "" : formatPP("  " + field.label, value, N);
-  }
-
-  private String formatPP(String label, int count, boolean invert, int N) {
-    var value = invert ? N - count : count;
-    return formatPP("  " + label, value, N);
-  }
-
-  @SuppressWarnings("unused")
-  private String formatCounter(FormFieldManager ffm, String key) {
-    var field = ffm.get(key);
-    return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
-  }
-
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  private String formatCounter(String label, ICounter counter) {
-    return ("\n" + label + ":\n" + formatCounter(counter.getDescendingCountIterator(), "value", "count"));
   }
 
 }

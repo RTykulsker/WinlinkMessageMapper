@@ -72,6 +72,9 @@ public enum Key implements IConfigurationKey {
 
   MAX_DAYS_BEFORE_LATE("maxDaysBeforeLate"), // for warning about late messages
 
+  RMS_HF_GATEWAYS_FILE_NAME("rms.hf_gateways.fileName"), // for getting RMS location
+  RMS_VHF_GATEWAYS_FILE_NAME("rms.vhf_gateways.fileName"), // for getting RMS location
+
   ;
 
   private final String key;

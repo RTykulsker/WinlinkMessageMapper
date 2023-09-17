@@ -42,7 +42,7 @@ import com.surftools.wimp.message.CheckOutMessage;
 import com.surftools.wimp.message.ExportedMessage;
 
 /**
- * parser for ETO's favorite message type
+ * parser for everytone's favorite message type
  *
  * @author bobt
  *
@@ -75,52 +75,43 @@ public class CheckInParser extends AbstractBaseParser {
     }
 
     try {
-
       String xmlString = new String(message.attachments.get(messageType.attachmentName()));
-
       makeDocument(message.messageId, xmlString);
 
+      var organization = getStringFromXml("organization");
+      var formDateTime = parseFormDateTime();
+      var contactName = getStringFromXml("contactname");
+      var initialOperators = getStringFromXml("assigned");
+
+      var status = getStringFromXml("status");
+      var service = getStringFromXml("service");
+      var band = getStringFromXml("band");
+      var mode = getStringFromXml("session");
+
+      var locationString = getStringFromXml("location");
+      var mgrs = getStringFromXml("mgrs");
+      var gridSquare = getStringFromXml("grid");
       var formLocation = getLatLongFromXml(null);
       if (formLocation == null) {
         return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
       }
 
-      var organization = getStringFromXml("organization");
-      var band = getStringFromXml("band");
-      var status = getStringFromXml("status");
-      var service = getStringFromXml("service");
-      var mode = getStringFromXml("session");
       var comments = getStringFromXml("comments");
-
-      var version = "";
-      var templateVersion = getStringFromXml("templateversion");
-
-      LocalDateTime formDateTime = null;
-      try {
-        formDateTime = LocalDateTime.parse(getStringFromXml("datetime"), DT_FORMATTER);
-      } catch (Exception e) {
-        ;
-      }
-
-      if (templateVersion != null) {
-        var fields = templateVersion.split(" ");
-        version = fields[fields.length - 1]; // last field
-      }
-
-      /**
-       * public CheckInMessage(ExportedMessage exportedMessage, String organization,
-       *
-       * // LatLongPair formLocation, LocalDateTime formDateTime, // String status, String band, String mode, String
-       * comments, String version)
-       */
+      var version = parseVersion();
 
       CheckInMessage m = null;
       if (messageType == MessageType.CHECK_IN) {
         m = new CheckInMessage(message, organization, //
-            formLocation, formDateTime, status, service, band, mode, comments, version);
+            formDateTime, contactName, initialOperators, //
+            status, service, band, mode, //
+            locationString, formLocation, mgrs, gridSquare, //
+            comments, version);
       } else if (messageType == MessageType.CHECK_OUT) {
         m = new CheckOutMessage(message, organization, //
-            formLocation, formDateTime, status, service, band, mode, comments, version);
+            formDateTime, contactName, initialOperators, //
+            status, service, band, mode, //
+            locationString, formLocation, mgrs, gridSquare, //
+            comments, version);
       } else {
         return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
       }
@@ -129,6 +120,26 @@ public class CheckInParser extends AbstractBaseParser {
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
+  }
+
+  private LocalDateTime parseFormDateTime() {
+    LocalDateTime formDateTime = null;
+    try {
+      formDateTime = LocalDateTime.parse(getStringFromXml("datetime"), DT_FORMATTER);
+    } catch (Exception e) {
+      ;
+    }
+    return formDateTime;
+  }
+
+  private String parseVersion() {
+    var version = "";
+    var templateVersion = getStringFromXml("templateversion");
+    if (templateVersion != null) {
+      var fields = templateVersion.split(" ");
+      version = fields[fields.length - 1]; // last field
+    }
+    return version;
   }
 
 }

@@ -35,11 +35,15 @@ import com.surftools.wimp.core.MessageType;
 public class CheckOutMessage extends CheckInMessage {
 
   public CheckOutMessage(ExportedMessage exportedMessage, String organization, //
-      LatLongPair formLocation, LocalDateTime formDateTime, //
-      String status, String service, String band, String mode, String comments, String version) {
+      LocalDateTime formDateTime, String contactName, String initialOperators, //
+      String status, String service, String band, String mode, //
+      String locationString, LatLongPair formLocation, String mgrs, String gridSquare, //
+      String comments, String version) {
     super(exportedMessage, organization, //
-        formLocation, formDateTime, //
-        status, service, band, mode, comments, version);
+        formDateTime, contactName, initialOperators, //
+        status, service, band, mode, //
+        locationString, formLocation, mgrs, gridSquare, //
+        comments, version);
   }
 
   @Override

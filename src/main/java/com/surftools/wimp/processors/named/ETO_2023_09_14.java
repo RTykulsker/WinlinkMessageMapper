@@ -28,7 +28,6 @@ SOFTWARE.
 package com.surftools.wimp.processors.named;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
-import com.surftools.utils.counter.ICounter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
@@ -103,6 +101,9 @@ public class ETO_2023_09_14 extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
 
     ffm = new FormFieldManager();
+
+    ffm.add("windowOpen", new FormField(FFType.DATE_TIME_ON_OR_AFTER, "Message sent too early", "2023-09-14 00:00"));
+    ffm.add("windowClose", new FormField(FFType.DATE_TIME_ON_OR_BEFORE, "Message sent too late", "2023-09-15 15:00"));
 
     ffm.add("org", new FormField("Agency/Group", "EMComm Training Organization"));
     ffm.add("incidentName", new FormField("Box 1 IncidentName", "Exercise - Operation Fire Support"));
@@ -213,8 +214,6 @@ public class ETO_2023_09_14 extends AbstractBaseProcessor {
     var ppMessageCorrectCount = 0;
     var ppExplicitBadLocationCounter = 0;
     var ppMissingLocationCounter = 0;
-    var ppBeforeExercise = 0;
-    var ppAfterExercise = 0;
 
     var ppFeedBackCounter = new Counter();
 
@@ -234,25 +233,6 @@ public class ETO_2023_09_14 extends AbstractBaseProcessor {
 
       ++ppCount;
 
-      // exercise window
-      {
-        var beginExerciseWindow = LocalDateTime.of(2023, 9, 14, 0, 0);
-
-        var messageDateTime = message.msgDateTime;
-        if (messageDateTime.isBefore(beginExerciseWindow)) {
-          explanations
-              .add("!!!message sent (" + messageDateTime.format(DT_FORMATTER) + ") before exercise window opened");
-          ++ppBeforeExercise;
-        }
-
-        var endExerciseWindow = LocalDateTime.of(2023, 9, 15, 15, 0);
-        if (messageDateTime.isAfter(endExerciseWindow)) {
-          explanations
-              .add("!!!message sent (" + messageDateTime.format(DT_FORMATTER) + ") after exercise window closed");
-          ++ppAfterExercise;
-        }
-      }
-
       var pair = message.msgLocation;
       if (pair == null) {
         zeroZeroLocationList.add(sender);
@@ -271,6 +251,8 @@ public class ETO_2023_09_14 extends AbstractBaseProcessor {
         explanations.add("explicit bad location: " + pair.toString());
       }
 
+      ffm.test("windowOpen", FormFieldManager.FORMATTER.format(message.msgDateTime));
+      ffm.test("windowClose", FormFieldManager.FORMATTER.format(message.msgDateTime));
       ffm.test("org", message.organization);
       ffm.test("incidentName", message.incidentName);
       ffm.test("activityDateTime", message.activityDateTime);
@@ -332,20 +314,13 @@ public class ETO_2023_09_14 extends AbstractBaseProcessor {
     sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
     sb.append(formatPP("NO Explicit Bad Locations", ppExplicitBadLocationCounter, true, N));
     sb.append(formatPP("NO Missing or Invalid Locations", ppMissingLocationCounter, true, N));
-    sb.append(formatPP("Before exercise window opened", ppBeforeExercise, true, N));
-    sb.append(formatPP("After exercise window closed", ppAfterExercise, true, N));
 
     for (var key : ffm.keySet()) {
-      sb.append(formatField(key, false, N));
+      sb.append(formatField(ffm, key, false, N));
     }
 
     sb.append("\n-------------------Histograms---------------------\n");
     sb.append(formatCounter("Feedback items", ppFeedBackCounter));
-    // sb.append(formatCounter("Invalid Op Time From", ppTimeFromCounter));
-    // sb.append(formatCounter("Invalid Op Time To", ppTimeToCounter));
-
-    // sb.append(formatCounter("Special Instructions", ppSpecialInstructionsCounter));
-    // sb.append(formatCounter(ffm, "org"));
 
     logger.info(sb.toString());
 
@@ -365,27 +340,5 @@ public class ETO_2023_09_14 extends AbstractBaseProcessor {
     var results = new ArrayList<>(callResultsMap.values());
 
     WriteProcessor.writeTable(results, Path.of(outputPathName, "ics_213_rr-with-feedback.csv"));
-  }
-
-  private String formatField(String key, boolean invert, int N) {
-    var field = ffm.get(key);
-    var value = invert ? N - field.count : field.count;
-    return (value == N) ? "" : formatPP("  " + field.label, value, N);
-  }
-
-  private String formatPP(String label, int count, boolean invert, int N) {
-    var value = invert ? N - count : count;
-    return formatPP("  " + label, value, N);
-  }
-
-  @SuppressWarnings("unused")
-  private String formatCounter(FormFieldManager ffm, String key) {
-    var field = ffm.get(key);
-    return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
-  }
-
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  private String formatCounter(String label, ICounter counter) {
-    return ("\n" + label + ":\n" + formatCounter(counter.getDescendingCountIterator(), "value", "count"));
   }
 }

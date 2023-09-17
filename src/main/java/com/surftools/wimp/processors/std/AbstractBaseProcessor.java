@@ -45,11 +45,13 @@ import org.slf4j.Logger;
 import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
 import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.utils.counter.ICounter;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
@@ -128,6 +130,27 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       }
     }
     return sb.toString();
+  }
+
+  protected String formatPP(String label, int count, boolean invert, int N) {
+    var value = invert ? N - count : count;
+    return formatPP("  " + label, value, N);
+  }
+
+  protected String formatField(FormFieldManager ffm, String key, boolean invert, int N) {
+    var field = ffm.get(key);
+    var value = invert ? N - field.count : field.count;
+    return (value == N) ? "" : formatPP("  " + field.label, value, N);
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  protected String formatCounter(String label, ICounter counter) {
+    return ("\n" + label + ":\n" + formatCounter(counter.getDescendingCountIterator(), "value", "count"));
+  }
+
+  protected String formatCounter(FormFieldManager ffm, String key) {
+    var field = ffm.get(key);
+    return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
   }
 
   protected void writeTable(String fileName, List<IWritableTable> entries) {

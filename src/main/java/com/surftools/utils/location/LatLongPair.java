@@ -65,6 +65,11 @@ public class LatLongPair {
     this.longitude = longitude;
   }
 
+  public LatLongPair(String grid) {
+    this(String.valueOf(LocationUtils.getLatitudeFromMaidenhead(grid)),
+        String.valueOf(LocationUtils.getLongitudeFromMaidenhead(grid)));
+  }
+
   @Override
   public String toString() {
     return "{lat:" + latitude + ", lon: " + longitude + "}";

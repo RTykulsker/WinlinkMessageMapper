@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,28 +25,18 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.message;
-
-import java.time.LocalDateTime;
+package com.surftools.utils.winlink.cms;
 
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.MessageType;
 
-public class EtoCheckInMessage extends CheckInMessage {
+public interface IRmsLocationManager {
 
-  public EtoCheckInMessage(ExportedMessage exportedMessage, String organization, //
-      LatLongPair formLocation, LocalDateTime formDateTime, //
-      String status, String band, String mode, String comments, String version) {
-    super(exportedMessage, organization, formLocation, formDateTime, status, band, mode, comments, version);
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.ETO_CHECK_IN;
-  }
-
-  @Override
-  public String getMultiMessageComment() {
-    return comments;
-  }
+  /**
+   * this is our public interface
+   *
+   * @param rmsCall:
+   *          callsign of RMS
+   * @return LatLongPair or null if not found
+   */
+  public LatLongPair getLocationForRms(String rmsCall);
 }

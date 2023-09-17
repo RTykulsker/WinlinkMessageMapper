@@ -40,28 +40,77 @@ import com.surftools.wimp.core.MessageType;
  */
 public class CheckInMessage extends ExportedMessage {
   public final String organization;
-  public final LatLongPair formLocation;
   public final LocalDateTime formDateTime;
+  public final String contactName;
+  public final String initialOperators;
 
-  public final String status;
-  public final String band;
-  public final String mode;
+  public final String status; // Exercise vs real event
+  public final String service; // AMATEUR or SHARES
+  public final String band; // NA, Telnet, HF, VHF, UHF, SHF
+  public final String mode; // Telnet, Packet, Pactor, Robust Packet, Ardop, VARA HF, VARA FM, Iridium Go, Mesh
+
+  public final String locationString;
+  public final LatLongPair formLocation;
+  public final String mgrs;
+  public final String gridSquare;
+
   public final String comments;
   public final String version;
-  public final String service;
 
   public CheckInMessage(ExportedMessage exportedMessage, String organization, //
-      LatLongPair formLocation, LocalDateTime formDateTime, //
-      String status, String service, String band, String mode, String comments, String version) {
+      LocalDateTime formDateTime, String contactName, String initialOperators, //
+      String status, String service, String band, String mode, //
+      String locationString, LatLongPair formLocation, String mgrs, String gridSquare, //
+      String comments, String version) {
     super(exportedMessage);
     this.organization = organization;
-    this.formLocation = formLocation;
+
     this.formDateTime = formDateTime;
+    this.contactName = contactName;
+    this.initialOperators = initialOperators;
 
     this.status = status;
     this.service = service;
     this.band = band;
     this.mode = mode;
+
+    this.locationString = locationString;
+    this.formLocation = formLocation;
+    this.mgrs = mgrs;
+    this.gridSquare = gridSquare;
+
+    this.comments = comments;
+    this.version = version;
+
+    if (formDateTime != null) {
+      setSortDateTime(formDateTime);
+    }
+
+    if (formLocation.isValid()) {
+      setMapLocation(formLocation);
+    }
+  }
+
+  public CheckInMessage(ExportedMessage exportedMessage, String organization, LatLongPair formLocation,
+      LocalDateTime formDateTime, String status, String band, String mode, String comments, String version) {
+
+    super(exportedMessage);
+    this.organization = organization;
+
+    this.formDateTime = formDateTime;
+    this.contactName = null;
+    this.initialOperators = null;
+
+    this.status = status;
+    this.service = null;
+    this.band = band;
+    this.mode = mode;
+
+    this.locationString = null;
+    this.formLocation = formLocation;
+    this.mgrs = null;
+    this.gridSquare = null;
+
     this.comments = comments;
     this.version = version;
 
@@ -81,14 +130,19 @@ public class CheckInMessage extends ExportedMessage {
 
   @Override
   public String[] getValues() {
-    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
-    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
+    // these are what we use to map: form over message
     var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
-    return new String[] { messageId, from, to, subject, //
-        date, time, latitude, longitude, organization, //
-        status, service, band, mode, comments, version };
+    return new String[] { messageId, from, latitude, longitude, to, subject, //
+        msgDateTime == null ? "" : msgDateTime.toString(), //
+        msgLocation == null ? "" : msgLocation.toString(), //
+
+        organization, formDateTime == null ? "" : formDateTime.toString(), //
+        toList, from, contactName, initialOperators, //
+        status, service, band, mode, //
+        locationString, formLocation == null ? "" : formLocation.toString(), mgrs, gridSquare, //
+        comments, version };
   }
 
   @Override
@@ -102,9 +156,12 @@ public class CheckInMessage extends ExportedMessage {
   }
 
   public static String[] getStaticHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
-        "Latitude", "Longitude", "Organization", //
-        "Status", "Service", "Band", "Mode", "Comments", "Version" };
+    return new String[] { "MessageId", "From", "Latitude", "Longitude", "To", "Subject", //
+        "Msg Date/Time", "Msg Lat/Long", //
+        "Organization", "Form Date/Time", "To", "From_", "Station Contact", "Initial Operators", //
+        "Status", "Service", "Band", "Mode", //
+        "Location", "Form Lat/Long", "MGRS", "Grid Square", //
+        "Comments", "Version" };
   }
 
 }
