@@ -44,6 +44,8 @@ import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.service.outboundMessage.OutboundMessage;
+import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 
 /**
  * New (version 5) Winlink Check In form
@@ -54,9 +56,9 @@ import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 public class ETO_2023_10_05 extends AbstractBaseProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2023_10_05.class);
 
-  public static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
-  public static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
-  public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+  // public static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
+  // public static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+  // public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
   private FormFieldManager ffm = new FormFieldManager();
 
@@ -103,17 +105,20 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
     var ppVersionCounter = new Counter();
 
     ffm.add("org", new FormField("Agency/Group name", "EmComm Training Organization"));
+    ffm.add("addresses", new FormField(FFType.CONTAINS, "To and/or CC addresses", "ETO-BK"));
+    ffm.add("dateTime", new FormField(FFType.DATE_TIME, "Date/Time", "yyyy-MM-dd HH:mm:ss"));
     ffm.add("type", new FormField("Session Type", "EXERCISE"));
     ffm.add("band", new FormField(FFType.REQUIRED, "Session Band"));
-    ffm.add("service", new FormField(FFType.REQUIRED, "Session Service"));
+    ffm.add("service", new FormField("Session Service", "AMATEUR"));
     ffm.add("mode", new FormField(FFType.REQUIRED, "Session/Mode"));
     ffm.add("location", new FormField(FFType.REQUIRED, "Location"));
     ffm.add("comments", new FormField(FFType.LIST, "Comments", "GENERAL,MAPPING-GIS"));
 
-    ffm.add("windowOpen", new FormField(FFType.DATE_TIME_ON_OR_AFTER, "Message sent too early", "2023-10-05 00:00"));
+    ffm.add("windowOpen", new FormField(FFType.DATE_TIME_ON_OR_AFTER, "Message sent too early", "2023-10-03 00:00"));
     ffm.add("windowClose", new FormField(FFType.DATE_TIME_ON_OR_BEFORE, "Message sent too late", "2023-10-06 15:00"));
 
     var results = new ArrayList<IWritableTable>();
+
     for (var message : mm.getMessagesForType(MessageType.CHECK_IN)) {
       CheckInMessage m = (CheckInMessage) message;
 
@@ -129,6 +134,12 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
       ffm.test("windowClose", FormFieldManager.FORMATTER.format(message.msgDateTime));
 
       ffm.test("org", m.organization);
+
+      var addressList = m.toList + "," + m.ccList;
+      ffm.test("addresses", addressList);
+
+      var formDTFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      ffm.test("dateTime", formDTFormatter.format(m.formDateTime));
 
       ffm.test("type", m.status);
       ffm.test("service", m.service);
@@ -172,6 +183,11 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
       var result = new Result(feedback, feedbackCountString, m);
 
       results.add(result);
+
+      var outboundMessage = new OutboundMessage(outboundMessageSender, m.from,
+          outboundMessageSubject + " " + m.messageId, feedback, null);
+      outboundMessageList.add(outboundMessage);
+
     } // end loop over Check In messages
 
     var sb = new StringBuilder();
@@ -202,4 +218,12 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
     writeTable("check-in-with-feedback.csv", results);
   }
 
+  @Override
+  public void postProcess() {
+    if (doOutboundMessaging) {
+      var service = new OutboundMessageService(cm);
+      outboundMessageList = service.sendAll(outboundMessageList);
+      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
+    }
+  }
 }

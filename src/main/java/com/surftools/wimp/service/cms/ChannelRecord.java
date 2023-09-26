@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +25,16 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service.cms;
 
-import com.surftools.utils.config.IConfigurationManager;
+import java.time.LocalDateTime;
 
-public interface IProcessor {
+public record ChannelRecord(LocalDateTime dateTime, String callsign, String baseCallsign, String gridsquare,
+    int frequency, int mode, int baud, int power, int height, int gain, int direction, String operatingHours,
+    String serviceCode) implements Comparable<ChannelRecord> {
 
-  /**
-   * run before any processors look at messages
-   *
-   * @param cm
-   * @param mm
-   */
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
-
-  /**
-   * can look at messages in the mm, etc.
-   */
-  public void process();
-
-  /**
-   * run after processors complete their normal message processing
-   */
-  public void postProcess();
+  @Override
+  public int compareTo(ChannelRecord o) {
+    return dateTime.compareTo(o.dateTime);
+  }
 }

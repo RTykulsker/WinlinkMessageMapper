@@ -75,6 +75,17 @@ public enum Key implements IConfigurationKey {
   RMS_HF_GATEWAYS_FILE_NAME("rms.hf_gateways.fileName"), // for getting RMS location
   RMS_VHF_GATEWAYS_FILE_NAME("rms.vhf_gateways.fileName"), // for getting RMS location
 
+  OUTBOUND_MESSAGE_ENGINE_TYPE("outboundMessage.engineType"), // PAT, WINLINK_CMS, etc
+  OUTBOUND_MESSAGE_SOURCE("outboundMessage.source"), // mbo address
+  OUTBOUND_MESSAGE_SENDER("outboundMessage.sender"), // from address
+  OUTBOUND_MESSAGE_SUBJECT("outboundMessage.subject"), // message subject
+  OUTBOUND_MESSAGE_PAT_EXEC_PATH("outboundMessage.pat.execPath"), // where to find PAT executable
+
+  CMS_AUTHORIZATION_KEY("cms.authorizationKey"), // for CMS access
+  CMS_MOCK_SENDER_PATH("cms.mock.sender.path"), // for keeping mock data out of git
+  CMS_MOCK_SOURCE_PATH("cms.mock.source.path"), // for keeping mock data out of git
+  CMS_MOCK_CHANNEL_PATH("cms.mock.channel.path"), // for keeping mock data out of git
+  CMS_MOCK_GATEWAY_PATH("cms.mock.gateway.path"), // for keeping mock data out of git
   ;
 
   private final String key;

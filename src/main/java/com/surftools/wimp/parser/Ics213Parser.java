@@ -37,6 +37,8 @@ import com.surftools.wimp.message.Ics213Message;
 
 public class Ics213Parser extends AbstractBaseParser {
   private static final Logger logger = LoggerFactory.getLogger(Ics213Parser.class);
+  private static final String IS_EXERCISE = "** THIS IS AN EXERCISE **";
+  private static final String[] mapLocationTags = new String[] { "maplat", "maplon" };
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
@@ -67,9 +69,20 @@ public class Ics213Parser extends AbstractBaseParser {
       var approvedBy = getStringFromXml("approved_name");
       var position = getStringFromXml("approved_postitle");
 
+      var isExercise = getStringFromXml("isexercise").equals(IS_EXERCISE);
+      var formLocation = getLatLongFromXml(mapLocationTags);
+      var version = getStringFromXml("templateversion");
+      if (version != null) {
+        var fields = version.replaceAll("  ", " ").split(" ");
+        if (fields.length >= 3) {
+          version = fields[2];
+        }
+      }
+
       var m = new Ics213Message(message, organization, incidentName, //
           formFrom, formTo, formSubject, formDate, formTime, //
-          formMessage, approvedBy, position);
+          formMessage, approvedBy, position, //
+          isExercise, formLocation, version);
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());

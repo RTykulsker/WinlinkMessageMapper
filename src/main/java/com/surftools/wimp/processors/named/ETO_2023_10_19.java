@@ -30,6 +30,7 @@ package com.surftools.wimp.processors.named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeMap;
 
@@ -38,15 +39,17 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
-import com.surftools.wimp.core.GradedResult;
+import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.service.outboundMessage.OutboundMessage;
+import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 
 /**
  * DYFI for Shakeout 2023
@@ -91,39 +94,31 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
-  /**
-   * This Earthquake report is an: check Exercise. In case of a “real world event”, do not send messages to your ETO
-   * clearinghouse. We are a training organization, not a response organization. Your message may sit, unread, for days.
-   * For this exercise, if you check REAL EVENT, you will earn a score of 0 points for this exercise, regardless of
-   * subsequent answers.
-   *
-   * Optional Exercise ID: ETO Winlink Thursday SHAKEOUT 2022 (50 points)
-   *
-   * How did you respond? Check Dropped and Covered (50 points). Drop, cover and hold is the recommended guideline for
-   * how to respond to an earthquake. Even if that is not what you actually did at 10:20 AM or if there was no place to
-   * cover yourself, Dropped and Covered is the answer we want.
-   */
   @Override
   public void process() {
     var ppCount = 0;
+    var ppMissingLocationCounter = 0;
+    var ppMessageCorrectCount = 0;
     var ppIsExerciseOk = 0;
     var ppAddressToUSGSOk = 0;
-    var ppAutoFailCount = 0;
 
     var ffm = new FormFieldManager();
-    ffm.add("exerciseId", new FormField(FFType.SPECIFIED, "Exercise Id", "ETO WLT SHAKEOUT 2023.", 0));
-    ffm.add("response", new FormField(FFType.SPECIFIED, "Response", "duck", 0));
+    ffm.add("eventType", new FormField("!!! Event Type", "EXERCISE"));
+    ffm.add("exerciseId", new FormField("Exercise Id", "2023SHAKEOUT"));
+    ffm.add("response", new FormField("Response", "duck"));
 
     var scoreCounter = new Counter();
     var responseCounter = new Counter();
     var exerciseIdCounter = new Counter();
     var intensityCounter = new Counter();
     var versionCounter = new Counter();
+    var ppFeedBackCounter = new Counter();
 
     var noUSGSCallAddressMap = new TreeMap<String, String>();
 
-    var results = new ArrayList<IWritableTable>();
+    var callResultsMap = new HashMap<String, IWritableTable>();
+    var zeroZeroLocationList = new ArrayList<String>();
+
     for (var message : mm.getMessagesForType(MessageType.DYFI)) {
       DyfiMessage m = (DyfiMessage) message;
       var call = m.from;
@@ -133,28 +128,16 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
       }
 
       ++ppCount;
-      var points = 0;
       var explanations = new ArrayList<String>();
       ffm.reset(explanations);
-      var autoFail = false;
 
-      var isRealEvent = m.isRealEvent;
-      if (isRealEvent) {
-        explanations.add("FAIL: must not select 'Real Event'");
-        autoFail = true;
-        ++ppAutoFailCount;
-      } else {
-        ++ppIsExerciseOk;
-      }
+      ffm.test("eventType", m.isRealEvent ? "REAL EVENT" : "EXERCISE");
 
       var addresses = new HashSet<String>();
       addresses.addAll(Arrays.asList(m.toList.replaceAll("SMTP:", "").split(",")));
       addresses.addAll(Arrays.asList(m.ccList.replaceAll("SMTP:", "").split(",")));
-
       if (!addresses.contains(REQUIRED_USGS_ADDRESS)) {
-        explanations.add("FAIL: To: and Cc: addresses don't contain required address: " + REQUIRED_USGS_ADDRESS);
-        autoFail = true;
-        ++ppAutoFailCount;
+        explanations.add("!!! To: and Cc: addresses don't contain required address: " + REQUIRED_USGS_ADDRESS);
         noUSGSCallAddressMap.put(call, addresses.toString());
       } else {
         ++ppAddressToUSGSOk;
@@ -171,39 +154,61 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
       var intensityString = m.intensity;
       intensityCounter.incrementNullSafe(intensityString);
 
+      var mapLocation = m.mapLocation;
+      if (mapLocation == null) {
+        zeroZeroLocationList.add(call);
+        ++ppMissingLocationCounter;
+        explanations.add("!!! missing location ");
+        mapLocation = new LatLongPair("", "");
+      } else if (!mapLocation.isValid() || mapLocation.equals(LatLongPair.ZERO_ZERO)) {
+        zeroZeroLocationList.add(call);
+        ++ppMissingLocationCounter;
+        explanations.add("!!!invalid location: " + mapLocation.toString());
+        mapLocation = new LatLongPair("", "");
+      }
+
       var version = m.formVersion;
       versionCounter.incrementNullSafe(version);
 
-      points = ffm.getPoints();
-      points = Math.min(100, points);
-      points = Math.max(0, points);
-      points = autoFail ? 0 : points;
-      scoreCounter.increment(points);
-      var grade = String.valueOf(points);
-      var explanation = (points == 100) ? "Perfect Score!" : String.join("\n", explanations);
+      var feedback = "Perfect Message";
+      var feedbackCountString = "0";
+      if (explanations.size() == 0) {
+        ++ppMessageCorrectCount;
+        ppFeedBackCounter.increment("0");
+      } else {
+        feedback = String.join("\n", explanations);
+        feedbackCountString = (explanations.size() < 10) ? String.valueOf(explanations.size()) : "10 or more";
+        ppFeedBackCounter.increment(feedbackCountString);
+      }
 
-      var result = new GradedResult(m, grade, explanation);
-      results.add(result);
+      var result = new Result(call, mapLocation.getLatitude(), mapLocation.getLongitude(), feedback,
+          feedbackCountString, m);
+
+      var outboundMessage = new OutboundMessage(outboundMessageSender, call, outboundMessageSubject + " " + m.messageId,
+          feedback, null);
+      outboundMessageList.add(outboundMessage);
+
+      callResultsMap.put(call, result);
     } // end loop over DYFI messages
 
     var sb = new StringBuilder();
-    sb.append("Automatic Fail Count: " + ppAutoFailCount + "\n");
-    sb.append(formatPP("Is Exerercise", ppIsExerciseOk, ppCount));
-    sb.append(formatPP("Addressed to USGS", ppAddressToUSGSOk, ppCount));
+    sb.append("\n\nETO 2023-10-19 aggregate results:\n");
+    sb.append("DYFI participants: " + ppCount + "\n");
+    sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, ppCount));
+    sb.append(formatPP("  Is Exerercise", ppIsExerciseOk, ppCount));
+    sb.append(formatPP("  Addressed to USGS", ppAddressToUSGSOk, ppCount));
+    sb.append(formatPP("NO Missing or Invalid Locations", ppMissingLocationCounter, true, ppCount));
 
-    sb.append("\nScorable Actionable Fields\n");
     for (var key : ffm.keySet()) {
-      var af = ffm.get(key);
-      sb.append("  " + formatPP(af.label, af.count, ppCount));
+      sb.append(formatField(ffm, key, false, ppCount));
     }
 
-    sb.append("\nScores: \n" + formatCounter(scoreCounter.getDescendingKeyIterator(), "score", "count"));
-    sb.append("\nResponses: \n" + formatCounter(responseCounter.getDescendingCountIterator(), "response", "count"));
-    sb
-        .append(
-            "\nExerciseId: \n" + formatCounter(exerciseIdCounter.getDescendingCountIterator(), "exerciseId", "count"));
-    sb.append("\nIntensity: \n" + formatCounter(intensityCounter.getDescendingKeyIterator(), "intensity", "count"));
-    sb.append("\nVersion: \n" + formatCounter(versionCounter.getDescendingKeyIterator(), "version", "count"));
+    sb.append("\n-------------------Histograms---------------------\n");
+    sb.append(formatCounter("Scores", scoreCounter));
+    sb.append(formatCounter("Responses", responseCounter));
+    sb.append(formatCounter("ExerciseId", exerciseIdCounter));
+    sb.append(formatCounter("Intensity", intensityCounter));
+    sb.append(formatCounter("Version", versionCounter));
 
     sb.append("\nFailed to address message to USGS: (" + REQUIRED_USGS_ADDRESS + ")\n");
     for (var call : noUSGSCallAddressMap.keySet()) {
@@ -212,7 +217,30 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
 
     logger.info(sb.toString());
 
-    writeTable("graded-dyfi.csv", results);
+    if (zeroZeroLocationList.size() > 0) {
+      logger
+          .info("adjusting lat/long for " + zeroZeroLocationList.size() + " messages: "
+              + String.join(",", zeroZeroLocationList));
+      var newLocations = LocationUtils.jitter(zeroZeroLocationList.size(), LatLongPair.ZERO_ZERO, 10_000);
+      for (int i = 0; i < zeroZeroLocationList.size(); ++i) {
+        var call = zeroZeroLocationList.get(i);
+        var result = (Result) callResultsMap.get(call);
+        var newLocation = newLocations.get(i);
+        result.message().setMapLocation(newLocation);
+      }
+    }
+
+    var results = new ArrayList<>(callResultsMap.values());
+
+    writeTable("dyfi-with-feedback.csv", results);
   }
 
+  @Override
+  public void postProcess() {
+    if (doOutboundMessaging) {
+      var service = new OutboundMessageService(cm);
+      outboundMessageList = service.sendAll(outboundMessageList);
+      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
+    }
+  }
 }

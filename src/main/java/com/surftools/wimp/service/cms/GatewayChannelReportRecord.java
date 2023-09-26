@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +25,31 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service.cms;
 
-import com.surftools.utils.config.IConfigurationManager;
+/**
+ * response for GatewayChannelReport
+ */
+public record GatewayChannelReportRecord(String callsign, String gridsquare, int frequency, int mode, String hours,
+    String serviceCode) implements Comparable<GatewayChannelReportRecord> {
 
-public interface IProcessor {
+  @Override
+  public int compareTo(GatewayChannelReportRecord o) {
+    var cmp = callsign.compareTo(o.callsign);
+    if (cmp != 0) {
+      return cmp;
+    }
 
-  /**
-   * run before any processors look at messages
-   *
-   * @param cm
-   * @param mm
-   */
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
+    cmp = gridsquare.compareTo(o.gridsquare);
+    if (cmp != 0) {
+      return cmp;
+    }
 
-  /**
-   * can look at messages in the mm, etc.
-   */
-  public void process();
+    cmp = frequency - o.frequency;
+    if (cmp != 0) {
+      return cmp;
+    }
+    return serviceCode.compareTo(o.serviceCode);
+  }
 
-  /**
-   * run after processors complete their normal message processing
-   */
-  public void postProcess();
 }

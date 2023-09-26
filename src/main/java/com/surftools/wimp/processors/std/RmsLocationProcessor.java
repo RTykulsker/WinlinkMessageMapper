@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.utils.winlink.cms;
+package com.surftools.wimp.processors.std;
 
 import java.io.FileReader;
 import java.io.Reader;
@@ -45,23 +45,19 @@ import com.opencsv.CSVReaderBuilder;
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.core.IMessageManager;
 
-/**
- * Reads an "exported message" file, produced by Winlink, creates @{ExportedMessage} records
- *
- * @author bobt
- *
- */
-public class RmsLocatorManager implements IRmsLocationManager {
-  private static final Logger logger = LoggerFactory.getLogger(RmsLocatorManager.class);
+public class RmsLocationProcessor extends AbstractBaseProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(RmsLocationProcessor.class);
 
-  private final Map<String, LatLongPair> callLocationMap;
-  private final IConfigurationManager cm;
+  public static final String RMS_LOCATION_MANAGER_CONTEXT = "rmsLocationManager";
+
+  private Map<String, LatLongPair> callLocationMap;
 
   /**
    * this is our public interface
    */
-  @Override
+
   public LatLongPair getLocationForRms(String rmsCall) {
     var result = callLocationMap.get(rmsCall);
     logger.debug("rms location of " + rmsCall + " is " + result);
@@ -69,13 +65,14 @@ public class RmsLocatorManager implements IRmsLocationManager {
     return result;
   }
 
-  public RmsLocatorManager(IConfigurationManager cm) {
-    this.cm = cm;
-
+  @Override
+  public void initialize(IConfigurationManager cm, IMessageManager mm) {
     callLocationMap = new HashMap<>();
     callLocationMap.putAll(load(Key.RMS_HF_GATEWAYS_FILE_NAME));
     callLocationMap.putAll(load(Key.RMS_VHF_GATEWAYS_FILE_NAME));
     logger.info("after initialization, map has " + callLocationMap.size() + " unique RMS locations");
+
+    mm.putContextObject(RMS_LOCATION_MANAGER_CONTEXT, this);
   }
 
   private Map<String, LatLongPair> load(Key key) {
@@ -142,4 +139,10 @@ public class RmsLocatorManager implements IRmsLocationManager {
     logger.debug("returning: " + list.size() + " records from: " + inputPath.toString());
     return list;
   }
+
+  @Override
+  public void process() {
+    // nothing to see here
+  }
+
 }

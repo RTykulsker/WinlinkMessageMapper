@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +25,31 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service.cms;
 
-import com.surftools.utils.config.IConfigurationManager;
+import java.time.LocalDateTime;
 
-public interface IProcessor {
+/**
+ * response for TrafficLogsSenderGet and TrafficLogsSourceGet
+ */
+public record TrafficRecord( //
+    LocalDateTime dateTime, //
+    String site, //
+    String event, //
+    String messageId, //
+    int clientType, //
+    String callsign, //
+    String gateway, //
+    String source, //
+    String sender, //
+    String subject, //
+    int size, //
+    int attachments, //
+    int frequency) implements Comparable<TrafficRecord> {
 
-  /**
-   * run before any processors look at messages
-   *
-   * @param cm
-   * @param mm
-   */
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
+  @Override
+  public int compareTo(TrafficRecord o) {
+    return dateTime.compareTo(o.dateTime);
+  }
 
-  /**
-   * can look at messages in the mm, etc.
-   */
-  public void process();
-
-  /**
-   * run after processors complete their normal message processing
-   */
-  public void postProcess();
 }

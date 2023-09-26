@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +42,7 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
@@ -53,9 +55,10 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
-  protected Logger logger;
+  protected static Logger logger;
 
   protected IConfigurationManager cm;
   protected IMessageManager mm;
@@ -65,13 +68,19 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected String outputPathName;
   protected Path outputPath;
 
+  protected List<OutboundMessage> outboundMessageList = new ArrayList<OutboundMessage>();
+  protected String outboundMessageSender;
+  protected String outboundMessageSubject;
+  protected boolean doOutboundMessaging;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-
+    logger = LoggerFactory.getLogger(AbstractBaseProcessor.class);
+    doInitialization(cm, mm);
   }
 
-  public void initialize(IConfigurationManager cm, IMessageManager mm, Logger logger) {
-    this.logger = logger;
+  public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
+    logger = _logger;
     doInitialization(cm, mm);
   }
 
@@ -88,10 +97,22 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     if (dumpIds == null) {
       dumpIds = new HashSet<>();
     }
+
+    outboundMessageSender = cm.getAsString(Key.OUTBOUND_MESSAGE_SENDER);
+    outboundMessageSubject = cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);
+    doOutboundMessaging = outboundMessageSender != null && outboundMessageSubject != null
+        && !outboundMessageSender.isEmpty() && !outboundMessageSubject.isEmpty();
+    if (!doOutboundMessaging) {
+      logger.debug("### skipping outboundMessage processing");
+    }
   }
 
   @Override
   public abstract void process();
+
+  @Override
+  public void postProcess() {
+  }
 
   protected String formatPercent(Double d) {
     if (d == null) {
@@ -153,7 +174,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
   }
 
-  protected void writeTable(String fileName, List<IWritableTable> entries) {
+  public static void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
     Path outputPath = Path.of(pathName, "output", fileName);
     FileUtils.makeDirIfNeeded(outputPath.toString());
 
@@ -188,6 +209,10 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     } catch (Exception e) {
       logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
     }
+  }
+
+  protected void writeTable(String fileName, List<IWritableTable> entries) {
+    writeTable(pathName, fileName, entries);
   }
 
   /**

@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 
 public class Ics213Message extends ExportedMessage {
@@ -42,9 +43,14 @@ public class Ics213Message extends ExportedMessage {
   public final String approvedBy;
   public final String position;
 
+  public final boolean isExercise;
+  public final LatLongPair formLocation;
+  public final String version;
+
   public Ics213Message(ExportedMessage exportedMessage, String organization, String incidentName, //
       String formFrom, String formTo, String formSubject, String formDate, String formTime, //
-      String formMessage, String approvedBy, String position) {
+      String formMessage, String approvedBy, String position, //
+      boolean isExercise, LatLongPair formLocation, String version) {
     super(exportedMessage);
     this.organization = organization;
     this.incidentName = incidentName;
@@ -58,27 +64,39 @@ public class Ics213Message extends ExportedMessage {
     this.formMessage = formMessage;
     this.approvedBy = approvedBy;
     this.position = position;
+
+    this.isExercise = isExercise;
+    this.formLocation = formLocation;
+    this.version = version;
   }
 
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
-        "Latitude", "Longitude", "Organization", "IncidentName", //
+        "Latitude", "Longitude", "Msg Location", "Form Location", //
+        "Organization", "IncidentName", //
         "Form From", "Form To", "Form Subject", "Form Date", "Form Time", //
-        "Form Message", "Approved By", "Position/Title" };
+        "Form Message", "Approved By", "Position/Title", "Is Exercise", "Version" };
   }
 
   @Override
   public String[] getValues() {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
-    var lat = mapLocation == null ? "" : mapLocation.getLatitude();
-    var lon = mapLocation == null ? "" : mapLocation.getLongitude();
+
+    // prefer form location to message location
+    var location = formLocation;
+    if (location == null || !location.isValid()) {
+      location = mapLocation;
+    }
+    var lat = location == null ? "" : location.getLatitude();
+    var lon = location == null ? "" : location.getLongitude();
 
     return new String[] { messageId, from, to, subject, date, time, //
-        lat, lon, organization, incidentName, //
+        lat, lon, mapLocation.toString(), formLocation.toString(), //
+        organization, incidentName, //
         formFrom, formTo, formSubject, formDate, formTime, //
-        formMessage, approvedBy, position };
+        formMessage, approvedBy, position, String.valueOf(isExercise), version };
   }
 
   @Override

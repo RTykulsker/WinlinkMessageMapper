@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +25,11 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service.rmsGateway;
 
-import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.utils.location.LatLongPair;
 
-public interface IProcessor {
+public record RmsGatewayResult(String sender, String messageId, boolean isFound, LatLongPair location,
+    String gatewayCallsign, int frequency) {
 
-  /**
-   * run before any processors look at messages
-   *
-   * @param cm
-   * @param mm
-   */
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
-
-  /**
-   * can look at messages in the mm, etc.
-   */
-  public void process();
-
-  /**
-   * run after processors complete their normal message processing
-   */
-  public void postProcess();
 }

@@ -51,6 +51,8 @@ import com.surftools.wimp.parser.Ics205Parser;
 import com.surftools.wimp.parser.Ics213Parser;
 import com.surftools.wimp.parser.Ics213RRParser;
 import com.surftools.wimp.parser.Ics213ReplyParser;
+import com.surftools.wimp.parser.Ics214Parser;
+import com.surftools.wimp.parser.Ics309Parser;
 import com.surftools.wimp.parser.MiroCheckInParser;
 import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
@@ -143,6 +145,10 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.ICS_213_REPLY;
       } else if (attachmentNames.contains(MessageType.ICS_213_RR.attachmentName())) {
         return MessageType.ICS_213_RR;
+      } else if (attachmentNames.contains(MessageType.ICS_214.attachmentName())) {
+        return MessageType.ICS_214;
+      } else if (attachmentNames.contains(MessageType.ICS_309.attachmentName())) {
+        return MessageType.ICS_309;
       } else if (attachmentNames.contains(MessageType.DAMAGE_ASSESSMENT.attachmentName())) {
         return MessageType.DAMAGE_ASSESSMENT;
       } else if (attachmentNames.contains(MessageType.QUICK.attachmentName())) {
@@ -202,6 +208,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.ICS_213, new Ics213Parser());
     parserMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyParser());
     parserMap.put(MessageType.ICS_213_RR, new Ics213RRParser());
+    parserMap.put(MessageType.ICS_214, new Ics214Parser());
+    parserMap.put(MessageType.ICS_309, new Ics309Parser());
 
     parserMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInParser());
     parserMap.put(MessageType.ETO_CHECK_IN_V2, new EtoCheckInV2Parser());

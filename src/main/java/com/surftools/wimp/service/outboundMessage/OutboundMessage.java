@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +25,34 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service.outboundMessage;
 
-import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.wimp.core.IWritableTable;
 
-public interface IProcessor {
+public record OutboundMessage(String from, String to, String subject, String body, String messageId)
+    implements IWritableTable {
 
-  /**
-   * run before any processors look at messages
-   *
-   * @param cm
-   * @param mm
-   */
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
+  public OutboundMessage(OutboundMessage in, String messageId) {
+    this(in.from, in.to, in.subject, in.body, messageId);
+  }
 
-  /**
-   * can look at messages in the mm, etc.
-   */
-  public void process();
+  private static String[] getStaticHeaders() {
+    return new String[] { "From", "To", "Subject", "Body", "MessageId", };
+  }
 
-  /**
-   * run after processors complete their normal message processing
-   */
-  public void postProcess();
+  @Override
+  public String[] getHeaders() {
+    return getStaticHeaders();
+  }
+
+  @Override
+  public String[] getValues() {
+    return new String[] { from, to, subject, body, messageId };
+  }
+
+  @Override
+  public int compareTo(IWritableTable other) {
+    return toString().compareTo(other.toString());
+  }
+
 }

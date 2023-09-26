@@ -81,6 +81,7 @@ public class WinlinkMessageMapper {
       pipeline
           .initialize(new PropertyFileConfigurationManager(configurationFileName, Key.values()), new MessageManager());
       pipeline.process();
+      pipeline.postProcess();
 
       logger.info("exiting");
     } catch (Exception e) {

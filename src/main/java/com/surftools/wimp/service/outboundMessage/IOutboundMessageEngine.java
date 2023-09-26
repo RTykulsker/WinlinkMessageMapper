@@ -25,18 +25,33 @@ SOFTWARE.
 
 */
 
-package com.surftools.utils.winlink.cms;
+package com.surftools.wimp.service.outboundMessage;
 
-import com.surftools.utils.location.LatLongPair;
-
-public interface IRmsLocationManager {
+public interface IOutboundMessageEngine {
 
   /**
-   * this is our public interface
+   * send a Winlink message,
    *
-   * @param rmsCall:
-   *          callsign of RMS
-   * @return LatLongPair or null if not found
+   * @param m
+   * @return messageId, if available
    */
-  public LatLongPair getLocationForRms(String rmsCall);
+  public String send(OutboundMessage m);
+
+  /**
+   * complete send process, if needed
+   */
+  public void finalizeSend();
+
+  /**
+   * @return EngineType of instance
+   */
+  public EngineType getEngineType();
+
+  /**
+   * properly initialized and ready to process
+   *
+   * @return
+   */
+  public boolean isReady();
+
 }

@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2023, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +25,18 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service;
 
-import com.surftools.utils.config.IConfigurationManager;
-
-public interface IProcessor {
+/**
+ * marker interface for services, which are things that aren't processors, but are used by processors
+ */
+public interface IService {
 
   /**
-   * run before any processors look at messages
+   * return name for this service
    *
-   * @param cm
-   * @param mm
+   * @return
    */
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
+  public String getName();
 
-  /**
-   * can look at messages in the mm, etc.
-   */
-  public void process();
-
-  /**
-   * run after processors complete their normal message processing
-   */
-  public void postProcess();
 }

@@ -49,6 +49,8 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.MiroCheckInMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.service.outboundMessage.OutboundMessage;
+import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 
 /**
  * compute documented resilience, based on {@link com.surftools.wimp.message.MiroCheckinMessage}
@@ -245,6 +247,11 @@ public class MiroProcessor extends AbstractBaseProcessor {
 
   private Map<String, List<GradedMiroMessage>> oldMessages;
 
+  private int ppCount = 0;
+  private int ppResilienceCount = 0;
+  private List<IWritableTable> results = new ArrayList<IWritableTable>();
+  private Counter scoreCounter = new Counter();
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
@@ -252,14 +259,8 @@ public class MiroProcessor extends AbstractBaseProcessor {
     oldMessages = makeOldMessageMap();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
-    var results = new ArrayList<IWritableTable>();
-    var scoreCounter = new Counter();
-    var ppCount = 0;
-    var ppResilienceCount = 0;
-
     var messages = mm.getMessagesForType(MessageType.MIRO_CHECK_IN);
     if (messages != null) {
       for (var message : messages) {
@@ -300,9 +301,36 @@ public class MiroProcessor extends AbstractBaseProcessor {
         Collections.sort(list);
         oldMessages.put(from, list);
         results.add(newGradedMessage);
-      }
-    }
 
+        if (doOutboundMessaging) {
+          var sb = new StringBuilder();
+          sb.append("Thank you for participating in our monthly MIRO Winlink Wednesday exercise ");
+          sb.append("and for submitting a MIRO Check In v2.0.0 message.\n\n");
+
+          if (isResilient.equalsIgnoreCase("YES")) {
+            sb.append("This month you used a 'resilient path' to send your messages. Well done!\n");
+          } else {
+            sb.append("This month you didn't use a 'resilient path'. Oh well, try again next month!\n");
+          }
+          sb.append("\n");
+          sb.append("For 2023, you participated in " + newExerciseCount + " exercise");
+          sb.append((newExerciseCount == 1 ? "" : "s") + ", ");
+          sb.append("with a resilient count of " + newResilientCount);
+          sb.append(", for a resiliency 'score' of " + resiliencyPercent + "%\n\n");
+
+          var feedback = sb.toString();
+          var outboundMessage = new OutboundMessage(outboundMessageSender, from,
+              outboundMessageSubject + " " + m.messageId, feedback, null);
+          outboundMessageList.add(outboundMessage);
+        } // end doOutboundMessaging
+
+      } // end loop over messages
+    } // end messages not null
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void postProcess() {
     var sb = new StringBuilder();
     sb.append("\nMiro Check In messages: " + ppCount + "\n");
     sb.append(formatPP("Messages with resilient channel", ppResilienceCount, ppCount));
@@ -319,6 +347,12 @@ public class MiroProcessor extends AbstractBaseProcessor {
     var writables = new ArrayList<IWritableTable>();
     writables.addAll(allGradedMessages);
     writeTable("cumulative-miro_check_in.csv", writables);
+
+    if (doOutboundMessaging) {
+      var service = new OutboundMessageService(cm);
+      outboundMessageList = service.sendAll(outboundMessageList);
+      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
+    }
   }
 
   private Map<String, List<GradedMiroMessage>> makeOldMessageMap() {

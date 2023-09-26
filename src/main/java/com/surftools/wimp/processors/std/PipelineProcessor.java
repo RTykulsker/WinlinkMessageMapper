@@ -140,4 +140,11 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     }
   }
 
+  @Override
+  public void postProcess() {
+    for (var processor : processors) {
+      processor.postProcess();
+    }
+  }
+
 }
