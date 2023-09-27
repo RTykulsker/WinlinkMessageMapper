@@ -55,10 +55,36 @@ public abstract class AbstractBaseCmsWebService implements ICmsWebService {
   private static final Logger logger = LoggerFactory.getLogger(AbstractBaseCmsWebService.class);
 
   protected Map<String, String> callServiceMap = new HashMap<>();
+  private final Map<Integer, String> modeNumberNameMap;
 
   public AbstractBaseCmsWebService(IConfigurationManager cm) {
     // In theory, we can be issued separate keys for each CMS service. In practice, we only have one key
     callServiceMap.put(Key.CMS_AUTHORIZATION_KEY.name(), cm.getAsString(Key.CMS_AUTHORIZATION_KEY));
+
+    modeNumberNameMap = new HashMap<>();
+    loadModeMap();
+  }
+
+  private void loadModeMap() {
+    var lines = modeNames.split("\n");
+    for (var line : lines) {
+      var fields = line.split(":");
+      if (fields.length >= 2) {
+        var key = Integer.valueOf(fields[0].strip());
+        var value = fields[1].strip();
+        modeNumberNameMap.put(key, value);
+      }
+    }
+  }
+
+  /**
+   * get mode name for a mode number
+   *
+   * @param modeNumber
+   * @return name or UNKNOWN
+   */
+  public String getModeName(int modeNumber) {
+    return modeNumberNameMap.getOrDefault(modeNumber, "UNKNOWN");
   }
 
   @Override
@@ -212,5 +238,38 @@ public abstract class AbstractBaseCmsWebService implements ICmsWebService {
   public String getName() {
     return "AbstractBaseCMSWebService";
   }
+
+  // https://github.com/ARSFI/winlink/wiki/Protocol-Mode-Mappings
+  public static final String modeNames = """
+      0: Packet 1200
+      1: Packet 2400
+      2: Packet 4800
+      3: Packet 9600
+      4: Packet 19200
+      5: Packet 38400
+      11: Pactor 1
+      12: Pactor 1,2
+      13: Pactor 1,2,3
+      14: Pactor 2
+      15: Pactor 2,3
+      16: Pactor 3
+      17: Pactor 1,2,3,4
+      18: Pactor 2,3,4
+      19: Pactor 3,4
+      20: Pactor 4
+      21: WINMOR 500
+      22: WINMOR 1600
+      30: Robust Packet
+      40: ARDOP 200
+      41: ARDOP 500
+      42: ARDOP 1000
+      43: ARDOP 2000
+      44: ARDOP 2000 FM
+      50: VARA
+      51: VARA FM
+      52: VARA FM WIDE
+      53: VARA 500
+      54: VARA 2750
+           """;
 
 }

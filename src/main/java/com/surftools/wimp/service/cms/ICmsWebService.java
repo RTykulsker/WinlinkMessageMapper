@@ -87,5 +87,18 @@ public interface ICmsWebService extends IService {
   public List<GatewayChannelReportRecord> gatewayChannelReport(int frequencyMinimum, int frequencyMaximum,
       String serviceCodes, List<Integer> modes);
 
+  /**
+   * Convenience method to returns a list of all GatewayChanelReportRecords
+   * 
+   * @return
+   */
   public List<GatewayChannelReportRecord> gatewayChannelReport();
+
+  /**
+   * get mode name for a mode number
+   *
+   * @param modeNumber
+   * @return name or UNKNOWN
+   */
+  public String getModeName(int modeNumber);
 }

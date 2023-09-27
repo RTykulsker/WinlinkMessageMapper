@@ -51,7 +51,6 @@ public class Dev_ICS_309 extends AbstractBaseProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
-
   }
 
   @SuppressWarnings({ "unused" })
