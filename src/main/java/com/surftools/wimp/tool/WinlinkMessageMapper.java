@@ -50,7 +50,7 @@ import com.surftools.wimp.processors.std.PipelineProcessor;
 
 public class WinlinkMessageMapper {
   static {
-    // System.setProperty("logback.configurationFile", "src/main/resources/logback.xml");
+    System.setProperty("logback.configurationFile", "src/main/resources/logback.xml");
   }
 
   private static final Logger logger = LoggerFactory.getLogger(WinlinkMessageMapper.class);

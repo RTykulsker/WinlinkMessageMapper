@@ -131,14 +131,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
     mm.load(exportedMessages);
   }
 
-  /**
-   * reads a single file (from a clearinghouse), returns a list of ExportedMessage records
-   *
-   * @param filePath
-   * @return
-   */
-  public List<ExportedMessage> readAll(Path filePath) {
-    logger.debug("Processing file: " + filePath.getFileName());
+  private List<ExportedMessage> parseExportedMessages(InputStream inputStream) {
     List<ExportedMessage> messages = new ArrayList<>();
 
     var iNode = 0;
@@ -147,7 +140,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
       DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
       dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       DocumentBuilder db = dbf.newDocumentBuilder();
-      Document doc = db.parse(getInputStream(filePath));
+      Document doc = db.parse(inputStream);
       doc.getDocumentElement().normalize();
       NodeList nodeList = doc.getElementsByTagName("message");
       nNodes = nodeList.getLength();
@@ -161,12 +154,31 @@ public class ReadProcessor extends AbstractBaseProcessor {
       } // end for over messages
     } catch (Exception e) {
       logger
-          .error("Exception processing file: " + filePath.getFileName() + ", message " + iNode + " of " + nNodes
+          .error("Exception processing imput stream, message " + iNode + " of " + nNodes
               + " (maybe not exported Winlink Messages XML file) : " + e.getLocalizedMessage());
     }
 
-    logger.info("extracted " + messages.size() + " exported messages from file: " + filePath.getFileName());
     return messages;
+  }
+
+  /**
+   * reads a single file (from a clearinghouse), returns a list of ExportedMessage records
+   *
+   * @param filePath
+   * @return
+   */
+  public List<ExportedMessage> readAll(Path filePath) {
+    logger.debug("Processing file: " + filePath.getFileName());
+
+    try {
+      var messages = parseExportedMessages(getInputStream(filePath));
+      logger.info("extracted " + messages.size() + " exported messages from file: " + filePath.getFileName());
+      return messages;
+    } catch (Exception e) {
+      logger.error("Exception processing file: " + filePath + ", " + e.getLocalizedMessage());
+      return new ArrayList<ExportedMessage>();
+    }
+
   }
 
   private ExportedMessage readMessage(Element element) {

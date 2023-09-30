@@ -67,7 +67,7 @@ public class ETO_2022_05_14_RMS extends AbstractBaseProcessor {
 
       // participation points
       var points = 20;
-      var<String> explanations = new ArrayList<String>();
+      var explanations = new ArrayList<String>();
 
       var expected = "";
       var automaticFail = false;
@@ -148,7 +148,7 @@ public class ETO_2022_05_14_RMS extends AbstractBaseProcessor {
       // Boxes 4-11 must contain comments if the answer is “NO”, and must not contain comments if the answer is “YES” or
       // “Unknown - N/A.”
 
-      var<List> fieldsList = Arrays
+      var fieldsList = Arrays
           .asList(Arrays.asList(m.landlineStatus, m.landlineComments, "landline"), //
               Arrays.asList(m.cellPhoneStatus, m.cellPhoneComments, "cellPhone"), //
               Arrays.asList(m.radioStatus, m.radioComments, "radio"), //
@@ -197,7 +197,7 @@ public class ETO_2022_05_14_RMS extends AbstractBaseProcessor {
 
         // additional activity option -- no original credit, so now it's extra credit
         {
-          final var<String> jetSet = Set.of("jet stream over", "jet stream near", "jetstream over", "jetstream near");
+          final var jetSet = Set.of("jet stream over", "jet stream near", "jetstream over", "jetstream near");
           for (var string : jetSet) {
             if (comments.contains(string)) {
               points += 5;
