@@ -30,7 +30,7 @@ package com.surftools.wimp.formField;
 public enum FFType {
   REQUIRED, // field value must be present, but any value
   REQUIRED_NOT, // field value must be present, and NOT value held by placeholder
-  OPTIONAL, // field may or may not (null/empty) be presnet
+  OPTIONAL, // field may or may not (null/empty) be present
   OPTIONAL_NOT, // field may or may not be present, but if present, must NOT be value held by placeholder value
   CONTAINS, // field must be present and contain the placeholder value
   CONTAINED_BY, // field must be present and within the placeholder value

@@ -346,6 +346,15 @@ public class FormFieldManager {
     return returnPoints;
   }
 
+  public void fail(String key, String explanation) {
+    if (!isEnabled) {
+      return;
+    }
+
+    var field = map.get(key);
+    explanations.add(importance(field) + explanation);
+  }
+
   private String importance(FormField field) {
     final var map = Map.of(0, "", 1, "!", 2, "!!", 3, "!!!");
     var index = 0;

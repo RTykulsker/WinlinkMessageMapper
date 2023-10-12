@@ -161,7 +161,8 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected String formatField(FormFieldManager ffm, String key, boolean invert, int N) {
     var field = ffm.get(key);
     var value = invert ? N - field.count : field.count;
-    return (value == N) ? "" : formatPP("  " + field.label, value, N);
+    // return (value == N) ? "" : formatPP(" " + field.label, value, N);
+    return formatPP("  " + field.label, value, N);
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
