@@ -69,6 +69,7 @@ public enum Key implements IConfigurationKey {
   EXERCISE_DESCRIPTION("exerciseDescription"), // for Summarizer
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
+  SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, list ETO-BK
 
   MAX_DAYS_BEFORE_LATE("maxDaysBeforeLate"), // for warning about late messages
 

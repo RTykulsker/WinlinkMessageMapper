@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.processors.named;
 
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -42,15 +43,18 @@ import org.slf4j.LoggerFactory;
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.MiroCheckInMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
+import com.surftools.wimp.service.rmsGateway.RmsGatewayService;
 
 /**
  * compute documented resilience, based on {@link com.surftools.wimp.message.MiroCheckinMessage}
@@ -252,11 +256,15 @@ public class MiroProcessor extends AbstractBaseProcessor {
   private List<IWritableTable> results = new ArrayList<IWritableTable>();
   private Counter scoreCounter = new Counter();
 
+  private RmsGatewayService rmsGatewayService;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
     oldMessages = makeOldMessageMap();
+
+    rmsGatewayService = new RmsGatewayService(cm);
   }
 
   @Override
@@ -318,6 +326,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
           sb.append("with a resilient count of " + newResilientCount);
           sb.append(", for a resiliency 'score' of " + resiliencyPercent + "%\n\n");
 
+          var totalMessageContent = getTotalMessageContent(from, mm.getMessagesForSender(from));
+          sb.append(totalMessageContent);
+
           var feedback = sb.toString();
           var outboundMessage = new OutboundMessage(outboundMessageSender, from,
               outboundMessageSubject + " " + m.messageId, feedback, null);
@@ -326,6 +337,50 @@ public class MiroProcessor extends AbstractBaseProcessor {
 
       } // end loop over messages
     } // end messages not null
+  }
+
+  private final DecimalFormat df = new DecimalFormat("#.000###");
+
+  private String getTotalMessageContent(String call, Map<MessageType, List<ExportedMessage>> messagesForSender) {
+    var sb = new StringBuilder();
+    sb.append("\n");
+
+    var totalMessages = 0;
+    for (var type : messagesForSender.keySet()) {
+      var list = messagesForSender.get(type);
+      for (var m : list) {
+        ++totalMessages;
+        /**
+         * public record RmsGatewayResult(String sender, String messageId, boolean isFound, LatLongPair location, String
+         * gatewayCallsign, int frequency) {
+         *
+         */
+        var serviceResult = rmsGatewayService.getLocationOfRmsGateway(call, m.messageId);
+        if (serviceResult.isFound()) {
+          sb
+              .append(
+                  "Your " + type + " message, mId(" + m.messageId + "), sent via: " + serviceResult.gatewayCallsign());
+          if (!serviceResult.gatewayCallsign().equalsIgnoreCase("TELNET")) {
+            if (serviceResult.isFound() && serviceResult.location() != null && serviceResult.location().isValid()) {
+              var distanceMiles = LocationUtils.computeDistanceMiles(m.mapLocation, serviceResult.location());
+              var bearing = LocationUtils.computBearing(m.mapLocation, serviceResult.location());
+              sb.append(", distance: " + distanceMiles + " miles, bearing: " + bearing);
+            }
+            if (serviceResult.frequency() > 0) {
+              var freqString = df.format(serviceResult.frequency() / 1_000_000d);
+              sb.append(", freq: " + freqString + " MHz");
+            }
+          }
+          sb.append("\n");
+        } else {
+          sb.append("Your " + type + " message, mId(" + m.messageId + ") not found in CMS database\n");
+        } // end if serviceResult not found
+      } // end loop over messages for type
+    } // end loop over types;
+
+    sb.append("\n" + "You sent " + totalMessages + " total messages" + "\n");
+    var s = sb.toString();
+    return s;
   }
 
   @SuppressWarnings("unchecked")

@@ -93,7 +93,8 @@ public class Ics213Message extends ExportedMessage {
     var lon = location == null ? "" : location.getLongitude();
 
     return new String[] { messageId, from, to, subject, date, time, //
-        lat, lon, mapLocation.toString(), formLocation.toString(), //
+        lat, lon, mapLocation == null ? "" : mapLocation.toString(), //
+        formLocation == null ? "" : formLocation.toString(), //
         organization, incidentName, //
         formFrom, formTo, formSubject, formDate, formTime, //
         formMessage, approvedBy, position, String.valueOf(isExercise), version };

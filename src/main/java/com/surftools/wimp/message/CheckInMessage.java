@@ -158,7 +158,7 @@ public class CheckInMessage extends ExportedMessage {
   public static String[] getStaticHeaders() {
     return new String[] { "MessageId", "From", "Latitude", "Longitude", "To", "Subject", //
         "Msg Date/Time", "Msg Lat/Long", //
-        "Organization", "Form Date/Time", "To", "From_", "Station Contact", "Initial Operators", //
+        "Organization", "Form Date/Time", "To List", "Form From", "Station Contact", "Initial Operators", //
         "Status", "Service", "Band", "Mode", //
         "Location", "Form Lat/Long", "MGRS", "Grid Square", //
         "Comments", "Version" };

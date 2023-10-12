@@ -72,7 +72,7 @@ public class LatLongPair {
 
   @Override
   public String toString() {
-    return "{lat:" + latitude + ", lon: " + longitude + "}";
+    return "lat:" + latitude + ", lon: " + longitude;
   }
 
   private static double centeredModulus(double dividend, double divisor) {

@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,8 @@ import org.slf4j.LoggerFactory;
 import com.opencsv.CSVWriter;
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
+import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
@@ -55,6 +58,53 @@ import com.surftools.wimp.message.ExportedMessage;
 public class WriteProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(WriteProcessor.class);
 
+  static class TypedMessage implements IWritableTable {
+    private ExportedMessage m;
+    private LatLongPair newLocation;
+
+    public TypedMessage(ExportedMessage message) {
+      m = message;
+    }
+
+    public TypedMessage(ExportedMessage message, LatLongPair latLongPair) {
+      this(message);
+      this.newLocation = latLongPair;
+    }
+
+    @Override
+    public int compareTo(IWritableTable o) {
+      var other = (ExportedMessage) o;
+      return m.compareTo(other);
+    }
+
+    @Override
+    public String[] getHeaders() {
+      return new String[] { "MessageId", "Type", "From", "To", "Other Addresses", "Subject", // "
+          "Date", "Time", "Latitude", "Longitude", "LocSource", //
+          "#Attachments"//
+      };
+    }
+
+    @Override
+    public String[] getValues() {
+      var date = m.sortDateTime == null ? "" : m.sortDateTime.toLocalDate().toString();
+      var time = m.sortDateTime == null ? "" : m.sortDateTime.toLocalTime().toString();
+      var lat = newLocation == null ? m.mapLocation.getLatitude() : newLocation.getLatitude();
+      var lon = newLocation == null ? m.mapLocation.getLongitude() : newLocation.getLongitude();
+
+      var addressesList = new ArrayList<String>();
+      addressesList.addAll(Arrays.asList(m.toList.split(",")));
+      addressesList.addAll(Arrays.asList(m.ccList.split(",")));
+      addressesList.remove(m.to);
+      var addresses = String.join(",", addressesList);
+      var nAttachments = m.attachments == null ? "" : String.valueOf(m.attachments.size());
+      return new String[] { m.messageId, m.getMessageType().toString(), m.from, m.to, addresses, m.subject, //
+          date, time, lat, lon, m.msgLocationSource, //
+          nAttachments };
+    }
+
+  }
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
@@ -62,14 +112,35 @@ public class WriteProcessor extends AbstractBaseProcessor {
 
   @Override
   public void process() {
+    var typedMessages = new ArrayList<IWritableTable>();
+    var badLocationMessages = new ArrayList<ExportedMessage>();
     var it = mm.getMessageTypeIteror();
     while (it.hasNext()) {
       var messageType = it.next();
       var messages = mm.getMessagesForType(messageType);
       writeOutput(messages, messageType);
+      if (messageType != MessageType.EXPORTED) {
+        for (var message : messages) {
+          if (message.mapLocation == null || message.mapLocation.equals(LatLongPair.ZERO_ZERO)
+              || !message.mapLocation.isValid()) {
+            badLocationMessages.add(message);
+          } else {
+            typedMessages.add(new TypedMessage(message));
+          }
+        }
+      }
     }
 
     writeOutput(new ArrayList<ExportedMessage>(mm.getOriginalMessages()), MessageType.EXPORTED);
+
+    if (badLocationMessages.size() > 0) {
+      var newLocations = LocationUtils.jitter(badLocationMessages.size(), LatLongPair.ZERO_ZERO, 10_000);
+      for (int i = 0; i < badLocationMessages.size(); ++i) {
+        var message = badLocationMessages.get(i);
+        typedMessages.add(new TypedMessage(message, newLocations.get(i)));
+      }
+    }
+    writeTable("typedMessages.csv", typedMessages);
   }
 
   /**

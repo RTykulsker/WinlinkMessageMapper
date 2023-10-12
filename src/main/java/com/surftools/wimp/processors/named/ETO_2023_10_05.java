@@ -139,7 +139,12 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
       ffm.test("addresses", addressList);
 
       var formDTFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      ffm.test("dateTime", formDTFormatter.format(m.formDateTime));
+      if (m.formDateTime != null) {
+        ffm.test("dateTime", formDTFormatter.format(m.formDateTime));
+      } else {
+        logger.warn("### null date/time for call: " + m.from);
+        ffm.test("dateTime", "");
+      }
 
       ffm.test("type", m.status);
       ffm.test("service", m.service);

@@ -86,6 +86,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
   private final List<String> deleteList;
 
   private Set<String> expectedDestinations = new LinkedHashSet<>();
+  private Set<String> secondaryDestinations = new LinkedHashSet<>();
 
   public ReadProcessor() {
     this(DEFAULT_DELETE_LIST);
@@ -107,6 +108,16 @@ public class ReadProcessor extends AbstractBaseProcessor {
       }
 
       logger.info("Expected Destinations: " + expectedDestinations.toString());
+    }
+
+    var secondaryDestinationsString = cm.getAsString(Key.SECONDARY_DESTINATIONS);
+    if (secondaryDestinationsString != null) {
+      var fields = secondaryDestinationsString.split(",");
+      for (var field : fields) {
+        secondaryDestinations.add(field);
+      }
+
+      logger.info("Secondary Destinations: " + secondaryDestinations.toString());
     }
 
   }
@@ -404,8 +415,15 @@ public class ReadProcessor extends AbstractBaseProcessor {
       }
     }
 
+    for (var address : addresses) {
+      if (secondaryDestinations.contains(post_fix(address))) {
+        return address;
+      }
+    }
+
     // last ditch
     return addresses.get(0);
+
   }
 
   /**

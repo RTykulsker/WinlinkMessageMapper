@@ -69,7 +69,8 @@ public class Ics213Parser extends AbstractBaseParser {
       var approvedBy = getStringFromXml("approved_name");
       var position = getStringFromXml("approved_postitle");
 
-      var isExercise = getStringFromXml("isexercise").equals(IS_EXERCISE);
+      var isExerciseString = getStringFromXml("isexercise");
+      var isExercise = isExerciseString != null && isExerciseString.equals(IS_EXERCISE);
       var formLocation = getLatLongFromXml(mapLocationTags);
       var version = getStringFromXml("templateversion");
       if (version != null) {

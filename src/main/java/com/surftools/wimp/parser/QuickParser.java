@@ -95,9 +95,7 @@ public class QuickParser extends AbstractBaseParser {
           subject, messageText, version);
 
       return m;
-    } catch (
-
-    Exception e) {
+    } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }

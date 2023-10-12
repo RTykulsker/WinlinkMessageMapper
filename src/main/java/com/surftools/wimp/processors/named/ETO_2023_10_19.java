@@ -44,6 +44,7 @@ import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.DyfiMessage;
@@ -104,8 +105,10 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
 
     var ffm = new FormFieldManager();
     ffm.add("eventType", new FormField("!!! Event Type", "EXERCISE"));
-    ffm.add("exerciseId", new FormField("Exercise Id", "2023SHAKEOUT"));
+    ffm.add("exerciseId", new FormField("Exercise Id", "2023 SHAKEOUT"));
     ffm.add("response", new FormField("Response", "duck"));
+    ffm.add("windowOpen", new FormField(FFType.DATE_TIME_ON_OR_AFTER, "Message sent too early", "2023-10-19 14:30"));
+    ffm.add("windowClose", new FormField(FFType.DATE_TIME_ON_OR_BEFORE, "Message sent too late", "2023-10-20 23:59"));
 
     var scoreCounter = new Counter();
     var responseCounter = new Counter();

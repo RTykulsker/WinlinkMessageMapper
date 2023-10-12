@@ -138,7 +138,7 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
     var outputPath = Path.of(outboxPath.toString(), messageId + ".b2f");
     try {
       Files.writeString(outputPath, sb.toString());
-      logger.info("wrote b2f file: " + outputPath);
+      logger.debug("wrote b2f file: " + outputPath);
     } catch (Exception e) {
       logger.error("Exception writing b2f file: " + outputPath + ", " + e.getLocalizedMessage());
     }
