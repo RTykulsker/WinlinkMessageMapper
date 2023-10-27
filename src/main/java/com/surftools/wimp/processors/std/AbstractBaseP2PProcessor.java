@@ -183,6 +183,10 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
       if (exportedMessages != null) {
         for (var m : exportedMessages) {
 
+          if (!m.isP2p) {
+            continue;
+          }
+
           var from = m.from;
           var to = m.to;
 
@@ -545,7 +549,7 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
       if (target.isActive) {
         targetMap.put(target.call, target);
       } else {
-        logger.info("skipping inactive target: " + target);
+        logger.debug("skipping inactive target: " + target);
       }
     }
     logger.info("read " + targetMap.size() + " targets from: " + inputFile);

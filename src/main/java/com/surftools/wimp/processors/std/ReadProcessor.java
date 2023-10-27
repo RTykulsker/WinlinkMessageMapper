@@ -199,6 +199,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
     var sender = element.getElementsByTagName("sender").item(0).getTextContent();
     var mime = element.getElementsByTagName("mime").item(0).getTextContent();
+    var isP2p = Boolean.parseBoolean(element.getElementsByTagName("peertopeer").item(0).getTextContent());
 
     if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
       logger.debug("messageId: " + messageId + ", sender: " + sender);
@@ -226,7 +227,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
     if (parser == null) {
       message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, //
           localDateTime, locationResult.location, locationResult.source, //
-          mime, plainContent, attachments);
+          mime, plainContent, attachments, isP2p);
       return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
     }
 
@@ -235,7 +236,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
 
     message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, //
         localDateTime, locationResult.location, locationResult.source, //
-        mime, plainContent, attachments);
+        mime, plainContent, attachments, isP2p);
 
     return message;
   }

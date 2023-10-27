@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.named;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,11 +43,9 @@ import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.formField.FFType;
-import com.surftools.wimp.formField.FormField;
-import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.service.FieldTestService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 
@@ -60,6 +59,7 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2023_10_19.class);
 
   public static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
+  public static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
   public static final DateTimeFormatter FORM_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   public static final DateTimeFormatter FORM_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -101,32 +101,28 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
 
   @Override
   public void process() {
+    final var windowOpenDT = LocalDateTime.of(2023, 10, 19, 14, 30, 0);
+    final var windowCloseDT = LocalDateTime.of(2023, 10, 20, 23, 59, 0);
     var ppCount = 0;
     var ppMessageCorrectCount = 0;
+    var intensityCounter = new Counter();
+    var versionCounter = new Counter();
+    var feedBackCounter = new Counter();
     var badLocationCalls = new ArrayList<String>();
     var callResultsMap = new HashMap<String, IWritableTable>();
 
-    var ffm = new FormFieldManager();
-    ffm.add("addresses-bk", new FormField(FFType.CONTAINS, "To and/or CC addresses contains ETO-BK", "ETO-BK"));
-    ffm
-        .add("addresses-usgs", new FormField(FFType.CONTAINS,
-            "To and/or CC addresses contains " + REQUIRED_USGS_ADDRESS, REQUIRED_USGS_ADDRESS));
-    ffm.add("windowOpen", new FormField(FFType.DATE_TIME_ON_OR_AFTER, "Message sent too early", "2023-10-19 14:30"));
-    ffm.add("windowClose", new FormField(FFType.DATE_TIME_ON_OR_BEFORE, "Message sent too late", "2023-10-20 23:59"));
-
-    ffm.add("eventType", new FormField("Event Type", "EXERCISE"));
-    ffm.add("exerciseId", new FormField("Exercise Id", "2023 SHAKEOUT"));
-    ffm.add("dyfi", new FormField("Did You feel it", "Yes"));
-    ffm.add("formDate", new FormField("Date of Earthquake", "10/19/2023"));
-    ffm.add("formTime", new FormField("Time of Earthquake", "10:19"));
-    ffm.add("response", new FormField("How did you respond", "Dropped and Covered"));
-    ffm.add("formLocation", new FormField(FFType.REQUIRED, "LAT/LON"));
-
-    var responseCounter = new Counter();
-    var exerciseIdCounter = new Counter();
-    var intensityCounter = new Counter();
-    var versionCounter = new Counter();
-    var ppFeedBackCounter = new Counter();
+    var fts = new FieldTestService();
+    fts.add("addresses-bk", "To and/or CC addresses must contain ETO-BK");
+    fts.add("addresses-usgs", "To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS);
+    fts.add("windowOpen", "Message must be sent on or after " + DT_FORMATTER.format(windowOpenDT), windowOpenDT);
+    fts.add("windowClose", "Message must be sent on or before " + DT_FORMATTER.format(windowCloseDT), windowCloseDT);
+    fts.add("eventType", "Event Type must be: #EV", "EXERCISE");
+    fts.add("exerciseId", "Exercise Id must be: #EV", "2023 SHAKEOUT");
+    fts.add("dyfi", "Did You feel it must be: #EV", "Yes");
+    fts.add("formDate", "Date of Earthquake must be: 10/19/2023");
+    fts.add("formTime", "Time of Earthquake must be: 10:19");
+    fts.add("response", "How did you respond must be: #EV", "Dropped and covered");
+    fts.add("formLocation", "LAT/LON must be provided");
 
     for (var message : mm.getMessagesForType(MessageType.DYFI)) {
       DyfiMessage m = (DyfiMessage) message;
@@ -137,63 +133,58 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
       }
 
       ++ppCount;
-      var explanations = new ArrayList<String>();
-      ffm.reset(explanations);
+      fts.reset();
 
       var addressList = m.toList + "," + m.ccList;
-      ffm.test("addresses-bk", addressList);
-      ffm.test("addresses-usgs", addressList);
-      ffm.test("windowOpen", FormFieldManager.FORMATTER.format(message.msgDateTime));
-      ffm.test("windowClose", FormFieldManager.FORMATTER.format(message.msgDateTime));
-
-      ffm.test("eventType", m.isRealEvent ? "REAL EVENT" : "EXERCISE");
-
-      var exerciseId = m.exerciseId == null ? null : m.exerciseId.trim().toUpperCase();
-      exerciseIdCounter.incrementNullSafe(exerciseId);
-      ffm.test("exerciseId", exerciseId);
-
-      ffm.test("dyfi", m.isFelt ? "Yes" : "No");
+      fts.test("addresses-bk", addressList, addressList.contains("ETO-BK"));
+      fts.test("addresses-usgs", addressList, addressList.contains(REQUIRED_USGS_ADDRESS));
+      fts.testOnOrAfter("windowOpen", m.msgDateTime, DT_FORMATTER);
+      fts.testOnOrBefore("windowClose", m.msgDateTime, DT_FORMATTER);
+      fts.test("eventType", m.isRealEvent ? "REAL EVENT" : "EXERCISE");
+      fts.test("exerciseId", m.exerciseId == null ? null : m.exerciseId.trim().toUpperCase());
+      fts.test("dyfi", m.isFelt ? "Yes" : "No");
 
       var response = m.response == null ? "Not specified" : m.response;
-      responseCounter.increment(response);
-      ffm.test("response", response.equalsIgnoreCase("duck") ? "Dropped and covered" : response);
+      fts
+          .test("response", response.equalsIgnoreCase("duck") ? "Dropped and covered"
+              : m.response == null ? "Not specified" : m.response);
 
       try {
-        ffm.test("formDate", FORM_DATE_FORMATTER.format(m.formDateTime));
+        fts.testDtEquals("formDate", m.msgDateTime, FORM_DATE_FORMATTER);
       } catch (Exception e) {
-        ffm.fail("formDate", "Missing/Invalid Date of Earthquake");
+        fts.fail("formDate", "Missing/Invalid Date of Earthquake");
       }
 
       try {
-        ffm.test("formTime", FORM_TIME_FORMATTER.format(m.formDateTime));
+        fts.testDtEquals("formTime", m.msgDateTime, FORM_TIME_FORMATTER);
       } catch (Exception e) {
-        ffm.fail("formTime", "Missing/Invalid Time of Earthquake");
+        fts.fail("formTime", "Missing/Invalid Time of Earthquake");
       }
 
-      var intensityString = m.intensity;
-      intensityCounter.incrementNullSafe(intensityString);
-
-      var version = m.formVersion;
-      versionCounter.incrementNullSafe(version);
+      intensityCounter.incrementNullSafe(m.intensity);
+      versionCounter.incrementNullSafe(m.formVersion);
 
       var formLocation = m.formLocation;
       if (formLocation == null) {
         badLocationCalls.add(call);
-        ffm.fail("formLocation", "Missing LAT/LON");
+        fts.fail("formLocation", "Missing LAT/LON");
       } else if (!formLocation.isValid() || formLocation.equals(LatLongPair.ZERO_ZERO)) {
         badLocationCalls.add(call);
-        ffm.fail("formLocation", "Invalid LAT/LON");
+        fts.fail("formLocation", "Invalid LAT/LON");
+      } else {
+        fts.pass("formLocation");
       }
 
       var feedback = "Perfect Message";
       var feedbackCountString = "0";
+      var explanations = fts.getExplanations();
       if (explanations.size() == 0) {
         ++ppMessageCorrectCount;
-        ppFeedBackCounter.increment("0");
+        feedBackCounter.increment("0");
       } else {
         feedback = String.join("\n", explanations);
         feedbackCountString = (explanations.size() < 10) ? String.valueOf(explanations.size()) : "10 or more";
-        ppFeedBackCounter.increment(feedbackCountString);
+        feedBackCounter.increment(feedbackCountString);
       }
 
       var result = new Result(formLocation, feedbackCountString, feedback, m);
@@ -210,13 +201,15 @@ public class ETO_2023_10_19 extends AbstractBaseProcessor {
     sb.append("DYFI participants: " + ppCount + "\n");
     sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, ppCount));
 
-    for (var key : ffm.keySet()) {
-      sb.append(formatField(ffm, key, false, ppCount));
+    var it = fts.iterator();
+    while (it.hasNext()) {
+      var key = it.next();
+      sb.append(fts.format(key));
     }
 
     sb.append("\n-------------------Histograms---------------------\n");
-    sb.append(formatCounter("Responses", responseCounter));
-    sb.append(formatCounter("ExerciseId", exerciseIdCounter));
+    sb.append(formatCounter("Responses", fts.getCounter("response")));
+    sb.append(formatCounter("ExerciseId", fts.getCounter("exerciseId")));
     sb.append(formatCounter("Intensity", intensityCounter));
     sb.append(formatCounter("Version", versionCounter));
 

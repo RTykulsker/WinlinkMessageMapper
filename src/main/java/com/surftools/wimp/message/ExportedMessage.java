@@ -65,6 +65,8 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public LocalDateTime sortDateTime; // date/time used for sorting
   public LatLongPair mapLocation; // location used for mapping
 
+  public final boolean isP2p;
+
   @Override
   public int hashCode() {
     final int prime = 31;
@@ -98,7 +100,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public ExportedMessage(String messageId, String from, String to, String toList, String ccList, //
       String subject, LocalDateTime dateTime, //
       LatLongPair location, String locationSource, //
-      String mime, String plainContent, Map<String, byte[]> attachments) {
+      String mime, String plainContent, Map<String, byte[]> attachments, boolean isP2p) {
     this.messageId = messageId;
     this.from = from;
     this.to = to;
@@ -116,6 +118,8 @@ public class ExportedMessage implements IMessage, IWritableTable {
 
     this.sortDateTime = dateTime;
     this.mapLocation = location;
+
+    this.isP2p = isP2p;
   }
 
   public void setSortDateTime(LocalDateTime dateTime) {
@@ -144,6 +148,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
 
     this.sortDateTime = exportedMessage.sortDateTime;
     this.mapLocation = exportedMessage.mapLocation;
+    this.isP2p = exportedMessage.isP2p;
   }
 
   @Override
