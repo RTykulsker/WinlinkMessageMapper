@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -94,7 +93,11 @@ public class EdmKmlToCsvTool {
 
     @Override
     public int compareTo(EdmTarget o) {
-      return call.compareTo(o.call);
+      var cmp = team.compareTo(o.team);
+      if (cmp != 0) {
+        return cmp;
+      }
+      return Integer.valueOf(channel).intValue() - Integer.valueOf(o.channel).intValue();
     }
 
     public static String[] getHeaders() {
@@ -112,101 +115,80 @@ public class EdmKmlToCsvTool {
   /**
    * main processing function
    */
-  private void run() {
-    try {
-      logger.info("begin");
+  private void run() throws Exception {
 
-      var content = Files.readString(Path.of(inputFileName));
+    logger.info("begin");
 
-      var iTarget = 0;
-      var nTargets = 0;
-      var targets = new ArrayList<EdmTarget>();
-      try {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.parse(new InputSource(new StringReader(content)));
-        doc.getDocumentElement().normalize();
-        NodeList nodeList = doc.getElementsByTagName("Placemark");
-        nTargets = nodeList.getLength();
-        logger.info("read " + nTargets + " targets from " + inputFileName);
-        for (iTarget = 0; iTarget < nTargets; ++iTarget) {
-          Node node = nodeList.item(iTarget);
-          if (node.getNodeType() == Node.ELEMENT_NODE) {
-            Element element = (Element) node;
-            var target = readPlacemark(element);
-            targets.add(target);
-          } // end if XML Node
-        } // end for over placemarks
-      } catch (Exception e) {
-        logger.error("Exception processing input file: " + inputFileName + ", " + e.getMessage());
+    var content = Files.readString(Path.of(inputFileName));
+    var targets = new ArrayList<EdmTarget>();
+
+    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+    DocumentBuilder db = dbf.newDocumentBuilder();
+    Document doc = db.parse(new InputSource(new StringReader(content)));
+    doc.getDocumentElement().normalize();
+    NodeList nodeList = doc.getElementsByTagName("Placemark");
+    var nTargets = nodeList.getLength();
+    logger.info("read " + nTargets + " targets from " + inputFileName);
+    for (var iTarget = 0; iTarget < nTargets; ++iTarget) {
+      targets.add(readPlacemark((Element) nodeList.item(iTarget)));
+    } // end for over placemarks
+
+    if (outputFileName != null && targets.size() > 0) {
+      var path = Path.of(outputFileName);
+      File outputDirectory = new File(path.toFile().getParent());
+      if (!outputDirectory.exists()) {
+        outputDirectory.mkdir();
       }
 
-      if (outputFileName != null && targets.size() > 0) {
-        try {
-          var path = Path.of(outputFileName);
-          File outputDirectory = new File(path.toFile().getParent());
-          if (!outputDirectory.exists()) {
-            outputDirectory.mkdir();
-          }
+      Collections.sort(targets);
 
-          Collections.sort(targets);
-
-          CSVWriter writer = new CSVWriter(new FileWriter(path.toString()));
-          if (targets.size() > 0) {
-            writer.writeNext(EdmTarget.getHeaders());
-            for (var m : targets) {
-              writer.writeNext(m.getValues());
-            }
-          } else {
-            writer.writeNext(new String[] { "No Data" });
-          }
-          writer.close();
-          logger.info("wrote " + targets.size() + " targets to " + outputFileName);
-        } catch (Exception e) {
-          logger.error("Exception writing output file: " + outputFileName + ", " + e.getMessage());
-        }
+      CSVWriter writer = new CSVWriter(new FileWriter(path.toString()));
+      writer.writeNext(EdmTarget.getHeaders());
+      for (var m : targets) {
+        writer.writeNext(m.getValues());
       }
+      writer.close();
+      logger.info("wrote " + targets.size() + " targets to " + outputFileName);
+    } // end if output
 
-      logger.info("exiting");
-    } catch (Exception e) {
-      logger.error("Exception running, " + e.getMessage(), e);
-      System.exit(1);
-    }
+    logger.info("exiting");
   }
 
+  // this is AFTER pretty printing
   String example = """
-          <Placemark>
+      <Placemark>
         <styleUrl>#0</styleUrl>
-        <name>Don</name>        <ExtendedData>
-                        <Data name='Last Name'>
-                <value>Rolph</value>
-              </Data>
-                        <Data name='Call Sign'>
-                <value>AB1PH</value>
-              </Data>
-                        <Data name='FEMA'>
-                <value>1</value>
-              </Data>
-                        <Data name='Team'>
-                <value>A</value>
-              </Data>
-                        <Data name='Channel'>
-                <value>6</value>
-              </Data>
-                        <Data name='Center Freq.'>
-                <value>3591.5</value>
-              </Data>
-                        <Data name='Email'>
-                <value>don.rolph@gmail.com</value>
-              </Data>
-                  </ExtendedData>
-                <address>East Walpole, MA </address>
+        <name>Don</name>
+        <ExtendedData>
+          <Data name='Last Name'>
+            <value>Rolph</value>
+          </Data>
+          <Data name='Call Sign'>
+            <value>AB1PH</value>
+          </Data>
+          <Data name='FEMA'>
+            <value>1</value>
+          </Data>
+          <Data name='Team'>
+            <value>A</value>
+          </Data>
+          <Data name='Channel'>
+            <value>6</value>
+          </Data>
+          <Data name='Center Freq.'>
+            <value>3591.5</value>
+          </Data>
+          <Data name='Email'>
+            <value>don.rolph@gmail.com</value>
+          </Data>
+        </ExtendedData>
+        <address>East Walpole, MA </address>
         <Point>
           <coordinates>-71.2101068,42.1614952,0</coordinates>
         </Point>
       </Placemark>
-      """;
+            """;
 
   private EdmTarget readPlacemark(Element element) {
     // top level elements: name, ExtendedData, Point, styleUrl
@@ -227,7 +209,7 @@ public class EdmKmlToCsvTool {
     String centerFrequency = null;
     String band = null;
 
-    if (coordinates != null && coordinates.length >= 2) {
+    if (coordinates != null && coordinates.length >= 2) { // longitude, latitude, altitude
       latitude = coordinates[1];
       longitude = coordinates[0];
     }
@@ -262,50 +244,21 @@ public class EdmKmlToCsvTool {
     return target;
   }
 
-  public static record Band(double lo, double hi, String label) {
-    public boolean contains(double d) {
-      return (lo <= d && d < hi);
+  public final String getBand(String freqString) {
+    double d = Double.parseDouble(freqString);
+    if (3500 <= d && d <= 4000) {
+      return "80m";
+    } else if (7000 <= d && d <= 7300) {
+      return "40m";
+    } else if (10100 <= d && d <= 10150) {
+      return "30m";
+    } else if (14000 <= d && d <= 14350) {
+      return "20m";
+    } else if (21000 <= d && d <= 21450) {
+      return "15m";
+    } else {
+      throw new RuntimeException("no band defined for frequency: " + freqString);
     }
   }
-
-  public static final String getBand(String freqString) {
-    Double d;
-    try {
-      d = Double.parseDouble(freqString);
-      return getBand(d);
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  public static final String getBand(double freq) {
-    for (var band : BANDS) {
-      if (band.contains(freq)) {
-        return band.label();
-      }
-    }
-
-    return null;
-  }
-
-  public static final Band[] BANDS = new Band[] { //
-      new Band(1800, 2000, "160m"), //
-      new Band(3500, 4000, "80m"), //
-      new Band(5330.5, 5403.5, "60m"), //
-      new Band(7000, 7300, "40m"), //
-      new Band(10100, 10150, "30m"), //
-      new Band(14000, 14350, "20m"), //
-      new Band(18068, 18168, "17m"), //
-      new Band(21000, 21450, "15m"), //
-      new Band(24890, 24990, "12m"), //
-      new Band(28000, 29700, "10m"), //
-      new Band(50000, 54000, "6m"), //
-      new Band(140000, 148000, "2m"), //
-      new Band(222000, 225000, "1.25m"), //
-      new Band(420000, 450000, "70cm"), //
-      new Band(902000, 928000, "33cm"), //
-      new Band(1240000, 1300000, "23cm"), //
-      new Band(2300000, 2450000, "13cm"), //
-  };
 
 }
