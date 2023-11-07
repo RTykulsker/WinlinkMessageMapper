@@ -135,7 +135,7 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
     fts.add("quantity3", "Line 3: Item Quantity must be #EV", "200");
     fts.add("kind3", "Line 3: Kind must be empty");
     fts.add("type3", "Line 3: Type must be empty");
-    fts.add("item3", "Line 3: Description must be #EV", "66 X 90 Poly Blanket");
+    fts.add("item3", "Line 3: Description must be #EV", "66 X 90 Poly Blankets");
     fts.add("requestedDateTime3", "Line 3: Requested Date/Time must be #EV", requestedDate);
     fts.add("estimatedDateTime3", "Line 3: Estimated Date/Time must be empty");
     fts.add("cost3", "Line 3: Item Cost must be empty");
@@ -162,7 +162,7 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
     fts.add("quantity6", "Line 6: Item Quantity must be #EV", "5");
     fts.add("kind6", "Line 6: Kind must be empty");
     fts.add("type6", "Line 6: Type must be empty");
-    fts.add("item6", "Line 6: Description must be #EV", "Dynarex Bulk BZK Antiseptic Towelettes 5\"x7\", 100 packet");
+    fts.add("item6", "Line 6: Description must be #EV", "Dynarex Bulk BZK Antiseptic Towelettes 5\"x7\", 1000 packets");
     fts.add("requestedDateTime6", "Line 6: Requested Date/Time must be #EV", requestedDate);
     fts.add("estimatedDateTime6", "Line 6: Estimated Date/Time must be empty");
     fts.add("cost6", "Line 6: Item Cost must be empty");
