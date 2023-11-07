@@ -68,6 +68,7 @@ public enum MessageType {
   DAMAGE_ASSESSMENT("windshield_damage_assessment", "RMS_Express_Form_Damage_Assessment_Viewer.xml"), //
   QUICK("quick", "RMS_Express_Form_Quick Message Viewer.xml"), //
   ICS_205_RADIO_PLAN("ics_205", "RMS_Express_Form_ICS205 Radio Plan_Viewer.xml"), //
+  HUMANITARIAN_NEEDS("humanitarian", "RMS_Express_Form_Humanitarian Needs Identification viewer.xml"), //
   ;
 
   /**
