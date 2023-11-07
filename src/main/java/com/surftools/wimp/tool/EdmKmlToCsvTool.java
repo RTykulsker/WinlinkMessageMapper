@@ -74,9 +74,6 @@ public class EdmKmlToCsvTool {
   @Option(name = "--outputFileName", usage = "path to output csv file", required = false)
   private String outputFileName = "/home/bobt/Documents/eto/2023/2023-11-11-P2P/EDM Target Stations.csv";
 
-  @Option(name = "--favoritesFileName", usage = "path to output p2p favorites file", required = false)
-  private String favoritesFileName = "/home/bobt/Documents/eto/2023/2023-11-11-P2P/Vara P2P Favorites.dat";
-
   public static void main(String[] args) {
     EdmKmlToCsvTool app = new EdmKmlToCsvTool();
     CmdLineParser parser = new CmdLineParser(app);
@@ -154,23 +151,6 @@ public class EdmKmlToCsvTool {
       writer.close();
       logger.info("wrote " + targets.size() + " targets to " + outputFileName);
     } // end if output
-
-    if (favoritesFileName != null && targets.size() > 0) {
-      var path = Path.of(favoritesFileName);
-      File favoritesDirectory = new File(path.toFile().getParent());
-      if (!favoritesDirectory.exists()) {
-        favoritesDirectory.mkdir();
-      }
-
-      var sb = new StringBuilder();
-      for (var target : targets) {
-        if (target.team.equals("A")) {
-          sb.append(target.call + "|" + target.centerFrequency + "/500\n");
-        }
-      }
-
-      Files.writeString(path, sb.toString());
-    } // end if favorites
 
     logger.info("exiting");
   }
