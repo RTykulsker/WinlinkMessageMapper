@@ -77,7 +77,7 @@ public class HumanitarianNeedsParser extends AbstractBaseParser {
       var description = getStringFromXml("situationdescription");
 
       // box 8
-      var other = getStringFromXml("other");
+      var other = getStringFromXml("otherinfo");
 
       // non-boxed
       var approvedBy = getStringFromXml("approvedby");
