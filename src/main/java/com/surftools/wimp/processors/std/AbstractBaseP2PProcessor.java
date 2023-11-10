@@ -30,6 +30,8 @@ package com.surftools.wimp.processors.std;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -574,6 +576,48 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
     var localTime = LocalTime.parse(time, TIME_FORMATTER);
     var dateTime = LocalDateTime.of(localDate, localTime);
     return dateTime;
+  }
+
+  @Override
+  public void postProcess() {
+    makeP2PFavorites();
+    makeTargetsList();
+  }
+
+  /**
+   * useful for trying to make P2P connections
+   */
+  private void makeP2PFavorites() {
+    var lines = new ArrayList<String>();
+    for (var target : targetMap.values()) {
+      lines.add(target.call + "|" + target.centerFreq + "/500");
+    }
+
+    var favoritesPath = Path.of(cm.getAsString(Key.PATH), "output", "Vara P2P Favorites.dat");
+    try {
+      Files.writeString(favoritesPath, String.join("\n", lines));
+      logger.info("wrote " + lines.size() + " favorites to: " + favoritesPath);
+    } catch (IOException e) {
+      logger.error("Exception writing " + favoritesPath + ", " + e.getMessage());
+    }
+  }
+
+  /**
+   * just a list of target calls, useful for composing a single message to address to all targets
+   */
+  private void makeTargetsList() {
+    var calls = new ArrayList<String>();
+    for (var target : targetMap.values()) {
+      calls.add(target.call);
+    }
+
+    var targetCallPath = Path.of(cm.getAsString(Key.PATH), "output", "targetList.txt");
+    try {
+      Files.writeString(targetCallPath, String.join(";", calls));
+      logger.info("wrote " + calls.size() + " target calls to: " + targetCallPath);
+    } catch (IOException e) {
+      logger.error("Exception writing " + targetCallPath + ", " + e.getMessage());
+    }
   }
 
   /*

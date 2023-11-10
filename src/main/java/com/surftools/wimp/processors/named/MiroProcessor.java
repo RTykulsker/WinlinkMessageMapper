@@ -200,7 +200,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
           "POWER", "BAND", "MODE", "RADIO", "PORTABLE", //
           "Antenna", "RF Power", "RMS Gateway", "Distance (miles)", //
           "Comments", "Version", //
-          "IsResilient?", "Explanation", "Exercise Count", "Resiliency Score", "Resiliency Percent" };
+          "IsResilient?", "Explanation", "Resiliency Count", "Exercise Count", "Resiliency Percent" };
     }
 
     @Override

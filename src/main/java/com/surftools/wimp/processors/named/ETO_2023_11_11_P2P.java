@@ -27,8 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.named;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
-import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
@@ -146,22 +143,6 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
     summarize();
   }
 
-  private void makeP2PFavorites() {
-    var lines = new ArrayList<String>();
-    for (var baseTarget : targetMap.values()) {
-      var target = (Target) baseTarget;
-      lines.add(target.call + "|" + target.centerFreq + "/500");
-    }
-
-    var favoritesPath = Path.of(cm.getAsString(Key.PATH), "output", "Vara P2P Favorites.dat");
-    try {
-      Files.writeString(favoritesPath, String.join("\n", lines));
-      logger.info("wrote " + lines.size() + " favorites to: " + favoritesPath);
-    } catch (IOException e) {
-      logger.error("Exception writing " + favoritesPath + ", " + e.getMessage());
-    }
-  }
-
   /**
    * produce needed (and un-needed) summary output
    */
@@ -177,8 +158,6 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
     sb.append("\n\nSummary\n");
     sb.append("total ICS 213 RR messages received: " + ppIcs213RrMessageCount + "\n");
     logger.info(sb.toString());
-
-    makeP2PFavorites();
   }
 
   @Override
