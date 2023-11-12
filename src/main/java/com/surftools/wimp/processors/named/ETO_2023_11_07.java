@@ -234,6 +234,7 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
 
       var pair = message.msgLocation;
       if (pair == null) {
+        pair = LatLongPair.ZERO_ZERO;
         badLocationCalls.add(sender);
         fts.fail("msgLocation", "Missing LAT/LON");
       } else if (!pair.isValid() || pair.equals(LatLongPair.ZERO_ZERO)) {

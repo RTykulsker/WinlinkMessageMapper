@@ -199,7 +199,12 @@ public class ReadProcessor extends AbstractBaseProcessor {
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
     var sender = element.getElementsByTagName("sender").item(0).getTextContent();
     var mime = element.getElementsByTagName("mime").item(0).getTextContent();
-    var isP2p = Boolean.parseBoolean(element.getElementsByTagName("peertopeer").item(0).getTextContent());
+
+    var isP2p = false;
+    var v = element.getElementsByTagName("peertopeer");
+    if (v != null && v.item(0) != null && v.item(0).getTextContent() != null) {
+      isP2p = Boolean.parseBoolean(v.item(0).getTextContent());
+    }
 
     if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
       logger.debug("messageId: " + messageId + ", sender: " + sender);
