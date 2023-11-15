@@ -310,7 +310,9 @@ public class FieldTestService implements IService {
     var failCount = entry.totalCount - entry.passCount;
     var passPercent = formatPercent(entry.passCount, entry.totalCount);
     var failPercent = formatPercent(failCount, entry.totalCount);
-    sb.append(", pass: " + entry.passCount + "(" + passPercent + "), fail: " + failCount + "(" + failPercent + ")");
+    sb
+        .append(", correct: " + entry.passCount + "(" + passPercent + "), incorrect: " + failCount + "(" + failPercent
+            + ")");
     sb.append("\n");
     return sb.toString();
   }

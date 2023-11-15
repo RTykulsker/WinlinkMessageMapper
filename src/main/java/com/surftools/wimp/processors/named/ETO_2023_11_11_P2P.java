@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.processors.named;
 
 import java.nio.file.Path;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ import com.surftools.wimp.processors.std.WriteProcessor;
  */
 public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2023_11_11_P2P.class);
+  private static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("MM/dd HH:mm");
 
   private static class Target extends BaseTarget {
     public String channel;
@@ -79,7 +81,7 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
   }
 
   private static class Field extends BaseField {
-    public String to;
+    // public String to;
     public int ics213rrCount;
 
     @Override
@@ -89,13 +91,13 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "Call", "To", "Latitude", "Longitude", //
+      return new String[] { "Call", "Latitude", "Longitude", //
           "Ics213RR Count" };
     }
 
     @Override
     public String[] getValues() {
-      return new String[] { call, to, location.getLatitude(), location.getLongitude(), //
+      return new String[] { call, location.getLatitude(), location.getLongitude(), //
           String.valueOf(ics213rrCount), };
     }
   }
@@ -134,7 +136,7 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
         ++field.ics213rrCount;
         ++target.ics213RrCount;
 
-        var entry = new P2PEntry(fieldCall, targetCall, message.messageId, message.sortDateTime,
+        var entry = new P2PEntry(fieldCall, targetCall, message.messageId, message.msgDateTime,
             message.getMessageType(), false);
         entryList.add(entry);
       } // end loop over messages in toList
@@ -194,10 +196,13 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
     // use ics_213_rr.csv as the basis
     Field field = new Field();
     field.call = fields[1];
-    field.to = fields[2];
+    // field.to = fields[2];
     var latitude = fields[6];
     var longitude = fields[7];
     field.location = new LatLongPair(latitude, longitude);
+    if (!field.location.isValid()) {
+      field.location = LatLongPair.ZERO_ZERO;
+    }
     field.toList = new ArrayList<>();
 
     return field;
@@ -212,7 +217,7 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
     sb.append("Outbound messages: " + toList.size() + "\n");
     sb.append(DASHES);
     for (var m : toList) {
-      var time = m.sortDateTime.toLocalTime();
+      var time = DT_FORMATTER.format(m.msgDateTime);
       var to = m.to;
       var target = (Target) targetMap.get(to);
       var band = target.band;
@@ -236,7 +241,7 @@ public class ETO_2023_11_11_P2P extends AbstractBaseP2PProcessor {
     sb.append("Inbound messages: " + fromList.size() + "\n");
     sb.append(DASHES);
     for (var m : fromList) {
-      var time = m.sortDateTime.toLocalTime();
+      var time = DT_FORMATTER.format(m.msgDateTime);
       var from = m.from;
       var location = m.mapLocation;
       var distanceMiles = location == null ? "unknown" : LocationUtils.computeDistanceMiles(target.location, location);

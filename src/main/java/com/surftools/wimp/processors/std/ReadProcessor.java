@@ -210,7 +210,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
       logger.debug("messageId: " + messageId + ", sender: " + sender);
     }
 
-    var locationResult = parseLocation(element);
+    var locationResult = parseLocation(element, mime);
 
     var localDateTime = LocalDateTime.parse(dtString, DT_FORMATTER);
 
@@ -252,7 +252,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
    * @param element
    * @return
    */
-  private LocationResult parseLocation(Element element) {
+  private LocationResult parseLocation(Element element, String mime) {
     LatLongPair location = null;
     String source = null;
 
@@ -279,8 +279,39 @@ public class ReadProcessor extends AbstractBaseProcessor {
           if (leftParenIndex >= 0 && rightParenIndex >= 0 && leftParenIndex < rightParenIndex) {
             source = fields[1].substring(leftParenIndex + 1, rightParenIndex);
           }
-        }
-      }
+        } else {
+          if (mime != null) {
+            // looking for something like: X-Location: 38.660000N, 122.870667W (SPECIFIED)
+            var mimeLines = mime.split("\n");
+            for (var line : mimeLines) {
+              if (line.startsWith("X-Location:")) {
+                fields = line.split(" ");
+                if (fields.length == 4) {
+                  var latString = fields[1].substring(0, fields[0].length() - 2);
+                  if (fields[0].endsWith("S")) {
+                    latString = "-" + latString.trim();
+                  }
+
+                  var lonString = fields[2].substring(0, fields[2].length() - 1);
+                  if (fields[2].endsWith("W")) {
+                    lonString = "-" + lonString.trim();
+                  }
+
+                  location = new LatLongPair(latString, lonString);
+
+                  source = "SPECIFIED";
+                  var leftParenIndex = fields[3].indexOf("(");
+                  var rightParenIndex = fields[3].indexOf(")");
+                  if (leftParenIndex >= 0 && rightParenIndex >= 0 && leftParenIndex < rightParenIndex) {
+                    source = fields[1].substring(leftParenIndex + 1, rightParenIndex);
+                  }
+                  break;
+                } // end if 4 fields in X-Location
+              } // end if X-Location line
+            } // end loop over mimeLines
+          } // end if mime != null
+        } // end if <location> tag has 2 fields
+      } // end if location string
     } catch (Exception e) {
       ;
     }
