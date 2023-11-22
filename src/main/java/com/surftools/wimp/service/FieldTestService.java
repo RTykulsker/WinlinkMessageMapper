@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.counter.ICounter;
@@ -125,6 +126,21 @@ public class FieldTestService implements IService {
     return 0;
   }
 
+  public int fail(String key) {
+    var entry = entryMap.get(key);
+    if (entry == null) {
+      throw new IllegalArgumentException("no entry found for key: " + key);
+    }
+
+    ++entry.totalCount;
+
+    explanations.add(entry.label);
+
+    entryMap.put(key, entry);
+
+    return 0;
+  }
+
   /**
    * always pass the test
    *
@@ -185,6 +201,22 @@ public class FieldTestService implements IService {
   }
 
   /**
+   * this is how we do a case-independent alpha-numeric only string comparison
+   *
+   * @param value
+   * @param expectedValue
+   * @return
+   */
+  public boolean defaultStringCompare(String value, String expectedValue) {
+    if (value == null) {
+      return false;
+    }
+
+    var predicate = value.replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(expectedValue.replaceAll("[^A-Za-z0-9]", ""));
+    return predicate;
+  }
+
+  /**
    * our default test is a case-independent alpha-numeric only string comparison
    *
    * @param key
@@ -202,9 +234,40 @@ public class FieldTestService implements IService {
     }
 
     var expectedValue = (String) entry.data;
-    var predicate = value.replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(expectedValue.replaceAll("[^A-Za-z0-9]", ""));
-
+    var predicate = defaultStringCompare(value, expectedValue);
     return test(key, value, predicate);
+  }
+
+  /**
+   * test against a set of strings
+   *
+   * @param key
+   * @param value
+   * @return
+   */
+  public int testSetOfStrings(String key, String value) {
+    if (value == null) {
+      return test(key, null, false);
+    }
+
+    var entry = entryMap.get(key);
+    if (entry == null) {
+      throw new IllegalArgumentException("no entry found for key: " + key);
+    }
+
+    @SuppressWarnings("unchecked")
+    var expectedValues = (Set<String>) entry.data;
+    for (var expectedValue : expectedValues) {
+      // determine if we'll pass first, then execute test to accumulate statistics and return
+      var predicate = defaultStringCompare(value, expectedValue);
+      if (predicate) {
+        return test(key, value, predicate);
+      }
+    }
+
+    var message = entry.label + " , not " + value;
+
+    return fail(key, message);
   }
 
   private int testDateTime(String key, LocalDateTime value, DateTimeFormatter formatter, DateTimeRelop relop) {

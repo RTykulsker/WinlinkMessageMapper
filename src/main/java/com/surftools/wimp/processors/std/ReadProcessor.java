@@ -210,7 +210,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
       logger.debug("messageId: " + messageId + ", sender: " + sender);
     }
 
-    var locationResult = parseLocation(element, mime);
+    var locationResult = parseLocation(element, mime, sender, messageId);
 
     var localDateTime = LocalDateTime.parse(dtString, DT_FORMATTER);
 
@@ -252,9 +252,13 @@ public class ReadProcessor extends AbstractBaseProcessor {
    * @param element
    * @return
    */
-  private LocationResult parseLocation(Element element, String mime) {
+  private LocationResult parseLocation(Element element, String mime, String sender, String messageId) {
     LatLongPair location = null;
     String source = null;
+
+    if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
+      logger.debug("messageId: " + messageId + ", sender: " + sender);
+    }
 
     try {
       var locationString = element.getElementsByTagName("location").item(0).getTextContent();
@@ -284,9 +288,10 @@ public class ReadProcessor extends AbstractBaseProcessor {
             // looking for something like: X-Location: 38.660000N, 122.870667W (SPECIFIED)
             var mimeLines = mime.split("\n");
             for (var line : mimeLines) {
-              if (line.startsWith("X-Location:")) {
+              line = line.toUpperCase();
+              if (line.startsWith("X-LOCATION:")) {
                 fields = line.split(" ");
-                if (fields.length == 4) {
+                if (fields.length >= 4) {
                   var latString = fields[1].substring(0, fields[0].length() - 2);
                   if (fields[0].endsWith("S")) {
                     latString = "-" + latString.trim();
@@ -299,12 +304,17 @@ public class ReadProcessor extends AbstractBaseProcessor {
 
                   location = new LatLongPair(latString, lonString);
 
-                  source = "SPECIFIED";
-                  var leftParenIndex = fields[3].indexOf("(");
-                  var rightParenIndex = fields[3].indexOf(")");
-                  if (leftParenIndex >= 0 && rightParenIndex >= 0 && leftParenIndex < rightParenIndex) {
-                    source = fields[1].substring(leftParenIndex + 1, rightParenIndex);
+                  source = "OTHER";
+                  if (line.contains("GRID SQUARE")) {
+                    source = "GRID SQUARE";
+                  } else if (line.contains("SPECIFIED")) {
+                    source = "SPECIFIED";
+                  } else if (line.contains("GPS")) {
+                    source = "GPS";
+                  } else {
+                    source = "UNKNOWN";
                   }
+
                   break;
                 } // end if 4 fields in X-Location
               } // end if X-Location line

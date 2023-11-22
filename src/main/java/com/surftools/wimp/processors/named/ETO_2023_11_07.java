@@ -33,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,7 +163,12 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
     fts.add("quantity6", "Line 6: Item Quantity must be #EV", "5");
     fts.add("kind6", "Line 6: Kind must be empty");
     fts.add("type6", "Line 6: Type must be empty");
-    fts.add("item6", "Line 6: Description must be #EV", "Dynarex Bulk BZK Antiseptic Towelettes 5\"x7\", 1000 packets");
+
+    var line6items = Set
+        .of("Dynarex Bulk BZK Antiseptic Towelettes 5\"x7\", 1000 packets",
+            "Dynarex Bulk BZK Antiseptic Towelettes 5\"x7\", 1000 packet");
+    fts.add("item6", "Line 6: Description must be one of: " + String.join(",", line6items), line6items);
+
     fts.add("requestedDateTime6", "Line 6: Requested Date/Time must be #EV", requestedDate);
     fts.add("estimatedDateTime6", "Line 6: Estimated Date/Time must be empty");
     fts.add("cost6", "Line 6: Item Cost must be empty");
@@ -245,7 +251,10 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
       }
 
       var addressList = m.toList + "," + m.ccList;
-      fts.test("addresses-bk", addressList, addressList.contains("ETO-BK"));
+      if (!addressList.contains("ETO-BK")) {
+        fts.fail("addresses-bk");
+      }
+
       fts.testOnOrAfter("windowOpen", m.msgDateTime, DT_FORMATTER);
       fts.testOnOrBefore("windowClose", m.msgDateTime, DT_FORMATTER);
       fts.test("org", message.organization);
@@ -255,11 +264,18 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
 
       for (var line : new int[] { 1, 2, 3, 4, 5, 6, 7, 8 }) {
         var lineItem = message.lineItems.get(line - 1);
+
         if (line < 8) {
           fts.test("quantity" + line, lineItem.quantity());
           fts.testIfEmpty("kind" + line, lineItem.kind());
           fts.testIfEmpty("type" + line, lineItem.type());
-          fts.test("item" + line, lineItem.item());
+
+          if (line == 6) {
+            fts.testSetOfStrings("item" + line, lineItem.item());
+          } else {
+            fts.test("item" + line, lineItem.item());
+          }
+
           fts.test("requestedDateTime" + line, lineItem.requestedDateTime());
           fts.testIfEmpty("estimatedDateTime" + line, lineItem.estimatedDateTime());
           fts.testIfEmpty("cost" + line, lineItem.cost());

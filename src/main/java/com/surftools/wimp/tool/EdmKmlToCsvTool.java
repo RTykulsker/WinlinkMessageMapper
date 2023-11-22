@@ -27,13 +27,15 @@ SOFTWARE.
 
 package com.surftools.wimp.tool;
 
-import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.TreeMap;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -69,10 +71,7 @@ public class EdmKmlToCsvTool {
   private static final Logger logger = LoggerFactory.getLogger(EdmKmlToCsvTool.class);
 
   @Option(name = "--inputFileName", usage = "path to input kml file", required = false)
-  private String inputFileName = "/home/bobt/Documents/eto/2023/2023-11-11-P2P/EDM Target Stations.kml";
-
-  @Option(name = "--outputFileName", usage = "path to output csv file", required = false)
-  private String outputFileName = "/home/bobt/Documents/eto/2023/2023-11-11-P2P/EDM Target Stations.csv";
+  private String inputFileName = "/home/bobt/Documents/edm/EDM Target Stations-2023-11-21.kml";
 
   public static void main(String[] args) {
     EdmKmlToCsvTool app = new EdmKmlToCsvTool();
@@ -103,12 +102,13 @@ public class EdmKmlToCsvTool {
     public static String[] getHeaders() {
       return new String[] { "Call", "Latitude", "Longitude", "Location", //
           "First Name", "Last Name", "Email", //
-          "Team", "Channel", "FEMA", "Center Freq", "Band" };
+          "Team", "Channel", "FEMA", "Center Freq", "Dial Freq", "Band" };
     }
 
     public String[] getValues() {
+      var dialFrequency = String.valueOf(Double.valueOf(centerFrequency) - 1.5d);
       return new String[] { call, latitude, longitude, cityState, //
-          firstName, lastName, email, team, channel, femaRegion, centerFrequency, band };
+          firstName, lastName, email, team, channel, femaRegion, centerFrequency, dialFrequency, band };
     }
   }
 
@@ -134,25 +134,40 @@ public class EdmKmlToCsvTool {
       targets.add(readPlacemark((Element) nodeList.item(iTarget)));
     } // end for over placemarks
 
-    if (outputFileName != null && targets.size() > 0) {
-      var path = Path.of(outputFileName);
-      File outputDirectory = new File(path.toFile().getParent());
-      if (!outputDirectory.exists()) {
-        outputDirectory.mkdir();
+    if (targets.size() > 0) {
+      var outputFileName = inputFileName.replaceAll(".kml", ".csv");
+      writeTargets(outputFileName, targets);
+
+      // build targetMap
+      var targetMap = new TreeMap<String, List<EdmTarget>>();
+      for (var target : targets) {
+        var team = target.team();
+        var list = targetMap.getOrDefault(team, new ArrayList<EdmTarget>());
+        list.add(target);
+        targetMap.put(team, list);
       }
 
-      Collections.sort(targets);
-
-      CSVWriter writer = new CSVWriter(new FileWriter(path.toString()));
-      writer.writeNext(EdmTarget.getHeaders());
-      for (var m : targets) {
-        writer.writeNext(m.getValues());
+      // write targetMap values
+      for (var team : targetMap.keySet()) {
+        outputFileName = inputFileName.replaceAll(".kml", "-team-" + team + ".csv");
+        writeTargets(outputFileName, targetMap.get(team));
       }
-      writer.close();
-      logger.info("wrote " + targets.size() + " targets to " + outputFileName);
+
     } // end if output
 
     logger.info("exiting");
+  }
+
+  void writeTargets(String outputFileName, List<EdmTarget> targets) throws IOException {
+    Collections.sort(targets);
+
+    CSVWriter writer = new CSVWriter(new FileWriter(Path.of(outputFileName).toString()));
+    writer.writeNext(EdmTarget.getHeaders());
+    for (var m : targets) {
+      writer.writeNext(m.getValues());
+    }
+    writer.close();
+    logger.info("wrote " + targets.size() + " targets to " + outputFileName);
   }
 
   // this is AFTER pretty printing
