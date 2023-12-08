@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -71,7 +72,7 @@ public class EdmKmlToCsvTool {
   private static final Logger logger = LoggerFactory.getLogger(EdmKmlToCsvTool.class);
 
   @Option(name = "--inputFileName", usage = "path to input kml file", required = false)
-  private String inputFileName = "/home/bobt/Documents/edm/EDM Target Stations-2023-11-21.kml";
+  private String inputFileName = "/home/bobt/Documents/edm/EDM Target Stations - 023-11-30.kml";
 
   public static void main(String[] args) {
     EdmKmlToCsvTool app = new EdmKmlToCsvTool();
@@ -137,6 +138,8 @@ public class EdmKmlToCsvTool {
     if (targets.size() > 0) {
       var outputFileName = inputFileName.replaceAll(".kml", ".csv");
       writeTargets(outputFileName, targets);
+      writeCalls(outputFileName.replaceAll(".csv", ".txt"), targets);
+      writeP2pFavorites(outputFileName.replaceAll(".csv", "- Vara P2P Favorites.dat"), targets);
 
       // build targetMap
       var targetMap = new TreeMap<String, List<EdmTarget>>();
@@ -150,12 +153,37 @@ public class EdmKmlToCsvTool {
       // write targetMap values
       for (var team : targetMap.keySet()) {
         outputFileName = inputFileName.replaceAll(".kml", "-team-" + team + ".csv");
-        writeTargets(outputFileName, targetMap.get(team));
+        var teamTargets = targetMap.get(team);
+        writeTargets(outputFileName, teamTargets);
+        writeCalls(outputFileName.replaceAll(".csv", ".txt"), teamTargets);
+        writeP2pFavorites(outputFileName.replaceAll(".csv", "- Vara P2P Favorites.dat"), teamTargets);
       }
 
     } // end if output
 
     logger.info("exiting");
+  }
+
+  private void writeCalls(String outputFileName, List<EdmTarget> targets) throws IOException {
+    Collections
+        .sort(targets, (t1, t2) -> Double.valueOf(t1.centerFrequency).compareTo(Double.valueOf(t2.centerFrequency)));
+    var calls = targets.stream().map(EdmTarget::call).toList();
+    Files.writeString(Path.of(outputFileName), String.join(";", calls));
+  }
+
+  /**
+   * call|center-freq/bandwidth for example AH6T|7119.5/500
+   *
+   * @param outputFileName
+   * @param targets
+   * @throws IOException
+   */
+  private void writeP2pFavorites(String outputFileName, List<EdmTarget> targets) throws IOException {
+    Collections
+        .sort(targets, (t1, t2) -> Double.valueOf(t1.centerFrequency).compareTo(Double.valueOf(t2.centerFrequency)));
+    Function<EdmTarget, String> lambda = (t) -> t.call + "|" + t.centerFrequency + "/500";
+    var calls = targets.stream().map(lambda).toList();
+    Files.writeString(Path.of(outputFileName), String.join("\n", calls));
   }
 
   void writeTargets(String outputFileName, List<EdmTarget> targets) throws IOException {

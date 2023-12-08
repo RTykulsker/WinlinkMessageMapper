@@ -104,108 +104,108 @@ public class ETO_2023_12_14 extends AbstractBaseProcessor {
     fts = new FieldTestService();
     final var requestedDate = "2023-12-25 02:00";
 
-    fts.add("msgLocation", "LAT/LON must be provided");
-    fts.add("addresses-bk", "To and/or CC addresses must contain ETO-BK");
-    fts.add("windowOpen", "Message must be sent on or after " + DT_FORMATTER.format(windowOpenDT), windowOpenDT);
-    fts.add("windowClose", "Message must be sent on or before " + DT_FORMATTER.format(windowCloseDT), windowCloseDT);
-    fts.add("org", "Agency/Group must be #EV", "EmComm Training Organization");
-    fts.add("incidentName", "Box 1 IncidentName must be #EV", "Exercise - Santa Wish List");
-    fts.add("activityDateTime", "Box 2 Date/Time must be supplied, not empty");
-    fts.add("requestNumber", "Box 3 Resource Request Number must be #EV", "Santa001");
+    fts.add("msgLocation", "LAT/LON should be provided");
+    fts.add("addresses-bk", "To and/or CC addresses should contain ETO-BK");
+    fts.add("windowOpen", "Message should be sent on or after " + DT_FORMATTER.format(windowOpenDT), windowOpenDT);
+    fts.add("windowClose", "Message should be sent on or before " + DT_FORMATTER.format(windowCloseDT), windowCloseDT);
+    fts.add("org", "Agency/Group should be #EV", "EmComm Training Organization");
+    fts.add("incidentName", "Box 1 IncidentName should be #EV", "Exercise - Santa Wish List");
+    fts.add("activityDateTime", "Box 2 Date/Time should be supplied, not empty");
+    fts.add("requestNumber", "Box 3 Resource Request Number should be #EV", "Santa001");
 
     // line 1
-    fts.add("quantity1", "Line 1: Item Quantity must be #EV", "1");
-    fts.add("kind1", "Line 1: Kind must be empty");
-    fts.add("type1", "Line 1: Type must be empty");
-    fts.add("item1", "Line 1: Description must be #EV", "Chameleon CHA CRL Pro loop antenna");
-    fts.add("requestedDateTime1", "Line 1: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime1", "Line 1: Estimated Date/Time must be empty");
-    fts.add("cost1", "Line 1: Item Cost must be empty");
+    fts.add("quantity1", "Line 1: Item Quantity should be #EV", "1");
+    fts.add("kind1", "Line 1: Kind should be empty");
+    fts.add("type1", "Line 1: Type should be empty");
+    fts.add("item1", "Line 1: Description should be #EV", "Chameleon CHA CRL Pro loop antenna");
+    fts.add("requestedDateTime1", "Line 1: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime1", "Line 1: Estimated Date/Time should be empty");
+    fts.add("cost1", "Line 1: Item Cost should be empty");
 
     // line 2
-    fts.add("quantity2", "Line 2: Item Quantity must be #EV", "1");
-    fts.add("kind2", "Line 2: Kind must be empty");
-    fts.add("type2", "Line 2: Type must be empty");
-    fts.add("item2", "Line 2: Description must be #EV", "Xiegu X6100 HF Transceiver");
-    fts.add("requestedDateTime2", "Line 2: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime2", "Line 2: Estimated Date/Time must be empty");
-    fts.add("cost2", "Line 2: Item Cost must be empty");
+    fts.add("quantity2", "Line 2: Item Quantity should be #EV", "1");
+    fts.add("kind2", "Line 2: Kind should be empty");
+    fts.add("type2", "Line 2: Type should be empty");
+    fts.add("item2", "Line 2: Description should be #EV", "Xiegu X6100 HF Transceiver");
+    fts.add("requestedDateTime2", "Line 2: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime2", "Line 2: Estimated Date/Time should be empty");
+    fts.add("cost2", "Line 2: Item Cost should be empty");
 
     // line 3
-    fts.add("quantity3", "Line 3: Item Quantity must be #EV", "1");
-    fts.add("kind3", "Line 3: Kind must be empty");
-    fts.add("type3", "Line 3: Type must be empty");
-    fts.add("item3", "Line 3: Description must be #EV", "Radioddity PB3 Protective Carry Case");
-    fts.add("requestedDateTime3", "Line 3: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime3", "Line 3: Estimated Date/Time must be empty");
-    fts.add("cost3", "Line 3: Item Cost must be empty");
+    fts.add("quantity3", "Line 3: Item Quantity should be #EV", "1");
+    fts.add("kind3", "Line 3: Kind should be empty");
+    fts.add("type3", "Line 3: Type should be empty");
+    fts.add("item3", "Line 3: Description should be #EV", "Radioddity PB3 Protective Carry Case");
+    fts.add("requestedDateTime3", "Line 3: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime3", "Line 3: Estimated Date/Time should be empty");
+    fts.add("cost3", "Line 3: Item Cost should be empty");
 
     // line 4
-    fts.add("quantity4", "Line 4: Item Quantity must be #EV", "1");
-    fts.add("kind4", "Line 4: Kind must be empty");
-    fts.add("type4", "Line 4: Type must be empty");
-    fts.add("item4", "Line 4: Description must be #EV", "MFJ 259D Antenna SWR Analyzer");
-    fts.add("requestedDateTime4", "Line 4: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime4", "Line 4: Estimated Date/Time must be empty");
-    fts.add("cost4", "Line 4: Item Cost must be empty");
+    fts.add("quantity4", "Line 4: Item Quantity should be #EV", "1");
+    fts.add("kind4", "Line 4: Kind should be empty");
+    fts.add("type4", "Line 4: Type should be empty");
+    fts.add("item4", "Line 4: Description should be #EV", "MFJ 259D Antenna SWR Analyzer");
+    fts.add("requestedDateTime4", "Line 4: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime4", "Line 4: Estimated Date/Time should be empty");
+    fts.add("cost4", "Line 4: Item Cost should be empty");
 
     // line 5
-    fts.add("quantity5", "Line 5: Item Quantity must be #EV", "1");
-    fts.add("kind5", "Line 5: Kind must be empty");
-    fts.add("type5", "Line 5: Type must be empty");
-    fts.add("item5", "Line 5: Description must be #EV", "Powerwerx Crimp Bag");
-    fts.add("requestedDateTime5", "Line 5: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime5", "Line 5: Estimated Date/Time must be empty");
-    fts.add("cost5", "Line 5: Item Cost must be empty");
+    fts.add("quantity5", "Line 5: Item Quantity should be #EV", "1");
+    fts.add("kind5", "Line 5: Kind should be empty");
+    fts.add("type5", "Line 5: Type should be empty");
+    fts.add("item5", "Line 5: Description should be #EV", "Powerwerx Crimp Bag");
+    fts.add("requestedDateTime5", "Line 5: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime5", "Line 5: Estimated Date/Time should be empty");
+    fts.add("cost5", "Line 5: Item Cost should be empty");
 
     // line 6
-    fts.add("quantity6", "Line 6: Item Quantity must be #EV", "1");
-    fts.add("kind6", "Line 6: Kind must be empty");
-    fts.add("type6", "Line 6: Type must be empty");
-    fts.add("item6", "Line 6: Description must be #EV", "CHA EmComm III Portable Antenna");
-    fts.add("requestedDateTime6", "Line 6: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime6", "Line 6: Estimated Date/Time must be empty");
-    fts.add("cost6", "Line 6: Item Cost must be empty");
+    fts.add("quantity6", "Line 6: Item Quantity should be #EV", "1");
+    fts.add("kind6", "Line 6: Kind should be empty");
+    fts.add("type6", "Line 6: Type should be empty");
+    fts.add("item6", "Line 6: Description should be #EV", "CHA EmComm III Portable Antenna");
+    fts.add("requestedDateTime6", "Line 6: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime6", "Line 6: Estimated Date/Time should be empty");
+    fts.add("cost6", "Line 6: Item Cost should be empty");
 
     // line 7
-    fts.add("quantity7", "Line 7: Item Quantity must be #EV", "1");
-    fts.add("kind7", "Line 7: Kind must be empty");
-    fts.add("type7", "Line 7: Type must be empty");
-    fts.add("item7", "Line 7: Description must be #EV", "Geochron Digital Atlas 2 4K 400-1000B");
-    fts.add("requestedDateTime7", "Line 7: Requested Date/Time must be #EV", requestedDate);
-    fts.add("estimatedDateTime7", "Line 7: Estimated Date/Time must be empty");
-    fts.add("cost7", "Line 7: Item Cost must be empty");
+    fts.add("quantity7", "Line 7: Item Quantity should be #EV", "1");
+    fts.add("kind7", "Line 7: Kind should be empty");
+    fts.add("type7", "Line 7: Type should be empty");
+    fts.add("item7", "Line 7: Description should be #EV", "Geochron Digital Atlas 2 4K 400-1000B");
+    fts.add("requestedDateTime7", "Line 7: Requested Date/Time should be #EV", requestedDate);
+    fts.add("estimatedDateTime7", "Line 7: Estimated Date/Time should be empty");
+    fts.add("cost7", "Line 7: Item Cost should be empty");
 
     // line 8
-    fts.add("quantity8", "Line 8: Item Quantity must be empty");
-    fts.add("kind8", "Line 8: Kind must be empty");
-    fts.add("type8", "Line 8: Type must be empty");
-    fts.add("item8", "Line 8: Description must be empty");
-    fts.add("requestedDateTime8", "Line 8: Requested Date/Time must be empty");
-    fts.add("estimatedDateTime8", "Line 8: Estimated Date/Time must be empty");
-    fts.add("cost8", "Line 8: Item Cost must be empty");
+    fts.add("quantity8", "Line 8: Item Quantity should be empty");
+    fts.add("kind8", "Line 8: Kind should be empty");
+    fts.add("type8", "Line 8: Type should be empty");
+    fts.add("item8", "Line 8: Description should be empty");
+    fts.add("requestedDateTime8", "Line 8: Requested Date/Time should be empty");
+    fts.add("estimatedDateTime8", "Line 8: Estimated Date/Time should be empty");
+    fts.add("cost8", "Line 8: Item Cost should be empty");
 
     // rest of request
-    fts.add("delivery", "Box 5: Delivery/Reporting Location must be #EV", "Child’s address");
-    fts.add("substitutes", "Box 6: Substitutes must be #EV", "DX Engineering");
-    fts.add("requestedBy", "Box 7: Requested By must be #EV", "Child/Nice list");
-    fts.add("priority", "Box 8: Priority must be #EV", "Routine");
-    fts.add("approvedBy", "Box 9: Section Chief must be #EV", "Gertrude Claus");
+    fts.add("delivery", "Box 5: Delivery/Reporting Location should be #EV", "Child’s address");
+    fts.add("substitutes", "Box 6: Substitutes should be #EV", "DX Engineering");
+    fts.add("requestedBy", "Box 7: Requested By should be #EV", "Child/Nice list");
+    fts.add("priority", "Box 8: Priority should be #EV", "Routine");
+    fts.add("approvedBy", "Box 9: Section Chief should be #EV", "Gertrude Claus");
 
     // logistics
-    fts.add("logisticsOrderNumber", "Box 10: Log Order Number must be empty");
-    fts.add("supplierInfo", "Box 11: Supplier Info must be empty");
-    fts.add("supplierName", "Box 12: Supplier Name must be empty");
-    fts.add("supplierPointOfContact", "Box 12A: Point of Contact must be empty");
-    fts.add("supplyNotes", "Box 13: Notes must be empty");
-    fts.add("logisticsAuthorizer", "Box 14: Logistics Rep must be empty");
-    fts.add("logisticsDateTime", "Box 15: Logistics Date/Time must be empty");
-    fts.add("orderedBy", "Box 16: Ordered By must be empty");
+    fts.add("logisticsOrderNumber", "Box 10: Log Order Number should be empty");
+    fts.add("supplierInfo", "Box 11: Supplier Info should be empty");
+    fts.add("supplierName", "Box 12: Supplier Name should be empty");
+    fts.add("supplierPointOfContact", "Box 12A: Point of Contact should be empty");
+    fts.add("supplyNotes", "Box 13: Notes should be empty");
+    fts.add("logisticsAuthorizer", "Box 14: Logistics Rep should be empty");
+    fts.add("logisticsDateTime", "Box 15: Logistics Date/Time should be empty");
+    fts.add("orderedBy", "Box 16: Ordered By should be empty");
 
     // finance
-    fts.add("financeComments", "Box 17: Finance Comments must be empty");
-    fts.add("financeName", "Box 18: Finance Chief must be empty");
-    fts.add("financeDateTime", "Box 19: Finance Date/Time By must be empty");
+    fts.add("financeComments", "Box 17: Finance Comments should be empty");
+    fts.add("financeName", "Box 18: Finance Chief should be empty");
+    fts.add("financeDateTime", "Box 19: Finance Date/Time By should be empty");
 
   }
 
@@ -316,16 +316,25 @@ public class ETO_2023_12_14 extends AbstractBaseProcessor {
 
       callResultsMap.put(result.message.from, result);
 
+      var feedbackRequest = "\n\n=======================================================================\n\n"
+          + "ETO would love to hear from you! Would you please take a few minutes to answer the following questions:\n\n" //
+          + "1. Were the exercise instructions clear? If not, where did they need improvement?\n" //
+          + "2. Did you find the exercise useful?\n" //
+          + "3. Did you find the above feedback useful?\n" //
+          + "4. What did you dislike about the exercise?\n" //
+          + "5. Any additional comments?\n" //
+          + "\nPlease reply to this Winlink message or to ETO.Technical.Team@EmComm-Training.groups.io. Thank you!";
+
       var nag = "\n\n=======================================================================\n\n"
-          + "ETO needs sponsors to be able to renew our groups.io subscription for 2024.\n\n"
-          + "By sponsoring this group, you are helping pay the Groups.io hosting fees.\n\n"
-          + "Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor\n\n"
-          + "Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.\n\n"
-          + "The minimum sponsorship is $5.00.\n\n" //
+          + "ETO needs sponsors to be able to renew our groups.io subscription for 2024.\n"
+          + "By sponsoring this group, you are helping pay the Groups.io hosting fees.\n"
+          + "Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor\n"
+          + "Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.\n"
+          + "The minimum sponsorship is $5.00.\n" //
           + "Thank you for your support!\n";
 
       var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-          outboundMessageSubject + " " + m.messageId, feedback + nag, null);
+          outboundMessageSubject + " " + m.messageId, feedback + feedbackRequest + nag, null);
       outboundMessageList.add(outboundMessage);
     } // end loop over for
 

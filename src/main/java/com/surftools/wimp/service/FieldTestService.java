@@ -148,7 +148,7 @@ public class FieldTestService implements IService {
    * @return
    */
   public int pass(String key) {
-    return test(key, null, true);
+    return testInternal(key, null, true);
   }
 
   /**
@@ -160,6 +160,23 @@ public class FieldTestService implements IService {
    * @return
    */
   public int test(String key, String value, boolean predicate) {
+    var entry = entryMap.get(key);
+    if (entry == null) {
+      throw new IllegalArgumentException("no entry found for key: " + key);
+    }
+
+    return testInternal(key, value, predicate);
+  }
+
+  /**
+   * internal test method
+   *
+   * @param key
+   * @param value
+   * @param predicate
+   * @return
+   */
+  private int testInternal(String key, String value, boolean predicate) {
     var entry = entryMap.get(key);
     if (entry == null) {
       throw new IllegalArgumentException("no entry found for key: " + key);
@@ -187,7 +204,7 @@ public class FieldTestService implements IService {
    * @param activityDateTime
    */
   public int testIfPresent(String key, String value) {
-    return test(key, value, value != null && !value.isEmpty());
+    return testInternal(key, value, value != null && !value.isEmpty());
   }
 
   /**
@@ -197,7 +214,7 @@ public class FieldTestService implements IService {
    * @param activityDateTime
    */
   public int testIfEmpty(String key, String value) {
-    return test(key, value, value == null || value.isEmpty());
+    return testInternal(key, value, value == null || value.isEmpty());
   }
 
   /**
@@ -225,7 +242,7 @@ public class FieldTestService implements IService {
    */
   public int test(String key, String value) {
     if (value == null) {
-      return test(key, null, false);
+      return testInternal(key, null, false);
     }
 
     var entry = entryMap.get(key);
@@ -235,7 +252,7 @@ public class FieldTestService implements IService {
 
     var expectedValue = (String) entry.data;
     var predicate = defaultStringCompare(value, expectedValue);
-    return test(key, value, predicate);
+    return testInternal(key, value, predicate);
   }
 
   /**
@@ -247,7 +264,7 @@ public class FieldTestService implements IService {
    */
   public int testSetOfStrings(String key, String value) {
     if (value == null) {
-      return test(key, null, false);
+      return testInternal(key, null, false);
     }
 
     var entry = entryMap.get(key);
@@ -261,7 +278,7 @@ public class FieldTestService implements IService {
       // determine if we'll pass first, then execute test to accumulate statistics and return
       var predicate = defaultStringCompare(value, expectedValue);
       if (predicate) {
-        return test(key, value, predicate);
+        return testInternal(key, value, predicate);
       }
     }
 
@@ -290,7 +307,7 @@ public class FieldTestService implements IService {
     default:
       throw new RuntimeException("DateTimeRelop: " + relop + " not supported");
     }
-    return test(key, formatter.format(value), predicate);
+    return testInternal(key, formatter.format(value), predicate);
   }
 
   public int testDtEquals(String key, LocalDateTime value, DateTimeFormatter formatter) {
