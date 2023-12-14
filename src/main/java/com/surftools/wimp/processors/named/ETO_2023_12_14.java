@@ -65,8 +65,8 @@ public class ETO_2023_12_14 extends AbstractBaseProcessor {
   public static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
   public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-  final LocalDateTime windowOpenDT = LocalDateTime.of(2023, 12, 14, 0, 0, 0);
-  final LocalDateTime windowCloseDT = LocalDateTime.of(2023, 12, 15, 23, 59, 0);
+  final LocalDateTime windowOpenDT = LocalDateTime.of(2023, 12, 12, 0, 0, 0);
+  final LocalDateTime windowCloseDT = LocalDateTime.of(2023, 12, 15, 15, 00, 0);
 
   private FieldTestService fts;
 
@@ -245,9 +245,7 @@ public class ETO_2023_12_14 extends AbstractBaseProcessor {
       }
 
       var addressList = m.toList + "," + m.ccList;
-      if (!addressList.contains("ETO-BK")) {
-        fts.fail("addresses-bk");
-      }
+      fts.test("addresses-bk", addressList.contains("ETO-BK"));
 
       fts.testOnOrAfter("windowOpen", m.msgDateTime, DT_FORMATTER);
       fts.testOnOrBefore("windowClose", m.msgDateTime, DT_FORMATTER);
@@ -316,14 +314,15 @@ public class ETO_2023_12_14 extends AbstractBaseProcessor {
 
       callResultsMap.put(result.message.from, result);
 
-      var feedbackRequest = "\n\n=======================================================================\n\n"
-          + "ETO would love to hear from you! Would you please take a few minutes to answer the following questions:\n\n" //
-          + "1. Were the exercise instructions clear? If not, where did they need improvement?\n" //
-          + "2. Did you find the exercise useful?\n" //
-          + "3. Did you find the above feedback useful?\n" //
-          + "4. What did you dislike about the exercise?\n" //
-          + "5. Any additional comments?\n" //
-          + "\nPlease reply to this Winlink message or to ETO.Technical.Team@EmComm-Training.groups.io. Thank you!";
+      // var feedbackRequest = "\n\n=======================================================================\n\n"
+      // + "ETO would love to hear from you! Would you please take a few minutes to answer the following questions:\n\n"
+      // //
+      // + "1. Were the exercise instructions clear? If not, where did they need improvement?\n" //
+      // + "2. Did you find the exercise useful?\n" //
+      // + "3. Did you find the above feedback useful?\n" //
+      // + "4. What did you dislike about the exercise?\n" //
+      // + "5. Any additional comments?\n" //
+      // + "\nPlease reply to this Winlink message or to ETO.Technical.Team@EmComm-Training.groups.io. Thank you!";
 
       var nag = "\n\n=======================================================================\n\n"
           + "ETO needs sponsors to be able to renew our groups.io subscription for 2024.\n"
@@ -334,7 +333,7 @@ public class ETO_2023_12_14 extends AbstractBaseProcessor {
           + "Thank you for your support!\n";
 
       var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-          outboundMessageSubject + " " + m.messageId, feedback + feedbackRequest + nag, null);
+          outboundMessageSubject + " " + m.messageId, feedback + nag, null);
       outboundMessageList.add(outboundMessage);
     } // end loop over for
 

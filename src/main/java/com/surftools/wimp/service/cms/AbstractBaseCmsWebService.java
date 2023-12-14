@@ -83,6 +83,7 @@ public abstract class AbstractBaseCmsWebService implements ICmsWebService {
    * @param modeNumber
    * @return name or UNKNOWN
    */
+  @Override
   public String getModeName(int modeNumber) {
     return modeNumberNameMap.getOrDefault(modeNumber, "UNKNOWN");
   }

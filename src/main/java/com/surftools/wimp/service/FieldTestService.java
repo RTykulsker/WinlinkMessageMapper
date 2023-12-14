@@ -90,6 +90,7 @@ public class FieldTestService implements IService {
     if (data instanceof String s && s != null && label.contains("#EV")) {
       label = label.replaceAll("#EV", s);
     }
+
     var entry = new Entry(label, data);
     entryMap.put(key, entry);
   }
@@ -168,6 +169,15 @@ public class FieldTestService implements IService {
     return testInternal(key, value, predicate);
   }
 
+  public int test(String key, boolean predicate) {
+    var entry = entryMap.get(key);
+    if (entry == null) {
+      throw new IllegalArgumentException("no entry found for key: " + key);
+    }
+
+    return testInternal(key, null, predicate);
+  }
+
   /**
    * internal test method
    *
@@ -195,6 +205,28 @@ public class FieldTestService implements IService {
     entryMap.put(key, entry);
 
     return possiblePoints;
+  }
+
+  /**
+   * test if string ends with data
+   *
+   * @param string
+   * @param activityDateTime
+   */
+  public int testEndsWith(String key, String value, boolean doCaseIndependent) {
+    var entry = entryMap.get(key);
+    if (entry == null) {
+      throw new IllegalArgumentException("no entry found for key: " + key);
+    }
+
+    var expectedValue = (String) entry.data;
+    var predicate = false;
+    if (doCaseIndependent) {
+      predicate = value.toLowerCase().endsWith(expectedValue.toLowerCase());
+    } else {
+      predicate = value.endsWith(expectedValue);
+    }
+    return testInternal(key, value, predicate);
   }
 
   /**

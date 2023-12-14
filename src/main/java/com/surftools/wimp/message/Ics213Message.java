@@ -72,6 +72,10 @@ public class Ics213Message extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
+    return getStaticHeaders();
+  }
+
+  public static String[] getStaticHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", "Msg Location", "Form Location", //
         "Organization", "IncidentName", //
