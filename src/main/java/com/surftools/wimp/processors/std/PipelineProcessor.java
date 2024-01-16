@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,7 +47,12 @@ public class PipelineProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(PipelineProcessor.class);
 
   private static final String[] PREFIXES = new String[] { //
-      "com.surftools.wimp.processors.std.", "com.surftools.wimp.processors.named.", "" };
+      "com.surftools.wimp.processors.std.", //
+      "com.surftools.wimp.processors.eto_2022.", //
+      "com.surftools.wimp.processors.eto_2023.", //
+      "com.surftools.wimp.processors.eto_2024.", //
+      "com.surftools.wimp.processors.other.", //
+      "" };
 
   private static final String[] SUFFIXES = new String[] { "Processor", "" };
 
@@ -106,7 +110,9 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     Set<String> set = new HashSet<>();
     if (dumpIdsString != null) {
       String[] fields = dumpIdsString.split(",");
-      set.addAll(Arrays.asList(fields));
+      for (var field : fields) {
+        set.add(field.toUpperCase());
+      }
       logger.info("dumpIds: " + String.join(",", set));
     }
     return set;

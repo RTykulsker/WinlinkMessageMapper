@@ -73,6 +73,10 @@ public enum Key implements IConfigurationKey {
 
   MAX_DAYS_BEFORE_LATE("maxDaysBeforeLate"), // for warning about late messages
 
+  RMS_KML_MESSAGE_TYPES("rms.kml.messageTypes"), // for supported MessageTypes in the RmsKmlProcessor
+  RMS_KML_SHOW_MESSAGE_TYPES("rms.kml.show.messageTypes"), // show message types in descriptions
+  RMS_KML_SHOW_DATES("rms.kml.show.dates"), // for dates as well as times in descriptions
+
   RMS_HF_GATEWAYS_FILE_NAME("rms.hf_gateways.fileName"), // for getting RMS location
   RMS_VHF_GATEWAYS_FILE_NAME("rms.vhf_gateways.fileName"), // for getting RMS location
 

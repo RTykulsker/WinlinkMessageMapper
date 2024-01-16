@@ -47,6 +47,7 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 
+@Deprecated
 public class RmsLocationProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(RmsLocationProcessor.class);
 
