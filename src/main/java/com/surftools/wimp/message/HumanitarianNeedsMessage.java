@@ -81,6 +81,10 @@ public class HumanitarianNeedsMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
+    return getStaticHeaders();
+  }
+
+  public static String[] getStaticHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", "Msg Location", "Form Location", //
         "TeamId", "Form Date", "Form Time", "Address", //
@@ -121,4 +125,5 @@ public class HumanitarianNeedsMessage extends ExportedMessage {
   public String getMultiMessageComment() {
     return description + ", " + other;
   }
+
 }

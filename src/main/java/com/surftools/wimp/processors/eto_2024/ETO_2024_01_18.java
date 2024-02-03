@@ -54,7 +54,7 @@ import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 
 /**
- * Processor for 2024-01_18 Exercise: an ICS-213, Winter Field Day questions
+ * Processor for 2024-01-18 Exercise: an ICS-213, Winter Field Day questions
  *
  *
  * @author bobt
@@ -118,6 +118,7 @@ public class ETO_2024_01_18 extends AbstractBaseProcessor {
     var ppClassCounter = new Counter();
     var ppCategoryCounter = new Counter();
     var ppLocationCounter = new Counter();
+    var ppVersionCounter = new Counter();
 
     var messageIdResultMap = new HashMap<String, IWritableTable>();
     var badLocationMessageIds = new ArrayList<String>();
@@ -133,6 +134,7 @@ public class ETO_2024_01_18 extends AbstractBaseProcessor {
       }
 
       ++ppCount;
+      ppVersionCounter.increment(m.version);
 
       var addressList = m.toList + "," + m.ccList;
       sts.test("To and/or CC addresses should contain ETO-BK", addressList.contains("ETO-BK"), null);
@@ -144,7 +146,7 @@ public class ETO_2024_01_18 extends AbstractBaseProcessor {
 
       sts
           .test("Box 2 To address should be an ETO clearinghouse",
-              cm.getAsString(Key.EXPECTED_DESTINATIONS).contains(m.formTo), m.formTo);
+              cm.getAsString(Key.EXPECTED_DESTINATIONS).contains(m.formTo.toUpperCase()), m.formTo);
 
       {
         var expected = sts.stripEmbeddedSpaces(sender + " / Winlink Thursday Participant").toLowerCase();
@@ -268,6 +270,7 @@ public class ETO_2024_01_18 extends AbstractBaseProcessor {
 
     sb.append("\n-------------------Histograms---------------------\n");
     sb.append(formatCounter("Feedback items", ppFeedBackCounter));
+    sb.append(formatCounter("Version", ppVersionCounter));
     sb.append(formatCounter("Will Participate", ppWillParticipateCounter));
     sb.append(formatCounter("Exchange Class", ppClassCounter));
     sb.append(formatCounter("Exchange Category", ppCategoryCounter));

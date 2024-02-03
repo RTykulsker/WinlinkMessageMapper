@@ -28,13 +28,14 @@ SOFTWARE.
 package com.surftools.wimp.service.simpleTestService;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 public class SimpleTestServiceTest {
-
   static final double DELTA = 0d;
 
   @Test
@@ -54,15 +55,35 @@ public class SimpleTestServiceTest {
 
   @Test
   public void test_toAlphanumericString() {
-    String s = "";
-    s = SimpleTestService.toAlphaNumericString(null);
+    var sts = new SimpleTestService();
+    var s = sts.toAlphaNumericString(null);
     assertNull(s);
 
-    s = SimpleTestService.toAlphaNumericString("");
+    s = sts.toAlphaNumericString("");
     assertEquals("", s);
 
     s = "abc ABC123 !@#";
-    s = SimpleTestService.toAlphaNumericString(s);
+    s = sts.toAlphaNumericString(s);
     assertEquals("abcabc123", s);
+  }
+
+  @Test
+  public void test_toAlphaNumericWords() {
+    var sts = new SimpleTestService();
+    var expected = "Hello, world";
+    var actual1 = "+++he---llo, World!";
+
+    var expectedString = sts.toAlphaNumericString(expected);
+    var expectedWords = sts.toAlphaNumericWords(expected);
+    var actual1String = sts.toAlphaNumericString(actual1);
+    var actual1Words = sts.toAlphaNumericWords(actual1);
+    assertTrue(expectedString.equalsIgnoreCase(actual1String));
+    assertFalse(expectedWords.equalsIgnoreCase(actual1Words));
+
+    var actual2 = "+++hello, @World!";
+    var actual2String = sts.toAlphaNumericString(actual2);
+    var actual2Words = sts.toAlphaNumericWords(actual2);
+    assertTrue(expectedString.equalsIgnoreCase(actual2String));
+    assertTrue(expectedWords.equalsIgnoreCase(actual2Words));
   }
 }

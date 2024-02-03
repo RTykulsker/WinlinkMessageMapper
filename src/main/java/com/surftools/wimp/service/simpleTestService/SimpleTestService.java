@@ -104,12 +104,12 @@ public class SimpleTestService implements IService {
     var entry = entryMap.get(label);
     if (entry == null) {
       ++addCount;
-      entry = new TestEntry(label, toAlphaNumericString(expectedValue));
+      entry = new TestEntry(label, toAlphaNumericWords(expectedValue));
       entryMap.put(label, entry);
     }
 
     expectedValue = entry.expectedValue;
-    var predicate = value != null && toAlphaNumericString(value).equals(expectedValue);
+    var predicate = value != null && toAlphaNumericWords(value).equalsIgnoreCase(expectedValue);
     return internalTest(entry, predicate, wrap(value), null);
   }
 
@@ -234,6 +234,24 @@ public class SimpleTestService implements IService {
     }
 
     return internalTest(entry, predicate, formatter.format(value), null);
+  }
+
+  /**
+   * for testing booleans/predicates
+   *
+   * @param entry
+   * @param predicate
+   * @return
+   */
+  public TestResult test(String label, boolean predicate) {
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, "");
+      entryMap.put(label, entry);
+    }
+
+    return internalTest(entry, predicate, null, null);
   }
 
   /**
@@ -425,15 +443,26 @@ public class SimpleTestService implements IService {
     return String.join("\n", explanations);
   }
 
-  public static String toAN(String s) {
-    return toAlphaNumericString(s);
-  }
-
-  public static String toAlphaNumericString(String s) {
+  public String toAlphaNumericString(String s) {
     if (s == null) {
       return null;
     }
     return s.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+  }
+
+  public String toAlphaNumericWords(String s) {
+    if (s == null) {
+      return null;
+    }
+
+    var list = new ArrayList<String>();
+    var words = s.split("\\s");
+    for (var word : words) {
+      // https://stackoverflow.com/questions/24967089/java-remove-all-non-alphanumeric-character-from-beginning-and-end-of-string
+      list.add(word.replaceAll("^[^\\p{L}^\\p{N}\\s%]+|[^\\p{L}^\\p{N}\\s%]+$", ""));
+    }
+
+    return String.join(" ", list);
   }
 
   public String stripEmbeddedSpaces(String s) {

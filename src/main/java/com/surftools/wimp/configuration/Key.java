@@ -53,6 +53,8 @@ public enum Key implements IConfigurationKey {
   MULITPLE_CHOICE_ALLOW_QUOTES("multipleChoice.allowQuotes"), // boolean, allow quotes around responses
   MULTIPLE_CHOICE_ALLOW_TRIM("multipleChoice.allowTrim"), // boolean allow trim around responses
 
+  OVERRIDE_LOCATION_PATH("overrideLocation.path"), // path to file with override locations
+
   P2P_TARGET_PATH("p2p.targetPath"), // for P2P processing, target (destination) definitions
   P2P_FIELD_PATH("p2p.fieldPath"), // for P2P processing, field (source) definitions
   P2P_DISTANCE_THRESHOLD_METERS("p2p.distanceThreshold.meters"), // for jittering

@@ -68,6 +68,8 @@ public class Ics213Message extends ExportedMessage {
     this.isExercise = isExercise;
     this.formLocation = formLocation;
     this.version = version;
+
+    this.mapLocation = (formLocation != null && formLocation.isValid()) ? formLocation : mapLocation;
   }
 
   @Override

@@ -52,6 +52,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.service.overrideLocationService.OverrideLocationService;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayResult;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayService;
 
@@ -85,13 +86,28 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "From", "To", "Gateway", "Frequency", "MiD", "DateTime", "Type", "Distance", "Bearing" };
+      return new String[] { "From", "To", "Gateway", "Frequency", "Band", "MiD", "DateTime", "Type", "Distance",
+          "Bearing" };
     }
 
     @Override
     public String[] getValues() {
-      return new String[] { from, to, gateway, String.valueOf(frequency), messageId, dateTime.toString(),
-          messageType.toString(), distanceMiles, bearingDegrees };
+      return new String[] { from, to, gateway, String.valueOf(frequency), bandOf(frequency), messageId,
+          dateTime.toString(), messageType.toString(), distanceMiles, bearingDegrees };
+    }
+
+    private String bandOf(int freq) {
+      if (freq == 0 && gateway.equals("TELNET")) {
+        return "TELNET";
+      } else if (freq <= 30_000_000) {
+        return "HF";
+      } else if (freq <= 300_000_000) {
+        return "VHF";
+      } else if (freq <= Integer.MAX_VALUE) {
+        return "UHF";
+      } else {
+        return "OTHER";
+      }
     }
 
     @Override
@@ -124,8 +140,10 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
     List<ExportedMessage> messages;
 
     Target(String call, LatLongPair location) {
+
       this.call = call;
       this.location = location;
+
       messages = new ArrayList<>();
     }
 
@@ -141,7 +159,9 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
 
     @Override
     public String[] getValues() {
-      return new String[] { call, location.getLatitude(), location.getLongitude(), String.valueOf(messages.size()) };
+      var latitude = location != null && location.isValid() ? location.getLatitude() : "0.0";
+      var longitude = location != null && location.isValid() ? location.getLongitude() : "0.0";
+      return new String[] { call, latitude, longitude, String.valueOf(messages.size()) };
     }
 
     @Override
@@ -184,6 +204,7 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
     }
   }
 
+  private OverrideLocationService overrideLocationService;
   private RmsGatewayService rmsGatewayService;
   private Set<MessageType> requiredMessageTypeSet;
   private Map<String, Target> targetMap;
@@ -201,6 +222,7 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
 
     super.initialize(cm, mm, logger);
 
+    overrideLocationService = new OverrideLocationService(cm);
     rmsGatewayService = new RmsGatewayService(cm);
 
     requiredMessageTypeSet = new HashSet<>();
@@ -234,42 +256,53 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
     var typeIterator = requiredMessageTypeSet.iterator();
     while (typeIterator.hasNext()) {
       var type = typeIterator.next();
-      for (var m : mm.getMessagesForType(type)) {
-        ++ppMessageCount;
+      var messages = mm.getMessagesForType(type);
+      if (messages != null) {
+        for (var m : mm.getMessagesForType(type)) {
+          ++ppMessageCount;
 
-        var rmsResult = rmsGatewayService.getLocationOfRmsGateway(m.from, m.messageId);
-        if (rmsResult.isFound()) {
-          var field = fieldMap.get(m.from);
-          if (field == null) {
-            field = new Field(m.from, m.mapLocation);
-          }
-          field.messages.add(m);
-          fieldMap.put(m.from, field);
+          var rmsResult = rmsGatewayService.getLocationOfRmsGateway(m.from, m.messageId);
+          if (rmsResult.isFound()) {
+            var field = fieldMap.get(m.from);
+            if (field == null) {
+              field = new Field(m.from, m.mapLocation);
+            }
+            field.messages.add(m);
+            fieldMap.put(m.from, field);
 
-          var target = targetMap.get(rmsResult.gatewayCallsign());
-          if (target == null) {
-            target = new Target(rmsResult.gatewayCallsign(), rmsResult.location());
-          }
-          target.messages.add(m);
-          targetMap.put(rmsResult.gatewayCallsign(), target);
+            var targetLocation = rmsResult.location();
+            if (targetLocation == null || !targetLocation.isValid()) {
+              logger.info("before overrideLocationService for call: " + rmsResult.gatewayCallsign());
+              targetLocation = overrideLocationService.getLocation(rmsResult.gatewayCallsign());
+              logger.info("after: location: " + targetLocation);
+            }
 
-          var distanceMiles = "n/a";
-          var bearingDegrees = "n/a";
-          if (rmsResult != null && rmsResult.location() != null && rmsResult.location().isValid()) {
-            distanceMiles = String.valueOf(LocationUtils.computeDistanceMiles(m.mapLocation, rmsResult.location()));
-            bearingDegrees = String.valueOf(LocationUtils.computBearing(m.mapLocation, rmsResult.location()));
-          }
+            var target = targetMap.get(rmsResult.gatewayCallsign());
+            if (target == null) {
+              target = new Target(rmsResult.gatewayCallsign(), targetLocation);
+            }
+            target.messages.add(m);
+            targetMap.put(rmsResult.gatewayCallsign(), target);
 
-          var gatewayMessage = new GatewayMessage(m.from, m.to, rmsResult.gatewayCallsign(), rmsResult.frequency(),
-              m.messageId, m.msgDateTime, type, distanceMiles, bearingDegrees);
-          gatewayMessages.add(gatewayMessage);
+            var distanceMiles = "n/a";
+            var bearingDegrees = "n/a";
+            if (rmsResult != null && rmsResult.location() != null && rmsResult.location().isValid()
+                && m.mapLocation != null) {
+              distanceMiles = String.valueOf(LocationUtils.computeDistanceMiles(m.mapLocation, rmsResult.location()));
+              bearingDegrees = String.valueOf(LocationUtils.computBearing(m.mapLocation, rmsResult.location()));
+            }
 
-          messageMap.put(m.messageId, rmsResult);
-        } else {// end if rmsResult.isFound
-          ++ppNotFoundCount;
-          logger.info("### no rmsEntry for call: " + m.from + ", messageId: " + m.messageId);
-        } // end if rmsResult not found
-      } // end loop over message of type
+            var gatewayMessage = new GatewayMessage(m.from, m.to, rmsResult.gatewayCallsign(), rmsResult.frequency(),
+                m.messageId, m.msgDateTime, type, distanceMiles, bearingDegrees);
+            gatewayMessages.add(gatewayMessage);
+
+            messageMap.put(m.messageId, rmsResult);
+          } else {// end if rmsResult.isFound
+            ++ppNotFoundCount;
+            logger.info("### no rmsEntry for call: " + m.from + ", messageId: " + m.messageId);
+          } // end if rmsResult not found
+        } // end loop over message of type
+      } // end if messages != null
     } // end loop over types
 
   }
@@ -285,7 +318,7 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
     writeTable("rmsTargetStations.csv", targets);
 
     Collections.sort(gatewayMessages);
-    writeTable("rmsGateways", gatewayMessages);
+    writeTable("rmsGateways.csv", gatewayMessages);
 
     var kmlText = makeKmlText();
     writeKml(kmlText);
@@ -372,7 +405,12 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
     for (var fieldCall : fieldMap.keySet()) {
       var field = fieldMap.get(fieldCall);
 
-      if (field.messages.size() > 0) {
+      // var debug = false;
+      // if (field.location == null) {
+      // debug = true;
+      // }
+
+      if (field.messages.size() > 0 && field.location != null) {
         sb.append("  <Placemark>\n");
         sb.append("    <name>" + fieldCall + "</name>\n");
         sb.append("    <styleUrl>#fieldpin</styleUrl>\n");
@@ -471,7 +509,8 @@ public class RmsKmlProcessor extends AbstractBaseProcessor {
 
       sb.append(time + ", to: " + to + ", via: " + rmsResult.gatewayCallsign());
       var rmsLocation = rmsResult.location();
-      if (rmsLocation != null && rmsLocation.isValid() && !rmsResult.gatewayCallsign().equalsIgnoreCase("TELNET")) {
+      if (field.location != null && rmsLocation != null && rmsLocation.isValid()
+          && !rmsResult.gatewayCallsign().equalsIgnoreCase("TELNET")) {
         var distanceMiles = LocationUtils.computeDistanceMiles(field.location, rmsLocation);
         sb.append(" (" + distanceMiles + " mi, " + formatFrequency(rmsResult.frequency()) + ")");
       }

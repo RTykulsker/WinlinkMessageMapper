@@ -112,8 +112,9 @@ public class MiroProcessor extends AbstractBaseProcessor {
       this.comments = m.comments;
       this.version = m.version;
 
-      if (mode.equalsIgnoreCase("Telnet")) {
+      if (mode.equalsIgnoreCase("Telnet") || band.equalsIgnoreCase("Telnet")) {
         final var na = "n/a";
+        mode = "Telnet";
         band = na;
         radio = na;
         antenna = na;
