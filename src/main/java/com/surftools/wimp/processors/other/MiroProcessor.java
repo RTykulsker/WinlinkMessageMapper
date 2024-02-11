@@ -322,7 +322,7 @@ public class MiroProcessor extends AbstractBaseProcessor {
             sb.append("This month you didn't use a 'resilient path'. Oh well, try again next month!\n");
           }
           sb.append("\n");
-          sb.append("For 2023, you participated in " + newExerciseCount + " exercise");
+          sb.append("For 2024, you participated in " + newExerciseCount + " exercise");
           sb.append((newExerciseCount == 1 ? "" : "s") + ", ");
           sb.append("with a resilient count of " + newResilientCount);
           sb.append(", for a resiliency 'score' of " + resiliencyPercent + "%\n\n");
