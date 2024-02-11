@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.service.IService;
 import com.surftools.wimp.service.cms.ChannelRecord;
 import com.surftools.wimp.service.cms.CmsWebService;
@@ -53,24 +54,33 @@ public class RmsGatewayService implements IService {
   private Map<TrafficKey, TrafficRecord> trafficMap = new HashMap<>();
   private Map<ChannelKey, ChannelRecord> channelMap = new HashMap<>();
   private Set<String> senderSet = new HashSet<>();
+  private boolean isInitialized;
 
   public RmsGatewayService(IConfigurationManager cm) {
     this.cm = cm;
 
-    try {
-      cmsService = new CmsWebService(cm);
-      var channelList = cmsService.channelList();
-      logger.info("received " + channelList.size() + " channel records");
-      for (var cr : channelList) {
-        var channelKey = new ChannelKey(cr.baseCallsign(), cr.frequency());
-        channelMap.put(channelKey, cr);
+    var authKey = cm.getAsString(Key.CMS_AUTHORIZATION_KEY);
+    if (authKey != null && authKey.length() > 0) {
+      try {
+        cmsService = new CmsWebService(cm);
+        var channelList = cmsService.channelList();
+        logger.info("received " + channelList.size() + " channel records");
+        for (var cr : channelList) {
+          var channelKey = new ChannelKey(cr.baseCallsign(), cr.frequency());
+          channelMap.put(channelKey, cr);
+        }
+        isInitialized = true;
+      } catch (Exception e) {
+        logger.error("Exception initializing: " + getName() + ", " + e.getLocalizedMessage());
       }
-    } catch (Exception e) {
-      logger.error("Exception initializing: " + getName() + ", " + e.getLocalizedMessage());
     }
   }
 
   public RmsGatewayResult getLocationOfRmsGateway(String sender, String messageId) {
+    if (!isInitialized) {
+      return new RmsGatewayResult(sender, messageId, false, null, null, 0);
+    }
+
     // assume our web service calls are expensive, so cache the results
     if (!senderSet.contains(sender)) {
       var trafficList = cmsService.trafficLocSenderGet(sender);
@@ -120,6 +130,10 @@ public class RmsGatewayService implements IService {
     logger
         .info("web service returns " + trafficList.size() + " traffic records, " + acceptedCount
             + " accepted traffic for sender " + sender);
+  }
+
+  public boolean isInitialized() {
+    return isInitialized;
   }
 
   @Override
