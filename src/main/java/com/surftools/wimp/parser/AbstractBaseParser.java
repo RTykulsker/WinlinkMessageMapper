@@ -161,7 +161,7 @@ public abstract class AbstractBaseParser implements IParser {
         if (s.indexOf(",") >= 0) {
           String[] fields = s.split(",");
           if (fields.length >= 2) {
-            LatLongPair pair = new LatLongPair(fields[0], fields[1]);
+            LatLongPair pair = new LatLongPair(fields[0].trim(), fields[1].trim());
             if (pair.isValid()) {
               return pair;
             } // end if pair is valid
