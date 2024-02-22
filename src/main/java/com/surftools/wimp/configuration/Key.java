@@ -69,6 +69,8 @@ public enum Key implements IConfigurationKey {
   EXERCISE_DATE("exerciseDate"), // for Summarizer
   EXERCISE_NAME("exerciseName"), // for Summarizer
   EXERCISE_DESCRIPTION("exerciseDescription"), // for Summarizer
+  EXERCISE_WINDOW_OPEN("exerciseWindowOpen"), //
+  EXERCISE_WINDOW_CLOSE("exerciseWindowClose"), //
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
   SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, list ETO-BK

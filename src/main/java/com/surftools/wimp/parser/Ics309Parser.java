@@ -63,10 +63,9 @@ public class Ics309Parser extends AbstractBaseParser {
       var operationalPeriod = getStringFromXml("opper");
       var taskName = getStringFromXml("taskname");
       var operatorName = getStringFromXml("opname");
-      var stationId = getStringFromXml("opid");
+      var stationId = getStringFromXml("operid");
       var incidentName = getStringFromXml("incident_name");
       var page = getStringFromXml("page");
-      var activities = makeActivities();
 
       var version = "";
       var templateVersion = getStringFromXml("templateversion");
@@ -74,6 +73,8 @@ public class Ics309Parser extends AbstractBaseParser {
         var fields = templateVersion.split(" ");
         version = fields[fields.length - 1]; // last field
       }
+
+      var activities = makeActivities(version);
 
       var m = new Ics309Message(message, organization, taskNumber, dateTimePrepared, operationalPeriod, taskName,
           operatorName, stationId, incidentName, page, version, activities);
@@ -84,13 +85,35 @@ public class Ics309Parser extends AbstractBaseParser {
     }
   }
 
-  private List<Ics309Message.Activity> makeActivities() {
+  private List<Ics309Message.Activity> makeActivities(String versionString) {
+
+    // v13.9.2
+    var versionNumber = 0;
+    if (versionString.length() > 0) {
+      var fields = versionString.substring(1).split("\\.");
+      for (var field : fields) {
+        versionNumber = (10 * versionNumber) + Integer.valueOf(field);
+      }
+      if (fields.length == 2) {
+        versionNumber *= 10;
+      }
+    }
+
     var list = new ArrayList<Ics309Message.Activity>();
-    for (int i = 1; i <= 8; ++i) {
+    for (int i = 1; i <= Ics309Message.getNDisplayActivities(); ++i) {
       var dateTime = getStringFromXml("time" + i);
       var from = getStringFromXml("from" + i);
       var to = getStringFromXml("to" + i);
-      var subject = getStringFromXml("subject" + i);
+
+      // defect in xml; fixed in 14.0
+      var doSwap = false;
+      if (doSwap || versionNumber < 1400) {
+        var tmp = from;
+        from = to;
+        to = tmp;
+      }
+
+      var subject = getStringFromXml("sub" + i);
       var entry = new Ics309Message.Activity(dateTime, from, to, subject);
       list.add(entry);
     }

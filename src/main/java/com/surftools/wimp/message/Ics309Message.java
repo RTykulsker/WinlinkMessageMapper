@@ -50,6 +50,25 @@ public class Ics309Message extends ExportedMessage {
   public final List<Activity> activities;
 
   public static record Activity(String dateTimeString, String from, String to, String subject) {
+    public boolean isValid() {
+      if (dateTimeString != null && !dateTimeString.isEmpty()) {
+        return true;
+      }
+
+      if (from != null && !from.isEmpty()) {
+        return true;
+      }
+
+      if (to != null && !to.isEmpty()) {
+        return true;
+      }
+
+      if (subject != null && !subject.isEmpty()) {
+        return true;
+      }
+
+      return false;
+    }
   };
 
   public Ics309Message(ExportedMessage exportedMessage, String organization, String taskNumber, String dateTimePrepared,
@@ -77,8 +96,7 @@ public class Ics309Message extends ExportedMessage {
     Ics309Message.nDisplayActivities = nDisplayActivities;
   }
 
-  @Override
-  public String[] getHeaders() {
+  public static String[] getStaticHeaders() {
     final var fixedHeaders = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", //
         "Organization", "Task Number", "Date/Time Prepared", "Operational Period", //
@@ -96,7 +114,11 @@ public class Ics309Message extends ExportedMessage {
     }
 
     return resultList.toArray(new String[resultList.size()]);
+  }
 
+  @Override
+  public String[] getHeaders() {
+    return getStaticHeaders();
   }
 
   @Override

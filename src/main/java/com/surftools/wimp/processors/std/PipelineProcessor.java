@@ -48,9 +48,9 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
   private static final String[] PREFIXES = new String[] { //
       "com.surftools.wimp.processors.std.", //
-      "com.surftools.wimp.processors.eto_2022.", //
-      "com.surftools.wimp.processors.eto_2023.", //
       "com.surftools.wimp.processors.eto_2024.", //
+      "com.surftools.wimp.processors.eto_2023.", //
+      "com.surftools.wimp.processors.eto_2022.", //
       "com.surftools.wimp.processors.other.", //
       "" };
 
@@ -123,12 +123,12 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     for (var prefix : PREFIXES) {
       for (var suffix : SUFFIXES) {
         var className = prefix + processorName + suffix;
-        logger.debug("searching for className: " + className);
+        logger.info("searching for className: " + className);
         try {
           var clazz = Class.forName(className);
           if (clazz != null) {
             processor = (IProcessor) clazz.getDeclaredConstructor().newInstance();
-            logger.debug("found  className: " + className);
+            logger.info("found  className: " + className);
             return processor;
           }
         } catch (Exception e) {

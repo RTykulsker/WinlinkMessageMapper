@@ -31,8 +31,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,21 +59,28 @@ public class PropertyFileConfigurationManager extends DefaultConfigurationManage
       logger.info("using configuration file: " + configFileName);
       properties.load(new FileInputStream(new File(configFileName)));
 
+      var substitutionMap = new HashMap<String, String>();
+
       super.setValues(values);
       List<String> propertiesWithoutConfigurationKeys = new ArrayList<>();
       Enumeration<Object> propertyKeys = properties.keys();
       while (propertyKeys.hasMoreElements()) {
         String propertyKey = propertyKeys.nextElement().toString();
-        IConfigurationKey configurationKey = fromString(propertyKey);
-        if (configurationKey == null) {
-          propertiesWithoutConfigurationKeys.add(propertyKey);
+
+        if (propertyKey.startsWith("${") && propertyKey.endsWith("}")) {
+          substitutionMap.put(propertyKey, properties.getProperty(propertyKey));
         } else {
-          String value = properties.getProperty(propertyKey);
-          if (!value.isEmpty()) {
-            map.put(configurationKey, value);
-            logger.debug("config: key: " + configurationKey.toString() + " => " + value);
+          IConfigurationKey configurationKey = fromString(propertyKey);
+          if (configurationKey == null) {
+            propertiesWithoutConfigurationKeys.add(propertyKey);
           } else {
-            throw new RuntimeException("empty configuration parameter: " + configurationKey.toString());
+            String value = properties.getProperty(propertyKey);
+            if (!value.isEmpty()) {
+              map.put(configurationKey, value);
+              logger.debug("config: key: " + configurationKey.toString() + " => " + value);
+            } else {
+              throw new RuntimeException("empty configuration parameter: " + configurationKey.toString());
+            }
           }
         }
       }
@@ -80,9 +90,83 @@ public class PropertyFileConfigurationManager extends DefaultConfigurationManage
             .warn("the following properties had no associated ConfigurationKey: "
                 + String.join(", ", propertiesWithoutConfigurationKeys));
       }
+
+      if (substitutionMap.size() > 0) {
+        doSubstitutions(substitutionMap);
+      }
     } catch (Exception e) {
       logger.error("Exception processing configuration file: " + configFileName + ": " + e.getMessage());
       throw e;
+    }
+  }
+
+  /**
+   * perform a substitution of ${values} within values
+   */
+  private void doSubstitutions(HashMap<String, String> substitutionMap) {
+    final String regex = "\\$\\{([^}]++)\\}";
+    final Pattern pattern = Pattern.compile(regex);
+
+    // expand substitution map
+    for (var entry : substitutionMap.entrySet()) {
+      var oldValue = entry.getValue();
+      var newValue = new String(oldValue);
+
+      // https://stackoverflow.com/questions/17462146
+      Matcher matcher = pattern.matcher(oldValue);
+
+      while (matcher.find()) {
+        String token = matcher.group(); // Ex: ${fizz}
+        // String tokenKey = matcher.group(1); // Ex: fizz
+        String replacementValue = null;
+
+        if (substitutionMap.containsKey(token)) {
+          replacementValue = substitutionMap.get(token);
+          try {
+            newValue = newValue.replaceFirst(Pattern.quote(token), replacementValue);
+          } catch (Exception e) {
+            logger.error("Exception for token: " + token + ", " + e.getMessage());
+          }
+        } else {
+          logger.error("String contained an unsupported token: " + token);
+        }
+      }
+
+      if (!newValue.equals(oldValue)) {
+        substitutionMap.put(entry.getKey(), newValue);
+      }
+
+    }
+
+    // expand main map
+    for (var entry : map.entrySet()) {
+      var oldValue = entry.getValue();
+      var newValue = new String(oldValue);
+
+      // https://stackoverflow.com/questions/17462146
+      Matcher matcher = pattern.matcher(oldValue);
+
+      while (matcher.find()) {
+        String token = matcher.group(); // Ex: ${fizz}
+        // String tokenKey = matcher.group(1); // Ex: fizz
+        String replacementValue = null;
+
+        if (substitutionMap.containsKey(token)) {
+          replacementValue = substitutionMap.get(token);
+          try {
+            newValue = newValue.replaceFirst(Pattern.quote(token), replacementValue);
+          } catch (Exception e) {
+            logger.error("Exception for token: " + token + ", " + e.getMessage());
+          }
+        } else {
+          logger.error("String contained an unsupported token: " + token);
+        }
+      }
+
+      if (!newValue.equals(oldValue)) {
+        map.put(entry.getKey(), newValue);
+      }
+
     }
   }
 

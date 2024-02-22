@@ -85,5 +85,10 @@ public class SimpleTestServiceTest {
     var actual2Words = sts.toAlphaNumericWords(actual2);
     assertTrue(expectedString.equalsIgnoreCase(actual2String));
     assertTrue(expectedWords.equalsIgnoreCase(actual2Words));
+
+    var actual3 = "212 S Ocean Blvd Myrtle Beach,SC";
+    var actual3Words = sts.toAlphaNumericWords(actual3);
+    var expected3Words = "212 S Ocean Blvd Myrtle Beach SC";
+    assertEquals(expected3Words.toLowerCase(), actual3Words.toLowerCase());
   }
 }

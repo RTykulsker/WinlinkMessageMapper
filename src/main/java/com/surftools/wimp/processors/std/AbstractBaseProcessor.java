@@ -73,6 +73,17 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected String outboundMessageSubject;
   protected boolean doOutboundMessaging;
 
+  protected final String STD_DISCLAIMER = """
+      DISCLAIMER: This feedback is automatically generated and provided for your consideration only.
+      It's not an evaluation of your individual performance. Differences in spelling or numbers will
+      trigger this automated message (differences in capitalization and punctuation are ignored).
+      You may think that some of our feedback is "nit picking" and that your responses would be understood
+      by any reasonable person -- and you'd be correct! You're welcome to disagree with any or all of our
+      feedback. You're also welcome to reply via Winlink to this message or send an email to
+      ETO.Technical.Team@emcomm-training.groups.io. In any event, thank you for participating
+      in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
+              """;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     logger = LoggerFactory.getLogger(AbstractBaseProcessor.class);

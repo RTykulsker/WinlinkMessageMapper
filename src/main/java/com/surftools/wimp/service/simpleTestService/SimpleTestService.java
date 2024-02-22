@@ -237,6 +237,30 @@ public class SimpleTestService implements IService {
   }
 
   /**
+   * test if value could be a LocalDate, LocalTime or LocalDateTime, according to formatter
+   *
+   * @param label
+   * @param value
+   * @param formatter
+   * @return
+   */
+  public TestResult testIsDateTime(String label, String value, DateTimeFormatter formatter) {
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, null);
+    }
+    var predicate = false;
+    try {
+      formatter.parse(value);
+      predicate = true;
+    } catch (Exception e) {
+      ; // could not parse
+    }
+    return internalTest(entry, predicate, value, null);
+  }
+
+  /**
    * for testing booleans/predicates
    *
    * @param entry
@@ -456,13 +480,47 @@ public class SimpleTestService implements IService {
     }
 
     var list = new ArrayList<String>();
-    var words = s.split("\\s");
-    for (var word : words) {
-      // https://stackoverflow.com/questions/24967089/java-remove-all-non-alphanumeric-character-from-beginning-and-end-of-string
-      list.add(word.replaceAll("^[^\\p{L}^\\p{N}\\s%]+|[^\\p{L}^\\p{N}\\s%]+$", ""));
+
+    // Some people, when confronted with a problem, think "I know, I'll use regular expressions."
+    // Now they have two problems.
+    var word = "";
+    for (var i = 0; i < s.length(); ++i) {
+      var ch = s.charAt(i);
+      if (Character.isLetterOrDigit(ch)) {
+        word += ch;
+      } else {
+        if (word.length() > 0) {
+          list.add(word);
+          word = "";
+        }
+      }
+    }
+
+    // is there still a word pending?
+    if (word.length() > 0) {
+      list.add(word);
     }
 
     return String.join(" ", list);
+  }
+
+  /**
+   * compare two strings, as case-independent alphanumeric words
+   *
+   * @param s1
+   * @param s2
+   * @return
+   */
+  public boolean compareWords(String s1, String s2) {
+    if (s1 == null && s2 != null) {
+      return false;
+    } else if (s1 != null && s2 == null) {
+      return false;
+    } else if (s1 == null && s2 == null) {
+      return true;
+    }
+
+    return toAlphaNumericWords(s1).equalsIgnoreCase(toAlphaNumericWords(s2));
   }
 
   public String stripEmbeddedSpaces(String s) {
