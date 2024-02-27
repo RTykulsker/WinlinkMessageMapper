@@ -161,4 +161,14 @@ public class MessageManager implements IMessageManager {
     isSenderMapDirty = false;
   }
 
+  @Override
+  public List<ExportedMessage> getAllMessagesForSender(String sender) {
+    var list = new ArrayList<ExportedMessage>();
+    var map = senderMap.get(sender);
+    for (var sublist : map.values()) {
+      list.addAll(sublist);
+    }
+    return list;
+  }
+
 }

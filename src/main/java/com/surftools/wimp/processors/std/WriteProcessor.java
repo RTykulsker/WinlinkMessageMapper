@@ -111,7 +111,7 @@ public class WriteProcessor extends AbstractBaseProcessor {
   }
 
   @Override
-  public void process() {
+  public void postProcess() {
     var typedMessages = new ArrayList<IWritableTable>();
     var badLocationMessages = new ArrayList<ExportedMessage>();
     var it = mm.getMessageTypeIteror();
@@ -130,7 +130,6 @@ public class WriteProcessor extends AbstractBaseProcessor {
         }
       }
     }
-
     writeOutput(new ArrayList<ExportedMessage>(mm.getOriginalMessages()), MessageType.EXPORTED);
 
     if (badLocationMessages.size() > 0) {
@@ -210,6 +209,10 @@ public class WriteProcessor extends AbstractBaseProcessor {
     } catch (Exception e) {
       logger.error("Exception writing file: " + path + ", " + e.getLocalizedMessage());
     }
+  }
+
+  @Override
+  public void process() {
   }
 
 }

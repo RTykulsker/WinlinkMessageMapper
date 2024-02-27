@@ -81,6 +81,14 @@ public interface IMessageManager {
   public Map<MessageType, List<ExportedMessage>> getMessagesForSender(String sender);
 
   /**
+   * get a list of messages by sender, typically for processing/aggregating
+   *
+   * @param sender
+   * @return
+   */
+  public List<ExportedMessage> getAllMessagesForSender(String sender);
+
+  /**
    * store a list list of messages by sender, typically after de-duplicating
    *
    * @param sender

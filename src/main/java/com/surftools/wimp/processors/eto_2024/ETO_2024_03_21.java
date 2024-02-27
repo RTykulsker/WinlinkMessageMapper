@@ -27,12 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.eto_2024;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -42,19 +37,11 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
-import com.surftools.utils.location.LatLongPair;
-import com.surftools.utils.location.LocationUtils;
-import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
-import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.message.HumanitarianNeedsMessage;
+import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.Ics309Message.Activity;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
-import com.surftools.wimp.processors.std.WriteProcessor;
-import com.surftools.wimp.service.outboundMessage.OutboundMessage;
-import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
+import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 
 /**
@@ -64,97 +51,26 @@ import com.surftools.wimp.service.simpleTestService.SimpleTestService;
  * @author bobt
  *
  */
-public class ETO_2024_03_21 extends AbstractBaseProcessor {
+public class ETO_2024_03_21 extends FeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_03_21.class);
-  public static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
-  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
-  public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-  public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-  private LocalDateTime windowOpenDT = null;
-  private LocalDateTime windowCloseDT = null;
-
-  private SimpleTestService sts = new SimpleTestService();
-
-  static record Result(String call, String latitude, String longitude, String feedback, String feedbackCountString,
-      Ics309Message message) implements IWritableTable {
-
-    @Override
-    public String[] getHeaders() {
-      var resultList = new ArrayList<String>(HumanitarianNeedsMessage.getStaticHeaders().length + 5);
-      Collections
-          .addAll(resultList, new String[] { "Call", "Map Latitude", "Map Longitude", "Feedback Count", "Feedback" });
-      Collections.addAll(resultList, Ics309Message.getStaticHeaders());
-      return resultList.toArray(new String[resultList.size()]);
-    }
-
-    @Override
-    public String[] getValues() {
-      var resultList = new ArrayList<String>(HumanitarianNeedsMessage.getStaticHeaders().length + 5);
-      Collections.addAll(resultList, new String[] { call, latitude, longitude, feedbackCountString, feedback });
-      Collections.addAll(resultList, message.getValues());
-      return resultList.toArray(new String[resultList.size()]);
-    }
-
-    @Override
-    public int compareTo(IWritableTable other) {
-      var o = (Result) other;
-      return this.message.compareTo(o.message);
-    }
-  };
+  protected Counter ppVersionCounter = new Counter();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
+    counterMap.put("Versions", ppVersionCounter);
     Ics309Message.setNDisplayActivities(8);
   }
 
   @Override
-  public void process() {
-
-    var ppCount = 0;
-    var ppMessageCorrectCount = 0;
-    var ppFeedBackCounter = new Counter();
-    var ppVersionCounter = new Counter();
-
-    var messageIdResultMap = new HashMap<String, IWritableTable>();
-    var badLocationMessageIds = new ArrayList<String>();
-
-    for (var message : mm.getMessagesForType(MessageType.ICS_309)) {
+  protected void specificProcessing(ExportedMessage message) {
+    switch (message.getMessageType()) {
+    case ICS_309: {
       var m = (Ics309Message) message;
-      var sender = message.from;
-      sts.reset();
-
-      if (dumpIds.contains(sender)) {
-        logger.info("dump: " + sender);
-      }
-
-      ++ppCount;
-
-      var addressList = m.toList + "," + m.ccList;
-      sts.test("To and/or CC addresses should contain ETO-BK", addressList.toUpperCase().contains("ETO-BK"), null);
-
-      windowOpenDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_OPEN)));
-      sts.testOnOrAfter("Message should be sent on or after #EV", windowOpenDT, m.msgDateTime, DTF);
-
-      windowCloseDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_CLOSE)));
-      sts.testOnOrBefore("Message should be sent on or before #EV", windowCloseDT, m.msgDateTime, DTF);
 
       ppVersionCounter.increment(m.version);
-
-      var pair = m.msgLocation;
-      if (pair == null || pair.equals(LatLongPair.ZERO_ZERO)) {
-        pair = LatLongPair.ZERO_ZERO;
-        badLocationMessageIds.add(m.messageId);
-        sts.test("LAT/LON should be provided", false, "missing");
-      } else if (!pair.isValid()) {
-        sts.test("LAT/LON should be provided", false, "invalid " + pair.toString());
-        pair = LatLongPair.ZERO_ZERO;
-        badLocationMessageIds.add(m.messageId);
-      } else {
-        sts.test("LAT/LON should be provided", true, null);
-      }
 
       sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
       sts.test("Task # should be #EV", "240321", m.taskNumber);
@@ -173,89 +89,15 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
       // push into function
       validateActivities(sender, sts, m.activities, windowOpenDT, windowCloseDT);
 
-      var explanations = sts.getExplanations();
-      var feedback = "";
-      var feedbackCountString = String.valueOf(explanations.size());
-      ppFeedBackCounter.increment(feedbackCountString);
-      if (explanations.size() == 0) {
-        ++ppMessageCorrectCount;
-        feedback = "Perfect Message!";
-      } else {
-        feedback = String.join("\n", explanations);
-      }
-
-      var result = new Result(m.from, m.msgLocation.getLatitude(), m.msgLocation.getLongitude(), feedback,
-          feedbackCountString, m);
-      messageIdResultMap.put(m.messageId, result);
-
-      var outboundMessageFeedback = feedback;
-      if (explanations.size() > 0) {
-        final String STD_DISCLAIMER = """
-            DISCLAIMER: This feedback is automatically generated and provided for your consideration only.
-            It's not an evaluation of your individual performance. Differences in spelling or numbers will
-            trigger this automated message (differences in capitalization and punctuation are ignored).
-            You may think that some of our feedback is "nit picking" and that your responses would be understood
-            by any reasonable person -- and you'd be correct! You're welcome to disagree with any or all of our
-            feedback. You're also welcome to reply via Winlink to this message or send an email to
-            ETO.Technical.Team@emcomm-training.groups.io. In any event, thank you for participating
-            in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
-                    """;
-        outboundMessageFeedback += "\n\n" + STD_DISCLAIMER;
-      }
-
-      var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-          outboundMessageSubject + " " + m.messageId, outboundMessageFeedback, null);
-      outboundMessageList.add(outboundMessage);
-
-    } // end loop over ICS-309
-
-    logger.info("field validation:\n" + sts.validate());
-
-    var sb = new StringBuilder();
-    var N = ppCount;
-    sb.append("\n\nETO 2024-03-21 aggregate results:\n");
-    sb.append("ICS-309 Participants: " + N + "\n");
-    sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
-
-    var it = sts.iterator();
-    while (it.hasNext()) {
-      var key = it.next();
-      if (sts.hasContent(key)) {
-        sb.append(sts.format(key));
-      }
+      setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+      break;
     }
 
-    sb.append("\n-------------------Histograms---------------------\n");
-    sb.append(formatCounter("Feedback items", ppFeedBackCounter));
-    sb.append(formatCounter("Versions", ppVersionCounter));
-
-    logger.info(sb.toString());
-
-    if (badLocationMessageIds.size() > 0) {
-      logger
-          .info("adjusting lat/long for " + badLocationMessageIds.size() + " messages: "
-              + String.join(",", badLocationMessageIds));
-      var newLocations = LocationUtils.jitter(badLocationMessageIds.size(), LatLongPair.ZERO_ZERO, 10_000);
-      for (int i = 0; i < badLocationMessageIds.size(); ++i) {
-        var messageId = badLocationMessageIds.get(i);
-        var result = (Result) messageIdResultMap.get(messageId);
-        var newLocation = newLocations.get(i);
-        result.message().setMapLocation(newLocation);
-      }
+    default: {
+      logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
     }
 
-    var results = new ArrayList<>(messageIdResultMap.values());
-    WriteProcessor.writeTable(results, Path.of(outputPathName, "ics_309-with-feedback.csv"));
-
-    if (doOutboundMessaging) {
-      var service = new OutboundMessageService(cm);
-      outboundMessageList = service.sendAll(outboundMessageList);
-      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
-    }
-  }
-
-  boolean isNull(String s) {
-    return s == null || s.isEmpty();
+    } // end switch
   }
 
   public void validateActivities(String sender, SimpleTestService sts, List<Activity> activities,

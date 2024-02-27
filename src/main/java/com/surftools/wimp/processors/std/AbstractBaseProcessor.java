@@ -58,7 +58,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
-  protected static Logger logger;
+  protected Logger logger;
 
   protected IConfigurationManager cm;
   protected IMessageManager mm;
@@ -75,8 +75,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    logger = LoggerFactory.getLogger(AbstractBaseProcessor.class);
-    doInitialization(cm, mm);
+    initialize(cm, mm, LoggerFactory.getLogger(AbstractBaseProcessor.class));
   }
 
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -175,7 +174,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
   }
 
-  public static void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
+  public void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
     Path outputPath = Path.of(pathName, "output", fileName);
     FileUtils.makeDirIfNeeded(outputPath.toString());
 
