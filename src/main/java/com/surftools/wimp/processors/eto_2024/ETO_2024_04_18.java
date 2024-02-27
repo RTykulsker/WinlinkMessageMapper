@@ -45,7 +45,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.message.HumanitarianNeedsMessage;
+import com.surftools.wimp.message.HospitalStatusMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
@@ -53,14 +53,14 @@ import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 
 /**
- * Processor for 2024-02-15 Exercise: Humanitarian Needs Identification Exercise
+ * Processor for 2024-04-18 Exercise: Hospital Status
  *
  *
  * @author bobt
  *
  */
-public class ETO_2024_02_15 extends AbstractBaseProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_02_15.class);
+public class ETO_2024_04_18 extends AbstractBaseProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_04_18.class);
   public static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
   public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
@@ -69,20 +69,20 @@ public class ETO_2024_02_15 extends AbstractBaseProcessor {
   private SimpleTestService sts = new SimpleTestService();
 
   static record Result(String call, String map_latitude, String map_longitude, String feedback,
-      String feedbackCountString, HumanitarianNeedsMessage message) implements IWritableTable {
+      String feedbackCountString, HospitalStatusMessage message) implements IWritableTable {
 
     @Override
     public String[] getHeaders() {
-      var resultList = new ArrayList<String>(HumanitarianNeedsMessage.getStaticHeaders().length + 5);
+      var resultList = new ArrayList<String>(HospitalStatusMessage.getStaticHeaders().length + 5);
       Collections
           .addAll(resultList, new String[] { "Call", "Map_Latitude", "Map_Longitude", "Feedback Count", "Feedback" });
-      Collections.addAll(resultList, HumanitarianNeedsMessage.getStaticHeaders());
+      Collections.addAll(resultList, HospitalStatusMessage.getStaticHeaders());
       return resultList.toArray(new String[resultList.size()]);
     }
 
     @Override
     public String[] getValues() {
-      var resultList = new ArrayList<String>(HumanitarianNeedsMessage.getStaticHeaders().length + 5);
+      var resultList = new ArrayList<String>(HospitalStatusMessage.getStaticHeaders().length + 5);
       Collections.addAll(resultList, new String[] { call, map_latitude, map_longitude, feedbackCountString, feedback });
       Collections.addAll(resultList, message.getValues());
       return resultList.toArray(new String[resultList.size()]);
@@ -117,8 +117,8 @@ public class ETO_2024_02_15 extends AbstractBaseProcessor {
     var messageIdResultMap = new HashMap<String, IWritableTable>();
     var badLocationMessageIds = new ArrayList<String>();
 
-    for (var message : mm.getMessagesForType(MessageType.HUMANITARIAN_NEEDS)) {
-      var m = (HumanitarianNeedsMessage) message;
+    for (var message : mm.getMessagesForType(MessageType.HOSPITAL_STATUS)) {
+      var m = (HospitalStatusMessage) message;
       var sender = message.from;
 
       sts.reset();
@@ -138,57 +138,6 @@ public class ETO_2024_02_15 extends AbstractBaseProcessor {
 
       var windowCloseDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_CLOSE)));
       sts.testOnOrBefore("Message should be sent on or before #EV", windowCloseDT, m.msgDateTime, DTF);
-
-      if (m.formLocation != null) {
-        sts.test("H1 GPS Latititude should be #EV", "33.682389", m.formLocation.getLatitude());
-        sts.test("H1 GPS Longitude should be #EV", "-78.890722", m.formLocation.getLongitude());
-      } else {
-        sts.test("H1 GPS Latititude should be 33.682389", false);
-        sts.test("H1 GPS Longitude should be -78.890722", false);
-
-      }
-      sts.test("H2 Team ID should be #EV", "H3-01", m.teamId);
-
-      sts.testIsDateTime("H3 Date should be in 'MM/dd/yyyy' format", m.formDate, DATE_FORMATTER);
-      sts.testIsDateTime("H4 Time should be in 'hh:mm' format", m.formTime, TIME_FORMATTER);
-
-      // Alas, text instructions had one value, image had another. We must accept both
-      final var expected212 = "212 S Ocean Blvd, Myrtle Beach, SC";
-      final var expected202 = "202 S Ocean Blvd, Myrtle Beach, SC";
-      var h5address = sts.toAlphaNumericWords(m.address == null ? "" : m.address);
-      var pred212 = sts.compareWords(h5address, expected212);
-      var pred202 = sts.compareWords(h5address, expected202);
-      sts.test("H5 Address should be 212 (or 202) S Ocean Blvd, Myrtle Beach, SC", pred212 || pred202, h5address);
-      ppAddressCounter.increment(pred212 ? "212" : pred202 ? "202" : h5address.length() == 0 ? "empty" : "other");
-
-      sts.test("H6 Health should be checked", m.needsHealth);
-      sts.test("H6 Shelter should be checked", m.needsShelter);
-      sts.test("H6 Food should be NOT checked", !m.needsFood);
-      sts.test("H6 Water should be NOT checked", !m.needsWater);
-      sts.test("H6 Logistics should be checked", m.needsLogistics);
-      sts.test("H6 Other should be checked", m.needsOther);
-
-      sts
-          .test("H7 Description should be #EV",
-              "Harbor Three Resort experienced a gas leak which led to an explosion causing the West side of the resort to collapse. The resort personnel discovered they had 130 of the 240 guests accounted for with many of the remaining feared trapped in the rubble.",
-              m.description);
-
-      var debugH7 = false;
-      if (debugH7) {
-        final var h7Expected = "Harbor Three Resort experienced a gas leak which led to an explosion causing the West side of the resort to collapse. The resort personnel discovered they had 130 of the 240 guests accounted for with many of the remaining feared trapped in the rubble.";
-        if (!sts.compareWords(h7Expected, m.description)) {
-          System.err
-              .println(
-                  "for call: " + m.from + ", H7 description should be\n" + h7Expected + ", not \n" + m.description);
-          System.err.println();
-          System.err.flush();
-        }
-      }
-
-      sts.test("H8 Other Information should be #EV", "EXERCISE: Request Urban Search and Rescue Assets.", m.other);
-
-      sts.test("Completed by should be #EV", "Ricky Jones", m.approvedBy);
-      sts.test("Title/Position should be #EV", "Emergency Communications Officer", m.position);
 
       var pair = m.msgLocation;
       if (pair == null || pair.equals(LatLongPair.ZERO_ZERO)) {
@@ -240,8 +189,8 @@ public class ETO_2024_02_15 extends AbstractBaseProcessor {
 
     var sb = new StringBuilder();
     var N = ppCount;
-    sb.append("\n\nETO 2024-02-15 aggregate results:\n");
-    sb.append("Humanitarian Needs participants: " + N + "\n");
+    sb.append("\n\nETO 2024-04-18 aggregate results:\n");
+    sb.append("Hospital Status participants: " + N + "\n");
     sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
 
     var it = sts.iterator();
@@ -274,7 +223,7 @@ public class ETO_2024_02_15 extends AbstractBaseProcessor {
     }
 
     var results = new ArrayList<>(messageIdResultMap.values());
-    WriteProcessor.writeTable(results, Path.of(outputPathName, "humanitarian-with-feedback.csv"));
+    WriteProcessor.writeTable(results, Path.of(outputPathName, "hospital_status-with-feedback.csv"));
 
     if (doOutboundMessaging) {
       var service = new OutboundMessageService(cm);

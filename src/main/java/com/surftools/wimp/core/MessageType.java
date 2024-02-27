@@ -69,6 +69,7 @@ public enum MessageType {
   QUICK("quick", "RMS_Express_Form_Quick Message Viewer.xml"), //
   ICS_205_RADIO_PLAN("ics_205", "RMS_Express_Form_ICS205 Radio Plan_Viewer.xml"), //
   HUMANITARIAN_NEEDS("humanitarian", "RMS_Express_Form_Humanitarian Needs Identification viewer.xml"), //
+  HOSPITAL_STATUS("hospital_status", "RMS_Express_Form_Hospital_Status_Viewer.xml"), //
 
   ETO_RESUME("eto_resume"), //
   ;

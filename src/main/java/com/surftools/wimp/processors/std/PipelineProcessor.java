@@ -123,12 +123,12 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     for (var prefix : PREFIXES) {
       for (var suffix : SUFFIXES) {
         var className = prefix + processorName + suffix;
-        logger.info("searching for className: " + className);
+        logger.debug("searching for className: " + className);
         try {
           var clazz = Class.forName(className);
           if (clazz != null) {
             processor = (IProcessor) clazz.getDeclaredConstructor().newInstance();
-            logger.info("found  className: " + className);
+            logger.debug("found  className: " + className);
             return processor;
           }
         } catch (Exception e) {

@@ -193,6 +193,21 @@ public class SimpleTestService implements IService {
    */
   public TestResult testOnOrAfter(String rawLabel, LocalDateTime expectedValue, LocalDateTime value,
       DateTimeFormatter formatter) {
+    return testOnOrAfter(rawLabel, expectedValue, value, formatter, null);
+  }
+
+  /**
+   * test[LocalDateTime]OnOrAfter
+   *
+   * @param rawLabel
+   * @param expectedValue
+   * @param value
+   * @param formatter
+   * @param extraExplanation
+   * @return
+   */
+  public TestResult testOnOrAfter(String rawLabel, LocalDateTime expectedValue, LocalDateTime value,
+      DateTimeFormatter formatter, String extraExplanation) {
     var predicate = value.compareTo(expectedValue) >= 0;
 
     var label = rawLabel.contains("#EV") && expectedValue != null //
@@ -206,7 +221,12 @@ public class SimpleTestService implements IService {
       entryMap.put(label, entry);
     }
 
-    return internalTest(entry, predicate, formatter.format(value), null);
+    String altExplanation = null;
+    if (extraExplanation != null) {
+      altExplanation = label + extraExplanation;
+    }
+
+    return internalTest(entry, predicate, formatter.format(value), altExplanation);
   }
 
   /**
@@ -220,6 +240,22 @@ public class SimpleTestService implements IService {
    */
   public TestResult testOnOrBefore(String rawLabel, LocalDateTime expectedValue, LocalDateTime value,
       DateTimeFormatter formatter) {
+    return testOnOrBefore(rawLabel, expectedValue, value, formatter, null);
+
+  }
+
+  /**
+   * test[LocalDateTime]OnOrBefore
+   *
+   * @param rawLabel
+   * @param expectedValue
+   * @param value
+   * @param formatter
+   * @param extraExplanation
+   * @return
+   */
+  public TestResult testOnOrBefore(String rawLabel, LocalDateTime expectedValue, LocalDateTime value,
+      DateTimeFormatter formatter, String extraExplanation) {
     var predicate = value.compareTo(expectedValue) <= 0;
 
     var label = rawLabel.contains("#EV") && expectedValue != null //
@@ -233,7 +269,12 @@ public class SimpleTestService implements IService {
       entryMap.put(label, entry);
     }
 
-    return internalTest(entry, predicate, formatter.format(value), null);
+    String altExplanation = null;
+    if (extraExplanation != null) {
+      altExplanation = label + extraExplanation;
+    }
+
+    return internalTest(entry, predicate, formatter.format(value), altExplanation);
   }
 
   /**

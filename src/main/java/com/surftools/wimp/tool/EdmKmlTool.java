@@ -34,8 +34,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.xml.XMLConstants;
@@ -52,6 +53,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import com.opencsv.CSVWriter;
+import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 
 /**
  * simple app to transform a Kml file from the EDM team into a flat, CSV file
@@ -64,18 +67,28 @@ import com.opencsv.CSVWriter;
  *
  */
 
-public class EdmKmlToCsvTool {
+public class EdmKmlTool {
   static {
     System.setProperty("logback.configurationFile", "src/main/resources/logback.xml");
   }
 
-  private static final Logger logger = LoggerFactory.getLogger(EdmKmlToCsvTool.class);
+  private static final Logger logger = LoggerFactory.getLogger(EdmKmlTool.class);
 
   @Option(name = "--inputFileName", usage = "path to input kml file", required = false)
   private String inputFileName = "/home/bobt/Downloads/EDM Target Stations.kml";
 
+  @Option(name = "--filterIncludeTeams", usage = "filter to INCLUDE only these teams", required = false)
+  private String filterIncludeTeamsString = "B";
+
+  @Option(name = "--filterTeams", usage = "filter to EXCLUDE these calls", required = false)
+  private String filterExcludeCallsString = "W6RT,W1IZZ,N8AI,N1ROG,K9JEC,N7UWX,KJ4TKA,KQ4GIW";
+
+  @Option(name = "--myGrid", usage = "maidenhead grid of my location", required = false)
+  private String myGridString = "CN87vm";
+  private LatLongPair myGrid;
+
   public static void main(String[] args) {
-    EdmKmlToCsvTool app = new EdmKmlToCsvTool();
+    EdmKmlTool app = new EdmKmlTool();
     CmdLineParser parser = new CmdLineParser(app);
     try {
       parser.parseArgument(args);
@@ -88,28 +101,36 @@ public class EdmKmlToCsvTool {
 
   static record EdmTarget(String call, String latitude, String longitude, String cityState, //
       String firstName, String lastName, String email, //
-      String team, String channel, String femaRegion, String centerFrequency, String band)
-      implements Comparable<EdmTarget> {
+      String team, String channel, String femaRegion, String centerFrequency, //
+      String band, int distanceMiles //
+  ) implements Comparable<EdmTarget> {
 
     @Override
     public int compareTo(EdmTarget o) {
-      var cmp = team.compareTo(o.team);
+      var cmp = -1 * band.compareTo(o.band);
       if (cmp != 0) {
         return cmp;
       }
-      return Integer.valueOf(channel).intValue() - Integer.valueOf(o.channel).intValue();
+
+      cmp = distanceMiles - o.distanceMiles;
+      if (cmp != 0) {
+        return cmp;
+      }
+
+      return Double.valueOf(centerFrequency).compareTo(Double.valueOf(centerFrequency));
     }
 
     public static String[] getHeaders() {
       return new String[] { "Call", "Latitude", "Longitude", "Location", //
           "First Name", "Last Name", "Email", //
-          "Team", "Channel", "FEMA", "Center Freq", "Dial Freq", "Band" };
+          "Team", "Channel", "FEMA", "Center Freq", "Dial Freq", "Band", "Distance Mi" };
     }
 
     public String[] getValues() {
       var dialFrequency = String.valueOf(Double.valueOf(centerFrequency) - 1.5d);
       return new String[] { call, latitude, longitude, cityState, //
-          firstName, lastName, email, team, channel, femaRegion, centerFrequency, dialFrequency, band };
+          firstName, lastName, email, team, channel, femaRegion, centerFrequency, dialFrequency, band,
+          String.valueOf(distanceMiles) };
     }
   }
 
@@ -120,7 +141,31 @@ public class EdmKmlToCsvTool {
 
     logger.info("begin");
 
+    myGrid = new LatLongPair(myGridString);
     var content = Files.readString(Path.of(inputFileName));
+    var rawTargets = readTargets(content);
+    var targets = filterTargets(rawTargets, filterIncludeTeamsString, filterExcludeCallsString);
+
+    if (targets.size() > 0) {
+      write(targets, Path.of(inputFileName).getParent());
+    } else {
+      logger.info("no targets to write");
+    }
+
+    logger.info("exiting");
+  }
+
+  private void write(List<EdmTarget> targets, Path parentPath) throws Exception {
+    var outputPath = Path.of(parentPath.toString(), "EdmKmlTool-Output");
+    var outputString = outputPath.toAbsolutePath().toString();
+    Files.createDirectories(outputPath);
+
+    writeTargets(Path.of(outputString, "targets.csv"), targets);
+    writeCalls(Path.of(outputString, "targets.txt"), targets);
+    writeP2pFavorites(Path.of(outputString, "Vara P2P Favorites.dat"), targets);
+  }
+
+  private List<EdmTarget> readTargets(String content) throws Exception {
     var targets = new ArrayList<EdmTarget>();
 
     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -135,103 +180,75 @@ public class EdmKmlToCsvTool {
       targets.add(readPlacemark((Element) nodeList.item(iTarget)));
     } // end for over placemarks
 
-    if (targets.size() > 0) {
-      var outputFileName = inputFileName.replaceAll(".kml", ".csv");
-      writeTargets(outputFileName, targets);
-      writeCalls(outputFileName.replaceAll(".csv", ".txt"), targets);
-      writeP2pFavorites(outputFileName.replaceAll(".csv", "- Vara P2P Favorites.dat"), targets);
-
-      // build targetMap
-      var targetMap = new TreeMap<String, List<EdmTarget>>();
-      for (var target : targets) {
-        var team = target.team();
-        var list = targetMap.getOrDefault(team, new ArrayList<EdmTarget>());
-        list.add(target);
-        targetMap.put(team, list);
-      }
-
-      // write targetMap values
-      for (var team : targetMap.keySet()) {
-        outputFileName = inputFileName.replaceAll(".kml", "-team-" + team + ".csv");
-        var teamTargets = targetMap.get(team);
-        writeTargets(outputFileName, teamTargets);
-        writeCalls(outputFileName.replaceAll(".csv", ".txt"), teamTargets);
-        writeP2pFavorites(outputFileName.replaceAll(".csv", "- Vara P2P Favorites.dat"), teamTargets);
-      }
-
-    } // end if output
-
-    logger.info("exiting");
+    return targets;
   }
 
-  private void writeCalls(String outputFileName, List<EdmTarget> targets) throws IOException {
-    Collections
-        .sort(targets, (t1, t2) -> Double.valueOf(t1.centerFrequency).compareTo(Double.valueOf(t2.centerFrequency)));
+  private List<EdmTarget> filterTargets(List<EdmTarget> rawTargets, String filterIncludeTeamsString,
+      String filterExcludeCallsString) {
+    var targets = new ArrayList<EdmTarget>();
+
+    Set<String> filterIncludeTeamsSet = new HashSet<>();
+    if (filterIncludeTeamsString != null) {
+      var fields = filterIncludeTeamsString.split(",");
+      filterIncludeTeamsSet = Set.of(fields);
+    }
+
+    Set<String> filterExcludeCallSet = new HashSet<>();
+    if (filterExcludeCallsString != null) {
+      var fields = filterExcludeCallsString.split(",");
+      filterExcludeCallSet = Set.of(fields);
+    }
+
+    for (var target : rawTargets) {
+      if (filterIncludeTeamsSet.size() > 0) {
+        if (!filterIncludeTeamsSet.contains(target.team)) {
+          logger.info("dropping target because not a filtered team: " + target);
+          continue;
+        }
+      }
+
+      if (filterExcludeCallSet.contains(target.call)) {
+        logger.info("dropping target because filtered call: " + target);
+      }
+
+      targets.add(target);
+    }
+
+    logger.info("filtered to " + targets.size() + " targets");
+    return targets;
+  }
+
+  private void writeCalls(Path outputPath, List<EdmTarget> targets) throws IOException {
+    Collections.sort(targets, (t1, t2) -> t1.call.compareTo(t2.call));
     var calls = targets.stream().map(EdmTarget::call).toList();
-    Files.writeString(Path.of(outputFileName), String.join(";", calls));
+    Files.writeString(outputPath, String.join(";", calls));
   }
 
   /**
    * call|center-freq/bandwidth for example AH6T|7119.5/500
    *
-   * @param outputFileName
+   * @param outputPath
    * @param targets
    * @throws IOException
    */
-  private void writeP2pFavorites(String outputFileName, List<EdmTarget> targets) throws IOException {
-    Collections
-        .sort(targets, (t1, t2) -> Double.valueOf(t1.centerFrequency).compareTo(Double.valueOf(t2.centerFrequency)));
+  private void writeP2pFavorites(Path outputPath, List<EdmTarget> targets) throws IOException {
+    Collections.sort(targets);
     Function<EdmTarget, String> lambda = (t) -> t.call + "|" + t.centerFrequency + "/500";
     var calls = targets.stream().map(lambda).toList();
-    Files.writeString(Path.of(outputFileName), String.join("\n", calls));
+    Files.writeString(outputPath, String.join("\n", calls));
   }
 
-  void writeTargets(String outputFileName, List<EdmTarget> targets) throws IOException {
+  void writeTargets(Path outputPath, List<EdmTarget> targets) throws IOException {
     Collections.sort(targets);
 
-    CSVWriter writer = new CSVWriter(new FileWriter(Path.of(outputFileName).toString()));
+    CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
     writer.writeNext(EdmTarget.getHeaders());
     for (var m : targets) {
       writer.writeNext(m.getValues());
     }
     writer.close();
-    logger.info("wrote " + targets.size() + " targets to " + outputFileName);
+    logger.info("wrote " + targets.size() + " targets to " + outputPath.toString());
   }
-
-  // this is AFTER pretty printing
-  String example = """
-      <Placemark>
-        <styleUrl>#0</styleUrl>
-        <name>Don</name>
-        <ExtendedData>
-          <Data name='Last Name'>
-            <value>Rolph</value>
-          </Data>
-          <Data name='Call Sign'>
-            <value>AB1PH</value>
-          </Data>
-          <Data name='FEMA'>
-            <value>1</value>
-          </Data>
-          <Data name='Team'>
-            <value>A</value>
-          </Data>
-          <Data name='Channel'>
-            <value>6</value>
-          </Data>
-          <Data name='Center Freq.'>
-            <value>3591.5</value>
-          </Data>
-          <Data name='Email'>
-            <value>don.rolph@gmail.com</value>
-          </Data>
-        </ExtendedData>
-        <address>East Walpole, MA </address>
-        <Point>
-          <coordinates>-71.2101068,42.1614952,0</coordinates>
-        </Point>
-      </Placemark>
-            """;
 
   private EdmTarget readPlacemark(Element element) {
     // top level elements: name, ExtendedData, Point, styleUrl
@@ -281,8 +298,13 @@ public class EdmKmlToCsvTool {
       }
     }
 
-    var target = new EdmTarget(call, latitude, longitude, cityState, firstName, lastName, email, team, channel,
-        femaRegion, centerFrequency, band);
+    var targetPair = new LatLongPair(latitude, longitude);
+    var distanceMiles = LocationUtils.computeDistanceMiles(myGrid, targetPair);
+
+    var target = new EdmTarget(call, latitude, longitude, cityState, //
+        firstName, lastName, email, team, channel, femaRegion, centerFrequency, //
+        band, distanceMiles);//
+
     logger.info(target.toString());
     return target;
   }

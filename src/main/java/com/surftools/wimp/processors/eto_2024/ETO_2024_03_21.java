@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -170,7 +171,7 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
       sts.test("Page # should be #EV", "1", m.page);
 
       // push into function
-      validateActivities(sender, sts, m.activities);
+      validateActivities(sender, sts, m.activities, windowOpenDT, windowCloseDT);
 
       var explanations = sts.getExplanations();
       var feedback = "";
@@ -189,6 +190,16 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
 
       var outboundMessageFeedback = feedback;
       if (explanations.size() > 0) {
+        final String STD_DISCLAIMER = """
+            DISCLAIMER: This feedback is automatically generated and provided for your consideration only.
+            It's not an evaluation of your individual performance. Differences in spelling or numbers will
+            trigger this automated message (differences in capitalization and punctuation are ignored).
+            You may think that some of our feedback is "nit picking" and that your responses would be understood
+            by any reasonable person -- and you'd be correct! You're welcome to disagree with any or all of our
+            feedback. You're also welcome to reply via Winlink to this message or send an email to
+            ETO.Technical.Team@emcomm-training.groups.io. In any event, thank you for participating
+            in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
+                    """;
         outboundMessageFeedback += "\n\n" + STD_DISCLAIMER;
       }
 
@@ -243,7 +254,12 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
     }
   }
 
-  public void validateActivities(String sender, SimpleTestService sts, List<Activity> activities) {
+  boolean isNull(String s) {
+    return s == null || s.isEmpty();
+  }
+
+  public void validateActivities(String sender, SimpleTestService sts, List<Activity> activities,
+      LocalDateTime windowOpenDT, LocalDateTime windowCloseDT) {
     if (sender == null) {
       logger.warn("null sender");
       return;
@@ -260,7 +276,8 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
     }
 
     var validActivities = activities.stream().filter(a -> a != null && a.isValid()).collect(Collectors.toList());
-    activities.stream().filter(a -> a != null && a.isValid()).forEach(System.out::println); // TODO remove this
+    var validctivitiesString = validActivities.stream().map((a) -> Objects.toString(a, null)).toList();
+    logger.debug("Activities: \n" + validctivitiesString);
 
     sts.test("Should have only 6 activities", validActivities.size() == 6, String.valueOf(validActivities.size()));
 
@@ -280,31 +297,88 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
         continue;
       }
 
+      if (isNull(a.dateTimeString())) {
+        sts.test("Should have non-empty activity Date/Time value", false, "on line: " + lineNumber);
+        continue;
+      } else {
+        sts.test("Should have non-empty activity Date/Time value", true, "on line: " + lineNumber);
+      }
+
+      if (isNull(a.from())) {
+        sts.test("Should have non-empty activity From value", false, "on line: " + lineNumber);
+        continue;
+      } else {
+        sts.test("Should have non-empty activity From value", true, "on line: " + lineNumber);
+      }
+
+      if (isNull(a.from())) {
+        sts.test("Should have non-empty activity From value", false, "on line: " + lineNumber);
+        continue;
+      } else {
+        sts.test("Should have non-empty activity From value", true, "on line: " + lineNumber);
+      }
+
+      if (isNull(a.to())) {
+        sts.test("Should have non-empty activity To value", false, "on line: " + lineNumber);
+        continue;
+      } else {
+        sts.test("Should have non-empty activity To value", true, "on line: " + lineNumber);
+      }
+
+      if (isNull(a.subject())) {
+        sts.test("Should have non-empty activity Subject value", false, "on line: " + lineNumber);
+        continue;
+      } else {
+        sts.test("Should have non-empty activity Subject value", true, "on line: " + lineNumber);
+      }
+
       try {
         dt = LocalDateTime.from(DTF.parse(a.dateTimeString()));
         sts.test("Should have valid activity Date/Time" + lineNumber, true);
+
+        if (lineNumber > 1) {
+          sts.testOnOrAfter("Should be ascending Date/Time on line: " + lineNumber, lastDT, dt, DTF);
+        }
+
       } catch (Exception e) {
         sts.test("Should have valid activity Date/Time", false, "'" + a.dateTimeString() + "', on line: " + lineNumber);
       }
 
-      if (lineNumber > 1) {
-        sts.testOnOrAfter("Should be ascending Date/Time on line: " + lineNumber, lastDT, dt, DTF);
+      if (dt != null) {
+        lastDT = dt;
       }
-      lastDT = dt;
 
-      var isTestMessage1 = a.from().equals(sender) && a.to().equals("TEST")
-          && a.subject().equalsIgnoreCase("ETO Exercise, Winlink Simulated Emergency Message One");
-      var isTestMessage2 = a.from().equals(sender) && a.to().equals("TEST")
-          && a.subject().equalsIgnoreCase("ETO Exercise, Winlink Simulated Emergency Message Two");
-      var isTestMessage3 = a.from().equals(sender) && a.to().equals("TEST")
-          && a.subject().equalsIgnoreCase("ETO Exercise, Winlink Simulated Emergency Message Three");
+      final var testSubject = "ETO Exercise, Winlink Simulated Emergency Message ";
+      var isTestMessage1 = !isNull(a.from()) && a.from().equals(sender) //
+          && !isNull(a.to()) && a.to().equals("TEST") //
+          && !isNull(a.subject()) && a.subject().equalsIgnoreCase(testSubject + "One");
+      var isTestMessage2 = !isNull(a.from()) && a.from().equals(sender) //
+          && !isNull(a.to()) && a.to().equals("TEST") //
+          && !isNull(a.subject()) && a.subject().equalsIgnoreCase(testSubject + "Two");
+      var isTestMessage3 = !isNull(a.from()) && a.from().equals(sender) //
+          && !isNull(a.to()) && a.to().equals("TEST") //
+          && !isNull(a.subject()) && a.subject().equalsIgnoreCase(testSubject + "Three");
 
       var isTestMessage = isTestMessage1 || isTestMessage2 || isTestMessage3;
-      var isServiceMessage = a.from().equals("SERVICE") && a.to().equals(sender) && a.subject().equals("Test Message");
+      var isServiceMessage = !isNull(a.from()) && a.from().equals("SERVICE") //
+          && !isNull(a.to()) && a.to().equals(sender) //
+          && !isNull(a.subject()) && a.subject().equals("Test Message");
 
       sts
           .test("Should have a TEST or SERVICE message", isTestMessage || isServiceMessage,
               a.toString() + ", on line: " + lineNumber);
+
+      if (windowOpenDT != null) {
+        sts
+            .testOnOrAfter("Activity Date/Time should be on or after #EV", windowOpenDT, dt, DTF,
+                ", not " + DTF.format(dt) + ", on line: " + lineNumber);
+      }
+
+      if (windowCloseDT != null) {
+        sts
+            .testOnOrBefore("Activity Date/Time should be on or before #EV", windowCloseDT, dt, DTF,
+                ", not " + DTF.format(dt) + ", on line: " + lineNumber);
+      }
 
       testMessageCount += isTestMessage ? 1 : 0;
       testMessage1Count += isTestMessage1 ? 1 : 0;
@@ -332,7 +406,7 @@ public class ETO_2024_03_21 extends AbstractBaseProcessor {
       }
 
     } // end loop over lines
-    sts.test("Should have exactly 3 messages to TEST", testMessageCount == 3, String.valueOf(testMessageCount));
+
     sts
         .test("Should have exactly 3 messages from SERVICE", serviceMessageCount == 3,
             String.valueOf(serviceMessageCount));

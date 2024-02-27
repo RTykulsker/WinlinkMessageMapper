@@ -48,6 +48,7 @@ import com.surftools.wimp.parser.EtoCheckInV2Parser;
 import com.surftools.wimp.parser.EtoResumeParser;
 import com.surftools.wimp.parser.FieldSituationParser;
 import com.surftools.wimp.parser.HospitalBedParser;
+import com.surftools.wimp.parser.HospitalStatusParser;
 import com.surftools.wimp.parser.HumanitarianNeedsParser;
 import com.surftools.wimp.parser.Ics205Parser;
 import com.surftools.wimp.parser.Ics213Parser;
@@ -159,6 +160,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.ICS_205_RADIO_PLAN;
       } else if (attachmentNames.contains(MessageType.HUMANITARIAN_NEEDS.attachmentName())) {
         return MessageType.HUMANITARIAN_NEEDS;
+      } else if (attachmentNames.contains(MessageType.HOSPITAL_STATUS.attachmentName())) {
+        return MessageType.HOSPITAL_STATUS;
       }
     }
     /**
@@ -227,6 +230,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.ICS_205_RADIO_PLAN, new Ics205Parser());
     parserMap.put(MessageType.HUMANITARIAN_NEEDS, new HumanitarianNeedsParser());
     parserMap.put(MessageType.ETO_RESUME, new EtoResumeParser());
+    parserMap.put(MessageType.HOSPITAL_STATUS, new HospitalStatusParser());
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
     }
