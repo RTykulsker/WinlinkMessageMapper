@@ -38,7 +38,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
@@ -53,6 +52,7 @@ import com.surftools.wimp.service.FieldTestService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Processor for ETO 2024 Spring Drill: multiple FSR plus an ICS-309 that should reference the FSRs

@@ -38,10 +38,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PipelineProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(PipelineProcessor.class);

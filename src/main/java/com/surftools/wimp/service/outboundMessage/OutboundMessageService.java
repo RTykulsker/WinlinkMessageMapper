@@ -30,9 +30,9 @@ package com.surftools.wimp.service.outboundMessage;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.service.IService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class OutboundMessageService implements IService {
   private IOutboundMessageEngine engine;

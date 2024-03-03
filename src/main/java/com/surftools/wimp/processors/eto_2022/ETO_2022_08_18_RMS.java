@@ -38,7 +38,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.GeoBox;
 import com.surftools.utils.location.LatLongPair;
@@ -50,6 +49,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * The Required Portion (Part 1/Thursday) will be graded as follows:

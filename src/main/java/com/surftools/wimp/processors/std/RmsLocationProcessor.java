@@ -42,10 +42,10 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 @Deprecated
 public class RmsLocationProcessor extends AbstractBaseProcessor {

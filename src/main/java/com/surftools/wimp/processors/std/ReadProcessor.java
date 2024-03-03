@@ -59,7 +59,6 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
@@ -68,6 +67,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RejectionMessage;
 import com.surftools.wimp.parser.AbstractBaseParser;
 import com.surftools.wimp.parser.CharacterAssassinator;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Reads an "exported message" file, produced by Winlink, creates @{ExportedMessage} records

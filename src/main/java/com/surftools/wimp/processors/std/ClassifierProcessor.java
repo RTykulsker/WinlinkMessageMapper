@@ -35,7 +35,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IParser;
 import com.surftools.wimp.core.MessageType;
@@ -65,6 +64,7 @@ import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
 import com.surftools.wimp.parser.WxLocalParser;
 import com.surftools.wimp.parser.WxSevereParser;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * classify message by type

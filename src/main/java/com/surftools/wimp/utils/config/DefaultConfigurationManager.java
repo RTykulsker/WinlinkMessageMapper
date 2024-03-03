@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.utils.config;
+package com.surftools.wimp.utils.config;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
@@ -42,6 +41,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * alternative grader on a Winlink Check In message in lieu of Position Report

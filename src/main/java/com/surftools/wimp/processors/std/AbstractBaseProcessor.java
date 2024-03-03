@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 import com.opencsv.CSVWriter;
 import com.surftools.utils.FileUtils;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.ICounter;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
@@ -56,6 +55,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
   protected Logger logger;

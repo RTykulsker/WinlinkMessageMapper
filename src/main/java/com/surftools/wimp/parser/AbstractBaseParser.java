@@ -54,13 +54,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IParser;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RejectionMessage;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class AbstractBaseParser implements IParser {
   private static final Logger logger = LoggerFactory.getLogger(AbstractBaseParser.class);

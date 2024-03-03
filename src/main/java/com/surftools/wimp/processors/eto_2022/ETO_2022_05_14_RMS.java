@@ -35,7 +35,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
@@ -43,6 +42,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Operation Ashfall

@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.GradedResult;
@@ -45,6 +44,7 @@ import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Try to parse lat/long from first line of message field of ICS-213. Not a good idea!

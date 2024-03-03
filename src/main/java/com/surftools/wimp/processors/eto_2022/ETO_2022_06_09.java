@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.FileUtils;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.GradedResult;
@@ -55,6 +54,7 @@ import com.surftools.wimp.core.ImageHistogram;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Winlink Check In, with cropped and resized image, compared to reference, and difficulty in comments

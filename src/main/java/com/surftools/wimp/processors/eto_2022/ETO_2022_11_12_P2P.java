@@ -35,7 +35,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
@@ -43,6 +42,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.processors.std.AbstractBaseP2PProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * processor for the P2P component of the 2022-11-12 drill

@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.FileUtils;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
@@ -55,6 +54,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Processor for 2022-12-22 Exercise: one ICS-213-RR with image

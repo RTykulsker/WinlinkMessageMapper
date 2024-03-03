@@ -25,13 +25,14 @@ SOFTWARE.
 
 */
 
-package com.surftools.utils.config.impl;
+package com.surftools.wimp.utils.config.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -40,8 +41,8 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.DefaultConfigurationManager;
-import com.surftools.utils.config.IConfigurationKey;
+import com.surftools.wimp.utils.config.DefaultConfigurationManager;
+import com.surftools.wimp.utils.config.IConfigurationKey;
 
 /**
  * implement IConfiguationManager, based on Properties file
@@ -59,7 +60,7 @@ public class PropertyFileConfigurationManager extends DefaultConfigurationManage
       logger.info("using configuration file: " + configFileName);
       properties.load(new FileInputStream(new File(configFileName)));
 
-      var substitutionMap = new HashMap<String, String>();
+      var substitutionMap = new LinkedHashMap<String, String>();
 
       super.setValues(values);
       List<String> propertiesWithoutConfigurationKeys = new ArrayList<>();

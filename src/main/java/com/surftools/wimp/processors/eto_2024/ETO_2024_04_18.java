@@ -30,12 +30,12 @@ package com.surftools.wimp.processors.eto_2024;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.HospitalStatusMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Processor for 2024-04-18 Exercise: Hospital Status
@@ -58,20 +58,27 @@ public class ETO_2024_04_18 extends FeedbackProcessor {
     counterMap.put("Versions", ppVersionCounter);
   }
 
+  /**
+   * this is the money shot
+   *
+   * @param m
+   */
+  private void specificProcessing(HospitalStatusMessage m) {
+    ppVersionCounter.increment(m.version);
+
+    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+  }
+
   @Override
   protected void specificProcessing(ExportedMessage message) {
     switch (message.getMessageType()) {
-    case HOSPITAL_STATUS: {
+    case HOSPITAL_STATUS:
       var m = (HospitalStatusMessage) message;
-
-      ppVersionCounter.increment(m.version);
+      specificProcessing(m);
       break;
-    }
 
-    default: {
+    default:
       logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
-    }
-
     } // end switch
   }
 

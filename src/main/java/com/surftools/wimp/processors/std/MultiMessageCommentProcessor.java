@@ -33,10 +33,10 @@ import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * an Processor that combines all the "comments" fields from all the messages, etc.

@@ -40,8 +40,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * provide access to Winlink CMS apis. No business logic, only web service

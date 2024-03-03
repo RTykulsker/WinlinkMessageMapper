@@ -106,7 +106,7 @@ public class Ics309Parser extends AbstractBaseParser {
       var to = getStringFromXml("to" + i);
 
       // defect in xml; fixed in 14.0
-      var doSwap = false;
+      var doSwap = true;
       if (doSwap || versionNumber < 1400) {
         var tmp = from;
         from = to;

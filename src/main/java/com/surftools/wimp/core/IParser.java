@@ -27,8 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.core;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * interface that all message Parsers must conform to

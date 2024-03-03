@@ -32,10 +32,10 @@ import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.impl.PropertyFileConfigurationManager;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.MessageManager;
 import com.surftools.wimp.processors.std.PipelineProcessor;
+import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 
 /**
  * This is the *main* class

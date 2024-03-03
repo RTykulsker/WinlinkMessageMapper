@@ -27,7 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.configuration;
 
-import com.surftools.utils.config.IConfigurationKey;
+import com.surftools.wimp.utils.config.IConfigurationKey;
 
 /**
  * the @{IConfigurationKey} for the WinlinkMessageMapper

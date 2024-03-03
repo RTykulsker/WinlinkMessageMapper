@@ -27,7 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.core;
 
-import com.surftools.utils.config.IConfigurationManager;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public interface IProcessor {
 

@@ -37,7 +37,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
@@ -48,6 +47,7 @@ import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.message.WxLocalMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Processor for 2022-12-01 exercise: one WX Local message (442 lines)

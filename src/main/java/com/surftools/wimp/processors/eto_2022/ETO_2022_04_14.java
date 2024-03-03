@@ -34,7 +34,6 @@ import java.util.HashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
@@ -45,6 +44,7 @@ import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class ETO_2022_04_14 extends AbstractBaseProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2022_04_14.class);

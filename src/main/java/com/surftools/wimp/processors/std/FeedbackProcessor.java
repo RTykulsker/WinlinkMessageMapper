@@ -38,7 +38,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
@@ -51,6 +50,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * more common processing, exercise processors must implement specificProcessing(...)
@@ -75,6 +75,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   protected static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
+  protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING.replaceAll("-", "/"));
   protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -221,6 +222,21 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   protected boolean isNull(String s) {
     return s == null || s.isEmpty();
+  }
+
+  protected LocalDateTime parse(String s) {
+    LocalDateTime dt = null;
+    if (s == null) {
+      throw new IllegalArgumentException("null input string");
+    }
+
+    try {
+      dt = LocalDateTime.from(DTF.parse(s.trim()));
+    } catch (Exception e) {
+      dt = LocalDateTime.from(ALT_DTF.parse(s.trim()));
+    }
+
+    return dt;
   }
 
   protected static final String OB_DISCLAIMER = """

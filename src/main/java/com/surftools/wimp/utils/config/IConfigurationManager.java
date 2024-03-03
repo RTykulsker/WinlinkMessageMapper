@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.utils.config;
+package com.surftools.wimp.utils.config;
 
 /**
  * provide configuration values to an application

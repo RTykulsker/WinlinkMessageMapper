@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.utils.config;
+package com.surftools.wimp.utils.config;
 
 /**
  * marker interface for a key, typically implemented as an enum

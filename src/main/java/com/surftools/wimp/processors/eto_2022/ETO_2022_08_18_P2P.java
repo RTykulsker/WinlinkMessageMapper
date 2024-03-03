@@ -41,7 +41,6 @@ import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
@@ -51,6 +50,7 @@ import com.surftools.wimp.processors.std.AbstractBaseP2PProcessor;
 import com.surftools.wimp.processors.std.ClassifierProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Processor to support ETO 2022-08-20 Exercise:

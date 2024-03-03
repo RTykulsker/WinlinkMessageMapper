@@ -36,7 +36,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.service.IService;
@@ -44,6 +43,7 @@ import com.surftools.wimp.service.cms.ChannelRecord;
 import com.surftools.wimp.service.cms.CmsWebService;
 import com.surftools.wimp.service.cms.ICmsWebService;
 import com.surftools.wimp.service.cms.TrafficRecord;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class RmsGatewayService implements IService {
   private static Logger logger = LoggerFactory.getLogger(RmsGatewayService.class);

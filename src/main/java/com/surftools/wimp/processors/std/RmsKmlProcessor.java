@@ -44,7 +44,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
@@ -55,6 +54,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.overrideLocationService.OverrideLocationService;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayResult;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * processor to generate a KML file, based on various Winlink messages from "field" stations and RMS gateways being the

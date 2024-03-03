@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * provide access to Winlink CMS apis. No business logic, only web service

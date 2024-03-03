@@ -30,11 +30,11 @@ package com.surftools.wimp.processors.dev;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.Ics214Message;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * development effort for ICS-214

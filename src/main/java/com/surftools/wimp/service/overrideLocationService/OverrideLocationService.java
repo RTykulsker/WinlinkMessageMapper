@@ -34,11 +34,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.service.IService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class OverrideLocationService implements IService {
   private static Logger logger = LoggerFactory.getLogger(OverrideLocationService.class);

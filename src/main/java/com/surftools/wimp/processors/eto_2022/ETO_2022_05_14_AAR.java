@@ -35,7 +35,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.GradedResult;
@@ -46,6 +45,7 @@ import com.surftools.wimp.message.Ics213ReplyMessage;
 import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.SummaryProcessor.ParticipantHistory;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 import com.surftools.wimp.processors.std.WriteProcessor;
 
 /**

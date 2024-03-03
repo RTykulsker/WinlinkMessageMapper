@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.config.IConfigurationManager;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
@@ -43,6 +42,7 @@ import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.Ics309Message.Activity;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * Processor for 2024-03-21 Exercise: ICS-309 from WLE-generated CSV
@@ -175,7 +175,7 @@ public class ETO_2024_03_21 extends FeedbackProcessor {
       }
 
       try {
-        dt = LocalDateTime.from(DTF.parse(a.dateTimeString()));
+        dt = parse(a.dateTimeString().trim());
         sts.test("Should have valid activity Date/Time" + lineNumber, true);
 
         if (lineNumber > 1) {
