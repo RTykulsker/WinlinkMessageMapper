@@ -113,7 +113,7 @@ public class HospitalStatusParser extends AbstractBaseParser {
 
       var areEvacConcerns = Boolean.valueOf(getStringFromXml("bevacconcerns").equals("YES"));
       var evacuating = getStringFromXml("bevac8");
-      var evacuatingStatus = getStringFromXml("bevac8");
+      var evacuatingStatus = getStringFromXml("a8a");
       var partialEvac = getStringFromXml("bpartial8");
       var partialEvacStatus = getStringFromXml("a8b");
       var totalEvac = getStringFromXml("btotal8");

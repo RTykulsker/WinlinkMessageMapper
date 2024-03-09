@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics309Message;
@@ -54,50 +53,36 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2024_03_21 extends FeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_03_21.class);
 
-  protected Counter ppVersionCounter = new Counter();
-
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    counterMap.put("Versions", ppVersionCounter);
     Ics309Message.setNDisplayActivities(8);
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    switch (message.getMessageType()) {
-    case ICS_309: {
-      var m = (Ics309Message) message;
+    var m = (Ics309Message) message;
+    getCounter("versions").increment(m.version);
 
-      ppVersionCounter.increment(m.version);
+    sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
+    sts.test("Task # should be #EV", "240321", m.taskNumber);
+    sts
+        .testOnOrAfter("Date/Time Prepared should be on or after #EV", windowOpenDT,
+            LocalDateTime.from(DTF.parse(m.dateTimePrepared)), DTF);
+    sts
+        .testOnOrBefore("Date/Time Prepared should be on or after #EV", windowCloseDT,
+            LocalDateTime.from(DTF.parse(m.dateTimePrepared)), DTF);
+    sts.test("Operational Periold should be #EV", "03/19-03/22", m.operationalPeriod);
+    sts.test("Task Name should be #EV", "ICS 309 Form Via Winlink Express Generated CSV", m.taskName);
+    sts.testIfPresent("Operator Name should be provided", m.operatorName);
+    sts.test("Station Id should be #EV", sender, m.stationId);
+    sts.test("Page # should be #EV", "1", m.page);
 
-      sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
-      sts.test("Task # should be #EV", "240321", m.taskNumber);
-      sts
-          .testOnOrAfter("Date/Time Prepared should be on or after #EV", windowOpenDT,
-              LocalDateTime.from(DTF.parse(m.dateTimePrepared)), DTF);
-      sts
-          .testOnOrBefore("Date/Time Prepared should be on or after #EV", windowCloseDT,
-              LocalDateTime.from(DTF.parse(m.dateTimePrepared)), DTF);
-      sts.test("Operational Periold should be #EV", "03/19-03/22", m.operationalPeriod);
-      sts.test("Task Name should be #EV", "ICS 309 Form Via Winlink Express Generated CSV", m.taskName);
-      sts.testIfPresent("Operator Name should be provided", m.operatorName);
-      sts.test("Station Id should be #EV", sender, m.stationId);
-      sts.test("Page # should be #EV", "1", m.page);
+    // push into function
+    validateActivities(sender, sts, m.activities, windowOpenDT, windowCloseDT);
 
-      // push into function
-      validateActivities(sender, sts, m.activities, windowOpenDT, windowCloseDT);
-
-      setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
-      break;
-    }
-
-    default: {
-      logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
-    }
-
-    } // end switch
+    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
   }
 
   public void validateActivities(String sender, SimpleTestService sts, List<Activity> activities,

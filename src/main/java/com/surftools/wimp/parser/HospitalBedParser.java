@@ -77,6 +77,7 @@ public class HospitalBedParser extends AbstractBaseParser {
       }
 
       var organization = getStringFromXml("title");
+      var isExercise = Boolean.valueOf(getStringFromXml("exbtn"));
       var facility = getStringFromXml("facility");
 
       var contactPerson = getStringFromXml("contact");
@@ -112,8 +113,17 @@ public class HospitalBedParser extends AbstractBaseParser {
       var totalBedCount = getStringFromXml("totalbeds");
       var additionalComments = getStringFromXml("comments");
 
+      // Hosp Bed Report 9.8.2
+      var version = getStringFromXml("templateversion");
+      if (version != null) {
+        var fields = version.replaceAll("  ", " ").split(" ");
+        if (fields.length > 1) {
+          version = fields[fields.length - 1];
+        }
+      }
+
       HospitalBedMessage m = new HospitalBedMessage(message, formDateTime, formLocation, //
-          organization, facility, contactPerson, contactPhone, contactEmail, //
+          organization, isExercise, facility, contactPerson, contactPhone, contactEmail, //
           emergencyBedCount, emergencyBedNotes, //
           pediatricsBedCount, pediatricsBedNotes, //
           medicalBedCount, medicalBedNotes, //
@@ -122,7 +132,7 @@ public class HospitalBedParser extends AbstractBaseParser {
           criticalBedCount, criticalBedNotes, //
           other1Name, other1BedCount, other1BedNotes, //
           other2Name, other2BedCount, other2BedNotes, //
-          totalBedCount, additionalComments);
+          totalBedCount, additionalComments, version);
 
       return m;
     } catch (Exception e) {

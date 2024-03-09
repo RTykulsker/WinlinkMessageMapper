@@ -72,7 +72,7 @@ public enum Key implements IConfigurationKey {
   EXERCISE_WINDOW_OPEN("exerciseWindowOpen"), //
   EXERCISE_WINDOW_CLOSE("exerciseWindowClose"), //
 
-  FEEDBACK_PATH("feedbackPath"), // for feedback file
+  FEEDBACK_ACCEPTABLE_MESSAGE_TYPES("feedback.acceptableMessageTypes"), // for FeedbackProcessor
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
   SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, list ETO-BK

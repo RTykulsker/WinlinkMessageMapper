@@ -37,6 +37,7 @@ import com.surftools.wimp.core.MessageType;
 public class HospitalBedMessage extends ExportedMessage {
 
   public final String organization;
+  public final boolean isExercise;
   public final LocalDateTime formDateTime;
   public final LatLongPair formLocation;
   public final String facility;
@@ -74,8 +75,11 @@ public class HospitalBedMessage extends ExportedMessage {
   public final String totalBedCount;
   public final String additionalComments;
 
+  public final String version;
+
   public HospitalBedMessage(ExportedMessage exportedMessage, //
-      LocalDateTime formDateTime, LatLongPair formLocation, String organization, String facility, //
+      LocalDateTime formDateTime, LatLongPair formLocation, //
+      String organization, boolean isExercise, String facility, //
       String contactPerson, String contactPhone, String contactEmail, //
       String emergencyBedCount, String emergencyBedNotes, //
       String pediatricsBedCount, String pediatricsBedNotes, //
@@ -85,10 +89,11 @@ public class HospitalBedMessage extends ExportedMessage {
       String criticalBedCount, String criticalBedNotes, //
       String other1Name, String other1BedCount, String other1BedNotes, //
       String other2Name, String other2BedCount, String other2BedNotes, //
-      String totalBedCount, String additionalComments) {
+      String totalBedCount, String additionalComments, String version) {
     super(exportedMessage);
 
     this.organization = organization;
+    this.isExercise = isExercise;
     this.formDateTime = formDateTime;
     this.formLocation = formLocation;
 
@@ -126,6 +131,7 @@ public class HospitalBedMessage extends ExportedMessage {
 
     this.totalBedCount = totalBedCount;
     this.additionalComments = additionalComments;
+    this.version = version;
 
     if (formLocation.isValid()) {
       mapLocation = formLocation;
@@ -141,10 +147,10 @@ public class HospitalBedMessage extends ExportedMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Organization", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
+        "Organization", "IsExercise", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
         "MedicalBedCount", "MedicalBedNotes", //
         "CriticalBedCount", "CriticalBedNotes", //
-        "TotalBedCount", "AdditionalComments"//
+        "TotalBedCount", "AdditionalComments", "Version"//
     };
   }
 
@@ -156,10 +162,10 @@ public class HospitalBedMessage extends ExportedMessage {
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        organization, facility, contactPerson, contactPhone, contactEmail, //
+        organization, String.valueOf(isExercise), facility, contactPerson, contactPhone, contactEmail, //
         medicalBedCount, medicalBedNotes, //
         criticalBedCount, criticalBedNotes, //
-        totalBedCount, additionalComments//
+        totalBedCount, additionalComments, version//
     };
   }
 
