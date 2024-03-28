@@ -74,14 +74,17 @@ public class SimpleTestService implements IService {
   private int testCount = 0; // number of times internalTest() has been called
 
   private String explanationPrefix = "";
+  private String caller;
 
   /**
    * must, Must, MUST be called at the beginning of process() for each call
    */
-  public void reset() {
+  public void reset(String caller) {
     this.explanations = new ArrayList<>();
     this.points = 0;
     ++resetCount;
+
+    this.caller = caller;
   }
 
   /**
@@ -569,6 +572,32 @@ public class SimpleTestService implements IService {
       return null;
     }
     return s.replaceAll("\\s", "");
+  }
+
+  @Override
+  public String toString() {
+    var sb = new StringBuilder();
+
+    sb.append("### instance: " + caller + "\n");
+    sb.append("points: " + points + "\n");
+    sb.append("explanations.size(): " + explanations.size() + "\n");
+    sb.append("explanations: " + String.join("\n", explanations) + "\n");
+
+    sb.append("### class\n");
+    sb.append("totalPoints (all entries): " + totalPoints + "\n");
+    sb.append("reset count: " + resetCount + "\n");
+    sb.append("add count: " + addCount + "\n");
+    sb.append("testCount: " + testCount + "\n");
+
+    var it = this.iterator();
+    while (it.hasNext()) {
+      var key = it.next();
+      if (this.hasContent(key)) {
+        sb.append("   " + this.format(key));
+      }
+    }
+
+    return sb.toString();
   }
 
 } // end class SimpleTestService

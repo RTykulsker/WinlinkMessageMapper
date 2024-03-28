@@ -49,9 +49,10 @@ public class PipelineProcessor extends AbstractBaseProcessor {
   private static final String[] PREFIXES = new String[] { //
       "com.surftools.wimp.processors.std.", //
       "com.surftools.wimp.processors.eto_2024.", //
+      "com.surftools.wimp.processors.other.", //
+      "com.surftools.wimp.processors.dev.", //
       "com.surftools.wimp.processors.eto_2023.", //
       "com.surftools.wimp.processors.eto_2022.", //
-      "com.surftools.wimp.processors.other.", //
       "" };
 
   private static final String[] SUFFIXES = new String[] { "Processor", "" };

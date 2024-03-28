@@ -1,6 +1,6 @@
 /**
 
-The MIT License (MIT)
+ - DO NOT REPLY!The MIT License (MIT)
 
 Copyright (c) 2022, Robert Tykulsker
 
@@ -27,8 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.EtoResumeMessage;
 import com.surftools.wimp.message.ExportedMessage;
@@ -45,8 +42,6 @@ import com.surftools.wimp.message.ExportedMessage;
 public class EtoResumeParser extends AbstractBaseParser {
 
   private static final Logger logger = LoggerFactory.getLogger(EtoResumeParser.class);
-
-  private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
   @SuppressWarnings("unchecked")
   @Override
@@ -68,47 +63,35 @@ public class EtoResumeParser extends AbstractBaseParser {
         return reject(message, RejectType.CANT_PARSE_ETO_JSON, e.getMessage());
       }
 
-      var sentBy = map.get("SentBy");
+      var sentBy = map.getOrDefault("SentBy", "");
+      var formDateTime = map.getOrDefault("DateTimeLocal", "");
 
-      LocalDateTime formDateTime = null;
-      try {
-        formDateTime = LocalDateTime.parse(map.get("DateTimeLocal"), DT_FORMATTER);
-      } catch (Exception e) {
-        ;
-      }
-
-      String latitude = map.get("Latitude");
-      String longitude = map.get("Longitude");
-      var formLocation = new LatLongPair(latitude, longitude);
-
-      var hasIs100 = parseBoolean(map, "IS100");
-      var hasIs200 = parseBoolean(map, "IS200");
-      var hasIs700 = parseBoolean(map, "IS700");
-      var hasIs800 = parseBoolean(map, "IS800");
-      var hasAces = parseBoolean(map, "ACES");
-      var hasEc001 = parseBoolean(map, "EC001");
-      var hasEc016 = parseBoolean(map, "EC016");
-      var hasSkywarn = parseBoolean(map, "SKYWARN");
-      var hasAuxComm = parseBoolean(map, "AUXCOMM");
-      var hasComT = parseBoolean(map, "COMT");
-      var hasComL = parseBoolean(map, "COML");
+      var hasIs100 = map.getOrDefault("IS100", "");
+      var hasIs200 = map.getOrDefault("IS200", "");
+      var hasIs700 = map.getOrDefault("IS700", "");
+      var hasIs800 = map.getOrDefault("IS800", "");
+      var hasIs2200 = map.getOrDefault("IS2200", "");
+      var hasAces = map.getOrDefault("ACES", "");
+      var hasEc001 = map.getOrDefault("EC001", "");
+      var hasEc016 = map.getOrDefault("EC016", "");
+      var hasSkywarn = map.getOrDefault("SKYWARN", "");
+      var hasAuxComm = map.getOrDefault("AUXCOMM", "");
+      var hasComT = map.getOrDefault("COMT", "");
+      var hasComL = map.getOrDefault("COML", "");
 
       var agencies = parseAgencies(map);
 
-      var comments = map.get("comments");
-      var version = map.get("version");
+      var comments = map.getOrDefault("Comments", "");
+      var version = map.getOrDefault("Version", "");
 
       var m = new EtoResumeMessage(message, //
-          sentBy, formDateTime, formLocation, //
-          hasIs100, hasIs200, hasIs700, hasIs800, //
+          sentBy, formDateTime, hasIs100, hasIs200, hasIs700, hasIs800, hasIs2200, //
           hasAces, hasEc001, hasEc016, hasSkywarn, //
           hasAuxComm, hasComT, hasComL, //
           agencies, comments, version);
 
       return m;
-    } catch (
-
-    Exception e) {
+    } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
@@ -125,11 +108,4 @@ public class EtoResumeParser extends AbstractBaseParser {
     return agencies;
   }
 
-  private boolean parseBoolean(Map<String, String> map, String key) {
-    var value = map.get(key);
-    if (value == null) {
-      return false;
-    }
-    return value.equalsIgnoreCase("YES") ? true : false;
-  }
 }

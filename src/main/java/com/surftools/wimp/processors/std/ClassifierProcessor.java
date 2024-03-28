@@ -59,6 +59,7 @@ import com.surftools.wimp.parser.MiroCheckInParser;
 import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
 import com.surftools.wimp.parser.QuickParser;
+import com.surftools.wimp.parser.RRIQuickWelfareParser;
 import com.surftools.wimp.parser.SpotRepParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
@@ -182,8 +183,10 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return MessageType.MIRO_CHECK_IN;
     } else if (subject.equals("Position Report")) {
       return MessageType.POSITION;
-    } else if (subject.startsWith("ETO Participant resume")) {
+    } else if (subject.startsWith("ETO Participant resume") || subject.startsWith("ETO Resume")) {
       return MessageType.ETO_RESUME;
+    } else if (subject.startsWith("I Am Safe Message From") && subject.endsWith(" - DO NOT REPLY!")) {
+      return MessageType.RRI_QUICK_WELFARE;
     } else if (subject.startsWith("ACK:")) {
       return MessageType.ACK;
     } else {
@@ -231,6 +234,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.HUMANITARIAN_NEEDS, new HumanitarianNeedsParser());
     parserMap.put(MessageType.ETO_RESUME, new EtoResumeParser());
     parserMap.put(MessageType.HOSPITAL_STATUS, new HospitalStatusParser());
+    parserMap.put(MessageType.RRI_QUICK_WELFARE, new RRIQuickWelfareParser());
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
     }

@@ -72,6 +72,7 @@ public enum MessageType {
   HOSPITAL_STATUS("hospital_status", "RMS_Express_Form_Hospital_Status_Viewer.xml"), //
 
   ETO_RESUME("eto_resume"), //
+  RRI_QUICK_WELFARE("rri_quick_welfare"), //
   ;
 
   /**

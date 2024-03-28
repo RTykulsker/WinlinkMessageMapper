@@ -42,14 +42,14 @@ import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2024-03-21 Exercise: ICS-309 from WLE-generated CSV
+ * Processor for 2024-05-16 Semi-Annual Drill: ICS-309 from WLE-generated CSV, messages to multiple RMS
  *
  *
  * @author bobt
  *
  */
-public class ETO_2024_03_21 extends FeedbackProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_03_21.class);
+public class ETO_2024_05_16 extends FeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_05_16.class);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {

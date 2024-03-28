@@ -27,10 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 
 /**
@@ -41,41 +39,41 @@ import com.surftools.wimp.core.MessageType;
  */
 public class EtoResumeMessage extends ExportedMessage {
   public final String sentBy;
-  public final LocalDateTime formDateTime; // truly local, not utc
-  public final LatLongPair formLocation;
+  public final String formDateTime; // truly local, not utc
 
-  public final boolean hasIs100;
-  public final boolean hasIs200;
-  public final boolean hasIs700;
-  public final boolean hasIs800;
-  public final boolean hasAces;
-  public final boolean hasEc001;
-  public final boolean hasEc016;
-  public final boolean hasSkywarn;
-  public final boolean hasAuxComm;
-  public final boolean hasComT;
-  public final boolean hasComL;
+  public final String hasIs100;
+  public final String hasIs200;
+  public final String hasIs700;
+  public final String hasIs800;
+  public final String hasIs2200;
+  public final String hasAces;
+  public final String hasEc001;
+  public final String hasEc016;
+  public final String hasSkywarn;
+  public final String hasAuxComm;
+  public final String hasComT;
+  public final String hasComL;
   public final List<String> agencies;
 
   public final String comments;
   public final String version;
 
   public EtoResumeMessage(ExportedMessage exportedMessage, //
-      String sentBy, LocalDateTime formDateTime, LatLongPair formLocation, //
-      boolean hasIs100, boolean hasIs200, boolean hasIs700, boolean hasIs800, //
-      boolean hasAces, boolean hasEc001, boolean hasEc016, boolean hasSkywarn, //
-      boolean hasAuxComm, boolean hasComT, boolean hasComL, //
+      String sentBy, String formDateTime, //
+      String hasIs100, String hasIs200, String hasIs700, String hasIs800, String hasIs2200, //
+      String hasAces, String hasEc001, String hasEc016, String hasSkywarn, //
+      String hasAuxComm, String hasComT, String hasComL, //
       List<String> agencies, String comments, String version) {
     super(exportedMessage);
 
     this.sentBy = sentBy;
     this.formDateTime = formDateTime;
-    this.formLocation = formLocation;
 
     this.hasIs100 = hasIs100;
     this.hasIs200 = hasIs200;
     this.hasIs700 = hasIs700;
     this.hasIs800 = hasIs800;
+    this.hasIs2200 = hasIs2200;
 
     this.hasAces = hasAces;
     this.hasEc001 = hasEc001;
@@ -85,23 +83,25 @@ public class EtoResumeMessage extends ExportedMessage {
     this.hasAuxComm = hasAuxComm;
     this.hasComT = hasComT;
     this.hasComL = hasComL;
-    this.agencies = agencies == null ? List.of("") : agencies;
+    this.agencies = agencies;
 
     this.comments = comments;
     this.version = version;
-
-    if (formDateTime != null) {
-      setSortDateTime(formDateTime);
-    }
-
-    if (formLocation.isValid()) {
-      setMapLocation(formLocation);
-    }
   }
 
   @Override
   public String[] getHeaders() {
     return getStaticHeaders();
+  }
+
+  public static String[] getStaticHeaders() {
+    return new String[] { "MessageId", "From", "Latitude", "Longitude", "To", "Subject", //
+        "Date", "Time", //
+        "Sent By", "Form Date/Time", "Training Count", "Agency Count", //
+        "IS-100", "IS-200", "IS-700", "IS-800", "IS-2200", //
+        "ACES", "EC-001", "EC-016", "Skywarn", //
+        "AuxComm", "ComT", "ComL", "Agencies", //
+        "Comments", "Version" };
   }
 
   @Override
@@ -110,29 +110,29 @@ public class EtoResumeMessage extends ExportedMessage {
     var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
-    return new String[] { messageId, from, latitude, longitude, to, subject, //
-        msgDateTime == null ? "" : msgDateTime.toString(), //
-        msgLocation == null ? "" : msgLocation.toString(), //
+    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
+    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
 
-        sentBy, //
-        formDateTime == null ? "" : formDateTime.toString(), //
-        formLocation == null ? "" : formLocation.toString(), //
+    return new String[] { messageId, from, latitude, longitude, to, subject, //
+        date, time, //
+        sentBy, formDateTime, //
         trainingCount(), //
         String.valueOf(agencies.size()), //
 
-        String.valueOf(hasIs100), //
-        String.valueOf(hasIs200), //
-        String.valueOf(hasIs700), //
-        String.valueOf(hasIs800), //
+        hasIs100, //
+        hasIs200, //
+        hasIs700, //
+        hasIs800, //
+        hasIs2200, //
 
-        String.valueOf(hasAces), //
-        String.valueOf(hasEc001), //
-        String.valueOf(hasEc016), //
-        String.valueOf(hasSkywarn), //
+        hasAces, //
+        hasEc001, //
+        hasEc016, //
+        hasSkywarn, //
 
-        String.valueOf(hasAuxComm), //
-        String.valueOf(hasComT), //
-        String.valueOf(hasComL), //
+        hasAuxComm, //
+        hasComT, //
+        hasComL, //
 
         String.join(",", agencies), //
         comments, version };
@@ -140,19 +140,20 @@ public class EtoResumeMessage extends ExportedMessage {
 
   private String trainingCount() {
     var sum = 0;
-    sum += hasIs100 ? 1 : 0;
-    sum += hasIs200 ? 1 : 0;
-    sum += hasIs700 ? 1 : 0;
-    sum += hasIs800 ? 1 : 0;
+    sum += hasIs100.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasIs200.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasIs700.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasIs800.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasIs2200.equalsIgnoreCase("NO") ? 0 : 1;
 
-    sum += hasAces ? 1 : 0;
-    sum += hasEc001 ? 1 : 0;
-    sum += hasEc016 ? 1 : 0;
-    sum += hasSkywarn ? 1 : 0;
+    sum += hasAces.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasEc001.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasEc016.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasSkywarn.equalsIgnoreCase("NO") ? 0 : 1;
 
-    sum += hasAuxComm ? 1 : 0;
-    sum += hasComT ? 1 : 0;
-    sum += hasComL ? 1 : 0;
+    sum += hasAuxComm.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasComT.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasComL.equalsIgnoreCase("NO") ? 0 : 1;
 
     return String.valueOf(sum);
   }
@@ -165,16 +166,6 @@ public class EtoResumeMessage extends ExportedMessage {
   @Override
   public String getMultiMessageComment() {
     return comments;
-  }
-
-  public static String[] getStaticHeaders() {
-    return new String[] { "MessageId", "From", "Latitude", "Longitude", "To", "Subject", //
-        "Msg Date/Time", "Msg Lat/Long", //
-        "Sent By", "Form Date/Time", "Form Location", "Training Count", "Agency Count", //
-        "IS-100", "IS-200", "IS-700", "IS-800", //
-        "ACES", "EC-001", "EC-016", "Skywarn", //
-        "AuxComm", "ComT", "ComL", "Agencies", //
-        "Comments", "Version" };
   }
 
 }

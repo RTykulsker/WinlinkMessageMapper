@@ -62,7 +62,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
-  protected static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
+  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
   protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING.replaceAll("-", "/"));
   protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -71,6 +71,8 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   protected LocalDateTime windowOpenDT = null;
   protected LocalDateTime windowCloseDT = null;
+
+  protected boolean doStsFieldValidation = true;
 
   /**
    * this is the context that we need for each message type, but we won't share it with subtypes
@@ -149,7 +151,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
     te = typeEntryMap.getOrDefault(message.getMessageType(), new TypeEntry());
     sts = te.sts;
-    sts.reset();
+    sts.reset(sender);
     ++te.ppCount;
 
     var addressList = message.toList + "," + message.ccList;
@@ -227,7 +229,9 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     for (var messageType : typeEntryMap.keySet()) {
       te = typeEntryMap.get(messageType);
 
-      logger.info("field validation:\n" + sts.validate());
+      if (doStsFieldValidation) {
+        logger.info("field validation:\n" + sts.validate());
+      }
 
       var sb = new StringBuilder();
       var N = te.ppCount;
@@ -306,12 +310,12 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
       =====================================================================================================
 
-      DISCLAIMER: This feedback is automatically generated and provided for your consideration only.
-      It's not an evaluation of your individual performance. Differences in spelling or numbers will
-      trigger this automated message (differences in capitalization and punctuation are ignored).
-      You may think that some of our feedback is "nit picking" and that your responses would be understood
-      by any reasonable person -- and you'd be correct! You're welcome to disagree with any or all of our
-      feedback. You're also welcome to reply via Winlink to this message or send an email to
+      DISCLAIMER: This feedback is provided for your consideration. We use the results to improve future
+      exercises. Differences in spelling, numbers or omitting whitespace  will trigger this automated message.
+      Differences in capitalization, punctuation and extra whitespace are generally ignored. You may
+      think that some of our feedback is "nit picking" and that your responses would be understood by any
+      reasonable person -- and you'd be correct! You're welcome to disagree with any or all of our feedback.
+      You're also welcome to reply via Winlink to this message or send an email to
       ETO.Technical.Team@emcomm-training.groups.io. In any event, thank you for participating
       in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
               """;

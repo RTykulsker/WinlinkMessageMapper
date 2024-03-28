@@ -121,7 +121,7 @@ public class ETO_2024_02_15 extends AbstractBaseProcessor {
       var m = (HumanitarianNeedsMessage) message;
       var sender = message.from;
 
-      sts.reset();
+      sts.reset(sender);
 
       if (dumpIds.contains(sender)) {
         logger.info("dump: " + sender);

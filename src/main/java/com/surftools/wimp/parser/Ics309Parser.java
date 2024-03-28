@@ -51,7 +51,7 @@ public class Ics309Parser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
 
     if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
+      logger.info("### call: " + message.from);
     }
 
     try {
@@ -105,8 +105,8 @@ public class Ics309Parser extends AbstractBaseParser {
       var from = getStringFromXml("from" + i);
       var to = getStringFromXml("to" + i);
 
-      // defect in xml; fixed in 14.0
-      var doSwap = true;
+      // defect in xml; fixed in v13.10
+      var doSwap = false;
       if (doSwap || versionNumber < 1400) {
         var tmp = from;
         from = to;
@@ -115,6 +115,7 @@ public class Ics309Parser extends AbstractBaseParser {
 
       var subject = getStringFromXml("sub" + i);
       var entry = new Ics309Message.Activity(dateTime, from, to, subject);
+
       list.add(entry);
     }
     return list;

@@ -127,7 +127,7 @@ public class ETO_2024_01_18 extends AbstractBaseProcessor {
       var m = (Ics213Message) message;
       var sender = message.from;
 
-      sts.reset();
+      sts.reset(sender);
 
       if (dumpIds.contains(sender)) {
         logger.info("dump: " + sender);

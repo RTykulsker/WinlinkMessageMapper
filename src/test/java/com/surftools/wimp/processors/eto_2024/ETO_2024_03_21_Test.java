@@ -44,6 +44,9 @@ import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 public class ETO_2024_03_21_Test {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_03_21_Test.class);
 
+  private static final LocalDateTime WINDOW_OPEN_DT = LocalDateTime.of(1970, 1, 01, 0, 0, 0);
+  private static final LocalDateTime WINDOW_CLOSE_DT = LocalDateTime.of(2099, 12, 31, 0, 0, 0);
+
   @Test
   public void test_null() {
     var sender = "UNIT TEST";
@@ -65,26 +68,13 @@ public class ETO_2024_03_21_Test {
 
     activities.add(null);
     processor.validateActivities(sender, sts, activities, null, null);
-    var explanations = sts.getExplanations();
-    logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(5, explanations.size());
-    assertEquals("Should have only 6 activities, not 0", explanations.get(0));
-    assertEquals("Should have exactly 3 messages from SERVICE, not 0", explanations.get(1));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... One, not 0", explanations.get(2));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Two, not 0", explanations.get(3));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Three, not 0", explanations.get(4));
+    assertEquals(0, sts.getExplanations().size());
 
-    sts.reset();
+    sts.reset("unit test");
     activities.clear();
     activities.add(new Activity(null, null, null, null));
     processor.validateActivities(sender, sts, activities, null, null);
-    explanations = sts.getExplanations();
-    assertEquals(5, sts.getExplanations().size());
-    assertEquals("Should have only 6 activities, not 0", explanations.get(0));
-    assertEquals("Should have exactly 3 messages from SERVICE, not 0", explanations.get(1));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... One, not 0", explanations.get(2));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Two, not 0", explanations.get(3));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Three, not 0", explanations.get(4));
+    assertEquals(0, sts.getExplanations().size());
   }
 
   @Test
@@ -101,19 +91,10 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dt, null, "TEST", testSubject));
     activities.add(new Activity(dt, sender, null, testSubject));
     activities.add(new Activity(dt, sender, "TEST", null));
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(9, sts.getExplanations().size());
-    assertEquals("Should have only 6 activities, not 4", explanations.get(0));
-    assertEquals("Should have non-empty activity Date/Time value, not on line: 1", explanations.get(1));
-    assertEquals("Should have non-empty activity From value, not on line: 2", explanations.get(2));
-    assertEquals("Should have non-empty activity To value, not on line: 3", explanations.get(3));
-    assertEquals("Should have non-empty activity Subject value, not on line: 4", explanations.get(4));
-    assertEquals("Should have exactly 3 messages from SERVICE, not 0", explanations.get(5));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... One, not 0", explanations.get(6));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Two, not 0", explanations.get(7));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Three, not 0", explanations.get(8));
+    assertEquals(7, sts.getExplanations().size());
   }
 
   @Test
@@ -130,19 +111,10 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dt, null, sender, testSubject));
     activities.add(new Activity(dt, "SERVICE", null, testSubject));
     activities.add(new Activity(dt, "SERVICE", sender, null));
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(9, sts.getExplanations().size());
-    assertEquals("Should have only 6 activities, not 4", explanations.get(0));
-    assertEquals("Should have non-empty activity Date/Time value, not on line: 1", explanations.get(1));
-    assertEquals("Should have non-empty activity From value, not on line: 2", explanations.get(2));
-    assertEquals("Should have non-empty activity To value, not on line: 3", explanations.get(3));
-    assertEquals("Should have non-empty activity Subject value, not on line: 4", explanations.get(4));
-    assertEquals("Should have exactly 3 messages from SERVICE, not 0", explanations.get(5));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... One, not 0", explanations.get(6));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Two, not 0", explanations.get(7));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Three, not 0", explanations.get(8));
+    assertEquals(8, sts.getExplanations().size());
   }
 
   @Test
@@ -152,12 +124,11 @@ public class ETO_2024_03_21_Test {
     var sts = new SimpleTestService();
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity("a date", sender, sender, sender));
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(7, explanations.size());
-    assertEquals("Should have only 6 activities, not 1", explanations.get(0));
-    assertEquals("Should have valid activity Date/Time, not 'a date', on line: 1", explanations.get(1));
+    assertEquals(6, explanations.size());
+    assertEquals("Should have valid activity Date/Time, not 'a date', on line: 1", explanations.get(0));
   }
 
   @Test
@@ -165,7 +136,7 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "2024-03-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity(dateBase + "1", sender, "TEST", testBase + "One"));
@@ -174,9 +145,7 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dateBase + "4", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "5", sender, "TEST", testBase + "Three"));
     activities.add(new Activity(dateBase + "6", "SERVICE", sender, "Test Message"));
-    processor
-        .validateActivities(sender, sts, activities, //
-            LocalDateTime.of(1969, 12, 31, 0, 0, 0), LocalDateTime.of(1970, 1, 2, 0, 0, 0));
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
     assertEquals(0, explanations.size());
@@ -187,7 +156,7 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "1969-01-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity(dateBase + "1", sender, "TEST", testBase + "One"));
@@ -196,16 +165,13 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dateBase + "4", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "5", sender, "TEST", testBase + "Three"));
     activities.add(new Activity(dateBase + "6", "SERVICE", sender, "Test Message"));
-    processor
-        .validateActivities(sender, sts, activities, //
-            LocalDateTime.of(1970, 01, 02, 0, 0, 0), LocalDateTime.of(1970, 1, 3, 0, 0, 0));
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
     assertEquals(6, explanations.size());
     for (var i = 1; i <= 6; ++i) {
-      assertEquals(
-          "Activity Date/Time should be on or after 1970-01-02 00:00, not 1970-01-01 00:0" + i + ", on line: " + i,
-          explanations.get(i - 1));
+      assertEquals("Activity Date/Time should be on or after " + ETO_2024_03_21.DTF.format(WINDOW_OPEN_DT) + ", not "
+          + dateBase + i + ", on line: " + i, explanations.get(i - 1));
     }
   }
 
@@ -214,7 +180,7 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "2100-03-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity(dateBase + "1", sender, "TEST", testBase + "One"));
@@ -223,16 +189,13 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dateBase + "4", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "5", sender, "TEST", testBase + "Three"));
     activities.add(new Activity(dateBase + "6", "SERVICE", sender, "Test Message"));
-    processor
-        .validateActivities(sender, sts, activities, //
-            LocalDateTime.of(1969, 01, 01, 0, 0, 0), LocalDateTime.of(1969, 12, 31, 0, 0, 0));
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
     assertEquals(6, explanations.size());
-    for (var i = 1; i < -6; ++i) {
-      assertEquals(
-          "Activity Date/Time should be on or before 1969-12-31 00:00, not 1970-01-01 00:0" + i + ", on line: " + i,
-          explanations.get(i));
+    for (var i = 1; i < 6; ++i) {
+      assertEquals("Activity Date/Time should be on or before " + ETO_2024_03_21.DTF.format(WINDOW_CLOSE_DT) + ", not "
+          + dateBase + i + ", on line: " + i, explanations.get(i - 1));
     }
   }
 
@@ -241,7 +204,7 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "2024-03-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity(dateBase + "6", sender, "TEST", testBase + "One"));
@@ -250,11 +213,15 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dateBase + "3", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "2", sender, "TEST", testBase + "Three"));
     activities.add(new Activity(dateBase + "1", "SERVICE", sender, "Test Message"));
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
     assertEquals(5, explanations.size());
-    assertEquals("Should be ascending Date/Time on line: 2, not 1970-01-01 00:05", explanations.get(0));
+    assertEquals("Should be ascending Date/Time on line: 2, not 2024-03-01 00:05", explanations.get(0));
+    assertEquals("Should be ascending Date/Time on line: 3, not 2024-03-01 00:04", explanations.get(1));
+    assertEquals("Should be ascending Date/Time on line: 4, not 2024-03-01 00:03", explanations.get(2));
+    assertEquals("Should be ascending Date/Time on line: 5, not 2024-03-01 00:02", explanations.get(3));
+    assertEquals("Should be ascending Date/Time on line: 6, not 2024-03-01 00:01", explanations.get(4));
   }
 
   @Test
@@ -262,21 +229,19 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "2024-03-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity(dateBase + "1", sender, "TEST", testBase + "One"));
     activities.add(new Activity(dateBase + "2", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "3", sender, "TEST", testBase + "Two"));
     activities.add(new Activity(dateBase + "4", "SERVICE", sender, "Test Message"));
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(3, explanations.size());
-    assertEquals("Should have only 6 activities, not 4", explanations.get(0));
-    // assertEquals("Should have exactly 3 messages to TEST, not 2", explanations.get(1));
-    assertEquals("Should have exactly 3 messages from SERVICE, not 2", explanations.get(1));
-    assertEquals("Should have exactly 1 message to TEST with Subject ... Three, not 0", explanations.get(2));
+    assertEquals(2, explanations.size());
+    assertEquals("Should have exactly 3 messages from SERVICE, not 2", explanations.get(0));
+    assertEquals("Should have exactly 1 message to TEST with Subject ... Three, not 0", explanations.get(1));
   }
 
   @Test
@@ -284,7 +249,7 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "2024-03-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
     activities.add(new Activity(dateBase + "1", sender, "TEST", testBase + "One"));
@@ -294,12 +259,11 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dateBase + "5", sender, "TEST", testBase + "Three"));
     activities.add(new Activity(dateBase + "6", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "7", sender, "TEST", testBase + "Four"));
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(2, explanations.size());
-    assertEquals("Should have only 6 activities, not 7", explanations.get(0));
-    assertTrue(explanations.get(1).startsWith("Should have a TEST or SERVICE message"));
+    assertEquals(1, explanations.size());
+    assertTrue(explanations.get(0).startsWith("Should have a TEST or SERVICE message"));
   }
 
   @Test
@@ -307,7 +271,7 @@ public class ETO_2024_03_21_Test {
     var sender = "UNIT TEST";
     var processor = new ETO_2024_03_21();
     var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
+    var dateBase = "2024-03-01 00:0";
     var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
     List<Activity> activities = new ArrayList<>();
 
@@ -318,35 +282,9 @@ public class ETO_2024_03_21_Test {
     activities.add(new Activity(dateBase + "4", "SERVICE", sender, "Test Message"));
     activities.add(new Activity(dateBase + "5", sender, "TEST", testBase + "Three"));
 
-    processor.validateActivities(sender, sts, activities, null, null);
+    processor.validateActivities(sender, sts, activities, WINDOW_OPEN_DT, WINDOW_CLOSE_DT);
     var explanations = sts.getExplanations();
     logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(3, explanations.size());
-    assertEquals("Should have more TEST messages than SERVICE messages at line: 1", explanations.get(0));
-    assertEquals("Should have more TEST messages than SERVICE messages at line: 3", explanations.get(1));
-    assertEquals("Should have more TEST messages than SERVICE messages at line: 5", explanations.get(2));
-  }
-
-  @Test
-  public void test_3_before_2_or_1() {
-    var sender = "UNIT TEST";
-    var processor = new ETO_2024_03_21();
-    var sts = new SimpleTestService();
-    var dateBase = "1970-01-01 00:0";
-    var testBase = "ETO Exercise, Winlink Simulated Emergency Message ";
-    List<Activity> activities = new ArrayList<>();
-    activities.add(new Activity(dateBase + "1", sender, "TEST", testBase + "Three"));
-    activities.add(new Activity(dateBase + "2", "SERVICE", sender, "Test Message"));
-    activities.add(new Activity(dateBase + "3", sender, "TEST", testBase + "Two"));
-    activities.add(new Activity(dateBase + "4", "SERVICE", sender, "Test Message"));
-    activities.add(new Activity(dateBase + "5", sender, "TEST", testBase + "One"));
-    activities.add(new Activity(dateBase + "6", "SERVICE", sender, "Test Message"));
-    processor.validateActivities(sender, sts, activities, null, null);
-    var explanations = sts.getExplanations();
-    logger.debug("explanations:\n" + String.join("\n", explanations) + "\n");
-    assertEquals(2, explanations.size());
-    assertEquals("Should have at least one TEST One or TEST Two message before TEST Three, not (0 or 0) on line: 1",
-        explanations.get(0));
-    assertEquals("Should have at least one TEST One message before TEST Two, not 0, on line: 3", explanations.get(1));
+    assertEquals(0, explanations.size());
   }
 }

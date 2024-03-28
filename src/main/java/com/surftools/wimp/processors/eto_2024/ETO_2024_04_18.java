@@ -45,7 +45,6 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  *
  */
 public class ETO_2024_04_18 extends FeedbackProcessor {
-  // public class ETO_2024_04_18 extends FeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_04_18.class);
 
   @Override
