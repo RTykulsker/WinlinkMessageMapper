@@ -347,9 +347,9 @@ public class SimpleTestService implements IService {
       if (altExplanation != null) {
         explanation += altExplanation;
       } else if (value == null) {
-        explanation = entry.label;
+        explanation += entry.label;
       } else {
-        explanation = entry.label + ", not " + value;
+        explanation += entry.label + ", not " + value;
       }
       explanations.add(explanation);
     }
@@ -600,4 +600,7 @@ public class SimpleTestService implements IService {
     return sb.toString();
   }
 
+  public void setExplanationPrefix(String explanationPrefix) {
+    this.explanationPrefix = explanationPrefix;
+  }
 } // end class SimpleTestService

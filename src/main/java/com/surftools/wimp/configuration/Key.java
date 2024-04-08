@@ -93,10 +93,8 @@ public enum Key implements IConfigurationKey {
   OUTBOUND_MESSAGE_PAT_EXEC_PATH("outboundMessage.pat.execPath"), // where to find PAT executable
 
   CMS_AUTHORIZATION_KEY("cms.authorizationKey"), // for CMS access
-  CMS_MOCK_SENDER_PATH("cms.mock.sender.path"), // for keeping mock data out of git
-  CMS_MOCK_SOURCE_PATH("cms.mock.source.path"), // for keeping mock data out of git
-  CMS_MOCK_CHANNEL_PATH("cms.mock.channel.path"), // for keeping mock data out of git
-  CMS_MOCK_GATEWAY_PATH("cms.mock.gateway.path"), // for keeping mock data out of git
+  CMS_CACHE_CHANNELS("cms.cacheChannels"), // onto local disk
+  CMS_CACHE_TRAFFIC("cms.cacheTraffic"), // onto local disk
   ;
 
   private final String key;

@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.HospitalBedMessage;
 import com.surftools.wimp.message.HospitalStatusMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -52,59 +51,9 @@ public class ETO_2024_04_18 extends FeedbackProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  private void handleHospitalBedMessage(HospitalBedMessage m) {
-    getCounter("versions").increment(m.version);
-
-    sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization);
-    sts.test("THIS IS AN EXERCISE should be #EV", "true", String.valueOf(m.isExercise));
-
-    sts.testIsDateTime("Report Date/Time should be correctly formatted", DTF.format(m.formDateTime), DTF);
-    sts.test("Form latitude should be #EV", "42.3539626", m.formLocation.getLatitude());
-    sts.test("Form longitude should be #EV", "-83.0534570", m.formLocation.getLongitude());
-
-    sts.test("Contact Person should be #EV", "Dominic Leblanc", m.contactPerson);
-    sts.test("Contact Phone should be #EV", "555-555-5555", m.contactPhone);
-    sts.test("Contact email should be #EV", "dleblanc@nodomain.com", m.contactEmail);
-
-    sts.test("Emergency Bed count should be #EV", "10", m.emergencyBedCount);
-    sts.test("Emergency Bed notes should be #EV", "Holding 3 patients for surgery", m.emergencyBedNotes);
-
-    sts.test("Pediatrics Bed count should be #EV", "8", m.pediatricsBedCount);
-    sts.testIfEmpty("Pediatrics Bed notes should be empty", m.pediatricsBedNotes);
-
-    sts.test("Medical Bed count should be #EV", "8", m.medicalBedCount);
-    sts.testIfEmpty("Medical Bed notes should be empty", m.medicalBedNotes);
-
-    sts.test("Psychiatry Bed count should be #EV", "4", m.psychiatryBedCount);
-    sts.testIfEmpty("Psychiatry Bed notes should be empty", m.psychiatryBedNotes);
-
-    sts.test("Burn Bed count should be #EV", "6", m.burnBedCount);
-    sts.testIfEmpty("Burn Bed notes should be empty", m.burnBedNotes);
-
-    sts.test("Critical Care Bed count should be #EV", "12", m.criticalBedCount);
-    sts.testIfEmpty("Critical Care Bed notes should be empty", m.criticalBedNotes);
-
-    sts.testIfEmpty("Other (1) label should be empty", m.other1Name);
-    sts.testIfEmpty("Other (1) count should be empty", m.other1BedCount);
-    sts.testIfEmpty("Other (1) notes should be empty", m.other1BedNotes);
-
-    sts.testIfEmpty("Other (2) label should be empty", m.other2Name);
-    sts.testIfEmpty("Other (2) count should be empty", m.other2BedCount);
-    sts.testIfEmpty("Other (2) notes should be empty", m.other2BedNotes);
-
-    sts.test("Total Available beds should be #EV", "48", m.totalBedCount);
-
-    sts.test("Additional Comments should be #EV", "At full Emergency Plan staffing", m.additionalComments);
-
-    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
-  }
-
-  /**
-   * this is the money shot
-   *
-   * @param m
-   */
-  private void handleHospitalStatusMessage(HospitalStatusMessage m) {
+  @Override
+  protected void specificProcessing(ExportedMessage message) {
+    var m = (HospitalStatusMessage) message;
     getCounter("versions").increment(m.version);
 
     sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization);
@@ -137,14 +86,14 @@ public class ETO_2024_04_18 extends FeedbackProcessor {
     sts.test("Box 6e Comms Cell Phone should be #EV", "IMPAIRED", m.commsCell);
     sts.test("Box 6f Comms Satellite Phone should be #EV", "NOT FUNCTIONAL", m.commsSatPhone);
     sts.test("Box 6g Comms Amateur Radio should be #EV", "LIMITED", m.commsHamRadio);
-    sts.test("Box 6 Comments should be #EV", "Winlink functional, Callsign WB6ZZZ", m.commsComments);
+    sts.test("Box 6 Comments should be #EV", "6g Winlink functional, Callsign WB6ZZZ", m.commsComments);
 
     sts.test("Box 7 Utilities Impacted should be #EV", "YES", m.isUtilsImpacted ? "YES" : "NO");
     sts.test("Box 7a Power should be #EV", "NOT FUNCTIONAL", m.utilsPower);
     sts.test("Box 7b Water Landline should be #EV", "NOT FUNCTIONAL", m.utilsWater);
     sts.test("Box 7c Sanitation Fax should be #EV", "UNKNOWN", m.utilsSanitation);
     sts.test("Box 7d HVAC Internet should be #EV", "NOT FUNCTIONAL", m.utilsHVAC);
-    sts.test("Box 7 Comments should be #EV", "No fresh water available", m.utilsComments);
+    sts.test("Box 7 Comments should be #EV", "7b No fresh water available", m.utilsComments);
 
     sts.test("Box 8 Evacuations should be #EV", "YES", m.areEvacConcerns ? "YES" : "NO");
     sts.test("Box 8a Evacuating should be #EV", "YES", m.evacuating);
@@ -157,7 +106,7 @@ public class ETO_2024_04_18 extends FeedbackProcessor {
     sts.testIfEmpty("Box 8d Shelter In Place Status should not be checked", m.shelterInPlaceStatus);
     sts
         .test("Box 8 Comments should be #EV",
-            "“All avail logistics/housekeeping staff employed clearing ER spaces and hallways in preparation for evac operation",
+            "All available logistics/housekeeping staff employed clearing ER spaces and hallways in preparation for evac operation",
             m.evacComments);
 
     sts.test("Box 9 Casualties should be #EV", "YES", m.areCasualties ? "YES" : "NO");
@@ -165,7 +114,7 @@ public class ETO_2024_04_18 extends FeedbackProcessor {
     sts.test("Box 9b Delayed injuries should be #EV", "100", m.casDelayed);
     sts.test("Box 9c Minor injuries should be #EV", "300", m.casMinor);
     sts.test("Box 9d Fatalities should be #EV", "5", m.casFatalities);
-    sts.test("Box 9 Comments should be #EV", "On site staff: 15% RED, 20% YELLOW, 45% GREEN”", m.casComments);
+    sts.test("Box 9 Comments should be #EV", "On-site staff: 15% RED, 40% YELLOW, 45% GREEN", m.casComments);
 
     sts.test("Box 10 Disaster plan activated should be #EV", "YES", m.planActivated ? "YES" : "NO");
     sts.test("Box 10 Command Center activated should be #EV", "YES", m.commandCenterActivated ? "YES" : "NO");
@@ -176,23 +125,6 @@ public class ETO_2024_04_18 extends FeedbackProcessor {
             "Preparing non-dischargeable patients for State EOC managed Mass Evacuation", m.additionalComments);
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
-  }
-
-  @Override
-  protected void specificProcessing(ExportedMessage message) {
-    switch (message.getMessageType()) {
-    case HOSPITAL_STATUS:
-
-      handleHospitalStatusMessage((HospitalStatusMessage) message);
-      break;
-
-    case HOSPITAL_BED:
-      handleHospitalBedMessage((HospitalBedMessage) message);
-      break;
-
-    default:
-      logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
-    } // end switch
   }
 
 }

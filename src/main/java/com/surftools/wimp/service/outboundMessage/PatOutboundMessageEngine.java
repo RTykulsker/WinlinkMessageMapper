@@ -106,7 +106,10 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
     }
 
     // see https://winlink.org/B2F
-    final String messageId = generateMid(m.toString());
+    String messageId = m.messageId();
+    if (m.messageId() == null || m.messageId().isEmpty()) {
+      messageId = generateMid(m.toString());
+    }
 
     final String SEP = "\r\n";
 
@@ -210,7 +213,7 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
     return String.join(",", list);
   }
 
-  private String generateMid(String string) {
+  public static String generateMid(String string) {
     try {
       MessageDigest md = MessageDigest.getInstance("MD5");
       String stringToHash = string + System.nanoTime();

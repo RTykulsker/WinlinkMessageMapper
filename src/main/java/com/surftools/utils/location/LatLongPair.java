@@ -51,6 +51,7 @@ public class LatLongPair {
   public static final LatLongPair ZERO_ZERO = new LatLongPair(0, 0);
   public static final LatLongPair NORTH_POLE = new LatLongPair(90, 0);
   public static final LatLongPair SOUTH_POLE = new LatLongPair(-90, 0);
+  public static final LatLongPair INVALID = new LatLongPair(null, null);
 
   private final String latitude;
   private final String longitude;

@@ -28,9 +28,15 @@ SOFTWARE.
 package com.surftools.wimp.service.cms;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import com.surftools.wimp.core.IWritableTable;
 
 /**
  * response for TrafficLogsSenderGet and TrafficLogsSourceGet
+ *
+ * for reasons unknown, the TrafficLogsXXX documentation has disappeared from the web site and the result does not
+ * include mode (aka session type)
  */
 public record TrafficRecord( //
     LocalDateTime dateTime, //
@@ -45,11 +51,67 @@ public record TrafficRecord( //
     String subject, //
     int size, //
     int attachments, //
-    int frequency) implements Comparable<TrafficRecord> {
+    int frequency) implements IWritableTable {
+
+  final static String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
+  final static DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
+  @Override
+  public String[] getHeaders() {
+    return new String[] { //
+        "DateTime", //
+        "Site", //
+        "Event", //
+        "MessageId", //
+        "ClientType", //
+        "Callsign", //
+        "Gateway", //
+        "Source", //
+        "Sender", //
+        "Subject", //
+        "Size", //
+        "Attachments", //
+        "Frequency" };
+  };
 
   @Override
-  public int compareTo(TrafficRecord o) {
+  public String[] getValues() {
+    return new String[] { //
+        DTF.format(dateTime), //
+        site, //
+        event, //
+        messageId, //
+        String.valueOf(clientType), //
+        callsign, //
+        gateway, //
+        source, //
+        sender, //
+        subject, //
+        String.valueOf(size), //
+        String.valueOf(attachments), //
+        String.valueOf(frequency) };
+  }
+
+  @Override
+  public int compareTo(IWritableTable other) {
+    var o = (TrafficRecord) other;
     return dateTime.compareTo(o.dateTime);
+  }
+
+  public static TrafficRecord fromFields(String[] f) {
+    return new TrafficRecord( //
+        LocalDateTime.parse(f[0], DTF), //
+        f[1], //
+        f[2], //
+        f[3], //
+        Integer.parseInt(f[4]), //
+        f[5], //
+        f[6], //
+        f[7], //
+        f[8], //
+        f[9], //
+        Integer.valueOf(f[10]), //
+        Integer.valueOf(f[11]), //
+        Integer.valueOf(f[12]));
   }
 
 }

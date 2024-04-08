@@ -56,6 +56,28 @@ public class Dev_ETO_Resume extends FeedbackProcessor {
     EtoResumeMessage m = (EtoResumeMessage) message;
     getCounter("versions").increment(m.version);
 
+    getCounter("IS-100").increment(m.hasIs100);
+    getCounter("IS-200").increment(m.hasIs200);
+    getCounter("IS-700").increment(m.hasIs700);
+    getCounter("IS-800").increment(m.hasIs800);
+    getCounter("IS-2200").increment(m.hasIs2200);
+
+    getCounter("EC-001").increment(m.hasEc001);
+    getCounter("EC-016").increment(m.hasEc016);
+    getCounter("OR ACES").increment(m.hasAces);
+    getCounter("Skywarn").increment(m.hasSkywarn);
+
+    getCounter("AuxCom").increment(m.hasAuxComm);
+    getCounter("COM-T").increment(m.hasComT);
+    getCounter("COM-L").increment(m.hasComL);
+
+    getCounter("# Served Agencies").increment(m.agencies.size());
+
+    for (var agency : m.agencies) {
+      getCounter("Agency").increment(agency);
+    }
+
+    getCounter("Comments present").increment(m.comments.isBlank() ? 0 : 1);
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
   }
 

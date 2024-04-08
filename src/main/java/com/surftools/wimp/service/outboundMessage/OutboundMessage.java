@@ -36,6 +36,10 @@ public record OutboundMessage(String from, String to, String subject, String bod
     this(in.from, in.to, in.subject, in.body, messageId);
   }
 
+  public static OutboundMessage fromFields(String[] fields) {
+    return new OutboundMessage(fields[0], fields[1], fields[2], fields[3], fields[4]);
+  }
+
   private static String[] getStaticHeaders() {
     return new String[] { "From", "To", "Subject", "Body", "MessageId", };
   }

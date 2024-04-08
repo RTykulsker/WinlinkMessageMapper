@@ -27,6 +27,11 @@ SOFTWARE.
 
 package com.surftools.wimp.service.rmsGateway;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +43,9 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.IService;
 import com.surftools.wimp.service.cms.ChannelRecord;
 import com.surftools.wimp.service.cms.CmsWebService;
@@ -56,35 +64,61 @@ public class RmsGatewayService implements IService {
   private Set<String> senderSet = new HashSet<>();
   private boolean isInitialized;
 
+  private boolean isChannelDataCached = false;
+  private boolean isTrafficDataCached = false;
+
   public RmsGatewayService(IConfigurationManager cm) {
     this.cm = cm;
+
+    isChannelDataCached = cm.getAsBoolean(Key.CMS_CACHE_CHANNELS);
+    isTrafficDataCached = cm.getAsBoolean(Key.CMS_CACHE_TRAFFIC);
 
     var authKey = cm.getAsString(Key.CMS_AUTHORIZATION_KEY);
     if (authKey != null && authKey.length() > 0) {
       try {
         cmsService = new CmsWebService(cm);
-        var channelList = cmsService.channelList();
-        logger.info("received " + channelList.size() + " channel records");
-        for (var cr : channelList) {
-          var channelKey = new ChannelKey(cr.baseCallsign(), cr.frequency());
-          channelMap.put(channelKey, cr);
+        if (isChannelDataCached) {
+          readChannelData();
+          isInitialized = true;
         }
-        isInitialized = true;
+
+        int dupCount = 0;
+        if (!isChannelDataCached || (isChannelDataCached && channelMap.size() == 0)) {
+          var channelList = cmsService.channelList();
+          logger.info("received " + channelList.size() + " channel records");
+          for (var cr : channelList) {
+            var channelKey = new ChannelKey(cr.baseCallsign(), cr.frequency());
+            channelMap.put(channelKey, cr);
+          }
+          logger.info("dupCount: " + dupCount);
+          isInitialized = true;
+          writeChannelData();
+        }
+
+        if (isTrafficDataCached) {
+          readTrafficData();
+          isInitialized = true;
+        }
       } catch (Exception e) {
         logger.error("Exception initializing: " + getName() + ", " + e.getLocalizedMessage());
       }
     }
+
   }
 
   public RmsGatewayResult getLocationOfRmsGateway(String sender, String messageId) {
     if (!isInitialized) {
-      return new RmsGatewayResult(sender, messageId, false, null, null, 0);
+      return new RmsGatewayResult(sender, messageId, false, null, null, 0, -1);
     }
 
     // assume our web service calls are expensive, so cache the results
     if (!senderSet.contains(sender)) {
       var trafficList = cmsService.trafficLocSenderGet(sender);
       processTrafficList(trafficList);
+
+      if (isTrafficDataCached) {
+        writeTrafficData();
+      }
     }
 
     var trafficKey = new TrafficKey(sender, messageId);
@@ -92,7 +126,7 @@ public class RmsGatewayService implements IService {
 
     RmsGatewayResult result = null;
     if (tr == null) {
-      result = new RmsGatewayResult(sender, messageId, false, null, null, 0);
+      result = new RmsGatewayResult(sender, messageId, false, null, null, 0, -1);
     } else {
       var channelKey = new ChannelKey(tr.gateway(), tr.frequency());
 
@@ -101,9 +135,10 @@ public class RmsGatewayService implements IService {
       if (channelRecord != null) {
         var gridsquare = channelRecord.gridsquare();
         location = new LatLongPair(gridsquare);
-        result = new RmsGatewayResult(sender, messageId, true, location, channelRecord.callsign(), tr.frequency());
+        result = new RmsGatewayResult(sender, messageId, true, location, channelRecord.callsign(), tr.frequency(),
+            channelRecord.mode());
       } else {
-        result = new RmsGatewayResult(sender, messageId, true, location, tr.gateway(), tr.frequency());
+        result = new RmsGatewayResult(sender, messageId, true, location, tr.gateway(), tr.frequency(), -1);
       }
 
       logger.info(result.toString());
@@ -123,8 +158,12 @@ public class RmsGatewayService implements IService {
         sender = tr.sender();
         var trafficKey = new TrafficKey(sender, tr.messageId());
         trafficMap.put(trafficKey, tr);
+        logger.debug("adding: trafficKey: " + trafficKey.toString() + ", trafficRecord: " + tr.toString());
         senderSet.add(sender);
         ++acceptedCount;
+      } else {
+        var trafficKey = new TrafficKey(sender, tr.messageId());
+        logger.debug("skipping: trafficKey: " + trafficKey.toString() + ", trafficRecord: " + tr.toString());
       }
     }
     logger
@@ -144,7 +183,67 @@ public class RmsGatewayService implements IService {
   record TrafficKey(String sender, String messageId) {
   }
 
+  /**
+   * ChannelKey *should* contain mode, but since the TrafficLogXXX calls don't return mode, why bother
+   */
   record ChannelKey(String baseCallsign, int frequency) {
   }
 
+  private void readChannelData() {
+    var channelDataPath = Path.of(cm.getAsString(Key.PATH), "channelData.csv");
+    var data = ReadProcessor.readCsvFileIntoFieldsArray(channelDataPath);
+    for (var fields : data) {
+      var channelRecord = ChannelRecord.fromFields(fields);
+      var channelKey = new ChannelKey(channelRecord.baseCallsign(), channelRecord.frequency());
+      channelMap.put(channelKey, channelRecord);
+    }
+    logger
+        .info("read " + data.size() + " records from " + channelDataPath.toString() + ", stored " + channelMap.size()
+            + " records into channelMap");
+  }
+
+  private void writeChannelData() {
+    var oldPath = Path.of(cm.getAsString(Key.PATH), "channelData.csv");
+    if (oldPath.toFile().exists()) {
+      var timeStamp = LocalDateTime.now().toString();
+      var newPath = Path.of(oldPath.toString() + "-" + timeStamp + ".csv");
+      try {
+        Files.move(oldPath, newPath); // rename
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    var values = new ArrayList<IWritableTable>(channelMap.values());
+    WriteProcessor.writeTable(values, oldPath);
+    logger.info("wrote " + channelMap.values().size() + " channel records from " + oldPath.toString());
+  }
+
+  private void readTrafficData() {
+    var trafficDataPath = Path.of(cm.getAsString(Key.PATH), "trafficData.csv");
+    var data = ReadProcessor.readCsvFileIntoFieldsArray(trafficDataPath);
+    for (var fields : data) {
+      var trafficRecord = TrafficRecord.fromFields(fields);
+      var trafficKey = new TrafficKey(trafficRecord.messageId(), trafficRecord.sender());
+      trafficMap.put(trafficKey, trafficRecord);
+    }
+    logger
+        .info("read " + data.size() + " records from " + trafficDataPath.toString() + ", stored " + trafficMap.size()
+            + " records into channelMap");
+  }
+
+  private void writeTrafficData() {
+    var oldPath = Path.of(cm.getAsString(Key.PATH), "trafficData.csv");
+    if (oldPath.toFile().exists()) {
+      var timeStamp = LocalDateTime.now().toString();
+      var newPath = Path.of(oldPath.toString() + "-" + timeStamp + ".csv");
+      try {
+        Files.move(oldPath, newPath); // rename
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    var values = new ArrayList<IWritableTable>(trafficMap.values());
+    WriteProcessor.writeTable(values, oldPath);
+    logger.info("wrote " + trafficMap.values().size() + " traffic records from " + oldPath.toString());
+  }
 }

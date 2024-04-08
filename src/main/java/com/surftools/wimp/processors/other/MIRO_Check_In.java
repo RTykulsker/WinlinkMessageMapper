@@ -63,8 +63,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class MiroProcessor extends AbstractBaseProcessor {
-  private static Logger logger = LoggerFactory.getLogger(MiroProcessor.class);
+public class MIRO_Check_In extends AbstractBaseProcessor {
+  private static Logger logger = LoggerFactory.getLogger(MIRO_Check_In.class);
 
   private static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 

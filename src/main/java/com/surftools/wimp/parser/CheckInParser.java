@@ -50,6 +50,7 @@ import com.surftools.wimp.message.ExportedMessage;
 public class CheckInParser extends AbstractBaseParser {
   private static final Logger logger = LoggerFactory.getLogger(CheckInParser.class);
   private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
@@ -124,10 +125,13 @@ public class CheckInParser extends AbstractBaseParser {
 
   private LocalDateTime parseFormDateTime() {
     LocalDateTime formDateTime = null;
-    try {
-      formDateTime = LocalDateTime.parse(getStringFromXml("datetime"), DT_FORMATTER);
-    } catch (Exception e) {
-      ;
+    var s = getStringFromXml("datetime");
+    if (s != null) {
+      try {
+        formDateTime = LocalDateTime.parse(s.trim(), DT_FORMATTER);
+      } catch (Exception e) {
+        formDateTime = LocalDateTime.from(ALT_DTF.parse(s.trim()));
+      }
     }
     return formDateTime;
   }

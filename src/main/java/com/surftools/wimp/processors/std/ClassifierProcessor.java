@@ -183,7 +183,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return MessageType.MIRO_CHECK_IN;
     } else if (subject.equals("Position Report")) {
       return MessageType.POSITION;
-    } else if (subject.startsWith("ETO Participant resume") || subject.startsWith("ETO Resume")) {
+    } else if (subject.startsWith("ETO Participant resume") || subject.startsWith("ETO Resume")
+        || subject.startsWith("ETO-RESUME")) {
       return MessageType.ETO_RESUME;
     } else if (subject.startsWith("I Am Safe Message From") && subject.endsWith(" - DO NOT REPLY!")) {
       return MessageType.RRI_QUICK_WELFARE;

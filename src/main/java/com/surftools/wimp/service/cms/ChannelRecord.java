@@ -28,13 +28,43 @@ SOFTWARE.
 package com.surftools.wimp.service.cms;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import com.surftools.wimp.core.IWritableTable;
 
 public record ChannelRecord(LocalDateTime dateTime, String callsign, String baseCallsign, String gridsquare,
     int frequency, int mode, int baud, int power, int height, int gain, int direction, String operatingHours,
-    String serviceCode) implements Comparable<ChannelRecord> {
+    String serviceCode) implements IWritableTable {
+
+  final static String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
+  final static DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
 
   @Override
-  public int compareTo(ChannelRecord o) {
+  public String[] getHeaders() {
+    return new String[] { "DateTime", "Callsign", "BaseCallsign", "Gridsquare", //
+        "Frequency", "Mode", "Baud", //
+        "Power", "Height", "Gain", //
+        "Direction", "Hours", "ServiceCode" };
+  }
+
+  @Override
+  public String[] getValues() {
+    return new String[] { DTF.format(dateTime), callsign, baseCallsign, gridsquare, //
+        String.valueOf(frequency), String.valueOf(mode), String.valueOf(baud), //
+        String.valueOf(power), String.valueOf(height), String.valueOf(gain), //
+        String.valueOf(direction), operatingHours, serviceCode };
+  }
+
+  public static ChannelRecord fromFields(String[] f) {
+    return new ChannelRecord(LocalDateTime.parse(f[0], DTF), f[1], f[2], f[3], //
+        Integer.valueOf(f[4]), Integer.valueOf(f[5]), Integer.valueOf(f[6]), //
+        Integer.valueOf(f[7]), Integer.valueOf(f[8]), Integer.valueOf(f[9]), //
+        Integer.valueOf(f[10]), f[11], f[12]);
+  }
+
+  @Override
+  public int compareTo(IWritableTable other) {
+    var o = (ChannelRecord) other;
     return dateTime.compareTo(o.dateTime);
   }
 }

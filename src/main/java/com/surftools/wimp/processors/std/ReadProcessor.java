@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -471,6 +472,51 @@ public class ReadProcessor extends AbstractBaseProcessor {
     // last ditch
     return addresses.get(0);
 
+  }
+
+  /**
+   * semi-generic method to read a CSV s into a list of array of String fields
+   *
+   * @param inputPath
+   * @return
+   */
+  public static List<String[]> readCsvStringIntoFieldsArray(String inputString) {
+    return readCsvStringIntoFieldsArray(inputString, ',', true, 1);
+  }
+
+  /**
+   * semi-generic method to read a CSV s into a list of array of String fields
+   *
+   * @param inputPath
+   * @return
+   */
+  public static List<String[]> readCsvStringIntoFieldsArray(String inputString, char separator, boolean ignoreQuotes,
+      int skipLines) {
+    var list = new ArrayList<String[]>();
+
+    var rowCount = -1;
+    try {
+      Reader reader = new StringReader(inputString);
+      CSVParser parser = new CSVParserBuilder() //
+          .withSeparator(separator) //
+            .withIgnoreQuotations(ignoreQuotes) //
+            .build();
+      CSVReader csvReader = new CSVReaderBuilder(reader) //
+          .withSkipLines(skipLines)//
+            .withCSVParser(parser)//
+            .build();
+      rowCount = 1;
+      String[] fields = null;
+      while ((fields = csvReader.readNext()) != null) {
+        ++rowCount;
+        list.add(fields);
+      }
+    } catch (Exception e) {
+      logger.error("Exception processing " + inputString + ", row " + rowCount + ", " + e.getLocalizedMessage());
+    }
+
+    logger.info("returning: " + list.size() + " records");
+    return list;
   }
 
   /**

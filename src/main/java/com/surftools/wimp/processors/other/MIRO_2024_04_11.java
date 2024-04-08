@@ -25,15 +25,17 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.eto_2024;
+package com.surftools.wimp.processors.other;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.Ics309Message.Activity;
@@ -42,14 +44,14 @@ import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2024-05-16 Semi-Annual Drill: ICS-309 from WLE-generated CSV, messages to multiple RMS
+ * Processor for 2024-04-10 Exercise: ICS-309 from WLE-generated CSV
  *
  *
  * @author bobt
  *
  */
-public class ETO_2024_05_16 extends FeedbackProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_05_16.class);
+public class MIRO_2024_04_11 extends FeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(MIRO_2024_04_11.class);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -57,6 +59,7 @@ public class ETO_2024_05_16 extends FeedbackProcessor {
 
     Ics309Message.setNDisplayActivities(8);
     doStsFieldValidation = false;
+    messageTypesRequiringSecondaryAddress = Set.of(MessageType.MIRO_CHECK_IN);
   }
 
   @Override
@@ -68,8 +71,8 @@ public class ETO_2024_05_16 extends FeedbackProcessor {
       logger.info("### call: " + m.from + "\n" + sts.toString());
     }
 
-    sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
-    sts.test("Task # should be #EV", "240321", m.taskNumber);
+    sts.test("Agency/Group name should be #EV", "MIRO Exercise", m.organization);
+    sts.test("Task # should be #EV", "240411", m.taskNumber);
 
     try {
       sts.test("Date/Time Prepared properly formatted", true);
@@ -84,7 +87,7 @@ public class ETO_2024_05_16 extends FeedbackProcessor {
       sts.test("Date/Time Prepared properly formatted", false);
     }
 
-    sts.test("Operational Period should be #EV", "03/19-03/22", m.operationalPeriod);
+    sts.test("Operational Period should be #EV", "Today", m.operationalPeriod);
     sts.test("Task Name should be #EV", "ICS 309 Form Via Winlink Express Generated CSV", m.taskName);
     sts.testIfPresent("Operator Name should be provided", m.operatorName);
     sts.test("Station Id should be #EV", m.from, m.stationId);
@@ -143,7 +146,7 @@ public class ETO_2024_05_16 extends FeedbackProcessor {
     var testMessage3Count = 0;
     var serviceMessageCount = 0;
 
-    var lastDT = LocalDateTime.of(1888, 1, 1, 0, 0, 0);
+    var lastDT = LocalDateTime.of(2024, 4, 1, 0, 0, 0);
     LocalDateTime dt = null;
     var lineNumber = 0;
     for (var a : activities) {
@@ -177,7 +180,7 @@ public class ETO_2024_05_16 extends FeedbackProcessor {
         lastDT = dt;
       }
 
-      final var testSubject = "ETO Exercise, Winlink Simulated Emergency Message ";
+      final var testSubject = "MIRO Exercise, Winlink Simulated Emergency Message ";
       var isTestMessage1 = !isNull(a.from()) && a.from().equals(sender) //
           && !isNull(a.to()) && a.to().equals("TEST") //
           && !isNull(a.subject()) && sts.compareWords(a.subject(), testSubject + "One");

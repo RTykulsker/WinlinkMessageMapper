@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,11 +96,12 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   private Map<MessageType, TypeEntry> typeEntryMap = new HashMap<>();
   private TypeEntry te;
-  private Set<MessageType> acceptableMessageTypesSet = new HashSet<>();
+  private Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
   protected SimpleTestService sts = new SimpleTestService();
   protected ExportedMessage message;
   protected String sender;
+  protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -127,19 +129,31 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   @Override
   public void process() {
     var senderIterator = mm.getSenderIterator();
-    while (senderIterator.hasNext()) {
+    while (senderIterator.hasNext()) { // loop over senders
       sender = senderIterator.next();
-      for (var message : mm.getAllMessagesForSender(sender)) {
-        if (acceptableMessageTypesSet.size() > 0) {
-          if (!acceptableMessageTypesSet.contains(message.getMessageType())) {
+      // how to iterate over messages?
+      if (acceptableMessageTypesSet.size() > 0) {
+        // process all messages for a type, in chronological order, in type order
+        var map = mm.getMessagesForSender(sender);
+        for (var messageType : acceptableMessageTypesSet) {
+          var typedMessages = map.get(messageType);
+          if (typedMessages == null || typedMessages.size() == 0) {
             continue;
           }
-        }
-        beginCommonProcessing(message);
-        specificProcessing(message);
-        endCommonProcessing(message);
-      }
-    }
+          for (var message : typedMessages) {
+            beginCommonProcessing(message);
+            specificProcessing(message);
+            endCommonProcessing(message);
+          } // end processing for a message
+        } // end processing for a messageType
+      } else {
+        for (var message : mm.getAllMessagesForSender(sender)) {
+          beginCommonProcessing(message);
+          specificProcessing(message);
+          endCommonProcessing(message);
+        } // end processing for a message
+      } // end if no specific acceptableMessageTypes
+    } // end loop over senders
   }
 
   protected void beginCommonProcessing(ExportedMessage message) {
@@ -154,14 +168,17 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     sts.reset(sender);
     ++te.ppCount;
 
-    var addressList = message.toList + "," + message.ccList;
-    sts.test("To and/or CC addresses should contain ETO-BK", addressList.toUpperCase().contains("ETO-BK"), null);
+    if (messageTypesRequiringSecondaryAddress.size() == 0
+        || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
+      var addressList = message.toList + "," + message.ccList;
+      sts.test("To and/or CC addresses should contain ETO-BK", addressList.toUpperCase().contains("ETO-BK"), null);
+    }
 
     windowOpenDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_OPEN)));
-    sts.testOnOrAfter("Message should be sent on or after #EV", windowOpenDT, message.msgDateTime, DTF);
+    sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
 
     windowCloseDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_CLOSE)));
-    sts.testOnOrBefore("Message should be sent on or before #EV", windowCloseDT, message.msgDateTime, DTF);
+    sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
     te.feedbackLocation = message.msgLocation;
     if (te.feedbackLocation == null || te.feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
@@ -280,6 +297,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }
     } // end loop over message types
+
   }
 
   public void setExtraOutboundMessageText(String extraOutboundMessageText) {
