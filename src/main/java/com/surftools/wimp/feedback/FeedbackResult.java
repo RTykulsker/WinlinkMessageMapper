@@ -53,7 +53,7 @@ public record FeedbackResult(String call, String latitude, String longitude, Str
   }
 
   public FeedbackResult updateLocation(LatLongPair newLocation) {
-    return new FeedbackResult(this.call, newLocation.getLatitude(), newLocation.getLongitude(),
-        this.feedbackCountString, this.feedback);
+    return new FeedbackResult(this.call, newLocation.getLatitude(), newLocation.getLongitude(), this.feedback,
+        this.feedbackCountString);
   }
 }

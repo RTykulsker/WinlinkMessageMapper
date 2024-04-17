@@ -97,6 +97,13 @@ public class RmsGatewayService implements IService {
 
         if (isTrafficDataCached) {
           readTrafficData();
+
+          for (var trafficKey : trafficMap.keySet()) {
+            var sender = trafficKey.sender;
+            senderSet.add(sender);
+          }
+          logger.info("sender set has " + senderSet.size() + " entries");
+
           isInitialized = true;
         }
       } catch (Exception e) {
@@ -108,7 +115,7 @@ public class RmsGatewayService implements IService {
 
   public RmsGatewayResult getLocationOfRmsGateway(String sender, String messageId) {
     if (!isInitialized) {
-      return new RmsGatewayResult(sender, messageId, false, null, null, 0, -1);
+      return new RmsGatewayResult(sender, messageId, false, null, null, 0, -1, null);
     }
 
     // assume our web service calls are expensive, so cache the results
@@ -126,7 +133,7 @@ public class RmsGatewayService implements IService {
 
     RmsGatewayResult result = null;
     if (tr == null) {
-      result = new RmsGatewayResult(sender, messageId, false, null, null, 0, -1);
+      result = new RmsGatewayResult(sender, messageId, false, null, null, 0, -1, null);
     } else {
       var channelKey = new ChannelKey(tr.gateway(), tr.frequency());
 
@@ -135,10 +142,13 @@ public class RmsGatewayService implements IService {
       if (channelRecord != null) {
         var gridsquare = channelRecord.gridsquare();
         location = new LatLongPair(gridsquare);
-        result = new RmsGatewayResult(sender, messageId, true, location, channelRecord.callsign(), tr.frequency(),
-            channelRecord.mode());
+        result = new RmsGatewayResult(sender, messageId, true, location, channelRecord.callsign(), //
+            tr.frequency(), channelRecord.mode(), channelRecord.baseCallsign());
       } else {
-        result = new RmsGatewayResult(sender, messageId, true, location, tr.gateway(), tr.frequency(), -1);
+        var index = tr.gateway().indexOf("-1");
+        var baseCallSign = (index == -1) ? tr.gateway() : tr.gateway().substring(0, index - 1);
+        result = new RmsGatewayResult(sender, messageId, true, location, tr.gateway(), //
+            tr.frequency(), -1, baseCallSign);
       }
 
       logger.info(result.toString());
@@ -223,7 +233,7 @@ public class RmsGatewayService implements IService {
     var data = ReadProcessor.readCsvFileIntoFieldsArray(trafficDataPath);
     for (var fields : data) {
       var trafficRecord = TrafficRecord.fromFields(fields);
-      var trafficKey = new TrafficKey(trafficRecord.messageId(), trafficRecord.sender());
+      var trafficKey = new TrafficKey(trafficRecord.sender(), trafficRecord.messageId());
       trafficMap.put(trafficKey, trafficRecord);
     }
     logger

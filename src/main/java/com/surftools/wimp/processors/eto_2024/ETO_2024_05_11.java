@@ -27,20 +27,28 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.eto_2024;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
@@ -64,16 +72,19 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2024_05_11 extends FeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_05_11.class);
 
-  private static final DecimalFormat df = new DecimalFormat("#.000###");
+  private static final DecimalFormat MHZ_FORMATTER = new DecimalFormat("#.000###");
+  private static final DateTimeFormatter KML_FORMATTER = DateTimeFormatter.ofPattern("EEE HH:mm");
+
   private static final String SUBJECT_START = "ETO 2024 Spring Drill - ";
 
   private static final Set<String> TELNET_MODES = Set.of("Telnet", "Mesh");
   private static final Set<String> FM_MODES = Set.of("Packet", "VARA FM");
   private static final Set<String> HF_MODES = Set.of("Pactor", "Ardop", "VARA HF", "Robust Packet");
 
-  private static class Summary implements IWritableTable {
+  private class Summary implements IWritableTable {
     public String sender;
     public LatLongPair location;
+
     public int feedbackCount;
     public String feedback;
 
@@ -84,8 +95,20 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     public int checkInReceiveCount; // number of check in messages received
     public int ics309ReceiveCount; // number of ics-309 messages received (0 or 1)
     public int ics309LogCount; // number of non-empty ics-309 activities
+    public int ics309CheckInSubjectCount; // number of valid Check In subjects
 
-    public Map<Zone, List<String>> zoneMIdListMap = new HashMap<>();
+    public Map<Zone, List<String>> zoneMIdListMap = new LinkedHashMap<>();
+
+    public Summary() {
+      for (var zone : Zone.values()) {
+        // skip over synthetic zones
+        if (zone.modeSet == null) {
+          continue;
+        }
+        zoneMIdListMap.put(zone, new ArrayList<String>());
+      }
+      feedback = "";
+    }
 
     @Override
     public int compareTo(IWritableTable other) {
@@ -95,30 +118,102 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
 
     @Override
     public String[] getHeaders() {
-      return new String[] {};
+
+      var list = new ArrayList<String>(List
+          .of("From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
+              "Check In Count", "Ics309 Count", "Ics309 Activities", "Valid Check In Zones"));
+
+      for (var zone : zoneMIdListMap.keySet()) {
+        list.add(zone.toString());
+      }
+      return list.toArray(new String[list.size()]);
     }
 
     @Override
     public String[] getValues() {
-      return new String[] {};
+      var latitude = (location != null && location.isValid()) ? location.getLatitude() : "0.0";
+      var longitude = (location != null && location.isValid()) ? location.getLongitude() : "0.0";
+
+      var list = new ArrayList<String>(List
+          .of(sender, latitude, longitude, String.valueOf(feedbackCount), feedback.trim(), //
+              String.valueOf(checkInReceiveCount), String.valueOf(ics309ReceiveCount), String.valueOf(ics309LogCount),
+              String.valueOf(ics309CheckInSubjectCount)));
+
+      for (var zoneList : zoneMIdListMap.values()) {
+        list.add(String.valueOf(zoneList.size()));
+      }
+
+      return list.toArray(new String[list.size()]);
     }
 
-    public void aggregate(Detail detail, CheckInMessage m) {
+    public void aggregate(Detail detail, CheckInMessage m, SimpleTestService sts) {
+
+      if (checkInReceiveCount == 0) {
+        // first check in, assert that there is an ICS-309 while still in process()/specificProcessing()
+        var ics309MessageList = mm.getMessagesForSender(detail.sender).get(MessageType.ICS_309);
+        sts.test("ICS-309 message sent", ics309MessageList != null);
+      }
+
+      // last wins
+      sender = m.from;
+      location = m.mapLocation;
+
       details.add(detail);
       checkInMessages.add(m);
-
       ++checkInReceiveCount;
-      // TODO
 
+      var zone = Zone.fromId(detail.apiZoneId);
+      if (zone.modeSet != null) {
+        var list = zoneMIdListMap.get(zone);
+        list.add(detail.messageId);
+        // check for multiple messages to same ZoneId
+        if (list.size() > 1) {
+          sts.test("Zone id: " + detail.apiZoneId + " has multiple messages", false, String.join(", ", list));
+        } else {
+          sts.test("Zone id: " + detail.apiZoneId + " has multiple messages", true);
+        }
+      }
+
+      if (detail.feedbackCount > 0) {
+        feedbackCount += detail.feedbackCount;
+        feedback += "\n" + detail.feedback;
+      }
+
+      var gatewayMap = baseGatewayMap
+          .getOrDefault(detail.baseGatewayCall, new LinkedHashMap<GatewayKey, List<Detail>>());
+      var key = new GatewayKey(detail.frequency, detail.rmsGateway);
+      var list = gatewayMap.getOrDefault(key, new ArrayList<Detail>());
+      list.add(detail);
+      gatewayMap.put(key, list);
+      baseGatewayMap.put(detail.baseGatewayCall, gatewayMap);
+
+      // last wins
+      var baseLocation = detail.gatewayLocation;
+      baseGatewayLocationMap.put(detail.baseGatewayCall, baseLocation);
     }
 
-    public void aggregate(Ics309Message m, int validActivityCount) {
+    public void aggregate(Ics309Message m, ActivitySummary activitySummary, SimpleTestService sts) {
       ics309Messages.add(m);
 
-      ++ics309ReceiveCount;
-      ics309LogCount += validActivityCount;
+      sts.test("At least 1 Winlink Check In message sent", checkInReceiveCount > 0);
 
-      // TODO
+      ++ics309ReceiveCount;
+      ics309LogCount += activitySummary.validActivityCount;
+      ics309CheckInSubjectCount += activitySummary.validCheckInSubjectCount;
+
+      // no check ins, wrong count of check ins
+      sts
+          .test("ICS-309 log count of activities should match # of Check In messages received",
+              activitySummary.validCheckInSubjectCount == checkInReceiveCount,
+              "ICS-309 log has " + activitySummary.validCheckInSubjectCount
+                  + " messages with valid ZoneId in Subject, but " + checkInReceiveCount
+                  + " Check In messages received");
+
+      if (sts.getExplanations().size() > 0) {
+        feedbackCount += sts.getExplanations().size();
+        feedback += "\n" + String.join("\n", sts.getExplanations());
+      }
+
     }
 
   }
@@ -127,15 +222,17 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     public String sender;
     public String messageId;
     public LocalDateTime dateTime;
-    public LatLongPair location;
+    public LatLongPair senderLocation;
     public int feedbackCount;
     public String feedback;
     public String apiZoneId;
     public String commentsZoneId;
     public String subjectZoneId;
     public String rmsGateway;
-    public String frequency;
+    public int frequency;
     public String distanceMiles;
+    public String baseGatewayCall;
+    public LatLongPair gatewayLocation;
 
     @Override
     public int compareTo(IWritableTable other) {
@@ -150,31 +247,59 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "From", "MId", "Date/Time", "Latitude", "Longitude", //
+      return new String[] { "From", "MId", "Date/Time", "Sender Latitude", "Sender Longitude", //
           "Feedback Count", "Feedback", "API Zone Id", "Comments Zone Id", "Subject Zone Id", //
-          "RMS Gateway", "Frequency", "Distance (MI)" };
+          "RMS Gateway", "Frequency", "Distance (MI)", //
+          "Base Gateway", "Gateway Latitude", "Gateway Longitude" };
     }
 
     @Override
     public String[] getValues() {
-      var lat = location.isValid() ? location.getLatitude() : "0.0";
-      var lon = location.isValid() ? location.getLongitude() : "0.0";
-      return new String[] { sender, messageId, DTF.format(dateTime), lat, lon, //
+      var senderLatitude = senderLocation.isValid() ? senderLocation.getLatitude() : "0.0";
+      var senderLongitude = senderLocation.isValid() ? senderLocation.getLongitude() : "0.0";
+      var gatewayLatitude = gatewayLocation.isValid() ? gatewayLocation.getLatitude() : "0.0";
+      var gatewayLongitude = gatewayLocation.isValid() ? gatewayLocation.getLongitude() : "0.0";
+      var freqString = (frequency == -1) ? "n/a" : MHZ_FORMATTER.format(frequency / 1_000_000d) + " MHz";
+
+      return new String[] { sender, messageId, DTF.format(dateTime), senderLatitude, senderLongitude, //
           String.valueOf(feedbackCount), feedback, apiZoneId, commentsZoneId, subjectZoneId, //
-          rmsGateway, frequency, distanceMiles };
+          rmsGateway, freqString, distanceMiles, //
+          baseGatewayCall, gatewayLatitude, gatewayLongitude };
     }
   }
+
+  private class GatewayKey implements Comparable<GatewayKey> {
+    public final int frequency;
+    public final String callsign;
+
+    public GatewayKey(int frequency, String callsign) {
+      this.frequency = frequency;
+      this.callsign = callsign;
+    }
+
+    @Override
+    public int compareTo(GatewayKey o) {
+      var cmp = frequency - o.frequency;
+      if (cmp != 0) {
+        return cmp;
+      }
+      return callsign.compareTo(o.callsign);
+
+    }
+  };
 
   private RmsGatewayService rmsGatewayService;
   private Map<String, Summary> summaryMap = new HashMap<>();
   private List<IWritableTable> detailList = new ArrayList<IWritableTable>();
   private Map<String, List<IWritableTable>> detailListMap = new HashMap<>();
 
+  private Map<String, Map<GatewayKey, List<Detail>>> baseGatewayMap = new HashMap<>();
+  private Map<String, LatLongPair> baseGatewayLocationMap = new HashMap<>();
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    Ics309Message.setNDisplayActivities(8);
     doStsFieldValidation = false;
 
     messageTypesRequiringSecondaryAddress = Set.of(MessageType.ICS_309);
@@ -241,11 +366,12 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
 
     sts.testIfPresent("Location should not be null or empty", m.locationString);
 
-    // var apiZoneId = Zone.NOT_FOUND.id;
     var apiZone = Zone.NOT_FOUND;
     var rmsGateway = "n/a";
+    var baseRmsGateway = "n/a";
+    var gatewayLocation = LatLongPair.ZERO_ZERO;
     var distanceMilesString = "n/a";
-    var freqString = "n/a";
+    var frequency = -1;
 
     if (rmsGatewayService != null) {
       var serviceResult = rmsGatewayService.getLocationOfRmsGateway(m.from, m.messageId);
@@ -256,9 +382,11 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
             var distanceMiles = LocationUtils.computeDistanceMiles(m.mapLocation, serviceResult.location());
             apiZone = Zone.idOf(distanceMiles, serviceResult.frequency());
             distanceMilesString = String.valueOf(distanceMiles);
+            gatewayLocation = serviceResult.location();
+            baseRmsGateway = serviceResult.baseGatewayCallsign();
           }
           if (serviceResult.frequency() > 0) {
-            freqString = df.format(serviceResult.frequency() / 1_000_000d) + " MHz";
+            frequency = serviceResult.frequency();
           }
         } else {
           apiZone = Zone.Telnet;
@@ -267,14 +395,12 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
         apiZone = Zone.NOT_FOUND;
         rmsGateway = "unknown";
         distanceMilesString = "unknown";
-        freqString = "unknown";
       } // end if serviceResult not found
     } // end if rmsGatewayService != null
 
     // correlation between api band/mode versus check-in band/mode
     if (apiZone != Zone.NOT_FOUND && apiZone != Zone.BAD_CMS) {
       sts.test("band should match Zone's band", apiZone.band.equals(m.band), m.band);
-      // TODO fixme
       sts.test("mode should be in Zone's mode", apiZone.modeSet.contains(m.mode), m.mode);
     } else {
       sts.test("band should match Zone's band", false, m.band);
@@ -285,7 +411,7 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     detail.sender = m.from;
     detail.messageId = m.messageId;
     detail.dateTime = m.formDateTime;
-    detail.location = m.mapLocation;
+    detail.senderLocation = m.mapLocation;
     detail.feedbackCount = sts.getExplanations().size();
     detail.feedback = String.join("\n", sts.getExplanations());
     detail.apiZoneId = apiZone.id;
@@ -293,7 +419,10 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     detail.subjectZoneId = subjectZoneId;
     detail.rmsGateway = rmsGateway;
     detail.distanceMiles = distanceMilesString;
-    detail.frequency = freqString;
+    detail.frequency = frequency;
+    detail.baseGatewayCall = baseRmsGateway;
+    detail.gatewayLocation = gatewayLocation;
+
     detailList.add(detail);
 
     var list = detailListMap.getOrDefault(m.from, new ArrayList<IWritableTable>());
@@ -301,10 +430,8 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     detailListMap.put(m.from, list);
 
     var summary = summaryMap.getOrDefault(m.from, new Summary());
-    summary.aggregate(detail, m);
+    summary.aggregate(detail, m, sts);
     summaryMap.put(m.from, summary);
-
-    // TODO RMS map
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
   }
@@ -339,25 +466,32 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     sts.test("Station Id should be #EV", m.from, m.stationId);
     sts.test("Page # should be #EV", "1", m.page);
 
-    var validActivityCount = validateActivities(sender, sts, m.activities);
+    var activitySummary = validateActivities(sender, sts, m.activities);
+    sts.setExplanationPrefix("");
     var summary = summaryMap.getOrDefault(m.from, new Summary());
-    summary.aggregate(m, validActivityCount);
+    summary.aggregate(m, activitySummary, sts);
     summaryMap.put(m.from, summary);
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
   }
 
+  static record ActivitySummary(int validActivityCount, int validCheckInSubjectCount) {
+  }
+
   /**
+   *
    * @param sender
    * @param sts
    * @param activities
+   * @return ActivitySummary
    */
-  public int validateActivities(String sender, SimpleTestService sts, List<Activity> activities) {
+  public ActivitySummary validateActivities(String sender, SimpleTestService sts, List<Activity> activities) {
 
     var lastDT = LocalDateTime.of(2024, 1, 1, 0, 0, 0);
     LocalDateTime dt = null;
     var lineNumber = 0;
     var validLineCount = 0;
+    var validCheckInSubject = 0;
     for (var a : activities) {
       ++lineNumber;
 
@@ -401,9 +535,12 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
       var subjectZoneId = a.subject().substring(SUBJECT_START.length());
       var subjectZone = Zone.fromId(subjectZoneId);
       sts.test("Subject properly formatted", subjectZone != Zone.INVALID_ID, a.subject());
+      if (subjectZone != Zone.INVALID_ID) {
+        ++validCheckInSubject;
+      }
 
     } // end loop over lines
-    return validLineCount;
+    return new ActivitySummary(validLineCount, validCheckInSubject);
   }
 
   static enum Zone {
@@ -482,13 +619,193 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
   public void postProcess() {
     super.postProcess();
 
-    // TODO write detailList, summaryMap, make descriptions from detailList
-
     WriteProcessor.writeTable(detailList, Path.of(outputPathName, "aggregate-details.csv"));
-
-    // TODO RMS map
+    WriteProcessor
+        .writeTable(new ArrayList<IWritableTable>(summaryMap.values()),
+            Path.of(outputPathName, "aggregate-summary.csv"));
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+
+    doKml();
   }
+
+  record KmlEntry(Supplier<String> contentMaker, String fileName) {
+  }
+
+  private void doKml() {
+    final var KML_TEXT = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+        <Document id="MAP_NAME">
+          <name>MAP_NAME</name>
+          <description>MAP_DESCRIPTION</description>
+          <Style id="senderpin">
+              <IconStyle>
+                <Icon>
+                  <href>http://maps.google.com/mapfiles/kml/paddle/blu-blank.png</href>
+                </Icon>
+              </IconStyle>
+            </Style>
+            <Style id="gatewaypin">
+              <IconStyle>
+                <Icon>
+                  <href>http://maps.google.com/mapfiles/kml/paddle/red-stars.png</href>
+                </Icon>
+              </IconStyle>
+            </Style>
+            CONTENT
+        </Document>
+        </kml>
+           """;
+
+    final List<KmlEntry> entries = List
+        .of(new KmlEntry(makeSenderPlacemarks, "kml-stations.kml"),
+            new KmlEntry(makeGatewayPlacemarks, "kml-gateways.kml"),
+            new KmlEntry(makeNetworkPlacemarks, "kml-network.kml"));
+
+    for (var entry : entries) {
+      var kmlText = KML_TEXT;
+      kmlText = kmlText.replaceAll("MAP_NAME", cm.getAsString(Key.EXERCISE_NAME));
+      kmlText = kmlText.replaceAll("MAP_DESCRIPTION", cm.getAsString(Key.EXERCISE_DESCRIPTION));
+      kmlText = kmlText.replaceAll("CONTENT", entry.contentMaker().get());
+
+      var kmlFile = Path.of(outputPath.toString(), entry.fileName).toFile();
+      try {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(kmlFile));
+        writer.write(kmlText);
+        writer.close();
+        logger.info("wrote KML to: " + kmlFile.toString());
+      } catch (Exception e) {
+        logger.error("Exception writing kml file: " + kmlFile.toString() + e.getLocalizedMessage());
+      }
+    }
+  }
+
+  Supplier<String> makeSenderPlacemarks = () -> {
+    var sb = new StringBuilder();
+
+    for (var summary : summaryMap.values()) {
+      var sender = summary.sender;
+      var details = summary.details;
+
+      if (details.size() > 0 && summary.location != null && summary.location.isValid()) {
+
+        Collections.sort(details);
+        var d = new StringBuilder();
+        for (var detail : details) {
+          if (detail.apiZoneId == Zone.Telnet.toString()) {
+            d.append(KML_FORMATTER.format(detail.dateTime) + " via Telnet" + "\n");
+          } else {
+            d
+                .append(KML_FORMATTER.format(detail.dateTime) + " via " + detail.rmsGateway + " (" + detail.apiZoneId
+                    + ", " + detail.distanceMiles + " mi)" + "\n");
+          }
+        }
+        var description = d.toString();
+
+        sb.append(" <Placemark>\n");
+        sb.append(" <name>" + sender + "</name>\n");
+        sb.append(" <styleUrl>#senderpin</styleUrl>\n");
+        sb.append("<description>\n");
+        sb.append(description);
+        sb.append("</description>\n");
+        sb.append(" <Point>\n");
+        sb
+            .append(" <coordinates>" + summary.location.getLongitude() + "," + summary.location.getLatitude()
+                + "</coordinates>\n");
+        sb.append(" </Point>\n");
+        sb.append(" </Placemark>\n");
+      }
+    }
+
+    var s = sb.toString();
+    return s;
+  };
+
+  private Supplier<String> makeGatewayPlacemarks = () -> {
+    var sb = new StringBuilder();
+
+    for (var baseGateway : baseGatewayMap.keySet()) {
+      if (baseGateway.equals("n/a")) {
+        continue;
+      }
+
+      var gatewayMap = baseGatewayMap.get(baseGateway);
+      var baseLocation = baseGatewayLocationMap.get(baseGateway);
+      var longitude = baseLocation.isValid() ? baseLocation.getLongitude() : "0.0";
+      var latitude = baseLocation.isValid() ? baseLocation.getLatitude() : "0.0";
+
+      var gatewayKeys = new ArrayList<GatewayKey>(gatewayMap.keySet());
+      Collections.sort(gatewayKeys);
+
+      var d = new StringBuilder();
+      for (var key : gatewayKeys) {
+        d.append("Frequency: " + MHZ_FORMATTER.format(key.frequency) + "MHz\n");
+        var details = gatewayMap.get(key);
+        Collections.sort(details);
+        for (var detail : details) {
+          d
+              .append("   " + KML_FORMATTER.format(detail.dateTime) + ", from: " + detail.sender + " ("
+                  + detail.apiZoneId.toString() + ", " + detail.distanceMiles + " mi)" + "\n");
+        }
+      }
+
+      var description = d.toString();
+
+      sb.append(" <Placemark>\n");
+      sb.append(" <name>" + baseGateway + "</name>\n");
+      sb.append(" <styleUrl>#gatewaypin</styleUrl>\n");
+      sb.append(" <description>\n");
+
+      sb.append(description);
+
+      sb.append(" </description>\n");
+      sb.append(" <Point>\n");
+      sb.append(" <coordinates>" + longitude + "," + latitude + "</coordinates>\n");
+      sb.append(" </Point>\n");
+      sb.append(" </Placemark>\n");
+    }
+
+    var s = sb.toString();
+    return s;
+  };
+
+  private Supplier<String> makeNetworkPlacemarks = () -> {
+    var drawnSet = new HashSet<String>();
+    var sb = new StringBuilder();
+
+    for (var d : detailList) {
+      var detail = (Detail) d;
+      var sender = detail.sender;
+      var gateway = detail.baseGatewayCall;
+
+      if (gateway.equals("n/a")) {
+        continue;
+      }
+
+      var drawnKey = sender + "-" + gateway;
+      if (drawnSet.contains(drawnKey)) {
+        continue;
+      }
+      drawnSet.add(drawnKey);
+      sb.append(" <Placemark>\n");
+      sb.append(" <name>" + drawnKey + "</name>\n");
+      sb.append(" <LineString>\n");
+
+      sb.append(" <description>\n");
+      sb.append(drawnKey + " (" + detail.distanceMiles + " mi)");
+      sb.append(" </description>\n");
+
+      sb
+          .append(" <coordinates>" + detail.senderLocation.getLongitude() + "," + detail.senderLocation.getLatitude() //
+              + " " + detail.gatewayLocation.getLongitude() + "," + detail.gatewayLocation.getLatitude()
+              + "</coordinates>\n");
+      sb.append(" </LineString>\n");
+      sb.append(" </Placemark>\n");
+    }
+
+    var s = sb.toString();
+    return s;
+  };
 
 }

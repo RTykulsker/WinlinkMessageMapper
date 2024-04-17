@@ -30,6 +30,6 @@ package com.surftools.wimp.service.rmsGateway;
 import com.surftools.utils.location.LatLongPair;
 
 public record RmsGatewayResult(String sender, String messageId, boolean isFound, LatLongPair location,
-    String gatewayCallsign, int frequency, int mode) {
+    String gatewayCallsign, int frequency, int mode, String baseGatewayCallsign) {
 
 }

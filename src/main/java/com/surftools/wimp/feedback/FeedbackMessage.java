@@ -49,7 +49,7 @@ public record FeedbackMessage(FeedbackResult feedbackResult, ExportedMessage mes
 
   @Override
   public String[] getValues() {
-    var list = new ArrayList<String>(feedbackResult.getValues().length + message.getValues().length);
+    var list = new ArrayList<String>(feedbackResult.getHeaders().length + message.getHeaders().length);
     Collections.addAll(list, feedbackResult.getValues());
     Collections.addAll(list, message.getValues());
     return list.toArray(new String[list.size()]);

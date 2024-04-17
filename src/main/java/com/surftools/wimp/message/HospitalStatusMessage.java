@@ -237,14 +237,15 @@ public class HospitalStatusMessage extends ExportedMessage {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
 
-    return new String[] { messageId, from, to, subject, date, time, msgLocation.toString(), //
+    return new String[] { messageId, from, to, subject, date, time, //
+        msgLocation == null ? "" : msgLocation.toString(), //
         organization, String.valueOf(isExercise), reportType, updateString, //
 
         incidentName, HospitalStatusParser.DT_FORMATTER.format(formDateTime), //
 
         facilityName, facilityType, facilityOther, //
 
-        formLocation.toString(), //
+        formLocation == null ? "" : formLocation.toString(), //
 
         contactName, contactPhone, contactExtension, contactCellPhone, contactEmail, //
 

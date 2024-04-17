@@ -91,6 +91,9 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     public Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
     public List<String> badLocationMessageIds = new ArrayList<String>();
 
+    public LocalDateTime windowOpenDt;
+    public LocalDateTime windowCloseDt;
+
     public String extraOutboundMessageText;
   }
 
@@ -124,6 +127,15 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     } else {
       logger.info("will accept *ALL* message types");
     }
+
+    windowOpenDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_OPEN)));
+    windowCloseDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_CLOSE)));
+  }
+
+  protected void setWindowsForType(MessageType type, LocalDateTime typedOpenDt, LocalDateTime typedCloseDt) {
+    var te = typeEntryMap.getOrDefault(type, new TypeEntry());
+    te.windowOpenDt = typedOpenDt;
+    te.windowCloseDt = typedCloseDt;
   }
 
   @Override
@@ -164,9 +176,13 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     }
 
     te = typeEntryMap.getOrDefault(message.getMessageType(), new TypeEntry());
+
     sts = te.sts;
     sts.reset(sender);
     ++te.ppCount;
+
+    windowOpenDT = te.windowOpenDt == null ? windowOpenDT : te.windowOpenDt;
+    windowCloseDT = te.windowCloseDt == null ? windowCloseDT : te.windowCloseDt;
 
     if (messageTypesRequiringSecondaryAddress.size() == 0
         || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
@@ -174,10 +190,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       sts.test("To and/or CC addresses should contain ETO-BK", addressList.toUpperCase().contains("ETO-BK"), null);
     }
 
-    windowOpenDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_OPEN)));
     sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
-
-    windowCloseDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_CLOSE)));
     sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
     te.feedbackLocation = message.msgLocation;
