@@ -91,4 +91,27 @@ public class SimpleTestServiceTest {
     var expected3Words = "212 S Ocean Blvd Myrtle Beach SC";
     assertEquals(expected3Words.toLowerCase(), actual3Words.toLowerCase());
   }
+
+  @Test
+  public void test_test_2line() {
+    {
+      var sts = new SimpleTestService();
+      var expected = "greeting should be hello, world,\n               not hello, warld";
+      var result = sts.test_2line("greeting should be #EV", "hello, world", "hello, warld");
+      var actual = result.explanation();
+      System.out.println(actual);
+      assertEquals(expected, actual);
+    }
+
+    {
+      var sts = new SimpleTestService();
+      var prefix = "blah ";
+      sts.setExplanationPrefix(prefix);
+      var expected = prefix + "greeting should be hello, world,\n                    not hello, warld";
+      var result = sts.test_2line("greeting should be #EV", "hello, world", "hello, warld");
+      var actual = result.explanation();
+      System.out.println(actual);
+      assertEquals(expected, actual);
+    }
+  }
 }

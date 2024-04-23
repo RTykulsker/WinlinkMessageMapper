@@ -27,7 +27,9 @@ SOFTWARE.
 
 package com.surftools.wimp.service.simpleTestService;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -77,6 +79,11 @@ public class SimpleTestService implements IService {
   private String caller;
 
   /**
+   * this is a hack to enable two line output
+   */
+  private boolean doTwoLineOutput = false;
+
+  /**
    * must, Must, MUST be called at the beginning of process() for each call
    */
   public void reset(String caller) {
@@ -114,6 +121,21 @@ public class SimpleTestService implements IService {
     expectedValue = entry.expectedValue;
     var predicate = value != null && toAlphaNumericWords(value).equalsIgnoreCase(expectedValue);
     return internalTest(entry, predicate, wrap(value), null);
+  }
+
+  /**
+   * our most common use case, with two-line output
+   *
+   * @param rawLabel
+   * @param expectedValue
+   * @param value
+   * @return
+   */
+  public TestResult test_2line(String rawLabel, String expectedValue, String value) {
+    doTwoLineOutput = true;
+    var ret = test(rawLabel, expectedValue, value);
+    doTwoLineOutput = false;
+    return ret;
   }
 
   /**
@@ -288,6 +310,7 @@ public class SimpleTestService implements IService {
    * @param formatter
    * @return
    */
+  @Deprecated
   public TestResult testIsDateTime(String label, String value, DateTimeFormatter formatter) {
     var entry = entryMap.get(label);
     if (entry == null) {
@@ -302,6 +325,58 @@ public class SimpleTestService implements IService {
       ; // could not parse
     }
     return internalTest(entry, predicate, value, null);
+  }
+
+  /**
+   * test if value could be a LocalDate, LocalTime or LocalDateTime, according to formatter
+   *
+   * @param label
+   * @param value
+   * @param formatter
+   * @return
+   */
+  public TestResult testIsDateTime(String label, Object value, DateTimeFormatter formatter) {
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, null);
+    }
+
+    if (value == null) {
+      return internalTest(entry, false, "(null)", null);
+    }
+
+    var predicate = false;
+    var string = "";
+
+    try {
+      switch (value) {
+      case LocalDateTime ldt:
+        string = formatter.format(ldt);
+        formatter.parse(string);
+        predicate = true;
+        break;
+
+      case LocalDate ld:
+        string = formatter.format(ld);
+        formatter.parse(string);
+        predicate = true;
+        break;
+
+      case LocalTime lt:
+        string = formatter.format(lt);
+        formatter.parse(string);
+        predicate = true;
+        break;
+
+      default:
+        break;
+      }
+    } catch (Exception e) {
+      ; // could not parse
+    }
+
+    return internalTest(entry, predicate, string, null);
   }
 
   /**
@@ -351,10 +426,35 @@ public class SimpleTestService implements IService {
       } else {
         explanation += entry.label + ", not " + value;
       }
+      if (doTwoLineOutput) {
+        explanation = reformat_ShouldBe_Not(explanation);
+      }
       explanations.add(explanation);
     }
 
     return new TestResult(predicate, entry.label, possiblePoints, explanation);
+  }
+
+  private String reformat_ShouldBe_Not(String s) {
+    if (s == null) {
+      return s;
+    }
+
+    final var SHOULD_BE = " should be ";
+    var shouldBeIndex = s.indexOf(SHOULD_BE);
+
+    final var NOT = ", not";
+    var notIndex = s.indexOf(NOT);
+    if (shouldBeIndex == -1 || notIndex == -1 || notIndex <= shouldBeIndex) {
+      return s;
+    }
+
+    var nSpaces = shouldBeIndex + SHOULD_BE.length() - NOT.length();
+    var spaces = new String(new char[nSpaces]).replace('\0', ' ');
+
+    var ret = s.substring(0, notIndex + 1) + "\n" + spaces + s.substring(notIndex + 1);
+
+    return ret;
   }
 
   @SuppressWarnings("rawtypes")

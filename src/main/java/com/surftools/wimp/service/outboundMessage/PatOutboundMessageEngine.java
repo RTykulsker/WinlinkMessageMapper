@@ -117,6 +117,7 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
     final String dateString = nowUTC.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
 
     var body = m.body().replaceAll("\n", SEP);
+    body = body.replaceAll("\\u009d", "");
     var to = expandToAddresses(m.to());
 
     var doDebugToAddress = false;

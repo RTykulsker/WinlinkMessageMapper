@@ -210,8 +210,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected void endCommonProcessing(ExportedMessage message) {
     var explanations = sts.getExplanations();
     var feedback = "";
-    var feedbackCountString = String.valueOf(explanations.size());
-    te.ppFeedBackCounter.increment(feedbackCountString);
+    te.ppFeedBackCounter.increment(explanations.size());
     if (explanations.size() == 0) {
       ++te.ppMessageCorrectCount;
       feedback = "Perfect Message!";
@@ -220,7 +219,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     }
 
     var feedbackResult = new FeedbackResult(sender, te.feedbackLocation.getLatitude(),
-        te.feedbackLocation.getLongitude(), feedback, feedbackCountString);
+        te.feedbackLocation.getLongitude(), explanations.size(), feedback);
     te.mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
 
     var outboundMessageFeedback = feedback + te.extraOutboundMessageText;

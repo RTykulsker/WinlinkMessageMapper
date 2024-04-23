@@ -151,7 +151,7 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
       if (checkInReceiveCount == 0) {
         // first check in, assert that there is an ICS-309 while still in process()/specificProcessing()
         var ics309MessageList = mm.getMessagesForSender(detail.sender).get(MessageType.ICS_309);
-        sts.test("ICS-309 message sent", ics309MessageList != null);
+        sts.test("ICS-309 message should be sent", ics309MessageList != null);
       }
 
       // last wins

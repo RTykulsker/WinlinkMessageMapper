@@ -33,8 +33,8 @@ import com.surftools.wimp.core.IWritableTable;
 /**
  * record to hold results of computing feedback
  */
-public record FeedbackResult(String call, String latitude, String longitude, String feedback,
-    String feedbackCountString) implements IWritableTable {
+public record FeedbackResult(String call, String latitude, String longitude, int feedbackCount, String feedback)
+    implements IWritableTable {
 
   @Override
   public String[] getHeaders() {
@@ -43,7 +43,7 @@ public record FeedbackResult(String call, String latitude, String longitude, Str
 
   @Override
   public String[] getValues() {
-    return new String[] { call, latitude, longitude, feedbackCountString, feedback };
+    return new String[] { call, latitude, longitude, String.valueOf(feedbackCount), feedback };
   }
 
   @Override
@@ -53,7 +53,7 @@ public record FeedbackResult(String call, String latitude, String longitude, Str
   }
 
   public FeedbackResult updateLocation(LatLongPair newLocation) {
-    return new FeedbackResult(this.call, newLocation.getLatitude(), newLocation.getLongitude(), this.feedback,
-        this.feedbackCountString);
+    return new FeedbackResult(this.call, newLocation.getLatitude(), newLocation.getLongitude(), this.feedbackCount,
+        this.feedback);
   }
 }

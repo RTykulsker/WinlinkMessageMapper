@@ -241,7 +241,9 @@ public class HospitalStatusMessage extends ExportedMessage {
         msgLocation == null ? "" : msgLocation.toString(), //
         organization, String.valueOf(isExercise), reportType, updateString, //
 
-        incidentName, HospitalStatusParser.DT_FORMATTER.format(formDateTime), //
+        incidentName, //
+
+        formDateTime == null ? "" : HospitalStatusParser.DT_FORMATTER.format(formDateTime), //
 
         facilityName, facilityType, facilityOther, //
 
