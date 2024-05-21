@@ -30,7 +30,6 @@ package com.surftools.wimp.processors.other;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +39,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
@@ -66,7 +66,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class MIRO_Check_In extends AbstractBaseProcessor {
   private static Logger logger = LoggerFactory.getLogger(MIRO_Check_In.class);
 
-  private static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  private static final MultiDateTimeParser parser = new MultiDateTimeParser(
+      List.of("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm 'UTC'"));
 
   private static final boolean FLAG_INCLUDE_ANTENNA_IN_RESILIENCY = false;
   private static final boolean FLAG_INCLUDE_RMS_GATEWAY_IN_RESILIENCY = false;
@@ -130,7 +131,7 @@ public class MIRO_Check_In extends AbstractBaseProcessor {
 
       var formDate = fields[2];
       var formTime = fields[3];
-      this.dateTime = LocalDateTime.parse(formDate + " " + formTime, DT_FORMATTER);
+      this.dateTime = parser.parse(formDate + " " + formTime);
 
       var formLatitude = fields[4];
       var formLongitude = fields[5];

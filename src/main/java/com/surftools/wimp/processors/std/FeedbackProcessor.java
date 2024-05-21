@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -97,7 +99,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     public String extraOutboundMessageText;
   }
 
-  private Map<MessageType, TypeEntry> typeEntryMap = new HashMap<>();
+  private Map<MessageType, TypeEntry> typeEntryMap = new LinkedHashMap<>();
   private TypeEntry te;
   private Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
@@ -205,6 +207,9 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     } else {
       sts.test("LAT/LON should be provided", true, null);
     }
+
+    var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
+    getCounter("Message sent days after window opens").increment(daysAfterOpen);
   }
 
   protected void endCommonProcessing(ExportedMessage message) {
@@ -348,23 +353,32 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       You're also welcome to reply via Winlink to this message or send an email to
       ETO.Technical.Team@emcomm-training.groups.io. In any event, thank you for participating
       in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
-              """;
+      """;
 
-  protected static final String OB_NAG = "\n\n=======================================================================\n\n"
-      + "ETO needs sponsors to be able to renew our groups.io subscription for 2024.\n"
-      + "By sponsoring this group, you are helping pay the Groups.io hosting fees.\n"
-      + "Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor\n"
-      + "Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.\n"
-      + "The minimum sponsorship is $5.00.\n" //
-      + "Thank you for your support!\n";
+  protected static final String OB_NAG = """
 
-  protected static final String OB_REQUEST_FEEDBACK = "\n\n=======================================================================\n\n"
-      + "ETO would love to hear from you! Would you please take a few minutes to answer the following questions:\n\n" //
-      + "1. Were the exercise instructions clear? If not, where did they need improvement?\n" //
-      + "2. Did you find the exercise useful?\n" //
-      + "3. Did you find the above feedback useful?\n" //
-      + "4. What did you dislike about the exercise?\n" //
-      + "5. Any additional comments?\n" //
-      + "\nPlease reply to this Winlink message or to ETO.Technical.Team@EmComm-Training.groups.io. Thank you!";
+       =====================================================================================================
+
+       ETO needs sponsors to be able to renew our groups.io subscription for 2024.
+       By sponsoring this group, you are helping pay the Groups.io hosting fees.
+       Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
+       Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
+       The minimum sponsorship is $5.00.
+       Thank you for your support!
+      """;
+
+  protected static final String OB_REQUEST_FEEDBACK = """
+
+      =====================================================================================================
+
+      ETO would love to hear from you! Would you please take a few minutes to answer the following questions:
+      1. Were the exercise instructions clear? If not, where did they need improvement?
+      2. Did you find the exercise useful?
+      3. Did you find the above feedback useful?
+      4. What did you dislike about the exercise?
+      5. Any additional comments?
+
+      Please reply to this Winlink message or to ETO.Technical.Team@EmComm-Training.groups.io. Thank you!
+      """;
 
 }

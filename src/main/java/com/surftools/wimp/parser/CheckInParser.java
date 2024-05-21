@@ -31,10 +31,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.CheckInMessage;
@@ -49,9 +51,11 @@ import com.surftools.wimp.message.ExportedMessage;
  */
 public class CheckInParser extends AbstractBaseParser {
   private static final Logger logger = LoggerFactory.getLogger(CheckInParser.class);
-  private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+  private MultiDateTimeParser parser = new MultiDateTimeParser(List
+      .of("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm 'UTC'", //
+          "MM/dd/yyyy HHmm'hrs.'", "MM/dd/yyyy HHmm'hrs'", "yyyy-MM-dd HH:mm:ss'L'"));
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
@@ -127,11 +131,7 @@ public class CheckInParser extends AbstractBaseParser {
     LocalDateTime formDateTime = null;
     var s = getStringFromXml("datetime");
     if (s != null) {
-      try {
-        formDateTime = LocalDateTime.parse(s.trim(), DT_FORMATTER);
-      } catch (Exception e) {
-        formDateTime = LocalDateTime.from(ALT_DTF.parse(s.trim()));
-      }
+      formDateTime = parser.parse(s);
     }
     return formDateTime;
   }

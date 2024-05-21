@@ -92,7 +92,9 @@ public class RmsGatewayService implements IService {
           }
           logger.info("dupCount: " + dupCount);
           isInitialized = true;
-          writeChannelData();
+          if (isChannelDataCached) {
+            writeChannelData();
+          }
         }
 
         if (isTrafficDataCached) {

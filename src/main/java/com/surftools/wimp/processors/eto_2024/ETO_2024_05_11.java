@@ -72,8 +72,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2024_05_11 extends FeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_05_11.class);
 
-  private static final DecimalFormat MHZ_FORMATTER = new DecimalFormat("#.000###");
-  private static final DateTimeFormatter KML_FORMATTER = DateTimeFormatter.ofPattern("EEE HH:mm");
+  private static final DecimalFormat MHZ_FORMATTER = new DecimalFormat("#.###");
+  private static final DateTimeFormatter KML_FORMATTER = DateTimeFormatter.ofPattern("MM/dd HH:mm");
 
   private static final String SUBJECT_START = "ETO 2024 Spring Drill - ";
 
@@ -81,8 +81,39 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
   private static final Set<String> FM_MODES = Set.of("Packet", "VARA FM");
   private static final Set<String> HF_MODES = Set.of("Pactor", "Ardop", "VARA HF", "Robust Packet");
 
+  private class BaseGateway implements IWritableTable {
+    public String call;
+    public LatLongPair location;
+    public int connectionCount;
+
+    public BaseGateway(String baseGatewayCall, LatLongPair gatewayLocation) {
+      this.call = baseGatewayCall;
+      this.location = gatewayLocation;
+      this.connectionCount = 0;
+    }
+
+    @Override
+    public int compareTo(IWritableTable other) {
+      var o = (BaseGateway) other;
+      return call.compareTo(o.call);
+    }
+
+    @Override
+    public String[] getHeaders() {
+      return new String[] { "Call", "Latitude", "Longitude", "Connections" };
+    }
+
+    @Override
+    public String[] getValues() {
+      var latitude = (location != null && location.isValid()) ? location.getLatitude() : "0.0";
+      var longitude = (location != null && location.isValid()) ? location.getLongitude() : "0.0";
+      return new String[] { call, latitude, longitude, String.valueOf(connectionCount) };
+    }
+  }
+
   private class Summary implements IWritableTable {
     public String sender;
+    public String clearinghouse = "(null)";
     public LatLongPair location;
 
     public int feedbackCount;
@@ -96,6 +127,10 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     public int ics309ReceiveCount; // number of ics-309 messages received (0 or 1)
     public int ics309LogCount; // number of non-empty ics-309 activities
     public int ics309CheckInSubjectCount; // number of valid Check In subjects
+
+    public boolean anyTelnet; // any
+    public boolean anyFm;
+    public boolean anyHf;
 
     public Map<Zone, List<String>> zoneMIdListMap = new LinkedHashMap<>();
 
@@ -120,7 +155,7 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     public String[] getHeaders() {
 
       var list = new ArrayList<String>(List
-          .of("From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
+          .of("From", "Clearinghouse", "Latitude", "Longitude", "Feedback Count", "Feedback", //
               "Check In Count", "Ics309 Count", "Ics309 Activities", "Valid Check In Zones"));
 
       for (var zone : zoneMIdListMap.keySet()) {
@@ -135,7 +170,7 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
       var longitude = (location != null && location.isValid()) ? location.getLongitude() : "0.0";
 
       var list = new ArrayList<String>(List
-          .of(sender, latitude, longitude, String.valueOf(feedbackCount), feedback.trim(), //
+          .of(sender, clearinghouse, latitude, longitude, String.valueOf(feedbackCount), feedback.trim(), //
               String.valueOf(checkInReceiveCount), String.valueOf(ics309ReceiveCount), String.valueOf(ics309LogCount),
               String.valueOf(ics309CheckInSubjectCount)));
 
@@ -174,18 +209,29 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
         }
       }
 
+      if (zone != null && zone.modeSet != null) {
+        anyTelnet = zone.modeSet.containsAll(TELNET_MODES) ? true : anyTelnet;
+        anyFm = zone.modeSet.containsAll(FM_MODES) ? true : anyFm;
+        anyHf = zone.modeSet.containsAll(HF_MODES) ? true : anyHf;
+      }
+
       if (detail.feedbackCount > 0) {
         feedbackCount += detail.feedbackCount;
         feedback += "\n" + detail.feedback;
       }
 
-      var gatewayMap = baseGatewayMap
-          .getOrDefault(detail.baseGatewayCall, new LinkedHashMap<GatewayKey, List<Detail>>());
+      var baseGateway = baseGatewayMap
+          .getOrDefault(detail.baseGatewayCall, new BaseGateway(detail.baseGatewayCall, detail.gatewayLocation));
+      ++baseGateway.connectionCount;
+      baseGatewayMap.put(detail.baseGatewayCall, baseGateway);
+
+      var gatewayDetailList = baseGatewayDetailListMap
+          .getOrDefault(detail.baseGatewayCall, new HashMap<GatewayKey, List<Detail>>());
       var key = new GatewayKey(detail.frequency, detail.rmsGateway);
-      var list = gatewayMap.getOrDefault(key, new ArrayList<Detail>());
+      var list = gatewayDetailList.getOrDefault(key, new ArrayList<Detail>());
       list.add(detail);
-      gatewayMap.put(key, list);
-      baseGatewayMap.put(detail.baseGatewayCall, gatewayMap);
+      gatewayDetailList.put(key, list);
+      baseGatewayDetailListMap.put(detail.baseGatewayCall, gatewayDetailList);
 
       // last wins
       var baseLocation = detail.gatewayLocation;
@@ -193,6 +239,11 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     }
 
     public void aggregate(Ics309Message m, ActivitySummary activitySummary, SimpleTestService sts) {
+      // last wins
+      sender = m.from;
+      location = m.mapLocation;
+      clearinghouse = m.to;
+
       ics309Messages.add(m);
 
       sts.test("At least 1 Winlink Check In message sent", checkInReceiveCount > 0);
@@ -213,6 +264,10 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
         feedbackCount += sts.getExplanations().size();
         feedback += "\n" + String.join("\n", sts.getExplanations());
       }
+
+      getCounter("Any Telnet").increment(anyTelnet);
+      getCounter("Any FM").increment(anyFm);
+      getCounter("Any HF").increment(anyHf);
 
     }
 
@@ -286,6 +341,48 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
       return callsign.compareTo(o.callsign);
 
     }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + getEnclosingInstance().hashCode();
+      result = prime * result + ((callsign == null) ? 0 : callsign.hashCode());
+      result = prime * result + frequency;
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      GatewayKey other = (GatewayKey) obj;
+      if (!getEnclosingInstance().equals(other.getEnclosingInstance())) {
+        return false;
+      }
+      if (callsign == null) {
+        if (other.callsign != null) {
+          return false;
+        }
+      } else if (!callsign.equals(other.callsign)) {
+        return false;
+      }
+      if (frequency != other.frequency) {
+        return false;
+      }
+      return true;
+    }
+
+    private ETO_2024_05_11 getEnclosingInstance() {
+      return ETO_2024_05_11.this;
+    }
   };
 
   private RmsGatewayService rmsGatewayService;
@@ -293,7 +390,8 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
   private List<IWritableTable> detailList = new ArrayList<IWritableTable>();
   private Map<String, List<IWritableTable>> detailListMap = new HashMap<>();
 
-  private Map<String, Map<GatewayKey, List<Detail>>> baseGatewayMap = new HashMap<>();
+  private Map<String, BaseGateway> baseGatewayMap = new HashMap<>();
+  private Map<String, Map<GatewayKey, List<Detail>>> baseGatewayDetailListMap = new HashMap<>();
   private Map<String, LatLongPair> baseGatewayLocationMap = new HashMap<>();
 
   @Override
@@ -310,7 +408,9 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var type = message.getMessageType();
-    if (type == MessageType.CHECK_IN) {
+    if (type == MessageType.PLAIN) {
+      handlePlain(message);
+    } else if (type == MessageType.CHECK_IN) {
       handleCheckInPayload((CheckInMessage) message);
     } else if (type == MessageType.ICS_309) {
       handleIcs309Message((Ics309Message) message);
@@ -319,26 +419,37 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     }
   }
 
+  protected void handlePlain(ExportedMessage m) {
+    var text = m.mime;
+
+    if (text.contains("Winlink Check-in") && text.contains("0. HEADER")) {
+      sts.test("Winlink Check In message should include XML attachment", false);
+    } else if (text.contains("Form 309") && text.contains("Task#")) {
+      sts.test("ICS-309 message should include XML attachment", false);
+    } else {
+      ; // ignore
+    }
+
+  }
+
   protected void handleCheckInPayload(CheckInMessage m) {
     outboundMessageSubject = "Feedback on your ETO Spring Drill 2024 Check In message, mId: ";
+    sts.setExplanationPrefix("mId: " + m.messageId + ": ");
 
     // box 0: meta
     getCounter("versions").increment(m.version);
     sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization);
 
     // box 4: comments; should be a zoneId
-    var comments = m.comments;
+    var comments = m.comments == null ? "" : m.comments.trim();
     sts.testIfPresent("Comments should not be null or empty", comments);
     var commentsZone = Zone.fromId(comments);
     sts.test("Comments should be a valid Zone ID", commentsZone != Zone.INVALID_ID, comments);
 
     var subject = m.subject;
     sts.testIfPresent("Subject should not be null or empty", subject);
-    sts
-        .test("Subject should start with " + SUBJECT_START,
-            subject.toLowerCase().startsWith(SUBJECT_START.toLowerCase()), subject);
-
-    var subjectZoneId = subject.substring(SUBJECT_START.length());
+    var subjectStartPredicate = subject.toLowerCase().startsWith(SUBJECT_START.toLowerCase());
+    var subjectZoneId = subjectStartPredicate ? subject.substring(SUBJECT_START.length()) : "invalid";
     var subjectZone = Zone.fromId(subjectZoneId);
     sts.test("Subject properly formatted", subjectZone != Zone.INVALID_ID, subject);
 
@@ -381,6 +492,7 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
             rmsGateway = serviceResult.gatewayCallsign();
             var distanceMiles = LocationUtils.computeDistanceMiles(m.mapLocation, serviceResult.location());
             apiZone = Zone.idOf(distanceMiles, serviceResult.frequency());
+            getCounter("ZoneId").increment(apiZone.id);
             distanceMilesString = String.valueOf(distanceMiles);
             gatewayLocation = serviceResult.location();
             baseRmsGateway = serviceResult.baseGatewayCallsign();
@@ -390,9 +502,11 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
           }
         } else {
           apiZone = Zone.Telnet;
+          getCounter("ZoneId").increment(apiZone.id);
         }
       } else { // not found in CMS api
         apiZone = Zone.NOT_FOUND;
+        getCounter("ZoneId").increment(apiZone.id);
         rmsGateway = "unknown";
         distanceMilesString = "unknown";
       } // end if serviceResult not found
@@ -438,6 +552,7 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
 
   protected void handleIcs309Message(Ics309Message m) {
     outboundMessageSubject = "Feedback on your ETO Spring Drill 2024 ICS-309 message, mId: ";
+    sts.setExplanationPrefix("mId: " + m.messageId + ": ");
 
     getCounter("ICS-309 versions").increment(m.version);
 
@@ -447,6 +562,9 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
 
     sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
     sts.test("Task # should be #EV", "240511", m.taskNumber);
+
+    var addresses = m.toList + "," + m.ccList;
+    sts.test("ICS-309 should not be sent to only ETO-DRILL", !addresses.equals(("ETO-DRILL@winlink.org,")));
 
     try {
       sts.test("Date/Time Prepared properly formatted", true);
@@ -527,12 +645,13 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
       }
 
       sts.test("From should be #EV", sender, a.from());
-      sts.test("To should contain: ETO-DRILL", a.to().contains("ETO-DRILL"), a.to());
+      var toPred = a.to() != null && a.to().contains("ETO-DRILL");
+      sts.test("To should contain: ETO-DRILL", toPred, a.to());
       sts.testIfPresent("Subject should not be null or empty", a.subject());
-      sts
-          .test("Subject should start with " + SUBJECT_START,
-              a.subject().toLowerCase().startsWith(SUBJECT_START.toLowerCase()), a.subject());
-      var subjectZoneId = a.subject().substring(SUBJECT_START.length());
+
+      var subjectStartPredicate = a.subject() != null
+          && a.subject().toLowerCase().startsWith(SUBJECT_START.toLowerCase());
+      var subjectZoneId = subjectStartPredicate ? a.subject().substring(SUBJECT_START.length()) : "invalid";
       var subjectZone = Zone.fromId(subjectZoneId);
       sts.test("Subject properly formatted", subjectZone != Zone.INVALID_ID, a.subject());
       if (subjectZone != Zone.INVALID_ID) {
@@ -623,13 +742,15 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     WriteProcessor
         .writeTable(new ArrayList<IWritableTable>(summaryMap.values()),
             Path.of(outputPathName, "aggregate-summary.csv"));
+    WriteProcessor
+        .writeTable(new ArrayList<IWritableTable>(baseGatewayMap.values()), Path.of(outputPathName, "gateways.csv"));
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
 
     doKml();
   }
 
-  record KmlEntry(Supplier<String> contentMaker, String fileName) {
+  record KmlEntry(Supplier<String> contentMaker, String fileName, String layerName) {
   }
 
   private void doKml() {
@@ -659,13 +780,13 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
            """;
 
     final List<KmlEntry> entries = List
-        .of(new KmlEntry(makeSenderPlacemarks, "kml-stations.kml"),
-            new KmlEntry(makeGatewayPlacemarks, "kml-gateways.kml"),
-            new KmlEntry(makeNetworkPlacemarks, "kml-network.kml"));
+        .of(new KmlEntry(makeSenderPlacemarks, "kml-stations.kml", "Stations"),
+            new KmlEntry(makeGatewayPlacemarks, "kml-gateways.kml", "RMS Stations"),
+            new KmlEntry(makeNetworkPlacemarks, "kml-network.kml", "Connections"));
 
     for (var entry : entries) {
       var kmlText = KML_TEXT;
-      kmlText = kmlText.replaceAll("MAP_NAME", cm.getAsString(Key.EXERCISE_NAME));
+      kmlText = kmlText.replaceAll("MAP_NAME", entry.layerName);
       kmlText = kmlText.replaceAll("MAP_DESCRIPTION", cm.getAsString(Key.EXERCISE_DESCRIPTION));
       kmlText = kmlText.replaceAll("CONTENT", entry.contentMaker().get());
 
@@ -692,6 +813,10 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
 
         Collections.sort(details);
         var d = new StringBuilder();
+
+        d.append(details.size() + " connections\n");
+        d.append("------------------------------------------------------------\n");
+
         for (var detail : details) {
           if (detail.apiZoneId == Zone.Telnet.toString()) {
             d.append(KML_FORMATTER.format(detail.dateTime) + " via Telnet" + "\n");
@@ -725,12 +850,12 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
   private Supplier<String> makeGatewayPlacemarks = () -> {
     var sb = new StringBuilder();
 
-    for (var baseGateway : baseGatewayMap.keySet()) {
+    for (var baseGateway : baseGatewayDetailListMap.keySet()) {
       if (baseGateway.equals("n/a")) {
         continue;
       }
 
-      var gatewayMap = baseGatewayMap.get(baseGateway);
+      var gatewayMap = baseGatewayDetailListMap.get(baseGateway);
       var baseLocation = baseGatewayLocationMap.get(baseGateway);
       var longitude = baseLocation.isValid() ? baseLocation.getLongitude() : "0.0";
       var latitude = baseLocation.isValid() ? baseLocation.getLatitude() : "0.0";
@@ -739,14 +864,24 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
       Collections.sort(gatewayKeys);
 
       var d = new StringBuilder();
+      var lastFrequency = "";
       for (var key : gatewayKeys) {
-        d.append("Frequency: " + MHZ_FORMATTER.format(key.frequency) + "MHz\n");
+        var thisFrequency = MHZ_FORMATTER.format(key.frequency / 1_000_000d);
+
         var details = gatewayMap.get(key);
+        if (!thisFrequency.equals(lastFrequency)) {
+          d.append("------------------------------------------------------------\n");
+          d
+              .append("Frequency: " + MHZ_FORMATTER.format(key.frequency / 1_000_000d) + "MHz, " + details.size()
+                  + " connections\n");
+          lastFrequency = thisFrequency;
+        }
+
         Collections.sort(details);
         for (var detail : details) {
           d
-              .append("   " + KML_FORMATTER.format(detail.dateTime) + ", from: " + detail.sender + " ("
-                  + detail.apiZoneId.toString() + ", " + detail.distanceMiles + " mi)" + "\n");
+              .append("   " + KML_FORMATTER.format(detail.dateTime) + ", " + detail.sender + ", "
+                  + detail.apiZoneId.toString() + ", " + detail.distanceMiles + " mi" + "\n");
         }
       }
 
