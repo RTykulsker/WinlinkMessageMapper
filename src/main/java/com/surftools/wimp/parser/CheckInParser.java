@@ -56,6 +56,9 @@ public class CheckInParser extends AbstractBaseParser {
   private MultiDateTimeParser parser = new MultiDateTimeParser(List
       .of("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm 'UTC'", //
           "MM/dd/yyyy HHmm'hrs.'", "MM/dd/yyyy HHmm'hrs'", "yyyy-MM-dd HH:mm:ss'L'"));
+
+  private final DateTimeFormatter UTC_PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'"); // 2024-05-23T23:55:11.000Z
+
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
@@ -129,10 +132,22 @@ public class CheckInParser extends AbstractBaseParser {
 
   private LocalDateTime parseFormDateTime() {
     LocalDateTime formDateTime = null;
-    var s = getStringFromXml("datetime");
-    if (s != null) {
-      formDateTime = parser.parse(s);
+
+    var utcString = getStringFromXml("timestamp2");
+    var localString = getStringFromXml("datetime");
+    if (utcString != null) {
+      try {
+        formDateTime = LocalDateTime.from(UTC_PARSER.parse(utcString));
+      } catch (Exception e) {
+        formDateTime = parser.parse(localString);
+      }
+    } else {
+      var s = getStringFromXml("datetime");
+      if (s != null) {
+        formDateTime = parser.parse(localString);
+      }
     }
+
     return formDateTime;
   }
 
