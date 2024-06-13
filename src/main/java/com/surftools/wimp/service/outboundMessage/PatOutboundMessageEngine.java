@@ -85,7 +85,7 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
 
     var path = cm.getAsString(Key.PATH);
     mailboxPath = Path.of(path, "output", "mailbox");
-    FileUtils.deleteDirectory(mailboxPath);
+    // FileUtils.deleteDirectory(mailboxPath);
 
     for (var dir : List.of("archive", "in", "out", "sent")) {
       FileUtils.createDirectory(Path.of(mailboxPath.toString(), source, dir));

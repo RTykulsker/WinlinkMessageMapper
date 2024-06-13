@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.dev;
+package com.surftools.wimp.processors.eto_2024;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +43,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class Dev_ETO_Resume extends FeedbackProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(Dev_ETO_Resume.class);
+public class ETO_2024_07_18 extends FeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_07_18.class);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {

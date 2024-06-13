@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -66,7 +67,8 @@ public class HospitalBedParser extends AbstractBaseParser {
 
       var formLocation = getLatLongFromXml(null);
       if (formLocation == null) {
-        return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
+        // return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
+        formLocation = LatLongPair.INVALID;
       }
 
       LocalDateTime formDateTime = null;

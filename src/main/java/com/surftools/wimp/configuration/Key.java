@@ -41,6 +41,9 @@ public enum Key implements IConfigurationKey {
   DATABASE_PATH("databasePath"), // path to input database summary files
   DUMP_IDS("dumpIds"), // comma-delimited list of messageIds or call signs to dump message contents for
 
+  OUTPUT_PATH("output.path"), // to override as subdir of path
+  OUTPUT_PATH_CLEAR_ON_START("output.path.clear.on.start"), // if true contents of outputDir cleared
+
   DEDUPLICATION_RULES("deduplication.rules"), // json string: {messageTypeName:rule,...}
 
   IMAGE_MAX_SIZE("image.maxSize"), // of attached images

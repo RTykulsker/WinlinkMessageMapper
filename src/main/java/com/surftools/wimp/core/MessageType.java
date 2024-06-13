@@ -59,6 +59,7 @@ public enum MessageType {
   ICS_213_REPLY("ics_213_reply", "RMS_Express_Form_ICS213_SendReply_Viewer.xml"), //
   ICS_213_RR("ics_213_rr", "RMS_Express_Form_ICS213RR_Viewer.xml"), //
   ICS_214("ics_214", "RMS_Express_Form_ICS214_Viewer.xml"), //
+  ICS_214A("ics_214A", "RMS_Express_Form_ICS214A_Viewer.xml"), // Individual
   ICS_309("ics_309", "RMS_Express_Form_ICS309_Viewer.xml"), //
 
   ETO_CHECK_IN("eto_check_in"), //

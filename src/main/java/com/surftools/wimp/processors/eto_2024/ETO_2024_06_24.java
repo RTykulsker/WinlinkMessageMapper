@@ -71,9 +71,16 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
 
     public int ics213Count; // number of ICS-213 messages received (0 or 1)
     public int ics214Count; // number of ICS-214 messages received (0 or 1)
+    public int ics214ACount; // number of ICS-214A messages received (0 or 1)
 
+    @SuppressWarnings("unused")
     public Ics213Message ics213Message;
+
     public Ics214Message ics214Message;
+
+    @SuppressWarnings("unused")
+    public Ics214Message ics214AMessage;
+
     public List<PlainMessage> plainMessages = new ArrayList<>();
 
     public Summary() {
@@ -91,7 +98,7 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
 
       var list = new ArrayList<String>(List
           .of("From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
-              "Ics213 Count", "Ics214 Count", //
+              "Ics213 Count", "Ics214 Count", "Ics214A Count", //
               "Plain Count", "Resource Count", "Activity Count"));
 
       return list.toArray(new String[list.size()]);
@@ -104,7 +111,7 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
 
       var list = new ArrayList<String>(List
           .of(sender, latitude, longitude, String.valueOf(feedbackCount), feedback.trim(), //
-              String.valueOf(ics213Count), String.valueOf(ics214Count), //
+              String.valueOf(ics213Count), String.valueOf(ics214Count), String.valueOf(ics214ACount), //
               String.valueOf(plainMessages.size()), String.valueOf(1 + ics214Message.assignedResources.size()),
               String.valueOf(ics214Message.activities.size())));
 
@@ -132,8 +139,13 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
       sender = m.from;
       location = m.mapLocation;
 
-      ++ics214Count;
-      ics214Message = m;
+      if (m.getMessageType() == MessageType.ICS_214) {
+        ++ics214Count;
+        ics214Message = m;
+      } else {
+        ++ics214ACount;
+        ics214AMessage = m;
+      }
 
       if (sts.getExplanations().size() > 0) {
         feedbackCount += sts.getExplanations().size();
@@ -178,8 +190,8 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     // different exercise windows
     setWindowsForType(MessageType.ICS_213, LocalDateTime.of(2024, 6, 22, 18, 0, 0),
         LocalDateTime.of(2024, 6, 23, 20, 59, 59));
-    setWindowsForType(MessageType.ICS_214, LocalDateTime.of(2024, 6, 22, 18, 0, 0),
-        LocalDateTime.of(2024, 6, 28, 16, 0, 0));
+    setWindowsForType(MessageType.ICS_214, LocalDateTime.of(2024, 6, 25, 18, 0, 0),
+        LocalDateTime.of(2024, 6, 28, 7, 59, 0));
   }
 
   @Override
@@ -191,14 +203,14 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
       handleIcs213((Ics213Message) message);
     } else if (type == MessageType.ICS_214) {
       handleIcs214((Ics214Message) message);
+    } else if (type == MessageType.ICS_214A) {
+      handleIcs214((Ics214Message) message);
     } else {
       logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
     }
   }
 
   private void handlePlain(PlainMessage m) {
-    // TODO Auto-generated method stub
-
     var summary = summaryMap.getOrDefault(m.from, new Summary());
     summary.aggregate(m, sts);
     summaryMap.put(m.from, summary);
@@ -289,13 +301,15 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     outboundMessageSubject = "Feedback on your Field Day ICS-214 message, mId: ";
     sts.setExplanationPrefix("");
 
-    getCounter("ICS-214 versions").increment(m.version);
-
     if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
       logger.info("### call: " + m.from + "\n" + sts.toString());
     }
 
+    getCounter("ICS-214 versions").increment(m.version);
+
     sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
+    var messageTypePredicate = m.getMessageType() == MessageType.ICS_214;
+    sts.test("Form ICS-214 should be used", messageTypePredicate);
 
     // box 1: incident name and page
     sts.test("Box 1 Incident Name should be #EV", "ARRL Field Day 2024", m.incidentName);
@@ -307,7 +321,7 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     sts.testIsDateTime("Box 2 Date Time To should be a valid date/time", (Object) m.opTo, OP_DTF);
 
     // box 3: name
-    sts.test("Box 3 Name should end with " + m.from, m.selfResource.name().endsWith(m.from), m.selfResource.name());
+    sts.test("Box 3 Name should end with callsign", m.selfResource.name().endsWith(m.from), m.selfResource.name());
 
     // box 4: ICS position
     sts.test("Box 4 ICS Position should be #EV", "ETO Winlink Thursday Participant", m.selfResource.icsPosition());

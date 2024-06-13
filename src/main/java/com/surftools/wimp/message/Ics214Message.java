@@ -48,6 +48,7 @@ public class Ics214Message extends ExportedMessage {
   public final List<Activity> activities;
   public final String preparedBy;
   public final String version;
+  public final boolean isIndividual;
 
   public static record Resource(String name, String icsPosition, String homeAgency) {
   }
@@ -57,7 +58,7 @@ public class Ics214Message extends ExportedMessage {
 
   public Ics214Message(ExportedMessage exportedMessage, String organization, String incidentName, String page,
       String opFrom, String opTo, Resource selfResource, List<Resource> assignedResources, List<Activity> activities,
-      String preparedBy, String version) {
+      String preparedBy, String version, boolean isIndividual) {
     super(exportedMessage);
     this.organization = organization;
     this.incidentName = incidentName;
@@ -69,6 +70,11 @@ public class Ics214Message extends ExportedMessage {
     this.activities = activities;
     this.preparedBy = preparedBy;
     this.version = version;
+    this.isIndividual = isIndividual;
+
+    if (isIndividual) {
+      nDisplayAdditionalResouces = 0;
+    }
   }
 
   public static int getNDisplayAdditionalResouces() {
@@ -174,7 +180,7 @@ public class Ics214Message extends ExportedMessage {
 
   @Override
   public MessageType getMessageType() {
-    return MessageType.ICS_214;
+    return isIndividual ? MessageType.ICS_214A : MessageType.ICS_214;
   }
 
   @Override

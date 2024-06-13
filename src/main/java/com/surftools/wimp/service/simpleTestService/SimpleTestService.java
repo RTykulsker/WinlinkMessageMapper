@@ -310,7 +310,6 @@ public class SimpleTestService implements IService {
    * @param formatter
    * @return
    */
-  @Deprecated
   public TestResult testIsDateTime(String label, String value, DateTimeFormatter formatter) {
     var entry = entryMap.get(label);
     if (entry == null) {

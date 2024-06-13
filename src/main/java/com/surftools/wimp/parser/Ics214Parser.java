@@ -27,7 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,10 +47,13 @@ import com.surftools.wimp.message.Ics214Message;
 public class Ics214Parser extends AbstractBaseParser {
   private static final Logger logger = LoggerFactory.getLogger(Ics214Parser.class);
 
-  @SuppressWarnings("unused")
-  private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
   private static boolean strictParsing = false; // should a parse error fail here, or downstream during grading
+
+  private final boolean isIndividual; // are we parsing ICS-214 or ICS-214A?
+
+  public Ics214Parser(boolean isIndividual) {
+    this.isIndividual = isIndividual;
+  }
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
@@ -62,7 +64,8 @@ public class Ics214Parser extends AbstractBaseParser {
 
     try {
 
-      String xmlString = new String(message.attachments.get(MessageType.ICS_214.attachmentName()));
+      var mt = isIndividual ? MessageType.ICS_214A : MessageType.ICS_214;
+      String xmlString = new String(message.attachments.get(mt.attachmentName()));
 
       makeDocument(message.messageId, xmlString);
 
@@ -84,7 +87,6 @@ public class Ics214Parser extends AbstractBaseParser {
       var preparedBy = getStringFromXml("preparedname");
       var version = "";
       var templateVersion = getStringFromXml("templateversion");
-
       if (templateVersion != null) {
         var fields = templateVersion.split(" ");
         version = fields[fields.length - 1]; // last field
@@ -98,15 +100,18 @@ public class Ics214Parser extends AbstractBaseParser {
           reasons.add("can't parse Page: " + page);
         }
 
-        // TODO add testing of opFrom, opTo as MM/DD/YY HH:MM, activity dates as either HH:MM or yyyy-mm-dd hh:mm
-
         if (reasons.size() > 0) {
           return reject(message, RejectType.EXPLICIT_OTHER, String.join(",", reasons));
         }
       }
 
+      if (isIndividual) {
+        resource = assignedResources.get(0);
+        assignedResources.clear();
+      }
+
       var m = new Ics214Message(message, organization, incidentName, page, opFrom, opTo, resource, assignedResources,
-          activities, preparedBy, version);
+          activities, preparedBy, version, isIndividual);
 
       return m;
     } catch (Exception e) {

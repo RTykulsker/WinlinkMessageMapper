@@ -262,6 +262,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   public void postProcess() {
     for (var messageType : typeEntryMap.keySet()) {
       te = typeEntryMap.get(messageType);
+      sts = te.sts;
 
       if (doStsFieldValidation) {
         logger.info("field validation:\n" + sts.validate());

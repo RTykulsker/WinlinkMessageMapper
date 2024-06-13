@@ -89,8 +89,19 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     this.mm = mm;
 
     pathName = cm.getAsString(Key.PATH);
-    outputPath = Path.of(pathName.toString(), "output");
-    outputPathName = outputPath.toString();
+
+    // allow overriding of outputPathName!
+    outputPathName = cm.getAsString(Key.OUTPUT_PATH);
+    if (outputPathName == null) {
+      outputPath = Path.of(pathName.toString(), "output");
+      outputPathName = outputPath.toString();
+    } else {
+      outputPath = Path.of(outputPathName);
+    }
+
+    if (cm.getAsBoolean(Key.OUTPUT_PATH_CLEAR_ON_START, true)) {
+      FileUtils.deleteDirectory(outputPath);
+    }
 
     dumpIds = (Set<String>) mm.getContextObject("dumpIds");
     if (dumpIds == null) {
@@ -102,7 +113,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     doOutboundMessaging = outboundMessageSender != null && outboundMessageSubject != null
         && !outboundMessageSender.isEmpty() && !outboundMessageSubject.isEmpty();
     if (!doOutboundMessaging) {
-      logger.debug("### skipping outboundMessage processing");
+      logger.info("### skipping outboundMessage processing");
     }
   }
 

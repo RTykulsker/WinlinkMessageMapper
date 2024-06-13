@@ -151,6 +151,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.ICS_213_RR;
       } else if (attachmentNames.contains(MessageType.ICS_214.attachmentName())) {
         return MessageType.ICS_214;
+      } else if (attachmentNames.contains(MessageType.ICS_214A.attachmentName())) {
+        return MessageType.ICS_214A;
       } else if (attachmentNames.contains(MessageType.ICS_309.attachmentName())) {
         return MessageType.ICS_309;
       } else if (attachmentNames.contains(MessageType.DAMAGE_ASSESSMENT.attachmentName())) {
@@ -222,7 +224,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.ICS_213, new Ics213Parser());
     parserMap.put(MessageType.ICS_213_REPLY, new Ics213ReplyParser());
     parserMap.put(MessageType.ICS_213_RR, new Ics213RRParser());
-    parserMap.put(MessageType.ICS_214, new Ics214Parser());
+    parserMap.put(MessageType.ICS_214, new Ics214Parser(false));
+    parserMap.put(MessageType.ICS_214A, new Ics214Parser(true));
     parserMap.put(MessageType.ICS_309, new Ics309Parser());
 
     parserMap.put(MessageType.ETO_CHECK_IN, new EtoCheckInParser());
