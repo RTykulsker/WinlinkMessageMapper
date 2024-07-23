@@ -115,6 +115,14 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
   }
 
   public MessageType getMessageType(ExportedMessage message) {
+    if (dumpIds.contains(message.from)) {
+      logger.debug("dump from: " + message.from);
+    }
+
+    if (dumpIds.contains(message.messageId)) {
+      logger.debug("dump messageId: " + message.messageId);
+    }
+
     var subject = message.subject;
 
     /**

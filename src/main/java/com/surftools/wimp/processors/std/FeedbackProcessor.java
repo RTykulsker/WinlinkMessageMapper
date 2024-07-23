@@ -130,14 +130,22 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       logger.info("will accept *ALL* message types");
     }
 
-    windowOpenDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_OPEN)));
-    windowCloseDT = LocalDateTime.from(DTF.parse(cm.getAsString(Key.EXERCISE_WINDOW_CLOSE)));
+    var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
+    if (windowOpenString != null) {
+      windowOpenDT = LocalDateTime.from(DTF.parse(windowOpenString));
+    }
+
+    var windowCloseString = cm.getAsString(Key.EXERCISE_WINDOW_CLOSE);
+    if (windowCloseString != null) {
+      windowCloseDT = LocalDateTime.from(DTF.parse(windowCloseString));
+    }
   }
 
   protected void setWindowsForType(MessageType type, LocalDateTime typedOpenDt, LocalDateTime typedCloseDt) {
     var te = typeEntryMap.getOrDefault(type, new TypeEntry());
     te.windowOpenDt = typedOpenDt;
     te.windowCloseDt = typedCloseDt;
+    typeEntryMap.put(type, te);
   }
 
   @Override

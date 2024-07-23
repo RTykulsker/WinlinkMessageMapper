@@ -43,8 +43,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class ETO_2024_07_18 extends FeedbackProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_07_18.class);
+public class ETO_2024_07_25 extends FeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_07_25.class);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -78,7 +78,21 @@ public class ETO_2024_07_18 extends FeedbackProcessor {
     }
 
     getCounter("Comments present").increment(m.comments.isBlank() ? 0 : 1);
-    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+
+    var blurb = """
+
+        Thank you for participating in this month's exercise. We will use your
+        information to help us shape future training exercises and drills. We
+        will respect your privacy by not sharing any details of your information
+        with any other organization, but we may share aggregated anonymous data.
+        Thanks again, and we look forward to seeing you participate again next
+        month!
+
+         """;
+
+    setExtraOutboundMessageText(blurb);
+    getCounter("Feedback Count").increment(sts.getExplanations().size());
+    getCounter("Clearinghouse Count").increment(m.to);
   }
 
 }

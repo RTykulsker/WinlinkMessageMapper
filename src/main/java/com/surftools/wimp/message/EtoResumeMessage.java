@@ -140,20 +140,20 @@ public class EtoResumeMessage extends ExportedMessage {
 
   private String trainingCount() {
     var sum = 0;
-    sum += hasIs100.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasIs200.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasIs700.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasIs800.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasIs2200.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasIs100.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasIs200.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasIs700.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasIs800.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasIs2200.equalsIgnoreCase("Not Yet!") ? 0 : 1;
 
-    sum += hasAces.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasEc001.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasEc016.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasSkywarn.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasAces.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasEc001.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasEc016.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasSkywarn.equalsIgnoreCase("Not Yet!") ? 0 : 1;
 
-    sum += hasAuxComm.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasComT.equalsIgnoreCase("NO") ? 0 : 1;
-    sum += hasComL.equalsIgnoreCase("NO") ? 0 : 1;
+    sum += hasAuxComm.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasComT.equalsIgnoreCase("Not Yet!") ? 0 : 1;
+    sum += hasComL.equalsIgnoreCase("Not Yet!") ? 0 : 1;
 
     return String.valueOf(sum);
   }

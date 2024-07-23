@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.other;
+package com.surftools.wimp.processors.miro;
 
 import java.nio.file.Path;
 import java.text.DecimalFormat;

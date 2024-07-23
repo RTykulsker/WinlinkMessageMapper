@@ -49,6 +49,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
 
   public final String messageId;
   public final String from;
+  public final String source;
   public final String to;
   public final String toList;
   public final String ccList;
@@ -97,12 +98,13 @@ public class ExportedMessage implements IMessage, IWritableTable {
     return true;
   }
 
-  public ExportedMessage(String messageId, String from, String to, String toList, String ccList, //
+  public ExportedMessage(String messageId, String from, String source, String to, String toList, String ccList, //
       String subject, LocalDateTime dateTime, //
       LatLongPair location, String locationSource, //
       String mime, String plainContent, Map<String, byte[]> attachments, boolean isP2p) {
     this.messageId = messageId;
     this.from = from;
+    this.source = source;
     this.to = to;
     this.toList = toList;
     this.ccList = ccList;
@@ -133,6 +135,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public ExportedMessage(ExportedMessage exportedMessage) {
     this.messageId = exportedMessage.messageId;
     this.from = exportedMessage.from;
+    this.source = exportedMessage.source;
     this.to = exportedMessage.to;
     this.toList = exportedMessage.toList;
     this.ccList = exportedMessage.ccList;

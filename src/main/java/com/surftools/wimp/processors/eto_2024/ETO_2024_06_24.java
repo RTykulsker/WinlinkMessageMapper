@@ -29,7 +29,6 @@ package com.surftools.wimp.processors.eto_2024;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -98,7 +97,7 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
 
       var list = new ArrayList<String>(List
           .of("From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
-              "Ics213 Count", "Ics214 Count", "Ics214A Count", //
+              "Ics213 Count", "Ics214 Count", "Ics214A Count", "Required Count", //
               "Plain Count", "Resource Count", "Activity Count"));
 
       return list.toArray(new String[list.size()]);
@@ -109,11 +108,15 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
       var latitude = (location != null && location.isValid()) ? location.getLatitude() : "0.0";
       var longitude = (location != null && location.isValid()) ? location.getLongitude() : "0.0";
 
+      var assignedResourcesCount = ics214Message == null ? 0 : 1 + ics214Message.assignedResources.size();
+      var activitesCount = ics214Message == null ? 0 : ics214Message.activities.size();
+
       var list = new ArrayList<String>(List
           .of(sender, latitude, longitude, String.valueOf(feedbackCount), feedback.trim(), //
-              String.valueOf(ics213Count), String.valueOf(ics214Count), String.valueOf(ics214ACount), //
-              String.valueOf(plainMessages.size()), String.valueOf(1 + ics214Message.assignedResources.size()),
-              String.valueOf(ics214Message.activities.size())));
+              String.valueOf(ics213Count), String.valueOf(ics214Count), String.valueOf(ics214ACount),
+              String.valueOf(ics213Count + ics214Count), //
+              String.valueOf(plainMessages.size()), String.valueOf(assignedResourcesCount),
+              String.valueOf(activitesCount)));
 
       return list.toArray(new String[list.size()]);
     }
@@ -192,6 +195,8 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
         LocalDateTime.of(2024, 6, 23, 20, 59, 59));
     setWindowsForType(MessageType.ICS_214, LocalDateTime.of(2024, 6, 25, 18, 0, 0),
         LocalDateTime.of(2024, 6, 28, 7, 59, 0));
+
+    Ics214Message.setNDisplayAdditionalResouces(0);
   }
 
   @Override
@@ -235,11 +240,25 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
 
     // box 2: to
 
+    // var source = m.source;
+    // var sender = m.from;
+    // var sourceNotSender = !source.equalsIgnoreCase(sender);
+    // if (sourceNotSender) {
+    // System.err.println("source: " + source + ", sender: " + sender);
+    // }
+
     // box 3: from
-    sts.test("Box 3 From should be #EV", m.from + " / ETO Winlink Thursday Participant", m.formFrom);
+    // var box3Predicate = sts
+    // .toAlphaNumericWords(m.from + " / ETO Winlink Thursday Participant")
+    // .equalsIgnoreCase(sts.toAlphaNumericWords(m.formFrom));
+    // sts.test("Box 3 From should be <YOURCALL> / ETO Winlink Thursday Participant", box3Predicate, m.formFrom);
+
+    sts
+        .test("Box 3 From should contain ETO Winlink Thursday Participant",
+            m.formFrom.toUpperCase().contains("ETO Winlink Thursday Participant".toUpperCase()), m.formFrom);
 
     // box 4: subject
-    sts.test("Box4 Subject should be #EV", "ARRL Field Day 2024 Participation", m.formSubject);
+    sts.test("Box 4 Subject should be #EV", "ARRL Field Day 2024 Participation", m.formSubject);
 
     // box 5: date
     // box 6: time
@@ -262,6 +281,9 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     summaryMap.put(m.from, summary);
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+
+    getCounter("Feedback Count").increment(sts.getExplanations().size());
+    getCounter("Clearinghouse Count").increment(m.to);
   }
 
   private String evaluateMessage(String message) {
@@ -316,9 +338,9 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     sts.test("Page # should be #EV", "1", m.page);
 
     // box 2: operational period
-    final var OP_DTF = DateTimeFormatter.ofPattern("MM/dd/yy HH:mm");
-    sts.testIsDateTime("Box 2 Date Time From should be a valid date/time", (Object) m.opFrom, OP_DTF);
-    sts.testIsDateTime("Box 2 Date Time To should be a valid date/time", (Object) m.opTo, OP_DTF);
+    // final var OP_DTF = DateTimeFormatter.ofPattern("MM/dd/yy HH:mm");
+    // sts.testIsDateTime("Box 2 Date Time From should be a valid date/time", (Object) m.opFrom, OP_DTF);
+    // sts.testIsDateTime("Box 2 Date Time To should be a valid date/time", (Object) m.opTo, OP_DTF);
 
     // box 3: name
     sts.test("Box 3 Name should end with callsign", m.selfResource.name().endsWith(m.from), m.selfResource.name());
@@ -334,6 +356,8 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     summaryMap.put(m.from, summary);
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+    getCounter("Feedback Count").increment(sts.getExplanations().size());
+    getCounter("Clearinghouse Count").increment(m.to);
   }
 
   @Override

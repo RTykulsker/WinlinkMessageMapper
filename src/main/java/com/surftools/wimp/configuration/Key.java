@@ -42,7 +42,7 @@ public enum Key implements IConfigurationKey {
   DUMP_IDS("dumpIds"), // comma-delimited list of messageIds or call signs to dump message contents for
 
   OUTPUT_PATH("output.path"), // to override as subdir of path
-  OUTPUT_PATH_CLEAR_ON_START("output.path.clear.on.start"), // if true contents of outputDir cleared
+  OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
 
   DEDUPLICATION_RULES("deduplication.rules"), // json string: {messageTypeName:rule,...}
 
@@ -98,6 +98,8 @@ public enum Key implements IConfigurationKey {
   CMS_AUTHORIZATION_KEY("cms.authorizationKey"), // for CMS access
   CMS_CACHE_CHANNELS("cms.cacheChannels"), // onto local disk
   CMS_CACHE_TRAFFIC("cms.cacheTraffic"), // onto local disk
+
+  CSV_COLUMN_CUTTER_CONFIGURATION("csvColumnCutterConfiguration"), // columns to be cut
   ;
 
   private final String key;

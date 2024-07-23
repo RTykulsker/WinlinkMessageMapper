@@ -199,6 +199,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
     var subject = element.getElementsByTagName("subject").item(0).getTextContent();
     var dtString = element.getElementsByTagName("time").item(0).getTextContent();
     var sender = element.getElementsByTagName("sender").item(0).getTextContent();
+    var source = element.getElementsByTagName("source").item(0).getTextContent();
     var mime = element.getElementsByTagName("mime").item(0).getTextContent();
 
     var isP2p = false;
@@ -231,7 +232,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
 
     var parser = AbstractBaseParser.makeMimeMessageParser(mime);
     if (parser == null) {
-      message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, //
+      message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
           localDateTime, locationResult.location, locationResult.source, //
           mime, plainContent, attachments, isP2p);
       return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
@@ -240,7 +241,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
     plainContent = parser.getPlainContent();
     attachments = AbstractBaseParser.getAttachments(parser);
 
-    message = new ExportedMessage(messageId, sender, recipient, toList, ccList, subject, //
+    message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
         localDateTime, locationResult.location, locationResult.source, //
         mime, plainContent, attachments, isP2p);
 
@@ -515,7 +516,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
       logger.error("Exception processing " + inputString + ", row " + rowCount + ", " + e.getLocalizedMessage());
     }
 
-    logger.info("returning: " + list.size() + " records");
+    logger.info("returning: " + list.size() + " records from " + inputString);
     return list;
   }
 
@@ -526,6 +527,17 @@ public class ReadProcessor extends AbstractBaseProcessor {
    * @return
    */
   public static List<String[]> readCsvFileIntoFieldsArray(Path inputPath) {
+    return readCsvFileIntoFieldsArray(inputPath, ',', false, 0);
+  }
+
+  /**
+   * semi-generic method to read a CSV file into a list of array of String fields
+   *
+   * @param inputPath
+   * @return
+   */
+  public static List<String[]> readCsvFileIntoFieldsArray(Path inputPath, char separator, boolean ignoreQuotes,
+      int skipLines) {
     var list = new ArrayList<String[]>();
 
     if (!inputPath.toFile().exists()) {
@@ -537,11 +549,11 @@ public class ReadProcessor extends AbstractBaseProcessor {
     try {
       Reader reader = new FileReader(inputPath.toString());
       CSVParser parser = new CSVParserBuilder() //
-          .withSeparator(',') //
-            .withIgnoreQuotations(false) //
+          .withSeparator(separator) //
+            .withIgnoreQuotations(ignoreQuotes) //
             .build();
       CSVReader csvReader = new CSVReaderBuilder(reader) //
-          .withSkipLines(1)//
+          .withSkipLines(skipLines)//
             .withCSVParser(parser)//
             .build();
       rowCount = 1;

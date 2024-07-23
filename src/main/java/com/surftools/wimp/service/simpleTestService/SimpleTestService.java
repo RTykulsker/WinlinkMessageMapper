@@ -95,6 +95,20 @@ public class SimpleTestService implements IService {
   }
 
   /**
+   * convenience method to unwrap a TestResult
+   *
+   * @param testResult
+   * @return
+   */
+  public boolean isOk(TestResult testResult) {
+    if (testResult == null) {
+      return false;
+    }
+
+    return testResult.ok();
+  }
+
+  /**
    * our most common use case, case-independent, alphanumeric String comparison
    *
    * @param rawLabel
