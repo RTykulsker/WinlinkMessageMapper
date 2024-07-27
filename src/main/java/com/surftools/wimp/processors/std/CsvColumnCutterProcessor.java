@@ -49,8 +49,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  *
  * inFile1;outFile1;columnContext1|inFile2;outFile2;columnContext2 ...
  */
-public class CvsColumnCutterProcessor implements IProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(CvsColumnCutterProcessor.class);
+public class CsvColumnCutterProcessor implements IProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(CsvColumnCutterProcessor.class);
 
   static record Context(String inputFileName, String outputFileName, List<Integer> columnList) {
   };

@@ -55,6 +55,7 @@ import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
+import com.surftools.wimp.service.pieChart.AbstractBasePieChartService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -77,10 +78,12 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   protected boolean doStsFieldValidation = true;
 
+  protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
+
   /**
    * this is the context that we need for each message type, but we won't share it with subtypes
    */
-  private static class TypeEntry {
+  private class TypeEntry {
     public SimpleTestService sts = new SimpleTestService();
 
     public int ppCount = 0;
@@ -322,6 +325,10 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         outboundMessageList = service.sendAll(outboundMessageList);
         writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }
+
+      var pieChartService = AbstractBasePieChartService.getService(cm, te.counterMap);
+      pieChartService.excludeCounters(excludedPieChartCounterLabels);
+      pieChartService.makePieCharts();
     } // end loop over message types
 
   }

@@ -100,6 +100,7 @@ public enum Key implements IConfigurationKey {
   CMS_CACHE_TRAFFIC("cms.cacheTraffic"), // onto local disk
 
   CSV_COLUMN_CUTTER_CONFIGURATION("csvColumnCutterConfiguration"), // columns to be cut
+  CSV_COLUMN_HEADER_RENAME_CONFIGURATION("csvColumnHeaderRenameConfiguration"), // columns to be renamed
   ;
 
   private final String key;

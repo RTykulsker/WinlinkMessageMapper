@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.eto_2024;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +51,8 @@ public class ETO_2024_07_25 extends FeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
+
+    excludedPieChartCounterLabels = List.of("Agency");
   }
 
   @Override
