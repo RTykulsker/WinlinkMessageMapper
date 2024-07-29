@@ -31,68 +31,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
-import com.surftools.wimp.message.EtoResumeMessage;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for ETO Resume
+ * Processor for FSR with Severe weather
  *
  *
  * @author bobt
  *
  */
-public class ETO_2024_07_25 extends FeedbackProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_07_25.class);
+public class ETO_2024_08_15 extends FeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_08_15.class);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
+
+    acceptableMessageTypesSet.add(MessageType.FIELD_SITUATION);
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    EtoResumeMessage m = (EtoResumeMessage) message;
-    getCounter("versions").increment(m.version);
+    FieldSituationMessage m = (FieldSituationMessage) message;
+    count(sts.test("Box 4 Subject should be #EV", "ARRL Field Day 2024 Participation", m.subject));
 
-    getCounter("IS-100").increment(m.hasIs100);
-    getCounter("IS-200").increment(m.hasIs200);
-    getCounter("IS-700").increment(m.hasIs700);
-    getCounter("IS-800").increment(m.hasIs800);
-    getCounter("IS-2200").increment(m.hasIs2200);
-
-    getCounter("EC-001").increment(m.hasEc001);
-    getCounter("EC-016").increment(m.hasEc016);
-    getCounter("OR ACES").increment(m.hasAces);
-    getCounter("Skywarn").increment(m.hasSkywarn);
-
-    getCounter("AuxCom").increment(m.hasAuxComm);
-    getCounter("COM-T").increment(m.hasComT);
-    getCounter("COM-L").increment(m.hasComL);
-
-    getCounter("# Served Agencies").increment(m.agencies.size());
-
-    for (var agency : m.agencies) {
-      getCounter("Agency").increment(agency);
-    }
-
-    getCounter("Comments present").increment(m.comments.isBlank() ? 0 : 1);
-    getCounter("Feedback Count").increment(sts.getExplanations().size());
+    getCounter("versions").increment(m.formVersion);
     getCounter("Clearinghouse Count").increment(m.to);
 
-    var blurb = """
+    getCounter("Feedback Count").increment(sts.getExplanations().size());
+    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
 
-        Thank you for participating in this month's exercise. We will use your
-        information to help us shape future training exercises and drills. We
-        will respect your privacy by not sharing any details of your information
-        with any other organization, but we may share aggregated anonymous data.
-        Thanks again, and we look forward to seeing you participate again next
-        month!
-
-         """;
-
-    setExtraOutboundMessageText(blurb);
   }
 
 }

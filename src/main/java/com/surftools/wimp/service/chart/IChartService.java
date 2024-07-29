@@ -25,40 +25,12 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.pieChart;
+package com.surftools.wimp.service.chart;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.surftools.wimp.service.IService;
 
-import com.surftools.utils.counter.Counter;
-import com.surftools.wimp.utils.config.IConfigurationManager;
+public interface IChartService extends IService {
 
-public abstract class AbstractBasePieChartService implements IPieChartService {
-
-  protected IConfigurationManager cm;
-  protected Map<String, Counter> counterMap;
-  protected Set<String> excludedCounterNames;
-
-  public static AbstractBasePieChartService getService(IConfigurationManager cm, Map<String, Counter> counterMap) {
-    return new PlotlyPieChartService(cm, counterMap);
-  }
-
-  public AbstractBasePieChartService(IConfigurationManager cm, Map<String, Counter> counterMap) {
-    this.cm = cm;
-    this.counterMap = counterMap;
-    this.excludedCounterNames = new HashSet<>();
-  }
-
-  @Override
-  public void excludeCounter(String counterName) {
-    excludedCounterNames.add(counterName);
-  }
-
-  @Override
-  public void excludeCounters(List<String> counterNames) {
-    excludedCounterNames.addAll(counterNames);
-  }
+  public void makeCharts();
 
 }

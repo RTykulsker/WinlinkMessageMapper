@@ -49,7 +49,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.MiroCheckInMessage;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
@@ -63,7 +63,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class MIRO_Check_In extends AbstractBaseProcessor {
+public class MIRO_Check_In extends FeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(MIRO_Check_In.class);
 
   private static final MultiDateTimeParser parser = new MultiDateTimeParser(
@@ -72,6 +72,26 @@ public class MIRO_Check_In extends AbstractBaseProcessor {
   private static final boolean FLAG_INCLUDE_ANTENNA_IN_RESILIENCY = false;
   private static final boolean FLAG_INCLUDE_RMS_GATEWAY_IN_RESILIENCY = false;
   private static final boolean FLAG_INCLUDE_RF_POWER_IN_RESILIENCY = false;
+
+  static {
+    powerMap = Map.of("B", "Battery", "G", "Generator", "M", "Municipal");
+    bandMap = Map.of("H", "HF", "T", "Telnet", "U", "UHF", "V", "VHF");
+    modeMap = Map
+        .of("A", "Ardop HF", "P", "Packet FM", "PT", "Pactor HF", "T", "Telnet", "VF", "Vara FM", "VH", "Vara HF");
+    radioMap = Map.of("B", "Base", "H", "Handheld", "M", "Mobile");
+    antennaMap = Map
+        .of("B", "Beam", "D", "Dipole", "E", "Endfed", "H", "Handheld", "N", "NVIS", "O", "Other", "V", "Vertical");
+    rfPowerMap = Map
+        .of("P0", "n/a", "P1", "very low (0-5 W)", "P2", "low (5-30 W)", "P3", "medium (30-50 W)", "P4",
+            "high (50-100 W)", "P5", "very high (100W to legal limit)");
+  }
+
+  private static final Map<String, String> powerMap;
+  private static final Map<String, String> bandMap;
+  private static final Map<String, String> modeMap;
+  private static final Map<String, String> radioMap;
+  private static final Map<String, String> antennaMap;
+  private static final Map<String, String> rfPowerMap;
 
   public static class GradedMiroMessage implements IWritableTable {
     public String messageId;
@@ -229,26 +249,6 @@ public class MIRO_Check_In extends AbstractBaseProcessor {
       return dateTime.compareTo(o.dateTime);
     }
 
-    static {
-      powerMap = Map.of("B", "Battery", "G", "Generator", "M", "Municipal");
-      bandMap = Map.of("H", "HF", "T", "Telnet", "U", "UHF", "V", "VHF");
-      modeMap = Map
-          .of("A", "Ardop HF", "P", "Packet FM", "PT", "Pactor HF", "T", "Telnet", "VF", "Vara FM", "VH", "Vara HF");
-      radioMap = Map.of("B", "Base", "H", "Handheld", "M", "Mobile");
-      antennaMap = Map
-          .of("B", "Beam", "D", "Dipole", "E", "Endfed", "H", "Handheld", "N", "NVIS", "O", "Other", "V", "Vertical");
-      rfPowerMap = Map
-          .of("P0", "n/a", "P1", "very low (0-5 W)", "P2", "low (5-30 W)", "P3", "medium (30-50 W)", "P4",
-              "high (50-100 W)", "P5", "very high (100W to legal limit)");
-    }
-
-    private static final Map<String, String> powerMap;
-    private static final Map<String, String> bandMap;
-    private static final Map<String, String> modeMap;
-    private static final Map<String, String> radioMap;
-    private static final Map<String, String> antennaMap;
-    private static final Map<String, String> rfPowerMap;
-
   }
 
   private Map<String, List<GradedMiroMessage>> oldMessages;
@@ -270,75 +270,86 @@ public class MIRO_Check_In extends AbstractBaseProcessor {
   }
 
   @Override
-  public void process() {
-    var messages = mm.getMessagesForType(MessageType.MIRO_CHECK_IN);
-    if (messages != null) {
-      for (var message : messages) {
-        MiroCheckInMessage m = (MiroCheckInMessage) message;
-        ++ppCount;
+  protected void specificProcessing(ExportedMessage message) {
+    if (message.getMessageType() != MessageType.MIRO_CHECK_IN) {
+      return;
+    }
 
-        var newGradedMessage = new GradedMiroMessage(m);
+    MiroCheckInMessage m = (MiroCheckInMessage) message;
+    ++ppCount;
 
-        var from = message.from;
-        var list = oldMessages.getOrDefault(from, new ArrayList<GradedMiroMessage>());
-        var oldExerciseCount = list.size();
-        long oldResilienceCount = list.stream().filter(msg -> msg.isResilient.equals("Yes")).count();
+    getCounter("versions").increment(m.version);
 
-        var explanations = new ArrayList<String>();
-        for (var old : list) {
-          if (!newGradedMessage.isResilientFrom(old)) {
-            explanations.add(old.messageId);
-          }
-        }
+    getCounter("power").increment(powerMap.getOrDefault(m.power, m.power));
+    getCounter("band").increment(bandMap.getOrDefault(m.band, m.band));
+    getCounter("mode").increment(modeMap.getOrDefault(m.mode, m.mode));
+    getCounter("radio").increment(radioMap.getOrDefault(m.radio, m.radio));
+    getCounter("antenna").increment(antennaMap.getOrDefault(m.antenna, m.antenna));
+    getCounter("portable").increment(m.portable);
+    getCounter("rfPower").increment(rfPowerMap.getOrDefault(m.rfPower, m.rfPower));
+    getCounter("rmsGateway").increment(m.rmsGateway);
+    getCounter("distanceMiles").increment(m.distanceMiles);
 
-        var isResilient = "Yes";
-        var explanation = "";
-        if (explanations.size() != 0) {
-          explanation = "same path as messageId(s): " + String.join(",", explanations);
-          isResilient = "No";
-        }
+    var newGradedMessage = new GradedMiroMessage(m);
 
-        var newExerciseCount = 1 + oldExerciseCount;
-        var newResilientCount = (int) ((isResilient.equals("Yes") ? 1 : 0) + oldResilienceCount);
-        var resiliencyPercent = (int) Math.round(100d * (newResilientCount) / newExerciseCount);
+    var from = message.from;
+    var list = oldMessages.getOrDefault(from, new ArrayList<GradedMiroMessage>());
+    var oldExerciseCount = list.size();
+    long oldResilienceCount = list.stream().filter(msg -> msg.isResilient.equals("Yes")).count();
 
-        newGradedMessage.isResilient = isResilient;
-        newGradedMessage.explanation = explanation;
-        newGradedMessage.resiliencyCount = newResilientCount;
-        newGradedMessage.exerciseCount = newExerciseCount;
-        newGradedMessage.resiliencyPercent = resiliencyPercent;
-        list.add(newGradedMessage);
-        Collections.sort(list);
-        oldMessages.put(from, list);
-        results.add(newGradedMessage);
+    var explanations = new ArrayList<String>();
+    for (var old : list) {
+      if (!newGradedMessage.isResilientFrom(old)) {
+        explanations.add(old.messageId);
+      }
+    }
 
-        if (doOutboundMessaging) {
-          var sb = new StringBuilder();
-          sb.append("Thank you for participating in our monthly MIRO Winlink Wednesday exercise ");
-          sb.append("and for submitting a MIRO Check In v2.0.0 message.\n\n");
+    var isResilient = "Yes";
+    var explanation = "";
+    if (explanations.size() != 0) {
+      explanation = "same path as messageId(s): " + String.join(",", explanations);
+      isResilient = "No";
+    }
 
-          if (isResilient.equalsIgnoreCase("YES")) {
-            sb.append("This month you used a 'resilient path' to send your messages. Well done!\n");
-          } else {
-            sb.append("This month you didn't use a 'resilient path'. Oh well, try again next month!\n");
-          }
-          sb.append("\n");
-          sb.append("For 2024, you participated in " + newExerciseCount + " exercise");
-          sb.append((newExerciseCount == 1 ? "" : "s") + ", ");
-          sb.append("with a resilient count of " + newResilientCount);
-          sb.append(", for a resiliency 'score' of " + resiliencyPercent + "%\n\n");
+    var newExerciseCount = 1 + oldExerciseCount;
+    var newResilientCount = (int) ((isResilient.equals("Yes") ? 1 : 0) + oldResilienceCount);
+    var resiliencyPercent = (int) Math.round(100d * (newResilientCount) / newExerciseCount);
 
-          var totalMessageContent = getTotalMessageContent(from, mm.getMessagesForSender(from));
-          sb.append(totalMessageContent);
+    newGradedMessage.isResilient = isResilient;
+    newGradedMessage.explanation = explanation;
+    newGradedMessage.resiliencyCount = newResilientCount;
+    newGradedMessage.exerciseCount = newExerciseCount;
+    newGradedMessage.resiliencyPercent = resiliencyPercent;
+    list.add(newGradedMessage);
+    Collections.sort(list);
+    oldMessages.put(from, list);
+    results.add(newGradedMessage);
 
-          var feedback = sb.toString();
-          var outboundMessage = new OutboundMessage(outboundMessageSender, from,
-              outboundMessageSubject + " " + m.messageId, feedback, null);
-          outboundMessageList.add(outboundMessage);
-        } // end doOutboundMessaging
+    if (doOutboundMessaging) {
+      var sb = new StringBuilder();
+      sb.append("Thank you for participating in our monthly MIRO Winlink Wednesday exercise ");
+      sb.append("and for submitting a MIRO Check In v2.0.0 message.\n\n");
 
-      } // end loop over messages
-    } // end messages not null
+      if (isResilient.equalsIgnoreCase("YES")) {
+        sb.append("This month you used a 'resilient path' to send your messages. Well done!\n");
+      } else {
+        sb.append("This month you didn't use a 'resilient path'. Oh well, try again next month!\n");
+      }
+      sb.append("\n");
+      sb.append("For 2024, you participated in " + newExerciseCount + " exercise");
+      sb.append((newExerciseCount == 1 ? "" : "s") + ", ");
+      sb.append("with a resilient count of " + newResilientCount);
+      sb.append(", for a resiliency 'score' of " + resiliencyPercent + "%\n\n");
+
+      var totalMessageContent = getTotalMessageContent(from, mm.getMessagesForSender(from));
+      sb.append(totalMessageContent);
+
+      var feedback = sb.toString();
+      var outboundMessage = new OutboundMessage(outboundMessageSender, from, outboundMessageSubject + " " + m.messageId,
+          feedback, null);
+      outboundMessageList.add(outboundMessage);
+    } // end doOutboundMessaging
+
   }
 
   private final DecimalFormat df = new DecimalFormat("#.000###");
@@ -388,6 +399,8 @@ public class MIRO_Check_In extends AbstractBaseProcessor {
   @SuppressWarnings("unchecked")
   @Override
   public void postProcess() {
+    super.postProcess();
+
     var sb = new StringBuilder();
     sb.append("\nMiro Check In messages: " + ppCount + "\n");
     sb.append(formatPP("Messages with resilient channel", ppResilienceCount, ppCount));
@@ -421,7 +434,7 @@ public class MIRO_Check_In extends AbstractBaseProcessor {
     }
 
     var path = Path.of(cm.getAsString(Key.DATABASE_PATH), "cumulative-miro_check_in.csv");
-    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(path);
+    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(path, ',', false, 1);
     for (var fields : fieldsArray) {
       var message = new GradedMiroMessage(fields);
       var sender = message.from;

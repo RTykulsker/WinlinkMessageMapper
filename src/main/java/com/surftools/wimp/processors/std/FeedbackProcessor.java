@@ -53,10 +53,11 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.service.chart.AbstractBaseChartService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
-import com.surftools.wimp.service.pieChart.AbstractBasePieChartService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
+import com.surftools.wimp.service.simpleTestService.TestResult;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -104,7 +105,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   private Map<MessageType, TypeEntry> typeEntryMap = new LinkedHashMap<>();
   private TypeEntry te;
-  private Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
+  protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
   protected SimpleTestService sts = new SimpleTestService();
   protected ExportedMessage message;
@@ -255,11 +256,22 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected Counter getCounter(String label) {
     var counter = te.counterMap.get(label);
     if (counter == null) {
-      counter = new Counter();
+      counter = new Counter(label);
       te.counterMap.put(label, counter);
     }
 
     return counter;
+  }
+
+  /**
+   * get a TestResult!
+   * 
+   * @param testResult
+   */
+  protected void count(TestResult testResult) {
+    var label = testResult.key();
+    var result = testResult.ok();
+    getCounter(label).increment(result ? "correct" : "incorrect");
   }
 
   /**
@@ -326,9 +338,8 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }
 
-      var pieChartService = AbstractBasePieChartService.getService(cm, te.counterMap);
-      pieChartService.excludeCounters(excludedPieChartCounterLabels);
-      pieChartService.makePieCharts();
+      var chartService = AbstractBaseChartService.getChartService(cm, te.counterMap, messageType);
+      chartService.makeCharts();
     } // end loop over message types
 
   }

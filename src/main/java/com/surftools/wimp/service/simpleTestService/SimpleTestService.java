@@ -716,4 +716,5 @@ public class SimpleTestService implements IService {
   public void setExplanationPrefix(String explanationPrefix) {
     this.explanationPrefix = explanationPrefix;
   }
+
 } // end class SimpleTestService

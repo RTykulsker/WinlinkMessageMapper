@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
+import com.surftools.wimp.core.MessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PipelineProcessor extends AbstractBaseProcessor {
@@ -65,6 +66,9 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
+    if (mm == null) {
+      mm = new MessageManager();
+    }
     super.initialize(cm, mm, logger);
 
     // fail fast: our working directory, where our input files are

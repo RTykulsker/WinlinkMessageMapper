@@ -46,6 +46,8 @@ public class HospitalBedParser extends AbstractBaseParser {
   private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
+
+  @SuppressWarnings("unused")
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
   static {

@@ -25,57 +25,62 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.pieChart;
+package com.surftools.wimp.service.chart;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.configuration.Key;
-import com.surftools.wimp.utils.config.IConfigurationManager;
 
-public class PlotlyPieChartService extends AbstractBasePieChartService {
-  private static final Logger logger = LoggerFactory.getLogger(PlotlyPieChartService.class);
-
-  public PlotlyPieChartService(IConfigurationManager cm, Map<String, Counter> counterMap) {
-    super(cm, counterMap);
-  }
+public class PlotlyChartService extends AbstractBaseChartService {
+  private static final Logger logger = LoggerFactory.getLogger(PlotlyChartService.class);
 
   @Override
-  public String getName() {
-    return "PlotlyPieChartService";
-  }
+  public void makeCharts() {
+    final String TEMPLATE = """
+        <!DOCTYPE html>
+        <html lang="en" class="">
+        <head>
+            <meta charset="UTF-8">
+            <title>TITLE</title>
+            <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
+        </head>
 
-  @Override
-  public void makePieCharts() {
-    var htmlContent = makeHTMLContent();
-    var scriptContent = makeScriptContent();
+        <body>
+          HTML_CONTENT
+        <script>
+          SCRIPT_CONTENT
+        </script>
+        </body>
+        """;
 
-    var text = TEMPLATE.replace("HTML_CONTENT", htmlContent);
-    text = text.replace("SCRIPT_CONTENT", scriptContent);
+    var text = TEMPLATE.replace("HTML_CONTENT", makeHTMLContent());
+    text = text.replace("SCRIPT_CONTENT", makeScriptContent());
 
-    var title = cm.getAsString(Key.EXERCISE_DESCRIPTION);
+    var title = cm.getAsString(Key.EXERCISE_DESCRIPTION, messageType.name().toLowerCase() + " histograms");
     text = text.replaceAll("TITLE", title);
 
-    var filePath = Path.of(cm.getAsString(Key.PATH), "output", "plottly_pie_chart.html");
-
     try {
-      Files.writeString(filePath, text);
-      logger.info("wrote pie char page to: " + filePath);
+      Files.writeString(fileOutputPath, text);
+      logger.info("wrote chart page to: " + fileOutputPath);
     } catch (Exception e) {
-      logger.error("Exception writing plotly output to: " + filePath + ", " + e.getLocalizedMessage());
+      logger.error("Exception writing plotly output to: " + fileOutputPath + ", " + e.getLocalizedMessage());
     }
   }
 
   private String makeHTMLContent() {
-    var sb = new StringBuilder();
+    final String HTML_DIV = """
+        <div>RAW_COUNTER_LABEL (### responses)
+          <div id="COUNTER_LABEL"></div>
+        </div>
+        <hr>
+        """;
 
+    var sb = new StringBuilder();
     for (var counterLabel : counterMap.keySet()) {
-      if (excludedCounterNames.contains(counterLabel)) {
+      if (isExcluded(counterLabel)) {
         logger.info("skipping excluded counter: " + counterLabel);
         continue;
       }
@@ -100,9 +105,22 @@ public class PlotlyPieChartService extends AbstractBasePieChartService {
   }
 
   private String makeScriptContent() {
+    final String SCRIPT = """
+        var data_COUNTER_LABEL = [{
+          type: "CHART_TYPE",
+          values: [VALUES],
+          labels: [LABELS],
+          textinfo: "label+percent",
+          textposition: "outside",
+          automargin: true }];
+
+        Plotly.newPlot('COUNTER_LABEL', data_COUNTER_LABEL, layout);
+        """;
+
     var sb = new StringBuilder();
+    sb.append(extraLayout);
     for (var counterLabel : counterMap.keySet()) {
-      if (excludedCounterNames.contains(counterLabel)) {
+      if (isExcluded(counterLabel)) {
         logger.info("skipping excluded counter: " + counterLabel);
         continue;
       }
@@ -110,13 +128,21 @@ public class PlotlyPieChartService extends AbstractBasePieChartService {
       var counter = counterMap.get(counterLabel);
       var labelStringBuilder = new StringBuilder();
       var valueStringBuilder = new StringBuilder();
+      var minValue = minValuesMap.get(counter);
       var iterator = counter.getDescendingCountIterator();
       while (iterator.hasNext()) {
         var entry = iterator.next();
         var label = entry.getKey().toString();
-        labelStringBuilder.append("\"" + label + "\"" + ",");
-
         var value = entry.getValue() == null ? 0 : entry.getValue();
+
+        if (minValue != null && value < minValue) {
+          logger
+              .info("skipping counter values for: " + counterLabel + "/" + label + ", because value: " + value
+                  + "< min value: " + minValue);
+          continue;
+        }
+
+        labelStringBuilder.append("\"" + label + "\"" + ",");
         valueStringBuilder.append(String.valueOf(value) + ",");
       }
 
@@ -126,45 +152,15 @@ public class PlotlyPieChartService extends AbstractBasePieChartService {
       var data = SCRIPT.replaceAll("COUNTER_LABEL", fix(counterLabel));
       data = data.replace("LABELS", labelString.substring(0, labelString.length() - 1));
       data = data.replace("VALUES", valueString.substring(0, valueString.length() - 1));
+      data = data.replace("CHART_TYPE", chartType);
       sb.append(data + "\n");
     }
     return sb.toString();
   }
 
-  final String TEMPLATE = """
-      <!DOCTYPE html>
-      <html lang="en" class="">
-      <head>
-          <meta charset="UTF-8">
-          <title>TITLE</title>
-          <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
-      </head>
-
-      <body>
-        HTML_CONTENT
-      <script>
-        SCRIPT_CONTENT
-      </script>
-      </body>
-      """;
-
-  final String HTML_DIV = """
-      <div>RAW_COUNTER_LABEL (### responses)
-        <div id="COUNTER_LABEL"></div>
-      </div>
-      <hr>
-      """;
-
-  final String SCRIPT = """
-      var data_COUNTER_LABEL = [{
-        type: "pie",
-        values: [VALUES],
-        labels: [LABELS],
-        textinfo: "label+percent",
-        textposition: "outside",
-        automargin: true }];
-
-      Plotly.newPlot('COUNTER_LABEL', data_COUNTER_LABEL);
-      """;
+  @Override
+  public String getName() {
+    return "PlotlChartService";
+  }
 
 }

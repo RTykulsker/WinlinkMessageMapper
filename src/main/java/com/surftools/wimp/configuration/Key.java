@@ -101,6 +101,8 @@ public enum Key implements IConfigurationKey {
 
   CSV_COLUMN_CUTTER_CONFIGURATION("csvColumnCutterConfiguration"), // columns to be cut
   CSV_COLUMN_HEADER_RENAME_CONFIGURATION("csvColumnHeaderRenameConfiguration"), // columns to be renamed
+
+  CHART_CONFIG("chartConfig"), // as a JSON blob
   ;
 
   private final String key;

@@ -37,6 +37,19 @@ import java.util.Map.Entry;
 @SuppressWarnings("rawtypes")
 public class Counter implements ICounter {
   protected Map<Comparable, Integer> map = new HashMap<>();
+  protected String name;
+
+  public Counter() {
+
+  }
+
+  public Counter(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
 
   @Override
   public void increment(Comparable key) {

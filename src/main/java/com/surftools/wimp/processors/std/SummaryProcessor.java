@@ -355,7 +355,7 @@ public class SummaryProcessor extends AbstractBaseProcessor {
   }
 
   private List<ExerciseSummary> getExerciseSummaries(Path path) {
-    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(path);
+    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(path, ',', false, 1);
     var list = new ArrayList<ExerciseSummary>(fieldsArray.size());
     for (var fields : fieldsArray) {
       var exerciseSummary = ExerciseSummary.make(fields);
@@ -375,7 +375,7 @@ public class SummaryProcessor extends AbstractBaseProcessor {
   }
 
   private List<ParticipantHistory> getParticipantHistories(Path path) {
-    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(path);
+    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(path, ',', false, 1);
     var list = new ArrayList<ParticipantHistory>(fieldsArray.size());
     for (var fields : fieldsArray) {
       var participantHistory = ParticipantHistory.make(fields);
