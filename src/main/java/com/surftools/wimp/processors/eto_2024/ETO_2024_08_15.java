@@ -57,14 +57,90 @@ public class ETO_2024_08_15 extends FeedbackProcessor {
   @Override
   protected void specificProcessing(ExportedMessage message) {
     FieldSituationMessage m = (FieldSituationMessage) message;
-    count(sts.test("Box 4 Subject should be #EV", "ARRL Field Day 2024 Participation", m.subject));
 
-    getCounter("versions").increment(m.formVersion);
     getCounter("Clearinghouse Count").increment(m.to);
 
-    getCounter("Feedback Count").increment(sts.getExplanations().size());
-    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+    count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
+    getCounter("Agency/Group Name").increment(m.organization);
 
+    count(sts.test("Precedence should be #EV", "R/Routine", m.precedence));
+    getCounter("Precedence").increment(m.precedence);
+
+    count(sts.testIfPresent("Date/Time should be present", m.formDateTime));
+
+    count(sts.test("Task should be #EV", "001", m.task));
+    getCounter("Task").increment(m.task);
+
+    count(sts.test("Form From should match call sign", m.formFrom.equalsIgnoreCase(m.from)));
+
+    count(sts.test("Form To should contain clearinghouse", m.formTo.toUpperCase().contains(m.to)));
+    count(sts.test("Form To should contain ETO-BK", m.formTo.toUpperCase().contains("ETO-BK")));
+
+    count(sts.test("Box 1 Is there an EMERGENT/LIFE SAFETY Need should be #EV", "NO", m.isHelpNeeded));
+    count(sts.test("911 box should be empty", m.neededHelp == null || m.neededHelp.isEmpty()));
+
+    var nonFunctionalCount = 0;
+    nonFunctionalCount += countAndTest("Box 4a POTS landlines functioning", m.landlineStatus, m.landlineComments);
+    nonFunctionalCount += countAndTest("Box 4b VOIP landlines functioning", m.voipStatus, m.voipComments);
+    nonFunctionalCount += countAndTest("Box 5a Cell phone voice functioning", m.cellPhoneStatus, m.cellPhoneComments);
+    nonFunctionalCount += countAndTest("Box 5a Cell phone texts functioning", m.cellTextStatus, m.cellTextComments);
+    nonFunctionalCount += countAndTest("Box 6 AM/FM Broadcast functioning", m.radioStatus, m.radioComments);
+    nonFunctionalCount += countAndTest("Box 7a OTA TV functioning", m.tvStatus, m.tvComments);
+    nonFunctionalCount += countAndTest("Box 7b Satellite TV functioning", m.satTvStatus, m.satTvComments);
+    nonFunctionalCount += countAndTest("Box 7c Cable TV functioning", m.cableTvStatus, m.cableTvComments);
+    nonFunctionalCount += countAndTest("Box 8 Public Water Works functioning", m.waterStatus, m.waterComments);
+    nonFunctionalCount += countAndTest("Box9a Commercial Power functioning", m.powerStatus, m.powerComments);
+    nonFunctionalCount += countAndTest("Box9b Commercial Power stable", m.powerStableStatus, m.powerStableComments);
+    nonFunctionalCount += countAndTest("Box9c Natural Gas Supply functioning", m.naturalGasStatus,
+        m.naturalGasComments);
+    nonFunctionalCount += countAndTest("Box10 Internet functioning", m.internetStatus, m.internetComments);
+    nonFunctionalCount += countAndTest("Box11a NOAA weather radio functioning", m.noaaStatus, m.noaaComments);
+
+    nonFunctionalCount += INVERTED_countAndTest("Box11b NOAA weather audio degraded", m.noaaAudioDegraded,
+        m.noaaAudioDegradedComments);
+
+    sts.testIfPresent("Box 12 content should be present", m.additionalComments);
+    count(sts.test("At least one infrastructure should be non-functional", nonFunctionalCount > 0));
+    getCounter("Non-functional infrastructure items").increment(nonFunctionalCount);
+
+    getCounter("Form Version").increment(m.formVersion);
+    getCounter("Feedback Count").increment(sts.getExplanations().size());
+  }
+
+  private int countAndTest(String label, String status, String comments) {
+    return internalCountAndTest(label, status, comments, false);
+  }
+
+  private int INVERTED_countAndTest(String label, String status, String comments) {
+    return internalCountAndTest(label, status, comments, true);
+  }
+
+  /**
+   *
+   * @param label
+   * @param status
+   * @param comments
+   * @param invertLogic
+   *
+   * @return 1 if non-functional
+   */
+  private int internalCountAndTest(String label, String status, String comments, boolean invertLogic) {
+    getCounter(label).increment(status);
+    var STATUS = status.toUpperCase();
+    var newLabel = label + " Comments should ONLY be present if not functioning";
+    var returnValue = 0;
+
+    var notFunctioning = (invertLogic) ? STATUS.equals("YES") : STATUS.equals("NO");
+    var functioning = !notFunctioning;
+
+    var commentsPresent = comments != null && !comments.isEmpty();
+    if (functioning) {
+      count(sts.test(newLabel, !commentsPresent));
+    } else {
+      returnValue = 1;
+      count(sts.test(newLabel, commentsPresent));
+    }
+    return returnValue;
   }
 
 }

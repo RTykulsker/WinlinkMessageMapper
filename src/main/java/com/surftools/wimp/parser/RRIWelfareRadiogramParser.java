@@ -36,11 +36,11 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.RRIQuickWelfareMessage;
+import com.surftools.wimp.message.RRIWelfareRadiogramMessage;
 
-public class RRIQuickWelfareParser extends AbstractBaseParser {
+public class RRIWelfareRadiogramParser extends AbstractBaseParser {
 
-  private static final Logger logger = LoggerFactory.getLogger(RRIQuickWelfareParser.class);
+  private static final Logger logger = LoggerFactory.getLogger(RRIWelfareRadiogramParser.class);
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
@@ -56,14 +56,14 @@ public class RRIQuickWelfareParser extends AbstractBaseParser {
       var demimed = new String(inputStream.readAllBytes());
       String[] mimeLines = demimed.split("\\n");
 
-      var formFrom = parseFormFrom(message.subject);
-      var formDateTime = parseFormDateTime(mimeLines);
-      var incidentName = parseIncidentName(mimeLines);
-      var text = parseText(mimeLines);
+      var header = mimeLines[0];
+      var address = parseAddress(mimeLines);
+      var body = parseBody(mimeLines);
+      var formFrom = parseFormFrom(mimeLines);
       var version = parseVersion(mimeLines);
 
-      var m = new RRIQuickWelfareMessage(message, //
-          formFrom, formDateTime, incidentName, text, version);
+      var m = new RRIWelfareRadiogramMessage(message, //
+          header, address, body, formFrom, version);
 
       return m;
     } catch (
@@ -73,55 +73,80 @@ public class RRIQuickWelfareParser extends AbstractBaseParser {
     }
   }
 
-  // I Am Safe Message From XXX - DO NOT REPLY!
-  private String parseFormFrom(String subject) {
-    var prefix = "I Am Safe Message From ";
-    var suffix = " - DO NOT REPLY!";
-    var startIndex = prefix.length();
-    var endIndex = subject.indexOf(suffix);
-    return subject.substring(startIndex, endIndex);
+  /**
+   * all lines after first line and before first <BT>
+   *
+   * @param mimeLines
+   * @return
+   */
+  private String parseAddress(String[] mimeLines) {
+    var sb = new StringBuilder();
+    for (var lineNumber = 1; lineNumber < mimeLines.length; ++lineNumber) {
+      var line = mimeLines[lineNumber].trim();
+      if (line.equals("BT")) {
+        break;
+      }
+      sb.append(line + "\n");
+    }
+    return sb.toString();
   }
 
-  private String parseFormDateTime(String[] mimeLines) {
-    var prefix = "Original Message Created: ";
+  /**
+   * all lines after first <BT> and before second <BT>
+   *
+   * @param mimeLines
+   * @return
+   */
+  private String parseBody(String[] mimeLines) {
+    var btCount = 0;
+    var sb = new StringBuilder();
     for (var line : mimeLines) {
-      if (line.startsWith(prefix)) {
-        return line.substring(prefix.length());
+      if (line.equals("BT")) {
+        ++btCount;
+        continue;
+      }
+      if (btCount == 1) {
+        sb.append(line + "\n");
+      }
+      if (btCount == 2) {
+        break;
       }
     }
-    return "";
+    return sb.toString();
   }
 
-  private String parseIncidentName(String[] mimeLines) {
-    var prefix = "It Was Sent From: ";
+  /**
+   * after second <BT> and before <AR>
+   *
+   * @param mimeLines
+   * @return
+   */
+  private String parseFormFrom(String[] mimeLines) {
+    var btCount = 0;
+    var sb = new StringBuilder();
     for (var line : mimeLines) {
-      if (line.startsWith(prefix)) {
-        return line.substring(prefix.length());
+      if (line.equals("BT")) {
+        ++btCount;
+        continue;
+      }
+      if (line.equals("AR")) {
+        break;
+      }
+      if (btCount == 2) {
+        sb.append(line + "\n");
       }
     }
-    return "";
+    return sb.toString();
   }
 
   private String parseVersion(String[] mimeLines) {
-    var prefix = "Template Version: Quick Welfare Message. ";
+    var prefix = "Template Version: RRI Welfare Radiogram v. ";
     for (var line : mimeLines) {
       if (line.startsWith(prefix)) {
         return line.substring(prefix.length());
       }
     }
     return "";
-  }
-
-  private String parseText(String[] mimeLines) {
-    var sb = new StringBuilder();
-    for (var lineNumber = 2; lineNumber < mimeLines.length; ++lineNumber) {
-      var line = mimeLines[lineNumber].trim();
-      if (line.isEmpty()) {
-        break;
-      }
-      sb.append(line);
-    }
-    return sb.toString();
   }
 
 }

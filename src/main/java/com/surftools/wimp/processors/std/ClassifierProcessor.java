@@ -60,6 +60,7 @@ import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
 import com.surftools.wimp.parser.QuickParser;
 import com.surftools.wimp.parser.RRIQuickWelfareParser;
+import com.surftools.wimp.parser.RRIWelfareRadiogramParser;
 import com.surftools.wimp.parser.SpotRepParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
@@ -198,6 +199,10 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return MessageType.ETO_RESUME;
     } else if (subject.startsWith("I Am Safe Message From") && subject.endsWith(" - DO NOT REPLY!")) {
       return MessageType.RRI_QUICK_WELFARE;
+    } else if (message.mime.contains("Quick Welfare Message")) {
+      return MessageType.RRI_QUICK_WELFARE;
+    } else if (message.mime.contains("RRI Welfare Radiogram")) {
+      return MessageType.RRI_WELFARE_RADIOGRAM;
     } else if (subject.startsWith("ACK:")) {
       return MessageType.ACK;
     } else {
@@ -247,6 +252,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.ETO_RESUME, new EtoResumeParser());
     parserMap.put(MessageType.HOSPITAL_STATUS, new HospitalStatusParser());
     parserMap.put(MessageType.RRI_QUICK_WELFARE, new RRIQuickWelfareParser());
+    parserMap.put(MessageType.RRI_WELFARE_RADIOGRAM, new RRIWelfareRadiogramParser());
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
     }

@@ -218,7 +218,7 @@ public abstract class AbstractBaseChartService implements IChartService {
     excludedCounters = new HashSet<>();
     minValuesMap = new HashMap<>();
     chartType = "pie";
-    extraLayout = "var layout={};";
+    extraLayout = "\nvar layout={};\n\n";
   }
 
   /**

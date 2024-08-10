@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.MultiDateTimeParser;
-import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
@@ -256,7 +255,6 @@ public class MIRO_Check_In extends FeedbackProcessor {
   private int ppCount = 0;
   private int ppResilienceCount = 0;
   private List<IWritableTable> results = new ArrayList<IWritableTable>();
-  private Counter scoreCounter = new Counter();
 
   private RmsGatewayService rmsGatewayService;
 
@@ -314,6 +312,8 @@ public class MIRO_Check_In extends FeedbackProcessor {
     var newExerciseCount = 1 + oldExerciseCount;
     var newResilientCount = (int) ((isResilient.equals("Yes") ? 1 : 0) + oldResilienceCount);
     var resiliencyPercent = (int) Math.round(100d * (newResilientCount) / newExerciseCount);
+
+    getCounter("isResilient").increment(isResilient);
 
     newGradedMessage.isResilient = isResilient;
     newGradedMessage.explanation = explanation;
@@ -396,7 +396,6 @@ public class MIRO_Check_In extends FeedbackProcessor {
     return s;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void postProcess() {
     super.postProcess();
@@ -405,7 +404,6 @@ public class MIRO_Check_In extends FeedbackProcessor {
     sb.append("\nMiro Check In messages: " + ppCount + "\n");
     sb.append(formatPP("Messages with resilient channel", ppResilienceCount, ppCount));
 
-    sb.append("\nResiliency: \n" + formatCounter(scoreCounter.getDescendingKeyIterator(), "resiliency", "count"));
     Collections.sort(results);
     writeTable("exercise-miro_check_in.csv", results);
 

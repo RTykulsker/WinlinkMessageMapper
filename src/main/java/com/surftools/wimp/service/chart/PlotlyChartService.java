@@ -39,6 +39,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
   @Override
   public void makeCharts() {
+
     final String TEMPLATE = """
         <!DOCTYPE html>
         <html lang="en" class="">
@@ -56,7 +57,13 @@ public class PlotlyChartService extends AbstractBaseChartService {
         </body>
         """;
 
-    var text = TEMPLATE.replace("HTML_CONTENT", makeHTMLContent());
+    var html = makeHTMLContent();
+    if (html.length() == 0) {
+      logger.info("returning because no content!");
+      return;
+    }
+
+    var text = TEMPLATE.replace("HTML_CONTENT", html);
     text = text.replace("SCRIPT_CONTENT", makeScriptContent());
 
     var title = cm.getAsString(Key.EXERCISE_DESCRIPTION, messageType.name().toLowerCase() + " histograms");

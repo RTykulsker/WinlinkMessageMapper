@@ -101,6 +101,17 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     public LocalDateTime windowCloseDt;
 
     public String extraOutboundMessageText;
+
+    public MessageType messageType;
+
+    @Override
+    public String toString() {
+      return messageType.name();
+    }
+
+    public TypeEntry(MessageType messageType) {
+      this.messageType = messageType;
+    }
   }
 
   private Map<MessageType, TypeEntry> typeEntryMap = new LinkedHashMap<>();
@@ -111,6 +122,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected ExportedMessage message;
   protected String sender;
   protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
+  protected Set<String> secondaryDestinations = new LinkedHashSet<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -143,10 +155,19 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     if (windowCloseString != null) {
       windowCloseDT = LocalDateTime.from(DTF.parse(windowCloseString));
     }
+
+    var secondaryDestinationsString = cm.getAsString(Key.SECONDARY_DESTINATIONS);
+    if (secondaryDestinationsString != null) {
+      var fields = secondaryDestinationsString.split(",");
+      for (var field : fields) {
+        secondaryDestinations.add(field.toUpperCase());
+      }
+    }
+
   }
 
   protected void setWindowsForType(MessageType type, LocalDateTime typedOpenDt, LocalDateTime typedCloseDt) {
-    var te = typeEntryMap.getOrDefault(type, new TypeEntry());
+    var te = typeEntryMap.getOrDefault(type, new TypeEntry(type));
     te.windowOpenDt = typedOpenDt;
     te.windowCloseDt = typedCloseDt;
     typeEntryMap.put(type, te);
@@ -179,7 +200,22 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
           endCommonProcessing(message);
         } // end processing for a message
       } // end if no specific acceptableMessageTypes
+      endProcessingForSender(sender);
     } // end loop over senders
+  }
+
+  /**
+   *
+   * @param sender
+   * @param message
+   */
+  protected void beforeCommonProcessing(String sender, ExportedMessage message) {
+  }
+
+  /**
+   * after all messageTypes for a given sender, a chance to look at cross-message relations
+   */
+  protected void endProcessingForSender(String sender) {
   }
 
   protected void beginCommonProcessing(ExportedMessage message) {
@@ -189,19 +225,26 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       logger.info("dump: " + sender);
     }
 
-    te = typeEntryMap.getOrDefault(message.getMessageType(), new TypeEntry());
+    te = typeEntryMap.getOrDefault(message.getMessageType(), new TypeEntry(message.getMessageType()));
 
     sts = te.sts;
     sts.reset(sender);
+
+    beforeCommonProcessing(sender, message);
+
     ++te.ppCount;
 
     windowOpenDT = te.windowOpenDt == null ? windowOpenDT : te.windowOpenDt;
     windowCloseDT = te.windowCloseDt == null ? windowCloseDT : te.windowCloseDt;
 
-    if (messageTypesRequiringSecondaryAddress.size() == 0
-        || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
-      var addressList = message.toList + "," + message.ccList;
-      sts.test("To and/or CC addresses should contain ETO-BK", addressList.toUpperCase().contains("ETO-BK"), null);
+    if (secondaryDestinations.size() > 0) {
+      if (messageTypesRequiringSecondaryAddress.size() == 0
+          || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
+        var addressList = (message.toList + "," + message.ccList).toUpperCase();
+        for (var ev : secondaryDestinations) {
+          count(sts.test("To and/or CC addresses should contain " + ev, addressList.contains(ev), ev));
+        }
+      }
     }
 
     sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
@@ -265,7 +308,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   /**
    * get a TestResult!
-   * 
+   *
    * @param testResult
    */
   protected void count(TestResult testResult) {
@@ -286,6 +329,8 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     for (var messageType : typeEntryMap.keySet()) {
       te = typeEntryMap.get(messageType);
       sts = te.sts;
+
+      beforePostProcessing(messageType);
 
       if (doStsFieldValidation) {
         logger.info("field validation:\n" + sts.validate());
@@ -342,6 +387,14 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       chartService.makeCharts();
     } // end loop over message types
 
+    endPostProcessingForAllMessageTypes();
+  }
+
+  protected void beforePostProcessing(MessageType messageType) {
+    // we have sts, etc. for type
+  }
+
+  protected void endPostProcessingForAllMessageTypes() {
   }
 
   public void setExtraOutboundMessageText(String extraOutboundMessageText) {

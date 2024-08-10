@@ -89,6 +89,7 @@ public class FieldSituationParser extends AbstractBaseParser {
 
       String organization = getStringFromXml("title");
       String precedence = getStringFromXml("precedence");
+      String formDateTime = getStringFromXml("udtgfld");
       String task = getStringFromXml("msgnr");
       String formTo = getStringFromXml("msgto");
       String formFrom = getStringFromXml("msgsender");
@@ -100,11 +101,17 @@ public class FieldSituationParser extends AbstractBaseParser {
       String state = getStringFromXml("state");
       String territory = getStringFromXml("territory");
 
-      String landlineStatus = getStringFromXml("land");
+      String landlineStatus = getStringFromXml("pots");
       String landlineComments = getStringFromXml("comm1");
+
+      String voipStatus = getStringFromXml("voip");
+      String voipComments = getStringFromXml("comm1a");
 
       String cellPhoneStatus = getStringFromXml("cell");
       String cellPhoneComments = getStringFromXml("comm2");
+
+      String cellTextStatus = getStringFromXml("celltext");
+      String cellTextComments = getStringFromXml("comm2a");
 
       String radioStatus = getStringFromXml("amfm");
       String radioComments = getStringFromXml("comm3");
@@ -112,17 +119,32 @@ public class FieldSituationParser extends AbstractBaseParser {
       String tvStatus = getStringFromXml("tvstatus");
       String tvComments = getStringFromXml("comm4");
 
+      String satTvStatus = getStringFromXml("tvstatusb");
+      String satTvComments = getStringFromXml("comm4b");
+
+      String cableTvStatus = getStringFromXml("tvstatusc");
+      String cableTvComments = getStringFromXml("comm4c");
+
       String waterStatus = getStringFromXml("waterworks");
       String waterComments = getStringFromXml("comm5");
 
       String powerStatus = getStringFromXml("powerworks");
       String powerComments = getStringFromXml("comm6");
 
+      String powerStable = getStringFromXml("powerstable");
+      String powerStableComments = getStringFromXml("comm6a");
+
+      String naturalGasStatus = getStringFromXml("natgas");
+      String naturalGasComments = getStringFromXml("comm9c");
+
       String internetStatus = getStringFromXml("inter");
       String internetComments = getStringFromXml("comm7");
 
       String noaaStatus = getStringFromXml("noaa");
       String noaaComments = getStringFromXml("noaacom");
+
+      String noaaAudioDegraded = getStringFromXml("noaab");
+      String noaaAudioDegradedComments = getStringFromXml("noaacomb");
 
       String additionalComments = getStringFromXml("message");
       String poc = getStringFromXml("poc");
@@ -132,11 +154,17 @@ public class FieldSituationParser extends AbstractBaseParser {
 
       FieldSituationMessage m = new FieldSituationMessage(//
           message, organization, formLocation, //
-          precedence, task, formTo, formFrom, isHelpNeeded, neededHelp, //
+          precedence, formDateTime, task, formTo, formFrom, isHelpNeeded, neededHelp, //
           city, county, state, territory, //
-          landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
-          tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
-          noaaStatus, noaaComments, //
+          landlineStatus, landlineComments, voipStatus, voipComments, //
+          cellPhoneStatus, cellPhoneComments, cellTextStatus, cellTextComments, //
+          radioStatus, radioComments, //
+          tvStatus, tvComments, satTvStatus, satTvComments, cableTvStatus, cableTvComments, //
+          waterStatus, waterComments, //
+          powerStatus, powerComments, powerStable, powerStableComments, //
+          naturalGasStatus, naturalGasComments, //
+          internetStatus, internetComments, //
+          noaaStatus, noaaComments, noaaAudioDegraded, noaaAudioDegradedComments, //
           additionalComments, poc, formVersion);
 
       return m;

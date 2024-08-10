@@ -74,6 +74,7 @@ public enum MessageType {
 
   ETO_RESUME("eto_resume"), //
   RRI_QUICK_WELFARE("rri_quick_welfare"), //
+  RRI_WELFARE_RADIOGRAM("rri_welfare_radiogram"), //
   ;
 
   /**

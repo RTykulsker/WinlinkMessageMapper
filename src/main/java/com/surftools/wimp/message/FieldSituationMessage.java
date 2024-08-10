@@ -40,6 +40,7 @@ public class FieldSituationMessage extends ExportedMessage {
   public final String organization;
   public final LatLongPair formLocation;
   public final String precedence;
+  public final String formDateTime;
   public final String task;
   public final String formTo;
   public final String formFrom;
@@ -51,41 +52,63 @@ public class FieldSituationMessage extends ExportedMessage {
   public final String territory;
   public final String landlineStatus;
   public final String landlineComments;
+  public final String voipStatus;
+  public final String voipComments;
   public final String cellPhoneStatus;
   public final String cellPhoneComments;
+  public final String cellTextStatus;
+  public final String cellTextComments;
   public final String radioStatus;
   public final String radioComments;
   public final String tvStatus;
   public final String tvComments;
+  public final String satTvStatus;
+  public final String satTvComments;
+  public final String cableTvStatus;
+  public final String cableTvComments;
   public final String waterStatus;
   public final String waterComments;
   public final String powerStatus;
   public final String powerComments;
+  public final String powerStableStatus;
+  public final String powerStableComments;
+  public final String naturalGasStatus;
+  public final String naturalGasComments;
   public final String internetStatus;
   public final String internetComments;
   public final String noaaStatus;
   public final String noaaComments;
+  public final String noaaAudioDegraded;
+  public final String noaaAudioDegradedComments;
   public final String additionalComments;
   public final String poc;
   public final String formVersion;
 
   public FieldSituationMessage(ExportedMessage exportedMessage, String organization, LatLongPair formLocation, //
-      String precedence, String task, String formTo, String formFrom, //
+      String precedence, String formDateTime, String task, String formTo, String formFrom, //
       String isHelpNeeded, String neededHelp, //
       String city, String county, String state, String territory, //
       String landlineStatus, String landlineComments, //
+      String voipStatus, String voipComments, //
       String cellPhoneStatus, String cellPhoneComments, //
+      String cellTextStatus, String cellTextComments, //
       String radioStatus, String radioComments, //
       String tvStatus, String tvComments, //
+      String satTvStatus, String satTvComments, //
+      String cableTvStatus, String cableTvComments, //
       String waterStatus, String waterComments, //
       String powerStatus, String powerComments, //
+      String powerStableStatus, String powerStableComments, //
+      String naturalGasStatus, String naturalGasComments, //
       String internetStatus, String internetComments, //
       String noaaStatus, String noaaComments, //
+      String noaaAudioDegraded, String noaaAudioDegradedComments, //
       String additionalComments, String poc, String formVersion) {
     super(exportedMessage);
     this.organization = organization;
     this.formLocation = formLocation;
     this.precedence = precedence;
+    this.formDateTime = formDateTime;
     this.task = task;
     this.formTo = formTo;
     this.formFrom = formFrom;
@@ -97,21 +120,35 @@ public class FieldSituationMessage extends ExportedMessage {
     this.territory = territory;
     this.landlineStatus = landlineStatus;
     this.landlineComments = landlineComments;
+    this.voipStatus = voipStatus;
+    this.voipComments = voipComments;
     this.cellPhoneStatus = cellPhoneStatus;
     this.cellPhoneComments = cellPhoneComments;
+    this.cellTextStatus = cellTextStatus;
+    this.cellTextComments = cellTextComments;
     this.radioStatus = radioStatus;
     this.radioComments = radioComments;
     this.tvStatus = tvStatus;
     this.tvComments = tvComments;
+    this.satTvStatus = satTvStatus;
+    this.satTvComments = satTvComments;
+    this.cableTvStatus = cableTvStatus;
+    this.cableTvComments = cableTvComments;
     this.waterStatus = waterStatus;
     this.waterComments = waterComments;
     this.powerStatus = powerStatus;
     this.powerComments = powerComments;
+    this.powerStableStatus = powerStableStatus;
+    this.powerStableComments = powerStableComments;
+    this.naturalGasStatus = naturalGasStatus;
+    this.naturalGasComments = naturalGasComments;
     this.internetStatus = internetStatus;
     this.internetComments = internetComments;
     this.noaaStatus = noaaStatus;
     this.noaaComments = noaaComments;
     this.additionalComments = additionalComments;
+    this.noaaAudioDegraded = noaaAudioDegraded;
+    this.noaaAudioDegradedComments = noaaAudioDegradedComments;
     this.poc = poc;
     this.formVersion = formVersion;
 
@@ -122,26 +159,39 @@ public class FieldSituationMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+    return new String[] { "MessageId", "From", "To", "Subject", "Date/Time", "Latitude", "Longitude", //
         "Precedence", "Task", "FormTo", "FormFrom", "IsHelpNeeded", "NeededHelp", //
         "Organization", "City", "County", "State", "Territory", //
-        "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus", "RadioComments",
-        "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments", "InternetStatus",
-        "InternetComments", "NOAAStatus", "NOAAComments", "AdditionalComments", "POC", "FormVersion" };
+        "POTS Status", "POTS Comments", "VOIP Status", "VOIP Comments", //
+        "Cell Voice Status", "Cell Voice Comments", "Cell Text Status", "Cell Text Comments", //
+        "AM/FM Radio Status", "AM/FM Radio Comments", //
+        "OTA TV Status", "OTA TV Comments", "Satellite TV Status", "Satellite TV Comments", "Cable TV Status",
+        "Cabke TV Comments", //
+        "Water Status", "Water Comments", //
+        "Power Status", "Power Comments", //
+        "Power Stable", "Power Stable Comments", //
+        "Natural Gas Status", "Natural Gas Comments", //
+        "Internet Status", "Internet Comments", //
+        "NOAA Status", "NOAA Comments", "NOAA audio degraded", "NOAA audio degraded Comments", //
+        "Additional Comments", "POC", "FormVersion" };
   }
 
   @Override
   public String[] getValues() {
-    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
-    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
     var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
+    return new String[] { messageId, from, to, subject, formDateTime, latitude, longitude, //
         precedence, task, formTo, formFrom, isHelpNeeded, neededHelp, organization, city, county, state, territory, //
-        landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus, radioComments, tvStatus,
-        tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus, internetComments,
-        noaaStatus, noaaComments, additionalComments, poc, formVersion };
+        landlineStatus, landlineComments, voipStatus, voipComments, //
+        cellPhoneStatus, cellPhoneComments, cellTextStatus, cellTextComments, //
+        radioStatus, radioComments, //
+        tvStatus, tvComments, satTvStatus, satTvComments, cableTvStatus, cableTvComments, //
+        waterStatus, waterComments, powerStatus, powerComments, powerStableStatus, powerStableComments, //
+        naturalGasStatus, naturalGasComments, //
+        internetStatus, internetComments, //
+        noaaStatus, noaaComments, noaaAudioDegraded, noaaAudioDegradedComments, //
+        additionalComments, poc, formVersion };
   }
 
   @Override
