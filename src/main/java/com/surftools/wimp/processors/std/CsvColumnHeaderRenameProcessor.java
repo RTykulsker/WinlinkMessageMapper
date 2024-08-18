@@ -60,10 +60,17 @@ public class CsvColumnHeaderRenameProcessor implements IProcessor {
   private String inputFileName;
   private String outputFileName;
 
+  private boolean isInitialized = false;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
 
     var configString = cm.getAsString(Key.CSV_COLUMN_HEADER_RENAME_CONFIGURATION);
+    if (configString == null) {
+      logger.warn("no configuration for " + Key.CSV_COLUMN_HEADER_RENAME_CONFIGURATION);
+      return;
+    }
+
     var fields = configString.split(FIELD_DELIMITER);
     if (fields.length != 3) {
       throw new IllegalArgumentException(
@@ -82,6 +89,7 @@ public class CsvColumnHeaderRenameProcessor implements IProcessor {
     }
 
     logger.info("initialized " + renameMap.size() + " rename pairs");
+    isInitialized = true;
   }
 
   @Override
@@ -91,6 +99,11 @@ public class CsvColumnHeaderRenameProcessor implements IProcessor {
 
   @Override
   public void postProcess() {
+    if (!isInitialized) {
+      logger.warn("no configuration for " + Key.CSV_COLUMN_HEADER_RENAME_CONFIGURATION);
+      return;
+    }
+
     try {
       var lines = Files.readAllLines(Path.of(inputFileName));
 

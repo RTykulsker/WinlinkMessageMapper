@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.service.chart;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.surftools.utils.PageParser;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.MessageType;
@@ -54,9 +56,11 @@ public abstract class AbstractBaseChartService implements IChartService {
   protected static Map<Counter, Integer> minValuesMap;
   protected static String chartType;
   protected static String extraLayout;
+  protected static boolean doSingleItemCharts;
 
   private static IChartService service;
   private static Set<Counter> excludedCounters = new HashSet<>();
+  private static List<Counter> counterList = new ArrayList<>();
 
   /**
    * factory method to get configuration-specified IChartService for given messageType
@@ -71,6 +75,11 @@ public abstract class AbstractBaseChartService implements IChartService {
     cm = _cm;
     counterMap = _counterMap;
     messageType = _messageType;
+
+    for (var counterLabel : counterMap.keySet()) {
+      var counter = counterMap.get(counterLabel);
+      counterList.add(counter);
+    }
 
     parseConfig();
 
@@ -106,20 +115,53 @@ public abstract class AbstractBaseChartService implements IChartService {
     try {
       ObjectMapper mapper = new ObjectMapper();
       var jsonMap = mapper.readValue(jsonString, Map.class);
+
       @SuppressWarnings("rawtypes")
       var messageTypeMap = (Map) jsonMap.get(messageType.toString());
       if (messageTypeMap == null) {
         return;
       }
+
+      var excludedCountersString = messageTypeMap.get("excludedCounters");
+      var includedCountersString = messageTypeMap.get("includedCounters");
+
+      if (includedCountersString != null && excludedCountersString != null) {
+        throw new RuntimeException("can't specify both includedCounters(" + includedCountersString
+            + ") and excludedCounters(" + excludedCountersString + ") for messageType: " + messageType);
+      }
+
       parseMinValues(messageTypeMap.get("minValues"));
       parseFileOutputName(messageTypeMap.get("fileOutputName"));
-      parseExcludedCounters(messageTypeMap.get("excludedCounters"));
+      parseExcludedCounters(excludedCountersString);
+      parseIncludedCounters(includedCountersString);
       parseServiceName(messageTypeMap.get("serviceName"));
       parseChartType(messageTypeMap.get("chartType"));
       parseExtraLayout(messageTypeMap.get("extraLayout"));
+      parseDoSingleItemCharts(messageTypeMap.get("doSingleItemCharts"));
+      parseShowCounterIndexes(messageTypeMap.get("showCounterIndexes"));
     } catch (Exception e) {
       logger.error("can't parse " + Key.CHART_CONFIG.name() + ", " + e.getMessage());
       throw new RuntimeException(e);
+    }
+
+  }
+
+  private static void parseShowCounterIndexes(Object object) {
+    if (object == null) {
+      return;
+    }
+
+    var showCounterIndexes = Boolean.parseBoolean((String) object);
+    if (showCounterIndexes) {
+      var sb = new StringBuilder();
+      sb.append("\n");
+      var index = 0;
+      for (var counter : counterList) {
+        sb.append("index: " + index + ", label: " + counter.getName() + ", keyCount: " + counter.getKeyCount() + "\n");
+        ++index;
+      }
+
+      logger.info("Counter indexes: " + sb);
     }
 
   }
@@ -130,6 +172,13 @@ public abstract class AbstractBaseChartService implements IChartService {
     }
 
     extraLayout = (String) object;
+  }
+
+  private static void parseDoSingleItemCharts(Object object) {
+    if (object == null) {
+      return;
+    }
+    doSingleItemCharts = Boolean.valueOf((String) object);
   }
 
   protected static void parseChartType(Object object) {
@@ -170,7 +219,9 @@ public abstract class AbstractBaseChartService implements IChartService {
       return;
     }
 
-    var counterNames = ((String) object).split(",");
+    excludedCounters.clear();
+
+    var counterNames = parseCounterNames((String) object);
     for (var counterName : counterNames) {
       var counter = counterMap.get(counterName);
       if (counter == null) {
@@ -178,6 +229,46 @@ public abstract class AbstractBaseChartService implements IChartService {
       }
       excludedCounters.add(counter);
     }
+  }
+
+  private static void parseIncludedCounters(Object object) {
+    if (object == null) {
+      return;
+    }
+
+    excludedCounters.addAll(counterMap.values());
+
+    // var counterNames = ((String) object).split(",");
+    var counterNames = parseCounterNames((String) object);
+    for (var counterName : counterNames) {
+      var counter = counterMap.get(counterName);
+      if (counter == null) {
+        throw new RuntimeException("no Counter for " + counterName);
+      }
+      excludedCounters.remove(counter);
+    }
+  }
+
+  private static String[] parseCounterNames(String string) {
+    if (string.startsWith("#")) {
+      string = convertIndexesToSingleString(string.substring(1));
+    }
+    return string.split(",");
+  }
+
+  private static String convertIndexesToSingleString(String substring) {
+    var pageParser = new PageParser();
+    var intList = pageParser.parse(substring);
+    var counterLabelList = new ArrayList<String>();
+    for (var index : intList) {
+      try {
+        var counter = counterList.get(index);
+        counterLabelList.add(counter.getName());
+      } catch (Exception e) {
+        throw new RuntimeException("Index : " + index + " out of bounds for counterList of size " + counterList.size());
+      }
+    }
+    return String.join(",", counterLabelList);
   }
 
   private static void parseFileOutputName(Object object) {
@@ -219,6 +310,7 @@ public abstract class AbstractBaseChartService implements IChartService {
     minValuesMap = new HashMap<>();
     chartType = "pie";
     extraLayout = "\nvar layout={};\n\n";
+    doSingleItemCharts = false;
   }
 
   /**

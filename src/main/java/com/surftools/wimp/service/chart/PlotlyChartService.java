@@ -79,13 +79,19 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
   private String makeHTMLContent() {
     final String HTML_DIV = """
-        <div>RAW_COUNTER_LABEL (### responses)
-          <div id="COUNTER_LABEL"></div>
+        <div>COUNTER_LABEL (### responses) DISPLAY_INDEX
+          <div id="plotly_id_COUNTER_ID"></div>
         </div>
         <hr>
         """;
 
+    var counterId = 0;
     var sb = new StringBuilder();
+
+    if (!doSingleItemCharts) {
+      sb.append("<div><h3>(excluding single-item pie charts)</h3></div>\n");
+    }
+
     for (var counterLabel : counterMap.keySet()) {
       if (isExcluded(counterLabel)) {
         logger.info("skipping excluded counter: " + counterLabel);
@@ -94,9 +100,17 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
       var counter = counterMap.get(counterLabel);
 
-      var html = HTML_DIV.replaceAll("RAW_COUNTER_LABEL", counterLabel);
-      html = html.replaceAll("COUNTER_LABEL", fix(counterLabel));
+      var keyCount = counter.getKeyCount();
+      if (!doSingleItemCharts && keyCount == 1) {
+        logger.debug("skipping counter: " + counterLabel + ", only one value");
+        continue;
+      }
+      ++counterId;
+
+      var html = HTML_DIV.replaceAll("COUNTER_LABEL", counterLabel);
+      html = html.replaceAll("COUNTER_ID", String.valueOf(counterId));
       html = html.replace("###", String.valueOf(counter.getValueTotal()));
+      html = html.replace("DISPLAY_INDEX", "[chart #" + String.valueOf(counterId) + "]");
       sb.append(html + "\n");
     }
 
@@ -104,16 +118,10 @@ public class PlotlyChartService extends AbstractBaseChartService {
     return s;
   }
 
-  private String fix(String string) {
-    var s = string.replaceAll(" ", "_");
-    s = s.replaceAll("-", "_");
-    s = s.replaceAll("#", "Number_of");
-    return s;
-  }
-
   private String makeScriptContent() {
     final String SCRIPT = """
-        var data_COUNTER_LABEL = [{
+        // COUNTER_LABEL
+        var data_COUNTER_ID = [{
           type: "CHART_TYPE",
           values: [VALUES],
           labels: [LABELS],
@@ -121,9 +129,10 @@ public class PlotlyChartService extends AbstractBaseChartService {
           textposition: "outside",
           automargin: true }];
 
-        Plotly.newPlot('COUNTER_LABEL', data_COUNTER_LABEL, layout);
+        Plotly.newPlot("plotly_id_COUNTER_ID", data_COUNTER_ID, layout);
         """;
 
+    var counterId = 0;
     var sb = new StringBuilder();
     sb.append(extraLayout);
     for (var counterLabel : counterMap.keySet()) {
@@ -133,13 +142,23 @@ public class PlotlyChartService extends AbstractBaseChartService {
       }
 
       var counter = counterMap.get(counterLabel);
+
+      var keyCount = counter.getKeyCount();
+      if (!doSingleItemCharts && keyCount == 1) {
+        logger.debug("skipping counter: " + counterLabel + ", only one value");
+        continue;
+      }
+      ++counterId;
+
       var labelStringBuilder = new StringBuilder();
       var valueStringBuilder = new StringBuilder();
       var minValue = minValuesMap.get(counter);
       var iterator = counter.getDescendingCountIterator();
       while (iterator.hasNext()) {
         var entry = iterator.next();
-        var label = entry.getKey().toString();
+
+        var label = entry.getKey();
+        label = label == null ? "" : label.toString();
         var value = entry.getValue() == null ? 0 : entry.getValue();
 
         if (minValue != null && value < minValue) {
@@ -156,10 +175,12 @@ public class PlotlyChartService extends AbstractBaseChartService {
       var labelString = labelStringBuilder.toString();
       var valueString = valueStringBuilder.toString();
 
-      var data = SCRIPT.replaceAll("COUNTER_LABEL", fix(counterLabel));
+      // var data = SCRIPT.replaceAll("COUNTER_LABEL", fix(counterLabel));
+      var data = SCRIPT.replaceAll("COUNTER_LABEL", counterLabel);
       data = data.replace("LABELS", labelString.substring(0, labelString.length() - 1));
       data = data.replace("VALUES", valueString.substring(0, valueString.length() - 1));
       data = data.replace("CHART_TYPE", chartType);
+      data = data.replaceAll("COUNTER_ID", String.valueOf(counterId));
       sb.append(data + "\n");
     }
     return sb.toString();

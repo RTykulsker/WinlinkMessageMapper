@@ -27,9 +27,14 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.eto_2024;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -47,11 +52,16 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2024_08_15 extends FeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_08_15.class);
 
+  private Set<String> clearinghouseSet = new HashSet<>();
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
     acceptableMessageTypesSet.add(MessageType.FIELD_SITUATION);
+
+    var clearinghouses = cm.getAsString(Key.EXPECTED_DESTINATIONS);
+    clearinghouseSet.addAll(Arrays.asList(clearinghouses.split(",")));
   }
 
   @Override
@@ -61,7 +71,6 @@ public class ETO_2024_08_15 extends FeedbackProcessor {
     getCounter("Clearinghouse Count").increment(m.to);
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
-    getCounter("Agency/Group Name").increment(m.organization);
 
     count(sts.test("Precedence should be #EV", "R/Routine", m.precedence));
     getCounter("Precedence").increment(m.precedence);
@@ -73,8 +82,16 @@ public class ETO_2024_08_15 extends FeedbackProcessor {
 
     count(sts.test("Form From should match call sign", m.formFrom.equalsIgnoreCase(m.from)));
 
-    count(sts.test("Form To should contain clearinghouse", m.formTo.toUpperCase().contains(m.to)));
-    count(sts.test("Form To should contain ETO-BK", m.formTo.toUpperCase().contains("ETO-BK")));
+    var isClearinghouseInFormTo = false;
+    var formTo = m.formTo.toUpperCase();
+    for (var clearinghouse : clearinghouseSet) {
+      if (formTo.contains(clearinghouse)) {
+        isClearinghouseInFormTo = true;
+        break;
+      }
+    }
+    count(sts.test("Form To should contain clearinghouse", isClearinghouseInFormTo));
+    count(sts.test("Form To should contain ETO-BK", formTo.contains("ETO-BK")));
 
     count(sts.test("Box 1 Is there an EMERGENT/LIFE SAFETY Need should be #EV", "NO", m.isHelpNeeded));
     count(sts.test("911 box should be empty", m.neededHelp == null || m.neededHelp.isEmpty()));
@@ -83,20 +100,20 @@ public class ETO_2024_08_15 extends FeedbackProcessor {
     nonFunctionalCount += countAndTest("Box 4a POTS landlines functioning", m.landlineStatus, m.landlineComments);
     nonFunctionalCount += countAndTest("Box 4b VOIP landlines functioning", m.voipStatus, m.voipComments);
     nonFunctionalCount += countAndTest("Box 5a Cell phone voice functioning", m.cellPhoneStatus, m.cellPhoneComments);
-    nonFunctionalCount += countAndTest("Box 5a Cell phone texts functioning", m.cellTextStatus, m.cellTextComments);
+    nonFunctionalCount += countAndTest("Box 5b Cell phone texts functioning", m.cellTextStatus, m.cellTextComments);
     nonFunctionalCount += countAndTest("Box 6 AM/FM Broadcast functioning", m.radioStatus, m.radioComments);
     nonFunctionalCount += countAndTest("Box 7a OTA TV functioning", m.tvStatus, m.tvComments);
     nonFunctionalCount += countAndTest("Box 7b Satellite TV functioning", m.satTvStatus, m.satTvComments);
     nonFunctionalCount += countAndTest("Box 7c Cable TV functioning", m.cableTvStatus, m.cableTvComments);
     nonFunctionalCount += countAndTest("Box 8 Public Water Works functioning", m.waterStatus, m.waterComments);
-    nonFunctionalCount += countAndTest("Box9a Commercial Power functioning", m.powerStatus, m.powerComments);
-    nonFunctionalCount += countAndTest("Box9b Commercial Power stable", m.powerStableStatus, m.powerStableComments);
-    nonFunctionalCount += countAndTest("Box9c Natural Gas Supply functioning", m.naturalGasStatus,
+    nonFunctionalCount += countAndTest("Box 9a Commercial Power functioning", m.powerStatus, m.powerComments);
+    nonFunctionalCount += countAndTest("Box 9b Commercial Power stable", m.powerStableStatus, m.powerStableComments);
+    nonFunctionalCount += countAndTest("Box 9c Natural Gas Supply functioning", m.naturalGasStatus,
         m.naturalGasComments);
-    nonFunctionalCount += countAndTest("Box10 Internet functioning", m.internetStatus, m.internetComments);
-    nonFunctionalCount += countAndTest("Box11a NOAA weather radio functioning", m.noaaStatus, m.noaaComments);
+    nonFunctionalCount += countAndTest("Box 10 Internet functioning", m.internetStatus, m.internetComments);
+    nonFunctionalCount += countAndTest("Box 11a NOAA weather radio functioning", m.noaaStatus, m.noaaComments);
 
-    nonFunctionalCount += INVERTED_countAndTest("Box11b NOAA weather audio degraded", m.noaaAudioDegraded,
+    nonFunctionalCount += INVERTED_countAndTest("Box 11b NOAA weather audio degraded", m.noaaAudioDegraded,
         m.noaaAudioDegradedComments);
 
     sts.testIfPresent("Box 12 content should be present", m.additionalComments);
@@ -105,6 +122,8 @@ public class ETO_2024_08_15 extends FeedbackProcessor {
 
     getCounter("Form Version").increment(m.formVersion);
     getCounter("Feedback Count").increment(sts.getExplanations().size());
+
+    setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
   }
 
   private int countAndTest(String label, String status, String comments) {

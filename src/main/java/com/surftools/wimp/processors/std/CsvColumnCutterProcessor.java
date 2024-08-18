@@ -63,10 +63,17 @@ public class CsvColumnCutterProcessor implements IProcessor {
   private static String[] outputHeaders;
   private Set<Integer> indexSet;
 
+  private boolean isInitialized;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
 
     var contextsString = cm.getAsString(Key.CSV_COLUMN_CUTTER_CONFIGURATION);
+    if (contextsString == null) {
+      logger.warn("no configuration for " + Key.CSV_COLUMN_CUTTER_CONFIGURATION);
+      return;
+    }
+
     contextsString = contextsString.replaceAll("\\$PATH", cm.getAsString(Key.PATH));
     if (contextsString != null && contextsString.length() > 0) {
       for (var contextString : contextsString.split(CONTEXT_DELIMITER)) {
@@ -82,6 +89,7 @@ public class CsvColumnCutterProcessor implements IProcessor {
       logger.info("initialized " + contexts.size() + " contexts");
     }
 
+    isInitialized = true;
   }
 
   @Override
@@ -91,6 +99,11 @@ public class CsvColumnCutterProcessor implements IProcessor {
 
   @Override
   public void postProcess() {
+    if (!isInitialized) {
+      logger.warn("no configuration for " + Key.CSV_COLUMN_CUTTER_CONFIGURATION);
+      return;
+    }
+
     for (var context : contexts) {
       indexSet = new HashSet<Integer>(context.columnList().size());
 

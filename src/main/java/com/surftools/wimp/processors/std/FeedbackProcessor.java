@@ -242,7 +242,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
           || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
         var addressList = (message.toList + "," + message.ccList).toUpperCase();
         for (var ev : secondaryDestinations) {
-          count(sts.test("To and/or CC addresses should contain " + ev, addressList.contains(ev), ev));
+          count(sts.test("To and/or CC addresses should contain " + ev, addressList.contains(ev)));
         }
       }
     }
