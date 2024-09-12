@@ -100,7 +100,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     public LocalDateTime windowOpenDt;
     public LocalDateTime windowCloseDt;
 
-    public String extraOutboundMessageText;
+    public String extraOutboundMessageText = "";
 
     public MessageType messageType;
 

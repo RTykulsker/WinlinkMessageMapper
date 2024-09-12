@@ -31,7 +31,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -124,7 +123,7 @@ public abstract class AbstractBaseParser implements IParser {
   }
 
   public static Map<String, byte[]> getAttachments(MimeMessageParser parser) {
-    Map<String, byte[]> attachments = new HashMap<>();
+    Map<String, byte[]> attachments = new LinkedHashMap<>();
     List<DataSource> dataSources = parser.getAttachmentList();
     int attachmentIndex = -1;
     for (DataSource ds : dataSources) {

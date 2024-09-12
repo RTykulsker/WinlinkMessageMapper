@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.DyfiMessage;
+import com.surftools.wimp.message.DyfiMessage.DetailLevel;
 import com.surftools.wimp.message.ExportedMessage;
 
 public class DyfiParser extends AbstractBaseParser {
@@ -99,15 +100,62 @@ public class DyfiParser extends AbstractBaseParser {
       var formVersion = map.get("form_version");
       var response = map.get("fldExperience_response");
 
-      DyfiMessage m = new DyfiMessage(message, //
-          exerciseId, isRealEvent, isFelt, //
-          formDateTime, location, formLocation, //
-          response, comments, intensity, formVersion);
+      if (DyfiMessage.getDetailLevel() == DetailLevel.LOW) {
+        DyfiMessage m = new DyfiMessage(message, //
+            exerciseId, isRealEvent, isFelt, //
+            formDateTime, location, formLocation, //
+            response, comments, intensity, formVersion);
 
-      return m;
-    } catch (
+        return m;
+      } else if (DyfiMessage.getDetailLevel() == DetailLevel.MEDIUM) {
+        var locationSource = map.get("location_source");
+        var situation = map.get("fldSituation_situation");
+        var situationOther = map.get("fldSituation_others");
 
-    Exception e) {
+        var situationFloor = map.get("fldSituation_floor");
+        var situationFloorOther = map.get("ifHigherPleaseDescribe");
+
+        var structureStories = map.get("fldSituation_structureStories");
+        var structureStoriesOther = map.get("howTallPleaseDescribe");
+
+        var situationSleep = map.get("fldSituation_sleep");
+        var situationOthersFeltIt = map.get("fldSituation_others");
+
+        var experienceShaking = map.get("fldExperience_shaking");
+        var experienceReaction = map.get("fldExperience_reaction");
+        var experienceResponse = map.get("fldExperience_response");
+        var experienceResponseOther = map.get("fldExperience_response_other");
+        var experienceStand = map.get("fldExperience_stand");
+
+        var effectsDoors = map.get("fldEffects_doors");
+        var effectsSounds = map.get("fldEffects_sounds");
+        var effectsShelves = map.get("fldEffects_shelved"); // typo in form?
+        var effectsPictures = map.get("fldEffects_pictures");
+        var effectsFurniture = map.get("fldEffects_furniture");
+        var effectsAppliances = map.get("fldEffects_appliances");
+        var effectsWalls = map.get("fldEffects_walls");
+
+        var damageText = map.get("d_text");
+        var buildingDamage = map.get("BuildingDamage");
+        var language = map.get("language");
+
+        DyfiMessage m = new DyfiMessage(message, //
+            exerciseId, isRealEvent, isFelt, //
+            formDateTime, location, formLocation, //
+            response, comments, intensity, formVersion, //
+            locationSource, situation, situationOther, //
+            situationFloor, situationFloorOther, //
+            structureStories, structureStoriesOther, //
+            situationSleep, situationOthersFeltIt, //
+            experienceShaking, experienceReaction, experienceResponse, experienceResponseOther, experienceStand, //
+            effectsDoors, effectsSounds, effectsShelves, effectsPictures, //
+            effectsFurniture, effectsAppliances, //
+            effectsWalls, damageText, buildingDamage, language);
+        return m;
+      } else {
+        throw new RuntimeException("Unsupported detailType: " + DyfiMessage.getDetailLevel());
+      }
+    } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }

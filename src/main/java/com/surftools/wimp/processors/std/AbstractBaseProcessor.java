@@ -102,6 +102,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     if (cm.getAsBoolean(Key.OUTPUT_PATH_CLEAR_ON_START, true)) {
       FileUtils.deleteDirectory(outputPath);
     }
+    FileUtils.makeDirIfNeeded(outputPath.toString());
 
     dumpIds = (Set<String>) mm.getContextObject("dumpIds");
     if (dumpIds == null) {

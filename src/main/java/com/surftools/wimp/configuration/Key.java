@@ -103,6 +103,8 @@ public enum Key implements IConfigurationKey {
   CSV_COLUMN_HEADER_RENAME_CONFIGURATION("csvColumnHeaderRenameConfiguration"), // columns to be renamed
 
   CHART_CONFIG("chartConfig"), // as a JSON blob
+
+  DYFI_DETAIL_LEVEL("dyfi.detailLevel"), // to control number of fields, etc.
   ;
 
   private final String key;

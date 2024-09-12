@@ -46,13 +46,11 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.PdfIcs309Message;
-import com.surftools.wimp.message.PlainMessage;
-import com.surftools.wimp.message.RRIQuickWelfareMessage;
-import com.surftools.wimp.message.RRIReplyWelfareRadiogramMessage;
-import com.surftools.wimp.message.RRIWelfareRadiogramMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
@@ -60,23 +58,13 @@ import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2024-09-19: "awareness" exercise for both RRI Welfare Radiogram and RRI Quick Welfare
- *
- * Specifically:
- *
- * send an Welfare Radiogram to clearinghouse, ETO-BK and personal email reply to Welfare Radiogram back to winlink
- * address send a Quick Welfare to clearinghouse and ETO-BK
- *
- * then generate an ICS-309 (PDF) with the above three messages and send to clearinghouse and ETO-BK
- *
- * There should *NOT* be a reply, (form-based) ICS-309 or any other plain text message
- *
+ * Processor for 2024-11-09: Semi-annual drill: Winlink Check, 4 sequential FSR and a generated ICS-309
  *
  * @author bobt
  *
  */
-public class ETO_2024_09_19 extends FeedbackProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_09_19.class);
+public class ETO_2024_11_09 extends FeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_11_09.class);
 
   private class Summary implements IWritableTable {
     public String sender;
@@ -85,32 +73,16 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     public List<String> explanations;
 
     // we want these three messages
-    public RRIWelfareRadiogramMessage rriWelfareRadiogramMessage;
-    public RRIQuickWelfareMessage rriQuickWelfareMessage;
+    public CheckInMessage checkInMessage;
+    public FieldSituationMessage fsrDay1Message;
+    public FieldSituationMessage fsrDay2Message;
+    public FieldSituationMessage fsrDay3Message;
+    public FieldSituationMessage fsrDay4Message;
     public PdfIcs309Message pdfIcs309Message;
-
-    // we don't want these three messages
-    public RRIReplyWelfareRadiogramMessage rriReplyWelfareRadiogramMessage;
-    public PlainMessage plainMessage;
-    public Ics309Message formIcs309Message; // we don't care about this either
 
     public Summary(String sender) {
       this.sender = sender;
       this.explanations = new ArrayList<String>();
-    }
-
-    @Override
-    public String toString() {
-      var sb = new StringBuilder();
-      sb.append("{");
-      sb.append("from: " + sender);
-      sb.append(", radiogram: " + rriWelfareRadiogramMessage == null ? "null" : rriWelfareRadiogramMessage.subject);
-      sb
-          .append(
-              ", reply: " + rriReplyWelfareRadiogramMessage == null ? "null" : rriReplyWelfareRadiogramMessage.subject);
-      sb.append(", quick: " + rriQuickWelfareMessage == null ? "null" : rriQuickWelfareMessage.subject);
-      sb.append("}");
-      return sb.toString();
     }
 
     @Override
@@ -122,12 +94,12 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     @Override
     public String[] getHeaders() {
       return new String[] { "From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
-          "#Radiogram", "#Quick", "#PDF ICS-309", //
-          "#Reply", "#Plain", "#Form ICS-309" };
+          "CheckIn", "FSR Day 1", "FSR Day 2", "FSR Day 3", "FSR Day 4", "PDF ICS-309", //
+      };
     }
 
-    private String count(ExportedMessage m) {
-      return m == null ? "" : "1";
+    private String mId(ExportedMessage m) {
+      return m == null ? "" : m.messageId;
     }
 
     @Override
@@ -138,8 +110,9 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
       var feedback = (explanations.size() == 0) ? "Perfect messages!" : String.join("\n", explanations);
       return new String[] { sender, latitude, longitude, //
           String.valueOf(explanations.size()), feedback, //
-          count(rriWelfareRadiogramMessage), count(rriQuickWelfareMessage), count(pdfIcs309Message), //
-          count(rriReplyWelfareRadiogramMessage), count(plainMessage), count(formIcs309Message) };
+          mId(checkInMessage), mId(fsrDay1Message), mId(fsrDay2Message), mId(fsrDay3Message), mId(fsrDay4Message),
+          mId(pdfIcs309Message), //
+      };
     }
   }
 
@@ -151,30 +124,23 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
 
     Ics309Message.setNDisplayActivities(12);
 
-    var acceptableMessageTypesList = List // order matters, last location wins,
-        .of(MessageType.PLAIN, MessageType.ICS_309, MessageType.RRI_REPLY_WELFARE_RADIOGRRAM, //
-            MessageType.RRI_QUICK_WELFARE, MessageType.RRI_WELFARE_RADIOGRAM, MessageType.PDF_ICS_309);
+    var acceptableMessageTypesList = List
+        .of( // order matters, last location wins,
+            MessageType.CHECK_IN, MessageType.FIELD_SITUATION, MessageType.PDF_ICS_309);
     acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    var sender = (message.getMessageType() == MessageType.RRI_REPLY_WELFARE_RADIOGRRAM) ? message.to : message.from;
     var summary = summaryMap.getOrDefault(sender, new Summary(sender));
 
     var type = message.getMessageType();
-    if (type == MessageType.RRI_QUICK_WELFARE) {
-      handle_RriQuickWelfareMessage(summary, (RRIQuickWelfareMessage) message);
-    } else if (type == MessageType.RRI_WELFARE_RADIOGRAM) {
-      handle_RriRadiogramMessage(summary, (RRIWelfareRadiogramMessage) message);
-    } else if (type == MessageType.RRI_REPLY_WELFARE_RADIOGRRAM) {
-      handle_RriReplyWelfareMessage(summary, (RRIReplyWelfareRadiogramMessage) message);
+    if (type == MessageType.CHECK_IN) {
+      handle_CheckInMessage(summary, (CheckInMessage) message);
+    } else if (type == MessageType.FIELD_SITUATION) {
+      handle_FieldSituationMessage(summary, (FieldSituationMessage) message);
     } else if (type == MessageType.PDF_ICS_309) {
       handle_PdfIcs309Message(summary, (PdfIcs309Message) message);
-    } else if (type == MessageType.ICS_309) {
-      handle_formIcs309Message(summary, (Ics309Message) message);
-    } else if (type == MessageType.PLAIN) {
-      handlePlain(summary, (PlainMessage) message);
     } else {
       logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
     }
@@ -186,21 +152,6 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     summaryMap.put(sender, summary);
   }
 
-  private void handle_formIcs309Message(Summary summary, Ics309Message m) {
-    summary.formIcs309Message = m;
-  }
-
-  // but we shouldn't receive these
-  private void handle_RriReplyWelfareMessage(Summary summary, RRIReplyWelfareRadiogramMessage m) {
-    sts.reset(m.to);
-    summary.rriReplyWelfareRadiogramMessage = m;
-    count(sts.test("Body should start with ACK", m.reply.contains("ACK")));
-  }
-
-  private void handlePlain(Summary summary, PlainMessage m) {
-    summary.plainMessage = m;
-  }
-
   private void handle_PdfIcs309Message(Summary summary, PdfIcs309Message m) {
     summary.pdfIcs309Message = m;
     count(sts.test("ICS-309 task number should be #EV", "01 Sep", m.taskNumber));
@@ -210,29 +161,6 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     count(sts.testIfPresent("Station ID should be present", m.stationId));
 
     var activitiesSubjectSet = m.activities.stream().map(a -> a.subject()).collect(Collectors.toSet());
-
-    String welfareSubject = summary.rriWelfareRadiogramMessage == null ? null
-        : summary.rriWelfareRadiogramMessage.subject;
-    /*
-     * activitiesSubjectSet.contains(subject) should be sufficient, but it is not, because "some people" enter dates in
-     * a format that is hard to parse "09 03 24 19:58", thereby messing up the subject
-     */
-    var welfarePredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareSubject));
-    count(sts
-        .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
-            welfareSubject == null ? false : welfarePredicate));
-
-    String welfareReplySubject = welfareSubject == null ? null : "Re: " + welfareSubject;
-    var welfareReplyPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareReplySubject));
-    count(sts
-        .test("ICS-309 activities should contain RRI Welfare Radiogram reply subject",
-            welfareReplySubject == null ? false : welfareReplyPredicate));
-
-    String quickSubject = summary.rriQuickWelfareMessage == null ? null : summary.rriQuickWelfareMessage.subject;
-    var quickPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(quickSubject));
-    count(sts
-        .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
-            quickSubject == null ? false : quickPredicate));
 
     writePdf(m);
   }
@@ -263,46 +191,28 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     }
   }
 
-  private void handle_RriRadiogramMessage(Summary summary, RRIWelfareRadiogramMessage m) {
-    summary.rriWelfareRadiogramMessage = m;
-    count(sts.test("Message Precedence should be TEST W", m.header.contains("TEST W")));
+  private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
+    summary.checkInMessage = m;
 
-    var bodyOneLine = m.body.replaceAll("\n", " ").replaceAll("\r", " ");
-
-    var ev = "EVACUATING TO A FAMILY MEMBER/FRIENDS HOUSE";
-    var predicate = bodyOneLine.contains(ev);
-    count(sts.test("Message Body should be contain " + ev, predicate));
-
-    ev = "WILL CONTACT YOU WHEN ABLE";
-    predicate = bodyOneLine.contains(ev);
-    count(sts.test("Message Body should be contain " + ev, predicate));
+    // TODO fixme
   }
 
-  private void handle_RriQuickWelfareMessage(Summary summary, RRIQuickWelfareMessage m) {
-    summary.rriQuickWelfareMessage = m;
-    var bodyOneLine = m.text.replaceAll("\n", "").replaceAll("\r", "");
-    var ev = "I am safe and well.";
-    var predicate = bodyOneLine.contains(ev);
-    count(sts.test("Message Body should be contain " + ev, predicate));
+  private void handle_FieldSituationMessage(Summary summary, FieldSituationMessage m) {
+    // TODO get message "day"
+    // TODO deduplicate, saving only latest message for given day
 
-    ev = "All communications are down.";
-    predicate = bodyOneLine.contains(ev);
-    count(sts.test("Message Body should be contain " + ev, predicate));
+    var formDateTimeString = m.formDateTime;
   }
 
   @Override
   protected void beforeCommonProcessing(String sender, ExportedMessage message) {
     var messageType = message.getMessageType();
-    if (messageType == MessageType.RRI_QUICK_WELFARE) {
-      sts.setExplanationPrefix("Quick: ");
-    } else if (messageType == MessageType.RRI_WELFARE_RADIOGRAM) {
-      sts.setExplanationPrefix("Radiogram: ");
+    if (messageType == MessageType.CHECK_IN) {
+      sts.setExplanationPrefix("CheckIn: ");
+    } else if (messageType == MessageType.FIELD_SITUATION) {
+      sts.setExplanationPrefix("FSR: ");
     } else if (messageType == MessageType.PDF_ICS_309) {
       sts.setExplanationPrefix("ICS-309: ");
-    } else if (messageType == MessageType.ICS_309) {
-      sts.setExplanationPrefix("ICS-309: ");
-    } else if (messageType == MessageType.PLAIN) {
-      sts.setExplanationPrefix("");
     }
   }
 
@@ -314,29 +224,31 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
       return;
     }
 
-    if (summary.plainMessage != null) {
-      summary.explanations.add("Plain messages should NOT have been sent.");
+    if (summary.checkInMessage == null) {
+      summary.explanations.add("No CheckIn message received.");
     }
 
-    if (summary.formIcs309Message != null) {
-      summary.explanations.add("Standard Template ICS-309 messages should NOT have been sent");
+    if (summary.fsrDay1Message == null) {
+      summary.explanations.add("No FSR Day 1 message received.");
     }
 
-    if (summary.rriReplyWelfareRadiogramMessage != null) {
-      summary.explanations.add("RRI Welfare Radiogram Reply messages should NOT have been sent");
+    if (summary.fsrDay2Message == null) {
+      summary.explanations.add("No FSR Day 2 message received.");
     }
 
-    if (summary.rriQuickWelfareMessage == null) {
-      summary.explanations.add("No RRI Quick Welfare message received.");
+    if (summary.fsrDay3Message == null) {
+      summary.explanations.add("No FSR Day 3 message received.");
     }
 
-    if (summary.rriWelfareRadiogramMessage == null) {
-      summary.explanations.add("No RRI Welfare Radiogram message received.");
+    if (summary.fsrDay4Message == null) {
+      summary.explanations.add("No FSR Day 4 message received.");
     }
 
     if (summary.pdfIcs309Message == null) {
       summary.explanations.add("No ICS-309 message received.");
     }
+
+    // TODO other inter-message relationships
 
     // TODO histograms for this? VirtualMessage for histograms? globalCounter exerciseCounter, ExerciseMessage
     // SummaryMessage
@@ -393,6 +305,6 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     }
 
     WriteProcessor
-        .writeTable(new ArrayList<IWritableTable>(summaryMap.values()), Path.of(outputPathName, "rri-summary.csv"));
+        .writeTable(new ArrayList<IWritableTable>(summaryMap.values()), Path.of(outputPathName, "drill-summary.csv"));
   }
 }

@@ -203,4 +203,18 @@ public class FieldSituationMessage extends ExportedMessage {
   public String getMultiMessageComment() {
     return additionalComments;
   }
+
+  @Override
+  public String toString() {
+    var headers = getHeaders();
+    var values = getValues();
+    var sb = new StringBuilder();
+    sb.append(" + {");
+    var n = Math.min(headers.length, values.length);
+    for (var i = 0; i < n; ++i) {
+      sb.append(headers[i] + ": " + values[i] + ", ");
+    }
+    sb.append("}");
+    return super.toString() + sb.toString();
+  }
 }

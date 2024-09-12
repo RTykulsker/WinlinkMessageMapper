@@ -51,6 +51,16 @@ public class FileUtils {
     }
   }
 
+  public static void makeDirIfNeeded(Path pathName) {
+    File dirName = new File(pathName.toString());
+    if (!dirName.exists()) {
+      boolean ok = dirName.mkdirs();
+      if (!ok) {
+        throw new RuntimeException("file path for: " + dirName + " not found and can't be created");
+      }
+    }
+  }
+
   /**
    * (recursively) create directory
    *

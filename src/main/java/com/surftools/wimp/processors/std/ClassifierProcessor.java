@@ -56,11 +56,13 @@ import com.surftools.wimp.parser.Ics213ReplyParser;
 import com.surftools.wimp.parser.Ics214Parser;
 import com.surftools.wimp.parser.Ics309Parser;
 import com.surftools.wimp.parser.MiroCheckInParser;
+import com.surftools.wimp.parser.PdfIcs309Parser;
 import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
 import com.surftools.wimp.parser.QuickParser;
 import com.surftools.wimp.parser.RRIQuickWelfareParser;
 import com.surftools.wimp.parser.RRIWelfareRadiogramParser;
+import com.surftools.wimp.parser.RRiReplyWelfareRadiogramParser;
 import com.surftools.wimp.parser.SpotRepParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
@@ -199,15 +201,22 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return MessageType.ETO_RESUME;
     } else if (subject.startsWith("I Am Safe Message From") && subject.endsWith(" - DO NOT REPLY!")) {
       return MessageType.RRI_QUICK_WELFARE;
-    } else if (message.mime.contains("Quick Welfare Message")) {
-      return MessageType.RRI_QUICK_WELFARE;
-    } else if (message.mime.contains("RRI Welfare Radiogram")) {
+    } else if (subject.startsWith("QTC 1 W") || subject.startsWith("QTC 1 TEST W")) {
       return MessageType.RRI_WELFARE_RADIOGRAM;
+    } else if (subject.toUpperCase().startsWith("RE: QTC 1 W")
+        || subject.toUpperCase().startsWith("RE: QTC 1 TEST W")) {
+      return MessageType.RRI_REPLY_WELFARE_RADIOGRRAM;
     } else if (subject.startsWith("ACK:")) {
       return MessageType.ACK;
-    } else {
-      return MessageType.PLAIN;
     }
+
+    // other
+    if (PdfIcs309Parser.isPdfIcs309(message)) {
+      return MessageType.PDF_ICS_309;
+    }
+
+    // default
+    return MessageType.PLAIN;
   }
 
   /**
@@ -253,6 +262,9 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.HOSPITAL_STATUS, new HospitalStatusParser());
     parserMap.put(MessageType.RRI_QUICK_WELFARE, new RRIQuickWelfareParser());
     parserMap.put(MessageType.RRI_WELFARE_RADIOGRAM, new RRIWelfareRadiogramParser());
+    parserMap.put(MessageType.RRI_REPLY_WELFARE_RADIOGRRAM, new RRiReplyWelfareRadiogramParser());
+    parserMap.put(MessageType.PDF_ICS_309, new PdfIcs309Parser());
+
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
     }

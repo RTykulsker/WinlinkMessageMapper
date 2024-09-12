@@ -432,7 +432,7 @@ public class SimpleTestService implements IService {
       points += entry.points;
     } else {
       explanation = explanationPrefix;
-      if (altExplanation != null) {
+      if (altExplanation != null && !altExplanation.isEmpty()) {
         explanation += altExplanation;
       } else if (value == null) {
         explanation += entry.label;
