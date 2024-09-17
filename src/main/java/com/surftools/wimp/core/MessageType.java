@@ -77,6 +77,8 @@ public enum MessageType {
   RRI_QUICK_WELFARE("rri_quick_welfare"), //
   RRI_WELFARE_RADIOGRAM("rri_welfare_radiogram"), //
   RRI_REPLY_WELFARE_RADIOGRRAM("rri_reply_welfare_radiogram"), //
+
+  WA_ICS_213_RR_WEB_EOC("wa_ics_213_rr_web_eoc", "RMS_EXPRESS_Form_RR_WebEOC_WA_view.xml"), //
   ;
 
   /**

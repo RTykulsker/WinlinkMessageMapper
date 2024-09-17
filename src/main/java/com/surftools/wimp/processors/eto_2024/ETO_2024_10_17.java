@@ -83,12 +83,13 @@ public class ETO_2024_10_17 extends FeedbackProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    var detailLevelString = cm.getAsString(Key.DYFI_DETAIL_LEVEL, "MEDIUM");
+    var detailLevelString = cm.getAsString(Key.DYFI_DETAIL_LEVEL, "LOW");
     var detailLevel = DyfiMessage.DetailLevel.fromString(detailLevelString);
     if (detailLevel == null) {
       throw new RuntimeException("Unsupported " + Key.DYFI_DETAIL_LEVEL.toString() + " value: " + detailLevelString);
     } else {
-      DyfiMessage.setDetailLevel(DyfiMessage.DetailLevel.MEDIUM);
+      DyfiMessage.setDetailLevel(detailLevel);
+      logger.info("### using DYFI detailLevel: " + detailLevel);
     }
   }
 
@@ -96,13 +97,13 @@ public class ETO_2024_10_17 extends FeedbackProcessor {
   protected void specificProcessing(ExportedMessage message) {
     DyfiMessage m = (DyfiMessage) message;
 
-    var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS);
+    var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS.toUpperCase());
     count(sts.test("To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
     count(sts.test("Event Type must be: EXERCISE", !m.isRealEvent));
-    count(sts.test("Exercise Id must be: #EV", "2024 SHAKEOUT", m.exerciseId));
+    count(sts.test("Exercise Id must be: #EV", "ETO Winlink Thursday SHAKEOUT 2024", m.exerciseId));
     count(sts.test("Did You feel it must be: Yes", m.isFelt));
     var response = m.response == null ? "Not specified" : m.response;
-    count(sts.test("How did you respond must be: Dropped and covered", "drop", response));
+    count(sts.test("How did you respond must be: Dropped and covered", "duck", response));
 
     // date and time should be 10/17 and 10:17
     count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
@@ -133,7 +134,7 @@ public class ETO_2024_10_17 extends FeedbackProcessor {
       count(sts.testIfPresent("Furniture(Appliances)/slide value should be present", m.effectsFurniture));
       count(sts.testIfPresent("Heavy Appliance Affected value should be present", m.effectsAppliances));
       count(sts.testIfPresent("Walls/Fences damaged value should be present", m.effectsWalls));
-    }
+    } // endif detailLevel == MEDIUM
 
     getCounter("Intensity").increment(m.intensity);
     getCounter("Version").increment(m.formVersion);
