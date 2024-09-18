@@ -35,8 +35,8 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
+import com.surftools.wimp.message.WA_WebEoc_Ics213RRMessage;
 
 public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
   private static final Logger logger = LoggerFactory.getLogger(WA_WebEoc_Ics213RRParser.class);
@@ -55,45 +55,80 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
 		var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR_WEB_EOC.attachmentName()));
       makeDocument(message.messageId, xmlString);
 
-      var organization = getStringFromXml("formtitle");
-      var incidentName = getStringFromXml("incname");
-      var activityDateTime = getStringFromXml("activitydatetime1");
-      var requestNumber = getStringFromXml("reqnum");
+		var activityDate = getStringFromXml("input1");
+		var activityTime = getStringFromXml("input2");
+		var activityDateTime = activityDate + " " + activityTime;
+
+		var organization = getStringFromXml("input4");
+
+		var requestNumber = getStringFromXml("input7");
+
+		var priority = getStringFromXml("input9");
+		var requestedBy = getStringFromXml("input11");
 
       var lineItems = new ArrayList<LineItem>();
 
-      for (var i = 1; i <= 8; ++i) {
-        var quantity = getStringFromXml("qty" + String.valueOf(i));
-        var kind = getStringFromXml("kind" + String.valueOf(i));
-        var type = getStringFromXml("type" + String.valueOf(i));
-        var item = getStringFromXml("item" + String.valueOf(i));
-        var requestedDateTime = getStringFromXml("reqdatetime" + String.valueOf(i));
-        var estimatedDateTime = getStringFromXml("estdatetime" + String.valueOf(i));
-        var cost = getStringFromXml("cost" + String.valueOf(i));
+
+		var quantity = getStringFromXml("input19");
+		var kind = getStringFromXml("input17");
+		var type = getStringFromXml("input18");
+		var item = getStringFromXml("input16");
+		var requestedDateTime = getStringFromXml("input22");
+		var estimatedDateTime = "";
+		var cost = "";
         var lineItem = new LineItem(quantity, kind, type, item, requestedDateTime, estimatedDateTime, cost);
         lineItems.add(lineItem);
-      }
 
-      var delivery = getStringFromXml("delivery");
-      var substitutes = getStringFromXml("subs1");
-      var requestedBy = getStringFromXml("reqname");
-      var priority = getStringFromXml("priority");
+
+		var delivery = getStringFromXml("input20");
+		var substitutes = getStringFromXml("die");
+
       var approvedBy = getStringFromXml("secapp");
 
-      var logisticsOrderNumber = getStringFromXml("lognum");
-      var supplierInfo = getStringFromXml("supinfo");
-      var supplierName = getStringFromXml("supname");
-      var supplierPointOfContact = getStringFromXml("poc");
-      var supplyNotes = getStringFromXml("notes");
-      var logisticsAuthorizer = getStringFromXml("authsig");
-      var logisticsDateTime = getStringFromXml("activitydatetime2");
-      var orderedBy = getStringFromXml("orderby");
+		// these are deprecated
+		var incidentName = getStringFromXml("die");
 
-      var financeComments = getStringFromXml("fincomm");
-      var financeName = getStringFromXml("finrepname");
-      var financeDateTime = getStringFromXml("activitydatetime3");
+		var logisticsOrderNumber = getStringFromXml("die");
+		var supplierInfo = getStringFromXml("die");
+		var supplierName = getStringFromXml("die");
+		var supplierPointOfContact = getStringFromXml("die");
+		var supplyNotes = getStringFromXml("die");
+		var logisticsAuthorizer = getStringFromXml("die");
+		var logisticsDateTime = getStringFromXml("die");
+		var orderedBy = getStringFromXml("die");
 
-      var m = new Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
+		var financeComments = getStringFromXml("die");
+		var financeName = getStringFromXml("die");
+		var financeDateTime = getStringFromXml("die");
+
+		// these are new
+		var creator = getStringFromXml("input3");
+		var county = getStringFromXml("input5");
+		var city = getStringFromXml("input6");
+		var stateTrackingNumber = getStringFromXml("input8");
+		var status = getStringFromXml("input10");
+		var requestorPhone = getStringFromXml("input12");
+		var requestorFax = getStringFromXml("input13");
+		var requestorEmail = getStringFromXml("input14");
+
+		var quickDescription = getStringFromXml("input15");
+
+		var localResourcesExhausted = getStringFromXml("input29");
+		var mutualAidResourcesExhausted = getStringFromXml("input30");
+		var commericalResourcesExhausted = getStringFromXml("input31");
+		var willingToFund = getStringFromXml("input32");
+
+		var templateVersion = getStringFromXml("templateversion");
+		var version = "unknown";
+		if (templateVersion != null) {
+			var prefix = "RR WebEOC WA ";
+			var index = templateVersion.indexOf(prefix);
+			if (index != -1) {
+				version = templateVersion.substring(prefix.length());
+			}
+		}
+
+		var m = new WA_WebEoc_Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
           lineItems, //
           delivery, substitutes, requestedBy, priority, approvedBy, //
           logisticsOrderNumber, supplierInfo, supplierName, //
