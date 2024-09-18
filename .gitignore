@@ -6,3 +6,4 @@ target/
 TODO
 src/test/resources/
 .~lock*
+/bin/

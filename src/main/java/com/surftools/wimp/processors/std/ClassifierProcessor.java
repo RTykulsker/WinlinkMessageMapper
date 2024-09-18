@@ -64,6 +64,8 @@ import com.surftools.wimp.parser.RRIQuickWelfareParser;
 import com.surftools.wimp.parser.RRIWelfareRadiogramParser;
 import com.surftools.wimp.parser.RRiReplyWelfareRadiogramParser;
 import com.surftools.wimp.parser.SpotRepParser;
+import com.surftools.wimp.parser.WA_Ics213RRParser;
+import com.surftools.wimp.parser.WA_WebEoc_Ics213RRParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
 import com.surftools.wimp.parser.WxLocalParser;
@@ -176,6 +178,10 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.HUMANITARIAN_NEEDS;
       } else if (attachmentNames.contains(MessageType.HOSPITAL_STATUS.attachmentName())) {
         return MessageType.HOSPITAL_STATUS;
+      } else if (attachmentNames.contains(MessageType.WA_ICS_213_RR.attachmentName())) {
+    	return MessageType.WA_ICS_213_RR;
+      } else if (attachmentNames.contains(MessageType.WA_ICS_213_RR_WEB_EOC.attachmentName())) {
+    	return MessageType.WA_ICS_213_RR_WEB_EOC;
       }
     }
     /**
@@ -264,6 +270,9 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.RRI_WELFARE_RADIOGRAM, new RRIWelfareRadiogramParser());
     parserMap.put(MessageType.RRI_REPLY_WELFARE_RADIOGRRAM, new RRiReplyWelfareRadiogramParser());
     parserMap.put(MessageType.PDF_ICS_309, new PdfIcs309Parser());
+    
+    parserMap.put(MessageType.WA_ICS_213_RR, new WA_Ics213RRParser());
+    parserMap.put(MessageType.WA_ICS_213_RR_WEB_EOC, new WA_WebEoc_Ics213RRParser());
 
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);

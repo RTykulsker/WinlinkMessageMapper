@@ -38,11 +38,11 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
 
-public class Ics213RRParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(Ics213RRParser.class);
+public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
+  private static final Logger logger = LoggerFactory.getLogger(WA_WebEoc_Ics213RRParser.class);
 
-  public Ics213RRParser() {
-  }
+  public WA_WebEoc_Ics213RRParser() {
+	}
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
@@ -52,7 +52,7 @@ public class Ics213RRParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-      var xmlString = new String(message.attachments.get(MessageType.ICS_213_RR.attachmentName()));
+		var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR_WEB_EOC.attachmentName()));
       makeDocument(message.messageId, xmlString);
 
       var organization = getStringFromXml("formtitle");
@@ -100,6 +100,7 @@ public class Ics213RRParser extends AbstractBaseParser {
           supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
           logisticsDateTime, orderedBy, //
           financeComments, financeName, financeDateTime
+
       );
 
       return m;

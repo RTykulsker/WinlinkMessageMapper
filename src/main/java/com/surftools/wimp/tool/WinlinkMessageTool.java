@@ -15,7 +15,7 @@ import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 public class WinlinkMessageTool {
   public static void main(String[] args) throws Exception {
     var pipeline = new PipelineProcessor();
-    pipeline.initialize(new PropertyFileConfigurationManager(args[0], Key.values()), new MessageManager());
+    pipeline.initialize(new PropertyFileConfigurationManager(args[1], Key.values()), new MessageManager());
     pipeline.process();
     pipeline.postProcess();
   }
