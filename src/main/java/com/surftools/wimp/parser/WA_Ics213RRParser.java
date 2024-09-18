@@ -52,18 +52,18 @@ public class WA_Ics213RRParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-		var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR.attachmentName()));
+      var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR.attachmentName()));
       makeDocument(message.messageId, xmlString);
 
-		var organization = getStringFromXml("agname");
+      var organization = getStringFromXml("agname");
       var incidentName = getStringFromXml("incname");
-		var activityDateTime = getStringFromXml("datetime");
-		var requestNumber = getStringFromXml("reqtracknum");
+      var activityDateTime = getStringFromXml("datetime");
+      var requestNumber = getStringFromXml("reqtracknum");
 
       var lineItems = new ArrayList<LineItem>();
 
-		// only ONE line item
-		for (var i = 1; i <= 1; ++i) {
+      // only ONE line item
+      for (var i = 1; i <= 1; ++i) {
         var quantity = getStringFromXml("qty" + String.valueOf(i));
         var kind = getStringFromXml("kind" + String.valueOf(i));
         var type = getStringFromXml("type" + String.valueOf(i));
@@ -75,49 +75,48 @@ public class WA_Ics213RRParser extends AbstractBaseParser {
         lineItems.add(lineItem);
       }
 
-		var supportNeeded = getStringFromXml("supneed");
-		var delivery = getStringFromXml("reqloc1");
-		var substitutes = getStringFromXml("sub");
+      var supportNeeded = getStringFromXml("supneed");
+      var delivery = getStringFromXml("reqloc1");
+      var substitutes = getStringFromXml("sub");
       var requestedBy = getStringFromXml("reqname");
       var priority = getStringFromXml("priority");
-		var approvedBy = getStringFromXml("reqauth");
+      var approvedBy = getStringFromXml("reqauth");
 
-		// WA unique
-		// TODO add to message, constructor, getHeaders/getValues
-		var deliveryPOC = getStringFromXml("reqloc");
-		var commericalResourcesExhausted = getStringFromXml("b12a");
-		var localResourcesExhausted = getStringFromXml("b12b");
-		var mutualAidResourcesExhausted = getStringFromXml("b12c");
-		var willingToFund = getStringFromXml("b13");
-		var fundingExplanation = getStringFromXml("explain");
+      // WA unique
+      // TODO add to message, constructor, getHeaders/getValues
+      var deliveryPOC = getStringFromXml("reqloc");
+      var commericalResourcesExhausted = getStringFromXml("b12a");
+      var localResourcesExhausted = getStringFromXml("b12b");
+      var mutualAidResourcesExhausted = getStringFromXml("b12c");
+      var willingToFund = getStringFromXml("b13");
+      var fundingExplanation = getStringFromXml("explain");
 
-		var logisticsOrderNumber = getStringFromXml("eocnum");
-		var supplierInfo = getStringFromXml("supinfo"); // not used
-		var supplierName = getStringFromXml("supname1");
-		var supplierPointOfContact = getStringFromXml("poc"); // not used
+      var logisticsOrderNumber = getStringFromXml("eocnum");
+      var supplierInfo = getStringFromXml("supinfo"); // not used
+      var supplierName = getStringFromXml("supname1");
+      var supplierPointOfContact = getStringFromXml("poc"); // not used
       var supplyNotes = getStringFromXml("notes");
-		var logisticsAuthorizer = getStringFromXml("logrep");
-		var logisticsDateTime = getStringFromXml("datetime1");
-		var orderedBy = getStringFromXml("orderby");
+      var logisticsAuthorizer = getStringFromXml("logrep");
+      var logisticsDateTime = getStringFromXml("datetime1");
+      var orderedBy = getStringFromXml("orderby");
 
-		// new
-		var extraOrderdBy = getStringFromXml("other");
-		var elevateToState = getStringFromXml("elevate");
-		var stateTrackingNumber = getStringFromXml("statenum");
-		var mutualAidTrackingNumber = getStringFromXml("matracking");
+      // new
+      var extraOrderdBy = getStringFromXml("other");
+      var elevateToState = getStringFromXml("elevate");
+      var stateTrackingNumber = getStringFromXml("statenum");
+      var mutualAidTrackingNumber = getStringFromXml("matracking");
 
       var financeComments = getStringFromXml("fincomm");
       var financeName = getStringFromXml("finrepname");
-		var financeDateTime = getStringFromXml("datetime2");
+      var financeDateTime = getStringFromXml("datetime2");
 
-		var m = new WA_Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
+      var m = new WA_Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
           lineItems, //
           delivery, substitutes, requestedBy, priority, approvedBy, //
           logisticsOrderNumber, supplierInfo, supplierName, //
           supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
           logisticsDateTime, orderedBy, //
-          financeComments, financeName, financeDateTime
-      );
+          financeComments, financeName, financeDateTime);
 
       return m;
 
