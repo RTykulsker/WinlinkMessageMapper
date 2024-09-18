@@ -66,7 +66,8 @@ public class PlotlyChartService extends AbstractBaseChartService {
     var text = TEMPLATE.replace("HTML_CONTENT", html);
     text = text.replace("SCRIPT_CONTENT", makeScriptContent());
 
-    var title = cm.getAsString(Key.EXERCISE_DESCRIPTION, messageType.name().toLowerCase() + " histograms");
+    var messageTypeName = messageType == null ? "summary" : messageType.name().toLowerCase();
+    var title = cm.getAsString(Key.EXERCISE_DESCRIPTION, messageTypeName + " histograms");
     text = text.replaceAll("TITLE", title);
 
     try {

@@ -205,7 +205,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     summary.pdfIcs309Message = m;
     count(sts.test("ICS-309 task number should be #EV", "01 Sep", m.taskNumber));
     count(sts.test("ICS-309 task name should be #EV", "RRI Welfare Message Exercise", m.taskName));
-    count(sts.test("ICS-309 operationsal period should be #EV", "191500-201500 UTC Sep 24", m.operationalPeriod));
+    count(sts.test("ICS-309 operational period should be #EV", "191500-201500 UTC Sep 24", m.operationalPeriod));
     count(sts.testIfPresent("Operator Name should be present", m.operatorName));
     count(sts.testIfPresent("Station ID should be present", m.stationId));
 

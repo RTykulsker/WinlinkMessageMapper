@@ -112,6 +112,10 @@ public abstract class AbstractBaseChartService implements IChartService {
       return; // the best config for a type is no config!
     }
 
+    if (messageType == null) {
+      return;
+    }
+
     try {
       ObjectMapper mapper = new ObjectMapper();
       var jsonMap = mapper.readValue(jsonString, Map.class);
@@ -302,9 +306,9 @@ public abstract class AbstractBaseChartService implements IChartService {
    * provide "sensible" values when no explicit configuration for a messageType is given
    */
   private static void makeDefaultConfig() {
+    var fileName = messageType == null ? "summary" : messageType.name().toLowerCase();
     service = new PlotlyChartService();
-    fileOutputPath = Path
-        .of(cm.getAsString(Key.PATH), "output", messageType.name().toLowerCase() + "_" + "plottly_chart.html");
+    fileOutputPath = Path.of(cm.getAsString(Key.PATH), "output", fileName + "_" + "plottly_chart.html");
 
     excludedCounters = new HashSet<>();
     minValuesMap = new HashMap<>();

@@ -80,6 +80,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected boolean doStsFieldValidation = true;
 
   protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
+  public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
 
   /**
    * this is the context that we need for each message type, but we won't share it with subtypes
@@ -383,9 +384,19 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }
 
+      for (var key : te.counterMap.keySet()) {
+        var summaryKey = messageType.name() + "_" + key;
+        var value = te.counterMap.get(key);
+        summaryCounterMap.put(summaryKey, value);
+      }
+
       var chartService = AbstractBaseChartService.getChartService(cm, te.counterMap, messageType);
       chartService.makeCharts();
     } // end loop over message types
+
+    // all messageTypes in one chart page
+    var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
+    chartService.makeCharts();
 
     endPostProcessingForAllMessageTypes();
   }
