@@ -47,11 +47,10 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
       "Estimated Date/Time", "Cost" };
 
   private static final String[] postHeaders = new String[] { "Delivery/Reporting Location", "Substitutes",
-	      "Requested By", "Priority", "Approved By", //
-	      "Log Order Number", "SupplierInfo", "SupplierName", //
-	      "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
-	      "Finance Comments", "Finance Chief", "Finance Date/Time", };
-
+      "Requested By", "Priority", "Approved By", //
+      "Log Order Number", "SupplierInfo", "SupplierName", //
+      "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
+      "Finance Comments", "Finance Chief", "Finance Date/Time", };
 
   public WA_Ics213RRMessage(ExportedMessage xmlMessage, String organization, String incidentName, //
       String activityDateTime, String requestNumber, //
@@ -63,16 +62,14 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
       String logisticsDateTime, String orderedBy, //
 
       String financeComments, String financeName, String financeDateTime) {
-	  
-	  super(xmlMessage, organization, incidentName, activityDateTime, requestNumber, //
-	          lineItems, //
-	          delivery, substitutes, requestedBy, priority, approvedBy, //
-	          logisticsOrderNumber, supplierInfo, supplierName, //
-	          supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
-	          logisticsDateTime, orderedBy, //
-	          financeComments, financeName, financeDateTime
-	      );
 
+    super(xmlMessage, organization, incidentName, activityDateTime, requestNumber, //
+        lineItems, //
+        delivery, substitutes, requestedBy, priority, approvedBy, //
+        logisticsOrderNumber, supplierInfo, supplierName, //
+        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
+        logisticsDateTime, orderedBy, //
+        financeComments, financeName, financeDateTime);
   }
 
   @Override

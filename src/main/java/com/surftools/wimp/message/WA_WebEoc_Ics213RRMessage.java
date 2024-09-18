@@ -36,7 +36,7 @@ import com.surftools.wimp.core.MessageType;
 public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
 
   static {
-	  lineItemsToDisplay = 1;
+    lineItemsToDisplay = 1;
   }
 
   private static final String[] preHeaders = new String[] { "MessageId", "From", "To", "Subject", //
@@ -52,10 +52,6 @@ public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
       "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
       "Finance Comments", "Finance Chief", "Finance Date/Time", };
 
- 
-
-
-
   public WA_WebEoc_Ics213RRMessage(ExportedMessage xmlMessage, String organization, String incidentName, //
       String activityDateTime, String requestNumber, //
       List<LineItem> lineItems, String delivery, String substitutes, //
@@ -66,16 +62,14 @@ public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
       String logisticsDateTime, String orderedBy, //
 
       String financeComments, String financeName, String financeDateTime) {
-     super(xmlMessage, organization, incidentName, activityDateTime, requestNumber, //
-              lineItems, //
-              delivery, substitutes, requestedBy, priority, approvedBy, //
-              logisticsOrderNumber, supplierInfo, supplierName, //
-              supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
-              logisticsDateTime, orderedBy, //
-              financeComments, financeName, financeDateTime
-          );
+    super(xmlMessage, organization, incidentName, activityDateTime, requestNumber, //
+        lineItems, //
+        delivery, substitutes, requestedBy, priority, approvedBy, //
+        logisticsOrderNumber, supplierInfo, supplierName, //
+        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
+        logisticsDateTime, orderedBy, //
+        financeComments, financeName, financeDateTime);
 
-   
   }
 
   @Override
