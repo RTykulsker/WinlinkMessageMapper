@@ -212,9 +212,7 @@ public class ETO_2024_11_09 extends FeedbackProcessor {
 	}
 
 	private void handle_FieldSituationMessage(Summary summary, FieldSituationMessage m) {
-		// TODO get message "day"
-		// TODO deduplicate, saving only latest message for given day
-
+		// TODO TEST THIS!!!
 		var isValidDate = false;
 		String explanation = "";
 		var formDateTimeString = m.formDateTime;
