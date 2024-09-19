@@ -285,20 +285,10 @@ public class ETO_2024_11_09 extends FeedbackProcessor {
 			summary.explanations.add("No CheckIn message received.");
 		}
 
-		if (summary.fsrMessages[0] == null) {
-			summary.explanations.add("No FSR Day 1 message received.");
-		}
-
-		if (summary.fsrMessages[1] == null) {
-			summary.explanations.add("No FSR Day 2 message received.");
-		}
-
-		if (summary.fsrMessages[2] == null) {
-			summary.explanations.add("No FSR Day 3 message received.");
-		}
-
-		if (summary.fsrMessages[3] == null) {
-			summary.explanations.add("No FSR Day 4 message received.");
+		for (var i = 0; i < N_FSR_DAYS; ++i) {
+			if (summary.fsrMessages[i] == null) {
+				summary.explanations.add("No FSR Day " + (i + i) + " message received.");
+			}
 		}
 
 		if (summary.pdfIcs309Message == null) {
