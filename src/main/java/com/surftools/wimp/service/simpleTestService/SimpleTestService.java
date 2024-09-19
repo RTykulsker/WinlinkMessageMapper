@@ -175,6 +175,21 @@ public class SimpleTestService implements IService {
     return internalTest(entry, predicate, wrapEmpty(value), null);
   }
 
+	public TestResult test(String label, boolean predicate, String value, String altExplanation) {
+	    if (label == null) {
+	      throw new IllegalArgumentException("null label or expectedValue");
+	    }
+
+	    var entry = entryMap.get(label);
+	    if (entry == null) {
+	      ++addCount;
+	      entry = new TestEntry(label, null);
+	      entryMap.put(label, entry);
+	    }
+
+		return internalTest(entry, predicate, wrapEmpty(value), altExplanation);
+	  }
+
   /**
    * test for null or empty String value
    *

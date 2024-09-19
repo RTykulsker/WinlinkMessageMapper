@@ -113,6 +113,15 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
 
 		var quickDescription = getStringFromXml("input15");
 
+		var deliveryPOC = getStringFromXml("input21");
+		var deliveryPhone = getStringFromXml("input22");
+		var deliveryEmail = getStringFromXml("input23");
+		var deliveryDateTime = getStringFromXml("input24");
+		var duration = getStringFromXml("input25");
+		var deliveryNeeded = getStringFromXml("input26");
+		var deliveryAddress = getStringFromXml("input27");
+		var deliveryDescription = getStringFromXml("input28");
+
 		var localResourcesExhausted = getStringFromXml("input29");
 		var mutualAidResourcesExhausted = getStringFromXml("input30");
 		var commericalResourcesExhausted = getStringFromXml("input31");
