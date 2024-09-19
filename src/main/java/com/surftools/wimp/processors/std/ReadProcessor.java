@@ -230,7 +230,7 @@ public class ReadProcessor extends AbstractBaseProcessor {
     String plainContent = null;
     Map<String, byte[]> attachments = null;
 
-    var parser = AbstractBaseParser.makeMimeMessageParser(mime);
+    var parser = AbstractBaseParser.makeMimeMessageParser(messageId, mime);
     if (parser == null) {
       message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
           localDateTime, locationResult.location, locationResult.source, //

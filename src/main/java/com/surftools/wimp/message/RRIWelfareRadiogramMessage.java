@@ -62,8 +62,8 @@ public class RRIWelfareRadiogramMessage extends ExportedMessage {
   public String[] getValues() {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
-    var latitude = msgLocation.isValid() ? msgLocation.getLatitude() : "0.0";
-    var longitude = msgLocation.isValid() ? msgLocation.getLongitude() : "0.0";
+    var latitude = msgLocation != null && msgLocation.isValid() ? msgLocation.getLatitude() : "0.0";
+    var longitude = msgLocation != null && msgLocation.isValid() ? msgLocation.getLongitude() : "0.0";
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
         header, address, body, formFrom, version };
   }

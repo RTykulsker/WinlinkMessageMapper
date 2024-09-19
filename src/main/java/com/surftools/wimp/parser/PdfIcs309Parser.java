@@ -315,6 +315,10 @@ public class PdfIcs309Parser extends AbstractBaseParser {
   }
 
   public static boolean isPdfIcs309(ExportedMessage message) {
+    if (message.attachments == null) {
+      return false;
+    }
+
     var keyList = new ArrayList<String>(message.attachments.keySet());
     for (var i = 0; i < message.attachments.size(); ++i) {
       var attachmentName = keyList.get(i);

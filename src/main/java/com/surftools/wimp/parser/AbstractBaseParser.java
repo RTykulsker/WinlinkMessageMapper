@@ -106,7 +106,7 @@ public abstract class AbstractBaseParser implements IParser {
     return "";
   }
 
-  public static MimeMessageParser makeMimeMessageParser(String mimeContent) {
+  public static MimeMessageParser makeMimeMessageParser(String messageId, String mimeContent) {
     try {
       InputStream inputStream = new ByteArrayInputStream(mimeContent.getBytes());
       Session session = Session.getDefaultInstance(new Properties(), null);
@@ -117,7 +117,7 @@ public abstract class AbstractBaseParser implements IParser {
 
       return parser;
     } catch (Exception e) {
-      logger.error("could not parse mime: " + e.getLocalizedMessage());
+      logger.error("could not parse mime: " + e.getLocalizedMessage() + ", for messageId: " + messageId);
       return null;
     }
   }

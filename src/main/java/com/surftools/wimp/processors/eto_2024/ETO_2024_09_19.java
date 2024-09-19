@@ -80,6 +80,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
 
   private class Summary implements IWritableTable {
     public String sender;
+    public String to;
     public LatLongPair location;
 
     public List<String> explanations;
@@ -94,8 +95,9 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     public PlainMessage plainMessage;
     public Ics309Message formIcs309Message; // we don't care about this either
 
-    public Summary(String sender) {
+    public Summary(String sender, String to) {
       this.sender = sender;
+      this.to = to;
       this.explanations = new ArrayList<String>();
     }
 
@@ -121,7 +123,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
+      return new String[] { "From", "To", "Latitude", "Longitude", "Feedback Count", "Feedback", //
           "#Radiogram", "#Quick", "#PDF ICS-309", //
           "#Reply", "#Plain", "#Form ICS-309" };
     }
@@ -136,7 +138,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
       var longitude = (location != null && location.isValid()) ? location.getLongitude() : "0.0";
 
       var feedback = (explanations.size() == 0) ? "Perfect messages!" : String.join("\n", explanations);
-      return new String[] { sender, latitude, longitude, //
+      return new String[] { sender, to, latitude, longitude, //
           String.valueOf(explanations.size()), feedback, //
           count(rriWelfareRadiogramMessage), count(rriQuickWelfareMessage), count(pdfIcs309Message), //
           count(rriReplyWelfareRadiogramMessage), count(plainMessage), count(formIcs309Message) };
@@ -160,7 +162,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var sender = (message.getMessageType() == MessageType.RRI_REPLY_WELFARE_RADIOGRRAM) ? message.to : message.from;
-    var summary = summaryMap.getOrDefault(sender, new Summary(sender));
+    var summary = summaryMap.getOrDefault(sender, new Summary(sender, message.to));
 
     var type = message.getMessageType();
     if (type == MessageType.RRI_QUICK_WELFARE) {
@@ -211,28 +213,33 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
 
     var activitiesSubjectSet = m.activities.stream().map(a -> a.subject()).collect(Collectors.toSet());
 
-    String welfareSubject = summary.rriWelfareRadiogramMessage == null ? null
-        : summary.rriWelfareRadiogramMessage.subject;
-    /*
-     * activitiesSubjectSet.contains(subject) should be sufficient, but it is not, because "some people" enter dates in
-     * a format that is hard to parse "09 03 24 19:58", thereby messing up the subject
-     */
-    var welfarePredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareSubject));
-    count(sts
-        .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
-            welfareSubject == null ? false : welfarePredicate));
+    var debug = false;
+    if (m.activities == null || m.activities.size() == 0 || activitiesSubjectSet == null) {
+      debug = true;
+    } else {
+      String welfareSubject = summary.rriWelfareRadiogramMessage == null ? ""
+          : summary.rriWelfareRadiogramMessage.subject;
+      /*
+       * activitiesSubjectSet.contains(subject) should be sufficient, but it is not, because "some people" enter dates
+       * in a format that is hard to parse "09 03 24 19:58", thereby messing up the subject
+       */
+      var welfarePredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareSubject));
+      count(sts
+          .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
+              welfareSubject == "" ? false : welfarePredicate));
 
-    String welfareReplySubject = welfareSubject == null ? null : "Re: " + welfareSubject;
-    var welfareReplyPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareReplySubject));
-    count(sts
-        .test("ICS-309 activities should contain RRI Welfare Radiogram reply subject",
-            welfareReplySubject == null ? false : welfareReplyPredicate));
+      String welfareReplySubject = welfareSubject == null ? "" : "Re: " + welfareSubject;
+      var welfareReplyPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareReplySubject));
+      count(sts
+          .test("ICS-309 activities should contain RRI Welfare Radiogram reply subject",
+              welfareReplySubject == "" ? false : welfareReplyPredicate));
 
-    String quickSubject = summary.rriQuickWelfareMessage == null ? null : summary.rriQuickWelfareMessage.subject;
-    var quickPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(quickSubject));
-    count(sts
-        .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
-            quickSubject == null ? false : quickPredicate));
+      String quickSubject = summary.rriQuickWelfareMessage == null ? "" : summary.rriQuickWelfareMessage.subject;
+      var quickPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(quickSubject));
+      count(sts
+          .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
+              quickSubject == "" ? false : quickPredicate));
+    }
 
     writePdf(m);
   }
@@ -385,11 +392,10 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
             "Feedback on ETO " + cm.getAsString(Key.EXERCISE_DATE) + " exercise", //
             outboundMessageFeedback, null);
         outboundMessageList.add(outboundMessage);
-
-        var service = new OutboundMessageService(cm);
-        outboundMessageList = service.sendAll(outboundMessageList);
-        writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }
+      var service = new OutboundMessageService(cm);
+      outboundMessageList = service.sendAll(outboundMessageList);
+      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }
 
     WriteProcessor
