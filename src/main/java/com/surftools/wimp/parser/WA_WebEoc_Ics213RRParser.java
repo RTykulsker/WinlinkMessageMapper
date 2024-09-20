@@ -126,6 +126,15 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
         }
       }
 
+      var deliveryPOC = getStringFromXml("input21");
+      var deliveryPhone = getStringFromXml("input22");
+      var deliveryEmail = getStringFromXml("input23");
+      var deliveryDateTime = getStringFromXml("input24");
+      var duration = getStringFromXml("input25");
+      var deliveryNeeded = getStringFromXml("input26");
+      var deliveryAddress = getStringFromXml("input27");
+      var deliveryDescription = getStringFromXml("input28");
+
       var m = new WA_WebEoc_Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
           lineItems, //
           delivery, substitutes, requestedBy, priority, approvedBy, //
