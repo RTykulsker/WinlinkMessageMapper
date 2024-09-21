@@ -48,6 +48,7 @@ public class Utils {
    *
    * @return false if timed out, otherwise result of evaluating predicate on user input
    */
+  @SuppressWarnings("resource")
   public static boolean promptForInputWithTimeout(String prompt, int timeoutSeconds, Predicate<String> predicate) {
     var response = "";
     Callable<String> callable = () -> new Scanner(System.in).next();
