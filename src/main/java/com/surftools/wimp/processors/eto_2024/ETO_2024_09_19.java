@@ -213,33 +213,28 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
 
     var activitiesSubjectSet = m.activities.stream().map(a -> a.subject()).collect(Collectors.toSet());
 
-    var debug = false;
-    if (m.activities == null || m.activities.size() == 0 || activitiesSubjectSet == null) {
-      debug = true;
-    } else {
-      String welfareSubject = summary.rriWelfareRadiogramMessage == null ? ""
-          : summary.rriWelfareRadiogramMessage.subject;
-      /*
-       * activitiesSubjectSet.contains(subject) should be sufficient, but it is not, because "some people" enter dates
-       * in a format that is hard to parse "09 03 24 19:58", thereby messing up the subject
-       */
-      var welfarePredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareSubject));
-      count(sts
-          .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
-              welfareSubject == "" ? false : welfarePredicate));
+    String welfareSubject = summary.rriWelfareRadiogramMessage == null ? ""
+        : summary.rriWelfareRadiogramMessage.subject;
+    /*
+     * activitiesSubjectSet.contains(subject) should be sufficient, but it is not, because "some people" enter dates in
+     * a format that is hard to parse "09 03 24 19:58", thereby messing up the subject
+     */
+    var welfarePredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareSubject));
+    count(sts
+        .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
+            welfareSubject == "" ? false : welfarePredicate));
 
-      String welfareReplySubject = welfareSubject == null ? "" : "Re: " + welfareSubject;
-      var welfareReplyPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareReplySubject));
-      count(sts
-          .test("ICS-309 activities should contain RRI Welfare Radiogram reply subject",
-              welfareReplySubject == "" ? false : welfareReplyPredicate));
+    String welfareReplySubject = welfareSubject == null ? "" : "Re: " + welfareSubject;
+    var welfareReplyPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(welfareReplySubject));
+    count(sts
+        .test("ICS-309 activities should contain RRI Welfare Radiogram reply subject",
+            welfareReplySubject == "" ? false : welfareReplyPredicate));
 
-      String quickSubject = summary.rriQuickWelfareMessage == null ? "" : summary.rriQuickWelfareMessage.subject;
-      var quickPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(quickSubject));
-      count(sts
-          .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
-              quickSubject == "" ? false : quickPredicate));
-    }
+    String quickSubject = summary.rriQuickWelfareMessage == null ? "" : summary.rriQuickWelfareMessage.subject;
+    var quickPredicate = activitiesSubjectSet.stream().anyMatch(x -> x.contains(quickSubject));
+    count(sts
+        .test("ICS-309 activities should contain RRI Welfare Radiogram subject",
+            quickSubject == "" ? false : quickPredicate));
 
     writePdf(m);
   }

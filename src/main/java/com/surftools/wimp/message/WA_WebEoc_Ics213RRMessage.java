@@ -27,49 +27,78 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.surftools.wimp.core.MessageType;
 
 public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
 
-  static {
-    lineItemsToDisplay = 1;
-  }
+  // fields (not in Ics213RRMessage)
+  public final String formDate;
+  public final String formTime;
+  public final String creator;
+  public final String county;
+  public final String city;
+  public final String stateTrackingNumber;
+  public final String status;
+  public final String requestorPhone;
+  public final String requestorFax;
+  public final String requestorEmail;
+  public final String quickDescription;
+  public final String deliveryPOC;
+  public final String deliveryPOCPhone;
+  public final String deliveryPOCEmail;
+  public final String duration;
+  public final String deliveryNeeded;
+  public final String deliveryAddress;
+  public final String deliveryDescription;
+  public final String localResourcesExhausted;
+  public final String mutualAidResourcesExhausted;
+  public final String commericalResourcesExhausted;
+  public final String willingToFund;
+  public final String version;
 
-  private static final String[] preHeaders = new String[] { "MessageId", "From", "To", "Subject", //
-      "Date", "Time", "Latitude", "Longitude", //
-      "Organization", "Incident Name", "Activity Date/Time", "Request Number" };
-
-  private static final String[] lineHeaders = new String[] { "Qty", "Kind", "Type", "Item", "Reqested Date/Time",
-      "Estimated Date/Time", "Cost" };
-
-  private static final String[] postHeaders = new String[] { "Delivery/Reporting Location", "Substitutes",
-      "Requested By", "Priority", "Approved By", //
-      "Log Order Number", "SupplierInfo", "SupplierName", //
-      "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
-      "Finance Comments", "Finance Chief", "Finance Date/Time", };
-
-  public WA_WebEoc_Ics213RRMessage(ExportedMessage xmlMessage, String organization, String incidentName, //
-      String activityDateTime, String requestNumber, //
-      List<LineItem> lineItems, String delivery, String substitutes, //
-      String requestedBy, String priority, String approvedBy, //
-
-      String logisticsOrderNumber, String supplierInfo, String supplierName, //
-      String supplierPointOfContact, String supplyNotes, String logisticsAuthorizer, //
-      String logisticsDateTime, String orderedBy, //
-
-      String financeComments, String financeName, String financeDateTime) {
-    super(xmlMessage, organization, incidentName, activityDateTime, requestNumber, //
+  public WA_WebEoc_Ics213RRMessage(ExportedMessage xmlMessage, //
+      List<String> input, List<LineItem> lineItems, String version) {
+    super(xmlMessage, input.get(4), "n/a", input.get(1) + " " + input.get(2), input.get(7), //
         lineItems, //
-        delivery, substitutes, requestedBy, priority, approvedBy, //
-        logisticsOrderNumber, supplierInfo, supplierName, //
-        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
-        logisticsDateTime, orderedBy, //
-        financeComments, financeName, financeDateTime);
+        input.get(20), "n/a", input.get(7), input.get(9), "n/a", //
+        "n/a", "n/a", "n/a", //
+        "n/a", "n/a", "n/a", //
+        "n/a", "n/a", //
+        "n/a", "n/a", "n.a");
 
+    formDate = input.get(1);
+    formTime = input.get(2);
+    creator = input.get(3);
+
+    county = input.get(5);
+    city = input.get(6);
+
+    stateTrackingNumber = input.get(8);
+    status = input.get(10);
+
+    requestorPhone = input.get(12);
+    requestorFax = input.get(13);
+    requestorEmail = input.get(14);
+
+    quickDescription = input.get(15);
+
+    deliveryPOC = input.get(21);
+    deliveryPOCPhone = input.get(22);
+    deliveryPOCEmail = input.get(23);
+
+    duration = input.get(25);
+    deliveryNeeded = input.get(26);
+    deliveryAddress = input.get(27);
+    deliveryDescription = input.get(28);
+
+    localResourcesExhausted = input.get(29);
+    mutualAidResourcesExhausted = input.get(30);
+    commericalResourcesExhausted = input.get(31);
+    willingToFund = input.get(32);
+
+    this.version = version;
   }
 
   @Override
@@ -79,58 +108,68 @@ public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
 
   public static String[] getStaticHeaders() {
 
-    var resultList = new ArrayList<String>(preHeaders.length + (lineItemsToDisplay * 7) + postHeaders.length);
-
-    Collections.addAll(resultList, preHeaders);
-    for (var lineNumber = 1; lineNumber <= lineItemsToDisplay; ++lineNumber) {
-      for (var lh : lineHeaders) {
-        resultList.add(lh + String.valueOf(lineNumber));
-      }
-    }
-    Collections.addAll(resultList, postHeaders);
-
-    return resultList.toArray(new String[resultList.size()]);
-
+    return new String[] { //
+        "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+        "Form Date", "Form Time", //
+        "Creator", //
+        "Requesting Agency", //
+        "County", "City/Tribe", //
+        "Requestor Tracking Number", //
+        "State Tracking Number", //
+        "Priority", //
+        "Order Status", //
+        "Requestor Name", "Requestor Phone", //
+        "Requestor Fax", "Requestor Email", //
+        "Resource Requested", //
+        "Detailed Description", //
+        "Kind", "Type", "Quantity", //
+        "Delivery Location", //
+        "Delivery POC", "POC Phone", //
+        "POC Email", //
+        "Requested Date/Time", //
+        "Duration Needed", //
+        "Delivery Needed", //
+        "Delivery Location", "Delivery Description", //
+        "LocalResources Exhausted", "Mutual Aid Resources Exhausted", "Commercial Resources Exhausted", //
+        "Willing to Fund", //
+        "Version", //
+    };
   }
 
   @Override
   public String[] getValues() {
-    var resultList = new ArrayList<String>(preHeaders.length + (lineItemsToDisplay * 7) + postHeaders.length);
-
-    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
-    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
     var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
+    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
+    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
+    var li = lineItems.get(0);
 
-    var preValues = new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        organization, incidentName, activityDateTime, requestNumber };
-    var postValues = new String[] { delivery, substitutes, requestedBy, priority, approvedBy, //
-        logisticsOrderNumber, supplierInfo, supplierName, //
-        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
-        logisticsDateTime, orderedBy, //
-        financeComments, financeName, financeDateTime };
-
-    Collections.addAll(resultList, preValues);
-    for (int i = 1; i <= lineItemsToDisplay; ++i) {
-      var li = lineItems.get(i - 1);
-      resultList.add(li.quantity());
-      resultList.add(li.kind());
-      resultList.add(li.type());
-      resultList.add(li.item());
-      resultList.add(li.requestedDateTime());
-      resultList.add(li.estimatedDateTime());
-      resultList.add(li.cost());
-    }
-    Collections.addAll(resultList, postValues);
-    return resultList.toArray(new String[resultList.size()]);
-  }
-
-  public static int getLineItemsToDisplay() {
-    return lineItemsToDisplay;
-  }
-
-  public static void setLineItemsToDisplay(int lineItemsToDisplay) {
-    WA_WebEoc_Ics213RRMessage.lineItemsToDisplay = lineItemsToDisplay;
+    return new String[] { //
+        messageId, from, to, subject, date, time, latitude, longitude, //
+        formDate, formTime, //
+        creator, //
+        organization, //
+        county, city, //
+        requestNumber, //
+        stateTrackingNumber, //
+        priority, //
+        status, //
+        requestedBy, requestorPhone, //
+        requestorFax, requestorEmail, //
+        quickDescription, //
+        li.item(), //
+        li.kind(), li.type(), li.quantity(), //
+        delivery, deliveryPOC, deliveryPOCPhone, //
+        deliveryPOCEmail, //
+        li.requestedDateTime(), //
+        duration, //
+        deliveryNeeded, //
+        deliveryAddress, //
+        deliveryDescription, //
+        localResourcesExhausted, mutualAidResourcesExhausted, commericalResourcesExhausted, //
+        willingToFund, //
+        version, //
+    };
   }
 
   @Override
@@ -140,6 +179,6 @@ public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
 
   @Override
   public String getMultiMessageComment() {
-    return substitutes;
+    return quickDescription;
   }
 }

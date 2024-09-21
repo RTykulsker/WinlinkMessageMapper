@@ -113,9 +113,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     outboundMessageSubject = cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);
     doOutboundMessaging = outboundMessageSender != null && outboundMessageSubject != null
         && !outboundMessageSender.isEmpty() && !outboundMessageSubject.isEmpty();
-    if (!doOutboundMessaging) {
-      logger.info("### skipping outboundMessage processing");
-    }
   }
 
   @Override

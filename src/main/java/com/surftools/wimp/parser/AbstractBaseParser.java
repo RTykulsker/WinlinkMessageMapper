@@ -108,6 +108,36 @@ public abstract class AbstractBaseParser implements IParser {
 
   public static MimeMessageParser makeMimeMessageParser(String messageId, String mimeContent) {
     try {
+
+      // ETO_2024_09_19: some people send in messages with this:
+      // Content-Disposition: attachment; name=""ETO Welfare Message //
+      // Exercise".pdf"; filename=""ETO Welfare Message Exercise".pdf"//
+      // Content-Type: text/plain; name=""ETO Welfare Message Exercise".pdf"//
+      // Content-Transfer-Encoding: base64//
+      var doHack_ETO_2024_09_19 = true;
+      if (doHack_ETO_2024_09_19) {
+        if (mimeContent == null) {
+          return null;
+        }
+        var lines = mimeContent.split("\n");
+        var newLines = new ArrayList<String>();
+        var inBadArea = false;
+        for (var line : lines) {
+          if (!inBadArea && line.startsWith("Content-Disposition: attachment;") && line.contains("\"\"")) {
+            inBadArea = true;
+          }
+          if (inBadArea && line.isBlank()) {
+            inBadArea = false;
+          }
+          if (inBadArea) {
+            line = line.replaceAll("\"\"", "\"");
+            line = line.replaceAll("\".pdf", ".pdf");
+          }
+          newLines.add(line);
+        } // end for over lines
+        mimeContent = String.join("\n", newLines);
+      }
+
       InputStream inputStream = new ByteArrayInputStream(mimeContent.getBytes());
       Session session = Session.getDefaultInstance(new Properties(), null);
       MimeMessage mimeMessage = new MimeMessage(session, inputStream);

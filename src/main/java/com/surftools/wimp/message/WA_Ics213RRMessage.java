@@ -27,49 +27,89 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.surftools.wimp.core.MessageType;
 
 public class WA_Ics213RRMessage extends Ics213RRMessage {
 
-  static {
-    lineItemsToDisplay = 1;
-  }
+  public static enum DetailLevel {
+    LOW, MEDIUM, HIGH;
 
-  private static final String[] preHeaders = new String[] { "MessageId", "From", "To", "Subject", //
-      "Date", "Time", "Latitude", "Longitude", //
-      "Organization", "Incident Name", "Activity Date/Time", "Request Number" };
+    public static DetailLevel fromString(String string) {
+      for (DetailLevel detailLevel : DetailLevel.values()) {
+        if (detailLevel.toString().equals(string)) {
+          return detailLevel;
+        }
+      }
+      return null;
+    }
+  };
 
-  private static final String[] lineHeaders = new String[] { "Qty", "Kind", "Type", "Item", "Reqested Date/Time",
-      "Estimated Date/Time", "Cost" };
+  // how we discriminate between DetailLevel; set in processors
+  public static DetailLevel detailLevel = DetailLevel.MEDIUM;
 
-  private static final String[] postHeaders = new String[] { "Delivery/Reporting Location", "Substitutes",
-      "Requested By", "Priority", "Approved By", //
-      "Log Order Number", "SupplierInfo", "SupplierName", //
-      "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
-      "Finance Comments", "Finance Chief", "Finance Date/Time", };
+  // fields (not in Ics213RRMessage)
+  public final String isExercise;
+  public final String supportNeeded;
+  public final String duration;
+  public final String deliveryPOC;
 
-  public WA_Ics213RRMessage(ExportedMessage xmlMessage, String organization, String incidentName, //
+  public final String commericalResourcesExhausted;
+  public final String localResourcesExhausted;
+  public final String mutualAidResourcesExhausted;
+  public final String willingToFund;
+  public final String fundingExplanation;
+
+  public final String extraOrderedBy;
+  public final String elevateToState;
+  public final String stateTrackingNumber;
+  public final String mutualAidTrackingNumber;
+
+  public WA_Ics213RRMessage(ExportedMessage xmlMessage, //
+      String isExercise, //
+      String incidentName, String organization, //
       String activityDateTime, String requestNumber, //
-      List<LineItem> lineItems, String delivery, String substitutes, //
-      String requestedBy, String priority, String approvedBy, //
+      List<LineItem> lineItems, //
+      String supportNeeded, String duration, //
+      String deliveryLocation, String deliveryPOC, //
+      String substitutes, String priority, //
+      String commercialResourcesExhaused, String localResourcesExhausted, String mutualAidResourcesExhausted, //
+      String willingToFund, String fundingExplanation, //
+      String requestedBy, String approvedBy, //
 
-      String logisticsOrderNumber, String supplierInfo, String supplierName, //
-      String supplierPointOfContact, String supplyNotes, String logisticsAuthorizer, //
-      String logisticsDateTime, String orderedBy, //
+      String logisticsOrderNumber, String supplierName, //
+      String supplyNotes, //
+      String logisticsAuthorizer, String logisticsDateTime, String orderedBy, String extraOrderedBy, //
+
+      String elevateToState, String stateTrackingNumber, String mutualAidTrackingNumber, //
 
       String financeComments, String financeName, String financeDateTime) {
 
     super(xmlMessage, organization, incidentName, activityDateTime, requestNumber, //
         lineItems, //
-        delivery, substitutes, requestedBy, priority, approvedBy, //
-        logisticsOrderNumber, supplierInfo, supplierName, //
-        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
+        deliveryLocation, substitutes, requestedBy, priority, approvedBy, //
+        logisticsOrderNumber, "n/a", supplierName, //
+        "n/a", supplyNotes, logisticsAuthorizer, //
         logisticsDateTime, orderedBy, //
         financeComments, financeName, financeDateTime);
+
+    this.isExercise = isExercise;
+    this.supportNeeded = supportNeeded;
+    this.duration = duration;
+    this.deliveryPOC = deliveryPOC;
+
+    this.commericalResourcesExhausted = commercialResourcesExhaused;
+    this.localResourcesExhausted = localResourcesExhausted;
+    this.mutualAidResourcesExhausted = mutualAidResourcesExhausted;
+    this.willingToFund = willingToFund;
+    this.fundingExplanation = fundingExplanation;
+
+    this.extraOrderedBy = extraOrderedBy;
+
+    this.elevateToState = elevateToState;
+    this.stateTrackingNumber = stateTrackingNumber;
+    this.mutualAidTrackingNumber = mutualAidTrackingNumber;
   }
 
   @Override
@@ -78,59 +118,92 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
   }
 
   public static String[] getStaticHeaders() {
+    if (detailLevel == DetailLevel.LOW) {
+      return new String[] { //
+          "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+          "Is Exercise", //
+          "Mission/Incident Name", "Requesting Agency", //
+          "Date & Time", "Requestor Tracking Number", //
+          "Quantity", "Kind", "Type", "Detailed Description", "Requested Date/Time", "Estimated", "Cost", //
+          "Personanel Needed", "Duration Needed", //
+          "Delivery Location", "Delivery POC", //
+          "Substitutes", "Priority", //
+          "Commercial Resources Exhausted", "LocalResources Exhausted", "Mutual Aid Resources Exhausted", //
+          "Willing to Fund", "Explanation", //
+          "Requested By", "Authorized By" };
+    } else if (detailLevel == DetailLevel.MEDIUM) {
+      return new String[] { //
+          "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
+          "Is Exercise", //
+          "Mission/Incident Name", "Requesting Agency", //
+          "Date & Time", "Requestor Tracking Number", //
+          "Quantity", "Kind", "Type", "Detailed Description", "Requested Date/Time", "Estimated", "Cost", //
+          "Personnel/Support Needed", "Duration Needed", //
+          "Delivery Location", "Delivery POC", //
+          "Substitutes", "Priority", //
+          "Commercial Resources Exhausted", "LocalResources Exhausted", "Mutual Aid Resources Exhausted", //
+          "Willing to Fund", "Explanation", //
+          "Requested By", "Authorized By", //
 
-    var resultList = new ArrayList<String>(preHeaders.length + (lineItemsToDisplay * 7) + postHeaders.length);
+          "Logistics Tracking Number", "Name of Supplier/POC", //
+          "Log Notes", //
+          "Log Approver", "Log Date/Time", //
+          "Order Placed By", "Other Info", //
+          "Elevate to State", "State Tracking Number", "Mutual Aid Tracking Number", //
 
-    Collections.addAll(resultList, preHeaders);
-    for (var lineNumber = 1; lineNumber <= lineItemsToDisplay; ++lineNumber) {
-      for (var lh : lineHeaders) {
-        resultList.add(lh + String.valueOf(lineNumber));
-      }
+          "Finance Comments", //
+          "Finance Signature", "Finance Date/Time" //
+      };
     }
-    Collections.addAll(resultList, postHeaders);
-
-    return resultList.toArray(new String[resultList.size()]);
-
+    throw new RuntimeException("Unsupported detailLevel: " + detailLevel);
   }
 
   @Override
   public String[] getValues() {
-    var resultList = new ArrayList<String>(preHeaders.length + (lineItemsToDisplay * 7) + postHeaders.length);
-
-    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
-    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
     var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
+    var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
+    var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
+    var li = lineItems.get(0);
 
-    var preValues = new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        organization, incidentName, activityDateTime, requestNumber };
-    var postValues = new String[] { delivery, substitutes, requestedBy, priority, approvedBy, //
-        logisticsOrderNumber, supplierInfo, supplierName, //
-        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
-        logisticsDateTime, orderedBy, //
-        financeComments, financeName, financeDateTime };
+    if (detailLevel == DetailLevel.LOW) {
+      return new String[] { //
+          messageId, from, to, subject, date, time, latitude, longitude, //
+          isExercise, //
+          incidentName, organization, //
+          activityDateTime, requestNumber, //
+          li.quantity(), li.kind(), li.type(), li.item(), li.requestedDateTime(), li.estimatedDateTime(), li.cost(), //
+          supportNeeded, duration, //
+          delivery, deliveryPOC, //
+          substitutes, priority, //
+          commericalResourcesExhausted, localResourcesExhausted, mutualAidResourcesExhausted, //
+          willingToFund, fundingExplanation, //
+          requestedBy, approvedBy, //
+      };
+    } else if (detailLevel == DetailLevel.MEDIUM) {
+      return new String[] { //
+          messageId, from, to, subject, date, time, latitude, longitude, //
+          isExercise, //
+          incidentName, organization, //
+          activityDateTime, requestNumber, //
+          li.quantity(), li.kind(), li.type(), li.item(), li.requestedDateTime(), li.estimatedDateTime(), li.cost(), //
+          supportNeeded, duration, //
+          delivery, deliveryPOC, //
+          substitutes, priority, //
+          commericalResourcesExhausted, localResourcesExhausted, mutualAidResourcesExhausted, //
+          willingToFund, fundingExplanation, //
+          requestedBy, approvedBy, //
 
-    Collections.addAll(resultList, preValues);
-    for (int i = 1; i <= lineItemsToDisplay; ++i) {
-      var li = lineItems.get(i - 1);
-      resultList.add(li.quantity());
-      resultList.add(li.kind());
-      resultList.add(li.type());
-      resultList.add(li.item());
-      resultList.add(li.requestedDateTime());
-      resultList.add(li.estimatedDateTime());
-      resultList.add(li.cost());
+          logisticsOrderNumber, supplierName, //
+          supplyNotes, //
+          logisticsAuthorizer, logisticsDateTime, //
+          orderedBy, extraOrderedBy, //
+          elevateToState, stateTrackingNumber, mutualAidTrackingNumber, //
+
+          financeComments, financeName, financeDateTime //
+      };
     }
-    Collections.addAll(resultList, postValues);
-    return resultList.toArray(new String[resultList.size()]);
-  }
-
-  public static int getLineItemsToDisplay() {
-    return lineItemsToDisplay;
-  }
-
-  public static void setLineItemsToDisplay(int lineItemsToDisplay) {
-    WA_Ics213RRMessage.lineItemsToDisplay = lineItemsToDisplay;
+    throw new RuntimeException("Unsupported detailLevel: " + detailLevel);
   }
 
   @Override
@@ -140,6 +213,6 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
 
   @Override
   public String getMultiMessageComment() {
-    return substitutes;
+    return lineItems.get(0).item();
   }
 }

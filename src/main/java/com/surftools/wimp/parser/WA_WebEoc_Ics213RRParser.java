@@ -55,16 +55,12 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
       var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR_WEB_EOC.attachmentName()));
       makeDocument(message.messageId, xmlString);
 
-      var activityDate = getStringFromXml("input1");
-      var activityTime = getStringFromXml("input2");
-      var activityDateTime = activityDate + " " + activityTime;
-
-      var organization = getStringFromXml("input4");
-
-      var requestNumber = getStringFromXml("input7");
-
-      var priority = getStringFromXml("input9");
-      var requestedBy = getStringFromXml("input11");
+      var input = new ArrayList<String>();
+      input.add(null); // so we can do 1-based indexing in message
+      for (var i = 1; i <= 32; ++i) {
+        var value = getStringFromXml("input" + i);
+        input.add(value);
+      }
 
       var lineItems = new ArrayList<LineItem>();
 
@@ -72,49 +68,11 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
       var kind = getStringFromXml("input17");
       var type = getStringFromXml("input18");
       var item = getStringFromXml("input16");
-      var requestedDateTime = getStringFromXml("input22");
+      var requestedDateTime = getStringFromXml("input24");
       var estimatedDateTime = "";
       var cost = "";
       var lineItem = new LineItem(quantity, kind, type, item, requestedDateTime, estimatedDateTime, cost);
       lineItems.add(lineItem);
-
-      var delivery = getStringFromXml("input20");
-      var substitutes = getStringFromXml("die");
-
-      var approvedBy = getStringFromXml("secapp");
-
-      // these are deprecated
-      var incidentName = getStringFromXml("die");
-
-      var logisticsOrderNumber = getStringFromXml("die");
-      var supplierInfo = getStringFromXml("die");
-      var supplierName = getStringFromXml("die");
-      var supplierPointOfContact = getStringFromXml("die");
-      var supplyNotes = getStringFromXml("die");
-      var logisticsAuthorizer = getStringFromXml("die");
-      var logisticsDateTime = getStringFromXml("die");
-      var orderedBy = getStringFromXml("die");
-
-      var financeComments = getStringFromXml("die");
-      var financeName = getStringFromXml("die");
-      var financeDateTime = getStringFromXml("die");
-
-      // these are new
-      var creator = getStringFromXml("input3");
-      var county = getStringFromXml("input5");
-      var city = getStringFromXml("input6");
-      var stateTrackingNumber = getStringFromXml("input8");
-      var status = getStringFromXml("input10");
-      var requestorPhone = getStringFromXml("input12");
-      var requestorFax = getStringFromXml("input13");
-      var requestorEmail = getStringFromXml("input14");
-
-      var quickDescription = getStringFromXml("input15");
-
-      var localResourcesExhausted = getStringFromXml("input29");
-      var mutualAidResourcesExhausted = getStringFromXml("input30");
-      var commericalResourcesExhausted = getStringFromXml("input31");
-      var willingToFund = getStringFromXml("input32");
 
       var templateVersion = getStringFromXml("templateversion");
       var version = "unknown";
@@ -126,27 +84,9 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
         }
       }
 
-      var deliveryPOC = getStringFromXml("input21");
-      var deliveryPhone = getStringFromXml("input22");
-      var deliveryEmail = getStringFromXml("input23");
-      var deliveryDateTime = getStringFromXml("input24");
-      var duration = getStringFromXml("input25");
-      var deliveryNeeded = getStringFromXml("input26");
-      var deliveryAddress = getStringFromXml("input27");
-      var deliveryDescription = getStringFromXml("input28");
-
-      var m = new WA_WebEoc_Ics213RRMessage(message, organization, incidentName, activityDateTime, requestNumber, //
-          lineItems, //
-          delivery, substitutes, requestedBy, priority, approvedBy, //
-          logisticsOrderNumber, supplierInfo, supplierName, //
-          supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
-          logisticsDateTime, orderedBy, //
-          financeComments, financeName, financeDateTime
-
-      );
+      var m = new WA_WebEoc_Ics213RRMessage(message, input, lineItems, version);
 
       return m;
-
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
