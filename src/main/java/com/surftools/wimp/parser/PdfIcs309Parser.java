@@ -281,7 +281,14 @@ public class PdfIcs309Parser extends AbstractBaseParser {
       return "";
     }
 
-    return line.substring(first.length(), line.indexOf(second));
+    String retVal = null;
+    try {
+      retVal = line.substring(first.length(), line.indexOf(second));
+    } catch (Exception e) {
+      logger.info("could not parseFirst for caller: " + from + ", line:" + line);
+    }
+
+    return retVal;
   }
 
   private String parse(String from, String messageId, String line, int lineNumber, String expected) {

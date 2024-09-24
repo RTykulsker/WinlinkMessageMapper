@@ -30,130 +30,126 @@ package com.surftools.wimp.message;
 import com.surftools.wimp.core.MessageType;
 
 public class WA_ISNAP_Message extends ExportedMessage {
-	public final String formDateTimeString;
-	public final String isnapVersion;
-	public final String incidentType;
-	public final String stateMissionNumber;
+  public final String formDateTimeString;
+  public final String isnapVersion;
+  public final String incidentType;
+  public final String stateMissionNumber;
 
-	public final String affectedJurisdictions;
-	public final String reportingJurisdiction;
+  public final String affectedJurisdictions;
+  public final String reportingJurisdiction;
 
-	public final String pointOfContact;
-	public final String eocStatus;
-	public final String countyStatus;
+  public final String pointOfContact;
+  public final String eocStatus;
+  public final String countyStatus;
 
-	public final String description;
+  public final String description;
 
-	public final String governmentStatus;
-	public final String governmentComments;
+  public final String governmentStatus;
+  public final String governmentComments;
 
-	public final String transportationStatus;
-	public final String transportationComments;
+  public final String transportationStatus;
+  public final String transportationComments;
 
-	public final String utilitiesStatus;
-	public final String utilitiesComments;
+  public final String utilitiesStatus;
+  public final String utilitiesComments;
 
-	public final String medicalStatus;
-	public final String medicalComments;
+  public final String medicalStatus;
+  public final String medicalComments;
 
-	public final String communicationsStatus;
-	public final String communicationsComments;
+  public final String communicationsStatus;
+  public final String communicationsComments;
 
-	public final String publicSafetyStatus;
-	public final String publicSafetyComments;
+  public final String publicSafetyStatus;
+  public final String publicSafetyComments;
 
-	public final String environmentStatus;
-	public final String environmentComments;
+  public final String environmentStatus;
+  public final String environmentComments;
 
-	public WA_ISNAP_Message(ExportedMessage exportedMessage, //
-			String formDate, String formTime, String isnapVersion, String incidentType, String stateMissionNumber,
-			String affectedJurisdictions, String reportingJurisdiction, //
-			String pointOfContact, String eocStatus, String countyStatus, //
-			String description, //
-			String governmentStatus, String governmentComments, //
-			String transportationStatus, String transportationComments, //
-			String utilitiesStatus, String utilitiesComments, //
-			String medicalStatus, String medicalComments, //
-			String communicationsStatus, String communicationsComments, //
-			String publicSafetyStatus, String publicSafetyComments, //
-			String environmentStatus, String environmentComments
-	) {
+  public WA_ISNAP_Message(ExportedMessage exportedMessage, //
+      String formDate, String formTime, String isnapVersion, String incidentType, String stateMissionNumber,
+      String affectedJurisdictions, String reportingJurisdiction, //
+      String pointOfContact, String eocStatus, String countyStatus, //
+      String description, //
+      String governmentStatus, String governmentComments, //
+      String transportationStatus, String transportationComments, //
+      String utilitiesStatus, String utilitiesComments, //
+      String medicalStatus, String medicalComments, //
+      String communicationsStatus, String communicationsComments, //
+      String publicSafetyStatus, String publicSafetyComments, //
+      String environmentStatus, String environmentComments) {
     super(exportedMessage);
 
-	formDateTimeString = formDate + "-" + formTime;
-	this.isnapVersion = isnapVersion;
-	this.incidentType = incidentType;
-	this.stateMissionNumber = stateMissionNumber;
+    formDateTimeString = formDate + "-" + formTime;
+    this.isnapVersion = isnapVersion;
+    this.incidentType = incidentType;
+    this.stateMissionNumber = stateMissionNumber;
 
-	this.affectedJurisdictions = affectedJurisdictions;
-	this.reportingJurisdiction = reportingJurisdiction;
+    this.affectedJurisdictions = affectedJurisdictions;
+    this.reportingJurisdiction = reportingJurisdiction;
 
-	this.pointOfContact = pointOfContact;
-	this.eocStatus = eocStatus;
-	this.countyStatus = countyStatus;
+    this.pointOfContact = pointOfContact;
+    this.eocStatus = eocStatus;
+    this.countyStatus = countyStatus;
 
-	this.description = description;
+    this.description = description;
 
-	this.governmentStatus = governmentStatus;
-	this.governmentComments = governmentComments;
+    this.governmentStatus = governmentStatus;
+    this.governmentComments = governmentComments;
 
-	this.transportationStatus = transportationStatus;
-	this.transportationComments = transportationComments;
+    this.transportationStatus = transportationStatus;
+    this.transportationComments = transportationComments;
 
-	this.utilitiesStatus = utilitiesStatus;
-	this.utilitiesComments = utilitiesComments;
+    this.utilitiesStatus = utilitiesStatus;
+    this.utilitiesComments = utilitiesComments;
 
-	this.medicalStatus = medicalStatus;
-	this.medicalComments = medicalComments;
+    this.medicalStatus = medicalStatus;
+    this.medicalComments = medicalComments;
 
-	this.communicationsStatus = communicationsStatus;
-	this.communicationsComments = communicationsComments;
+    this.communicationsStatus = communicationsStatus;
+    this.communicationsComments = communicationsComments;
 
-	this.publicSafetyStatus = publicSafetyStatus;
-	this.publicSafetyComments = publicSafetyComments;
+    this.publicSafetyStatus = publicSafetyStatus;
+    this.publicSafetyComments = publicSafetyComments;
 
-	this.environmentStatus = environmentStatus;
-	this.environmentComments = environmentComments;
-
+    this.environmentStatus = environmentStatus;
+    this.environmentComments = environmentComments;
   }
 
   @Override
   public String[] getHeaders() {
-		return new String[] { "MessageId", "From", "To", "Subject", "Date/Time", "Latitude", "Longitude", //
-				"ISNAP Version", "Incident Type", "State Mission Number", //
+    return new String[] { "MessageId", "From", "To", "Subject", "Date/Time", "Latitude", "Longitude", //
+        "ISNAP Version", "Incident Type", "State Mission Number", //
         "Affected Jurisdictions", "Reporting Jurisdiction", //
-				"Point of Contact", "EOC Status", "County Status", //
+        "Point of Contact", "EOC Status", "County Status", //
         "Brief Description", //
-				"Government Status", "Government Comments", //
-				"Transportation Status", "Transportation Comments", //
-				"Utilities Status", "Utilities Comments", //
-				"Medical Status", "Medical Comments", //
-				"Communications Status", "communications Comments", //
-				"Public Safety Status", "Public Safety Comments", //
-				"Environment Status", "Environment Comments" //
-		};
-
+        "Government Status", "Government Comments", //
+        "Transportation Status", "Transportation Comments", //
+        "Utilities Status", "Utilities Comments", //
+        "Medical Status", "Medical Comments", //
+        "Communications Status", "communications Comments", //
+        "Public Safety Status", "Public Safety Comments", //
+        "Environment Status", "Environment Comments" //
+    };
   }
 
   @Override
   public String[] getValues() {
-		var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
+    var latitude = mapLocation == null ? "" : mapLocation.getLatitude();
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
-
-		return new String[] { messageId, from, to, subject, formDateTimeString, latitude, longitude, //
-				isnapVersion, incidentType, stateMissionNumber, //
-				affectedJurisdictions, reportingJurisdiction, //
-				pointOfContact, eocStatus, countyStatus, //
-				description, //
-				governmentStatus, governmentComments, //
-				transportationStatus, transportationComments, //
-				utilitiesStatus, utilitiesComments, //
-				medicalStatus, medicalComments, //
-				communicationsStatus, communicationsComments, //
-				publicSafetyStatus, publicSafetyComments, //
-				environmentStatus, environmentComments, //
-		};
+    return new String[] { messageId, from, to, subject, formDateTimeString, latitude, longitude, //
+        isnapVersion, incidentType, stateMissionNumber, //
+        affectedJurisdictions, reportingJurisdiction, //
+        pointOfContact, eocStatus, countyStatus, //
+        description, //
+        governmentStatus, governmentComments, //
+        transportationStatus, transportationComments, //
+        utilitiesStatus, utilitiesComments, //
+        medicalStatus, medicalComments, //
+        communicationsStatus, communicationsComments, //
+        publicSafetyStatus, publicSafetyComments, //
+        environmentStatus, environmentComments, //
+    };
   }
 
   @Override
@@ -163,6 +159,6 @@ public class WA_ISNAP_Message extends ExportedMessage {
 
   @Override
   public String getMultiMessageComment() {
-		return description;
+    return description;
   }
 }

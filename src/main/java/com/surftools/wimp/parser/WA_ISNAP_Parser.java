@@ -27,91 +27,78 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.WA_ISNAP_Message;
 
 public class WA_ISNAP_Parser extends AbstractBaseParser {
-	private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
-	private static final String MERGED_LAT_LON_TAG_NAMES;
-
-	static {
-		var set = new LinkedHashSet<String>();
-		set.addAll(Arrays.asList(DEFAULT_LATLON_TAGS));
-		set.addAll(Arrays.asList(OVERRIDE_LAT_LON_TAG_NAMES));
-		MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
-	}
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
 
     try {
-		String xmlString = new String(message.attachments.get(MessageType.WA_ISNAP.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.WA_ISNAP.attachmentName()));
       makeDocument(message.messageId, xmlString);
 
-		var formDate = getStringFromXml("date");
-		var formTime = getStringFromXml("time");
-		var isnapVersion = getStringFromXml("isn_ver");
-		var incidentType = getStringFromXml("inc_type");
-		var stateMissionNumber = getStringFromXml("sta_mis_num");
+      var formDate = getStringFromXml("date");
+      var formTime = getStringFromXml("time");
+      var isnapVersion = getStringFromXml("isn_ver");
+      var incidentType = getStringFromXml("inc_type");
+      var stateMissionNumber = getStringFromXml("sta_mis_num");
 
-		var affectedJurisdictions = getStringFromXml("aff_jur");
-		var reportingJurisdiction = getStringFromXml("rep_jur");
+      var affectedJurisdictions = getStringFromXml("aff_jur");
+      var reportingJurisdiction = getStringFromXml("rep_jur");
 
-		var pointOfContact = getStringFromXml("poi_con");
-		var eocStatus = getStringFromXml("eoc_sta");
-		var countyStatus = getStringFromXml("cty_sta");
+      var pointOfContact = getStringFromXml("poi_con");
+      var eocStatus = getStringFromXml("eoc_sta");
+      var countyStatus = getStringFromXml("cty_sta");
 
-		var description = getStringFromXml("sit");
+      var description = getStringFromXml("sit");
 
-		var governmentStatus = getStringFromXml("selec1");
-		var governmentComments = getStringFromXml("gvt_cmt");
+      var governmentStatus = getStringFromXml("selec1");
+      var governmentComments = getStringFromXml("gvt_cmt");
 
-		var transportationStatus = getStringFromXml("selec2");
-		var transportationComments = getStringFromXml("tran_cmt");
+      var transportationStatus = getStringFromXml("selec2");
+      var transportationComments = getStringFromXml("tran_cmt");
 
-		var utilitiesStatus = getStringFromXml("selec3");
-		var utilitiesComments = getStringFromXml("util_cmt");
+      var utilitiesStatus = getStringFromXml("selec3");
+      var utilitiesComments = getStringFromXml("util_cmt");
 
-		var medicalStatus = getStringFromXml("selec4");
-		var medicalComments = getStringFromXml("med_cmt");
+      var medicalStatus = getStringFromXml("selec4");
+      var medicalComments = getStringFromXml("med_cmt");
 
-		var communicationsStatus = getStringFromXml("selec5");
-		var communicationsComments = getStringFromXml("comm_cmt");
+      var communicationsStatus = getStringFromXml("selec5");
+      var communicationsComments = getStringFromXml("comm_cmt");
 
-		var publicSafetyStatus = getStringFromXml("selec6");
-		var publicSafetyComments = getStringFromXml("psaf_cmt");
+      var publicSafetyStatus = getStringFromXml("selec6");
+      var publicSafetyComments = getStringFromXml("psaf_cmt");
 
-		var environmentStatus = getStringFromXml("selec7");
-		var environmentComments = getStringFromXml("envi_cmt");
+      var environmentStatus = getStringFromXml("selec7");
+      var environmentComments = getStringFromXml("envi_cmt");
 
-	var m = new  WA_ISNAP_Message(message, //
-			formDate, formTime, isnapVersion, incidentType, stateMissionNumber, //
+      var m = new WA_ISNAP_Message(message, //
+          formDate, formTime, isnapVersion, incidentType, stateMissionNumber, //
 
-			affectedJurisdictions, reportingJurisdiction, //
+          affectedJurisdictions, reportingJurisdiction, //
 
-			pointOfContact, eocStatus, countyStatus, //
+          pointOfContact, eocStatus, countyStatus, //
 
-			description, //
+          description, //
 
-			governmentStatus, governmentComments, //
+          governmentStatus, governmentComments, //
 
-			transportationStatus, transportationComments, //
+          transportationStatus, transportationComments, //
 
-			utilitiesStatus, utilitiesComments, //
+          utilitiesStatus, utilitiesComments, //
 
-			medicalStatus, medicalComments, //
+          medicalStatus, medicalComments, //
 
-			communicationsStatus, communicationsComments, //
+          communicationsStatus, communicationsComments, //
 
-			publicSafetyStatus, publicSafetyComments, //
+          publicSafetyStatus, publicSafetyComments, //
 
-			environmentStatus, environmentComments
-	);
+          environmentStatus, environmentComments);
 
       return m;
     } catch (Exception e) {
