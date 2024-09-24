@@ -29,7 +29,7 @@ package com.surftools.wimp.message;
 
 import com.surftools.wimp.core.MessageType;
 
-public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
+public class WA_WSDOT_RoadwayDamageMessage extends ExportedMessage {
   public final boolean isExercise;
   public final String formDate;
   public final String formTime;
@@ -43,17 +43,20 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
   public final String inspectorName;
   public final String remarks;
 
-  public final boolean damageApproaches;
-  public final boolean damageWingWalls;
-  public final boolean damageAbutments;
-  public final boolean damageBentCapsAndColumns;
-  public final boolean damageBearings;
-  public final boolean damageBeamsGirders;
-  public final boolean damageDeck;
-  public final boolean damageHingeExpansionJoints;
-  public final boolean damageHandRails;
-  public final boolean damageUtilitiesSurroundingAreas;
-  public final boolean damageSeismicRestraintDevices;
+  public final boolean damageCracking;
+  public final boolean damageBuckling;
+  public final boolean damageHeavingRolling;
+  public final boolean damagePavementSeparation;
+  public final boolean damageChangeInConfiguration;
+  public final boolean damageChangeInSurface;
+  public final boolean damageSignsVmsBridges;
+  public final boolean damageDrainage;
+
+  public final boolean geoShoulderSettlement;
+  public final boolean geoSags;
+  public final boolean geoMovement;
+  public final boolean geoDebris;
+  public final boolean geoSloughingSlopes;
 
   public final String commLogSendingStation;
   public final String commLogReceivingStation;
@@ -62,23 +65,26 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
 
   public final String version;
 
-  public WA_WSDOT_BridgeDamageMessage(ExportedMessage exportedMessage, //
+  public WA_WSDOT_RoadwayDamageMessage(ExportedMessage exportedMessage, //
       boolean isExercise, String formDate, String formTime, String status, //
       String region, String county, String route, String milepost, String bridgeNumber, //
       String location, String inspectorName, //
       String remarks,
 
-      boolean damageApproaches, //
-      boolean damageWingWalls, //
-      boolean damageAbutments, //
-      boolean damageBentCapsAndColumns, //
-      boolean damageBearings, //
-      boolean damageBeamsGirders, //
-      boolean damageDeck, //
-      boolean damageHingeExpansionJoints, //
-      boolean damageHandRails, //
-      boolean damageUtilitiesSurroundingAreas, //
-      boolean damageSeismicRestraintDevices, //
+      boolean damageCracking, //
+      boolean damageBuckling, //
+      boolean damageHeavingRolling, //
+      boolean damagePavementSeparation, //
+      boolean damageChangeInConfiguration, //
+      boolean damageChangeInSurface, //
+      boolean damageSignsVmsBridges, //
+      boolean damageDrainage, //
+
+      boolean geoShoulderSettlement, //
+      boolean geoSags, //
+      boolean geoMovement, //
+      boolean geoDebris, //
+      boolean geoSloughingSlopes, //
 
       String commLogSendingStation, String commLogReceivingStation, String commLogFrequencyMHz,
       String commLogReceivedLocal,
@@ -99,17 +105,20 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
     this.inspectorName = inspectorName;
     this.remarks = remarks;
 
-    this.damageApproaches = damageApproaches;
-    this.damageWingWalls = damageWingWalls;
-    this.damageAbutments = damageAbutments;
-    this.damageBentCapsAndColumns = damageBentCapsAndColumns;
-    this.damageBearings = damageBearings;
-    this.damageBeamsGirders = damageBeamsGirders;
-    this.damageDeck = damageDeck;
-    this.damageHingeExpansionJoints = damageHingeExpansionJoints;
-    this.damageHandRails = damageHandRails;
-    this.damageUtilitiesSurroundingAreas = damageUtilitiesSurroundingAreas;
-    this.damageSeismicRestraintDevices = damageSeismicRestraintDevices;
+    this.damageCracking = damageCracking;
+    this.damageBuckling = damageBuckling;
+    this.damageHeavingRolling = damageHeavingRolling;
+    this.damagePavementSeparation = damagePavementSeparation;
+    this.damageChangeInConfiguration = damageChangeInConfiguration;
+    this.damageChangeInSurface = damageChangeInSurface;
+    this.damageSignsVmsBridges = damageSignsVmsBridges;
+    this.damageDrainage = damageDrainage;
+
+    this.geoShoulderSettlement = geoShoulderSettlement;
+    this.geoSags = geoSags;
+    this.geoMovement = geoMovement;
+    this.geoDebris = geoDebris;
+    this.geoSloughingSlopes = geoSloughingSlopes;
 
     this.commLogSendingStation = commLogSendingStation;
     this.commLogReceivingStation = commLogReceivingStation;
@@ -127,17 +136,20 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
         "Location", "Inspector's Name", //
         "Remarks", //
 
-        "Bridge Approaches", //
-        "Wing Walls", //
-        "Bridge Abutments", //
-        "Bent Caps and Columns", //
-        "Bearings", //
-        "Beams or Girders", //
-        "Bridge Deck", //
-        "Hinge or Expansion Joints", //
-        "Hand Rails", //
-        "Utilities and Surrounding Areas", //
-        "Seismic Restraint Devices", //
+        "Cracking", //
+        "Buckling", //
+        "Heaving or rolling", //
+        "Pavement separation", //
+        "Change in configuration- striping or lane shift", //
+        "Change in roadway surface", //
+        "Signs, VMS and sign bridge", //
+        "Drainage", //
+
+        "Shoulder settlement", //
+        "Sags in roadway safety features", //
+        "Movement above or below tilted trees", //
+        "Debris on roadway", //
+        "Sloughing slopes", //
 
         "Sending Station", "Receiving Station", "Radio Frequency", "Sent/Received", //
         "Version" };
@@ -160,17 +172,20 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
         location, inspectorName, //
         remarks, //
 
-        b(damageApproaches), //
-        b(damageWingWalls), //
-        b(damageAbutments), //
-        b(damageBentCapsAndColumns), //
-        b(damageBearings), //
-        b(damageBeamsGirders), //
-        b(damageDeck), //
-        b(damageHingeExpansionJoints), //
-        b(damageHandRails), //
-        b(damageUtilitiesSurroundingAreas), //
-        b(damageSeismicRestraintDevices), //
+        b(damageCracking), //
+        b(damageBuckling), //
+        b(damageHeavingRolling), //
+        b(damagePavementSeparation), //
+        b(damageChangeInConfiguration), //
+        b(damageChangeInSurface), //
+        b(damageSignsVmsBridges), //
+        b(damageDrainage), //
+
+        b(geoShoulderSettlement), //
+        b(geoSags), //
+        b(geoMovement), //
+        b(geoDebris), //
+        b(geoSloughingSlopes), //
 
         commLogSendingStation, commLogReceivingStation, commLogFrequencyMHz, commLogReceivedLocal, //
         version };
@@ -178,7 +193,7 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
 
   @Override
   public MessageType getMessageType() {
-    return MessageType.WA_WSDOT_BRIDGE_DAMAGE;
+    return MessageType.WA_WSDOT_ROADWAY_DAMAGE;
   }
 
   @Override
