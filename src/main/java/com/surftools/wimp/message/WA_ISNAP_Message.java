@@ -125,7 +125,7 @@ public class WA_ISNAP_Message extends ExportedMessage {
 				"Point of Contact", "EOC Status", "County Status", //
         "Brief Description", //
 				"Government Status", "Government Comments", //
-				"Tranportation Status", "Transportation Comments", //
+				"Transportation Status", "Transportation Comments", //
 				"Utilities Status", "Utilities Comments", //
 				"Medical Status", "Medical Comments", //
 				"Communications Status", "communications Comments", //
