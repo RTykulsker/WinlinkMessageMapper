@@ -81,6 +81,7 @@ public enum MessageType {
   WA_ICS_213_RR_WEB_EOC("wa_ics_213_rr_web_eoc", "RMS_Express_Form_RR_WebEOC_WA_Viewer.xml"), //
   WA_ICS_213_RR("wa_ics_213_rr", "RMS_Express_Form_ICS213RR_WA_Viewer.xml"), //
   WA_ISNAP("wa_isnap", "RMS_Express_Form_ISNAP_WA_Viewer.xml"), //
+  WA_WSDOT_BRIDGE_DAMAGE("wa_wsdot_bridge_damage", "RMS_Express_Form_WSDOT Bridge Damage Report viewer.xml"), //
   ;
 
   /**

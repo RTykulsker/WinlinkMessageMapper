@@ -66,6 +66,7 @@ import com.surftools.wimp.parser.RRiReplyWelfareRadiogramParser;
 import com.surftools.wimp.parser.SpotRepParser;
 import com.surftools.wimp.parser.WA_ISNAP_Parser;
 import com.surftools.wimp.parser.WA_Ics213RRParser;
+import com.surftools.wimp.parser.WA_WSDOT_BridgeDamageParser;
 import com.surftools.wimp.parser.WA_WebEoc_Ics213RRParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
@@ -185,6 +186,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.WA_ICS_213_RR_WEB_EOC;
       } else if (attachmentNames.contains(MessageType.WA_ISNAP.attachmentName())) {
         return MessageType.WA_ISNAP;
+      } else if (attachmentNames.contains(MessageType.WA_WSDOT_BRIDGE_DAMAGE.attachmentName())) {
+        return MessageType.WA_WSDOT_BRIDGE_DAMAGE;
       }
     }
     /**
@@ -277,6 +280,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.WA_ICS_213_RR, new WA_Ics213RRParser());
     parserMap.put(MessageType.WA_ICS_213_RR_WEB_EOC, new WA_WebEoc_Ics213RRParser());
     parserMap.put(MessageType.WA_ISNAP, new WA_ISNAP_Parser());
+    parserMap.put(MessageType.WA_WSDOT_BRIDGE_DAMAGE, new WA_WSDOT_BridgeDamageParser());
 
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
