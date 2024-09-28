@@ -104,6 +104,10 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
           logger.debug("messageId: " + message.messageId + ", from: " + message.from);
         }
 
+        if (!filterIds.contains(message.messageId) && !filterIds.contains(message.from)) {
+          continue;
+        }
+
         var messageType = getMessageType(message);
         var parser = parserMap.get(messageType);
         ExportedMessage parsedMessage = message;

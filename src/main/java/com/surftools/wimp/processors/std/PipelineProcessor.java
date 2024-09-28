@@ -80,8 +80,11 @@ public class PipelineProcessor extends AbstractBaseProcessor {
       logger.info("WinlinkMessageMapper, starting with input path: " + path);
     }
 
-    var dumpIdsSet = makeDumpIds(cm.getAsString(Key.DUMP_IDS));
-    mm.putContextObject("dumpIds", dumpIdsSet);
+    dumpIds = makeIds(cm, Key.DUMP_IDS);
+    mm.putContextObject("dumpIds", dumpIds);
+
+    filterIds = makeIds(cm, Key.FILTER_IDS);
+    mm.putContextObject("filterIds", filterIds);
 
     var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,ExplicitRejection,Deduplication");
     var main = cm.getAsString(Key.PIPELINE_MAIN);
@@ -113,14 +116,15 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
   }
 
-  public Set<String> makeDumpIds(String dumpIdsString) {
+  public Set<String> makeIds(IConfigurationManager cm, Key key) {
     Set<String> set = new HashSet<>();
-    if (dumpIdsString != null) {
-      String[] fields = dumpIdsString.split(",");
+    var ids = cm.getAsString(key);
+    if (ids != null) {
+      String[] fields = ids.split(",");
       for (var field : fields) {
         set.add(field.toUpperCase());
       }
-      logger.info("dumpIds: " + String.join(",", set));
+      logger.info(key.toString() + ": " + String.join(",", set));
     }
     return set;
   }

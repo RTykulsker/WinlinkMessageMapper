@@ -57,9 +57,8 @@ import com.surftools.wimp.service.simpleTestService.TestResult;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * more common processing, exercise processors must implement
- * specificProcessing(...)
- * 
+ * more common processing, exercise processors must implement specificProcessing(...)
+ *
  * explicitly for multiple messages; no TypeEntry, or typeEntryMap
  *
  * support multiple message types
@@ -80,80 +79,79 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
   protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
   public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
-	protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
+  protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
   /**
    * to allow for output customization
    */
-	protected class Explanation {
-		String messageId;
-		MessageType messageType;
-		String text;
+  protected class Explanation {
+    String messageId;
+    MessageType messageType;
+    String text;
 
-		public Explanation(String text) {
-			this.messageId = messageId;
-			this.messageType = messageType;
-		}
-	}
-	
-	protected class Summary implements IWritableTable {
-		public String from;
-		public String to;
-		public LatLongPair location;
+    public Explanation(String text) {
+      this.messageId = messageId;
+      this.messageType = messageType;
+    }
+  }
 
-		private static List<String> keys; // aka labels; doesn't get published
-		private static String perfectMessageText;
-		private List<Explanation> explanations; // doesn't get published, but interpreted
+  protected class Summary implements IWritableTable {
+    public String from;
+    public String to;
+    public LatLongPair location;
 
-		private Map<String, String> data = new LinkedHashMap<>();
+    private static List<String> keys; // aka labels; doesn't get published
+    private static String perfectMessageText;
+    private List<Explanation> explanations; // doesn't get published, but interpreted
 
-		protected static void setKeys(List<String> _keys) {
-			keys = _keys;
-		}
+    private Map<String, String> data = new LinkedHashMap<>();
 
-		protected void setPerfectMessageText(String _perfectMessageText) {
-			perfectMessageText = _perfectMessageText;
-		}
+    protected static void setKeys(List<String> _keys) {
+      keys = _keys;
+    }
 
-		@Override
-		public int compareTo(IWritableTable o) {
-			var other = (Summary) o;
-			return from.compareTo(other.from);
-		}
+    protected void setPerfectMessageText(String _perfectMessageText) {
+      perfectMessageText = _perfectMessageText;
+    }
 
-		@Override
-		public String[] getHeaders() {
-			var list = new ArrayList<String>(
-					List.of("From", "To", "Latitude", "Longitude", "Feedback Count", "Feedback"));
-			list.addAll(keys);
+    @Override
+    public int compareTo(IWritableTable o) {
+      var other = (Summary) o;
+      return from.compareTo(other.from);
+    }
 
-			return list.toArray(new String[list.size()]);
-		}
+    @Override
+    public String[] getHeaders() {
+      var list = new ArrayList<String>(List.of("From", "To", "Latitude", "Longitude", "Feedback Count", "Feedback"));
+      list.addAll(keys);
 
-		@Override
-		public String[] getValues() {
-			var latitude = location == null ? "0.0" : location.getLatitude();
-			var longitude = location == null ? "0.0" : location.getLongitude();
-			var feedbackCount = "0";
-			var feedback = perfectMessageText;
+      return list.toArray(new String[list.size()]);
+    }
 
-			if (explanations.size() > 0) {
-				feedbackCount = String.valueOf(explanations.size());
-				feedback = "tbd";
-			}
+    @Override
+    public String[] getValues() {
+      var latitude = location == null ? "0.0" : location.getLatitude();
+      var longitude = location == null ? "0.0" : location.getLongitude();
+      var feedbackCount = "0";
+      var feedback = perfectMessageText;
 
-			var list = new ArrayList<String>(
-					List.of(from, to, latitude, longitude, "Feedback Count", "Feedback"));
-			list.addAll(keys);
+      if (explanations.size() > 0) {
+        feedbackCount = String.valueOf(explanations.size());
+        feedback = "tbd";
+      }
 
-			return list.toArray(new String[list.size()]);
-		}
-	}
+      var list = new ArrayList<String>(List.of(from, to, latitude, longitude, "Feedback Count", "Feedback"));
+      // TODO fixme!
+      list.addAll(keys);
 
-	private Map<String, Summary> summaryMap = new HashMap<>();
-	protected Summary summary; // summary for current sender
-	protected String messageId;	// the mId of the current message
-	protected MessageType messageType; // the messageType of the current message
+      return list.toArray(new String[list.size()]);
+    }
+  }
+
+  private Map<String, Summary> summaryMap = new HashMap<>();
+  protected Summary summary; // summary for current sender
+  protected String messageId; // the mId of the current message
+  protected MessageType messageType; // the messageType of the current message
 
   protected SimpleTestService sts = new SimpleTestService();
   protected ExportedMessage message;
@@ -161,11 +159,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
   protected Set<String> secondaryDestinations = new LinkedHashSet<>();
 
-	public int ppCount = 0;
-	public int ppMessageCorrectCount = 0;
-	public Counter ppFeedBackCounter = new Counter();
+  public int ppCount = 0;
+  public int ppMessageCorrectCount = 0;
+  public Counter ppFeedBackCounter = new Counter();
 
-	public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
+  public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -173,23 +171,22 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     logger = _logger;
 
     var acceptableMessageTypesString = cm.getAsString(Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES);
-	if (acceptableMessageTypesString == null) {
-		throw new RuntimeException(
-				"Must specify " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + " in configuration");
-	}
+    if (acceptableMessageTypesString == null) {
+      throw new RuntimeException(
+          "Must specify " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + " in configuration");
+    }
 
-      var typeNames = acceptableMessageTypesString.split(",");
-      for (var typeName : typeNames) {
-        var messageType = MessageType.fromString(typeName);
-        if (messageType != null) {
-          acceptableMessageTypesSet.add(messageType);
-          logger.info("will accept " + messageType.toString() + " messageTypes");
-        } else {
-          throw new RuntimeException("No MessageType for: " + messageType + ", in "
-              + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
-        }
+    var typeNames = acceptableMessageTypesString.split(",");
+    for (var typeName : typeNames) {
+      var messageType = MessageType.fromString(typeName);
+      if (messageType != null) {
+        acceptableMessageTypesSet.add(messageType);
+        logger.info("will accept " + messageType.toString() + " messageTypes");
+      } else {
+        throw new RuntimeException("No MessageType for: " + messageType + ", in "
+            + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
       }
-
+    }
 
     var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
     if (windowOpenString != null) {
@@ -211,29 +208,28 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
   }
 
-
   @Override
   public void process() {
     var senderIterator = mm.getSenderIterator();
     while (senderIterator.hasNext()) { // loop over senders
       sender = senderIterator.next();
-		summary = summaryMap.get(sender);
-		if (summary == null) {
-			summary = new Summary();
-		}
-		// process all messages for a type, in chronological order, in type order
-		var map = mm.getMessagesForSender(sender);
-		for (var messageType : acceptableMessageTypesSet) {
-			var typedMessages = map.get(messageType);
-			if (typedMessages == null || typedMessages.size() == 0) {
-				continue;
-			}
-			for (var message : typedMessages) {
+      summary = summaryMap.get(sender);
+      if (summary == null) {
+        summary = new Summary();
+      }
+      // process all messages for a type, in chronological order, in type order
+      var map = mm.getMessagesForSender(sender);
+      for (var messageType : acceptableMessageTypesSet) {
+        var typedMessages = map.get(messageType);
+        if (typedMessages == null || typedMessages.size() == 0) {
+          continue;
+        }
+        for (var message : typedMessages) {
           beginCommonProcessing(message);
           specificProcessing(message);
           endCommonProcessing(message);
         } // end processing for a message
-	} // end processing for a messageType
+      } // end processing for a messageType
       endProcessingForSender(sender);
     } // end loop over senders
   }
@@ -259,12 +255,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       logger.info("dump: " + sender);
     }
 
-	summary = summaryMap.get(sender);
+    summary = summaryMap.get(sender);
     sts.reset(sender);
 
     beforeCommonProcessing(sender, message);
 
-	++ppCount;
+    ++ppCount;
 
     if (secondaryDestinations.size() > 0) {
       if (messageTypesRequiringSecondaryAddress.size() == 0
@@ -279,46 +275,46 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
     sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
-	// TODO fixme
-//    te.feedbackLocation = message.msgLocation;
-//    if (te.feedbackLocation == null || te.feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
-//      te.feedbackLocation = LatLongPair.ZERO_ZERO;
-//      te.badLocationMessageIds.add(message.messageId);
-//      sts.test("LAT/LON should be provided", false, "missing");
-//    } else if (!te.feedbackLocation.isValid()) {
-//      sts.test("LAT/LON should be provided", false, "invalid " + te.feedbackLocation.toString());
-//      te.feedbackLocation = LatLongPair.ZERO_ZERO;
-//      te.badLocationMessageIds.add(message.messageId);
-//    } else {
-//      sts.test("LAT/LON should be provided", true, null);
-//    }
+    // TODO fixme
+    // te.feedbackLocation = message.msgLocation;
+    // if (te.feedbackLocation == null || te.feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
+    // te.feedbackLocation = LatLongPair.ZERO_ZERO;
+    // te.badLocationMessageIds.add(message.messageId);
+    // sts.test("LAT/LON should be provided", false, "missing");
+    // } else if (!te.feedbackLocation.isValid()) {
+    // sts.test("LAT/LON should be provided", false, "invalid " + te.feedbackLocation.toString());
+    // te.feedbackLocation = LatLongPair.ZERO_ZERO;
+    // te.badLocationMessageIds.add(message.messageId);
+    // } else {
+    // sts.test("LAT/LON should be provided", true, null);
+    // }
 
     var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
     getCounter("Message sent days after window opens").increment(daysAfterOpen);
   }
 
-	// TODO fixme
+  // TODO fixme
   protected void endCommonProcessing(ExportedMessage message) {
-//    var explanations = sts.getExplanations();
-//    var feedback = "";
-//    te.ppFeedBackCounter.increment(explanations.size());
-//    if (explanations.size() == 0) {
-//      ++te.ppMessageCorrectCount;
-//      feedback = "Perfect Message!";
-//    } else {
-//      feedback = String.join("\n", explanations);
-//    }
-//
-//    var feedbackResult = new FeedbackResult(sender, te.feedbackLocation.getLatitude(),
-//        te.feedbackLocation.getLongitude(), explanations.size(), feedback);
-//    te.mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
-//
-//    var outboundMessageFeedback = feedback + te.extraOutboundMessageText;
-//    var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-//        outboundMessageSubject + " " + message.messageId, outboundMessageFeedback, null);
-//    outboundMessageList.add(outboundMessage);
-//
-//    typeEntryMap.put(message.getMessageType(), te);
+    // var explanations = sts.getExplanations();
+    // var feedback = "";
+    // te.ppFeedBackCounter.increment(explanations.size());
+    // if (explanations.size() == 0) {
+    // ++te.ppMessageCorrectCount;
+    // feedback = "Perfect Message!";
+    // } else {
+    // feedback = String.join("\n", explanations);
+    // }
+    //
+    // var feedbackResult = new FeedbackResult(sender, te.feedbackLocation.getLatitude(),
+    // te.feedbackLocation.getLongitude(), explanations.size(), feedback);
+    // te.mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
+    //
+    // var outboundMessageFeedback = feedback + te.extraOutboundMessageText;
+    // var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
+    // outboundMessageSubject + " " + message.messageId, outboundMessageFeedback, null);
+    // outboundMessageList.add(outboundMessage);
+    //
+    // typeEntryMap.put(message.getMessageType(), te);
   }
 
   /**
@@ -328,10 +324,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
    * @return
    */
   protected Counter getCounter(String label) {
-		var counter = counterMap.get(label);
+    var counter = counterMap.get(label);
     if (counter == null) {
       counter = new Counter(label);
-		counterMap.put(label, counter);
+      counterMap.put(label, counter);
     }
 
     return counter;
@@ -358,68 +354,66 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   @Override
   public void postProcess() {
 
-      if (doStsFieldValidation) {
-        logger.info("field validation:\n" + sts.validate());
+    if (doStsFieldValidation) {
+      logger.info("field validation:\n" + sts.validate());
+    }
+
+    var sb = new StringBuilder();
+    var N = ppCount;
+
+    sb
+        .append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results for " + messageType.toString()
+            + ":\n");
+    sb.append("Participants: " + N + "\n");
+
+    // TODO fixme
+    sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
+
+    var it = sts.iterator();
+    while (it.hasNext()) {
+      var key = it.next();
+      if (sts.hasContent(key)) {
+        sb.append(sts.format(key));
       }
+    }
 
-      var sb = new StringBuilder();
-		var N = ppCount;
+    sb.append("\n-------------------Histograms---------------------\n");
+    for (var counterLabel : counterMap.keySet()) {
+      sb.append(formatCounter(counterLabel, counterMap.get(counterLabel)));
+    }
 
-      sb
-          .append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results for " + messageType.toString()
-              + ":\n");
-      sb.append("Participants: " + N + "\n");
+    logger.info(sb.toString());
 
-		// TODO fixme
-		sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
+    // TODO fixme
+    // if (badLocationMessageIds.size() > 0) {
+    // logger
+    // .info("adjusting lat/long for " + badLocationMessageIds.size() + " messages: "
+    // + String.join(",", te.badLocationMessageIds));
+    // var newLocations = LocationUtils.jitter(badLocationMessageIds.size(), LatLongPair.ZERO_ZERO, 10_000);
+    // for (int i = 0; i < te.badLocationMessageIds.size(); ++i) {
+    // var messageId = te.badLocationMessageIds.get(i);
+    // var feedbackMessage = (FeedbackMessage) te.mIdFeedbackMap.get(messageId);
+    // var newLocation = newLocations.get(i);
+    // var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
+    // te.mIdFeedbackMap.put(messageId, newFeedbackMessage);
+    // }
+    // }
 
-      var it = sts.iterator();
-      while (it.hasNext()) {
-        var key = it.next();
-        if (sts.hasContent(key)) {
-          sb.append(sts.format(key));
-        }
-      }
+    var list = new ArrayList<IWritableTable>((summaryMap.values()));
+    WriteProcessor.writeTable(list, Path.of(outputPathName, "summary-feedback.csv"));
 
-      sb.append("\n-------------------Histograms---------------------\n");
-		for (var counterLabel : counterMap.keySet()) {
-			sb.append(formatCounter(counterLabel, counterMap.get(counterLabel)));
-      }
+    if (doOutboundMessaging) {
+      var service = new OutboundMessageService(cm);
+      outboundMessageList = service.sendAll(outboundMessageList);
+      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
+    }
 
-      logger.info(sb.toString());
-
-		// TODO fixme
-//		if (badLocationMessageIds.size() > 0) {
-//        logger
-//				.info("adjusting lat/long for " + badLocationMessageIds.size() + " messages: "
-//                + String.join(",", te.badLocationMessageIds));
-//		var newLocations = LocationUtils.jitter(badLocationMessageIds.size(), LatLongPair.ZERO_ZERO, 10_000);
-//        for (int i = 0; i < te.badLocationMessageIds.size(); ++i) {
-//          var messageId = te.badLocationMessageIds.get(i);
-//          var feedbackMessage = (FeedbackMessage) te.mIdFeedbackMap.get(messageId);
-//          var newLocation = newLocations.get(i);
-//          var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
-//          te.mIdFeedbackMap.put(messageId, newFeedbackMessage);
-//        }
-//	}
-
-
-		var list = new ArrayList<IWritableTable>((summaryMap.values()));
-		WriteProcessor.writeTable(list, Path.of(outputPathName, "summary-feedback.csv"));
-
-      if (doOutboundMessaging) {
-        var service = new OutboundMessageService(cm);
-        outboundMessageList = service.sendAll(outboundMessageList);
-        writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
-      }
-
-		// TODO fixme
-//		for (var key : counterMap.keySet()) {
-//        var summaryKey = messageType.name() + "_" + key;
-//        var value = te.counterMap.get(key);
-//        summaryCounterMap.put(summaryKey, value);
-//      }
-
+    // TODO fixme
+    // for (var key : counterMap.keySet()) {
+    // var summaryKey = messageType.name() + "_" + key;
+    // var value = te.counterMap.get(key);
+    // summaryCounterMap.put(summaryKey, value);
+    // }
 
     // all messageTypes in one chart page
     var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
@@ -427,10 +421,9 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
   }
 
-
-// TODO fixme
+  // TODO fixme
   public void setExtraOutboundMessageText(String extraOutboundMessageText) {
-		extraOutboundMessageText = extraOutboundMessageText;
+    extraOutboundMessageText = extraOutboundMessageText;
   }
 
   protected boolean isNull(String s) {
@@ -451,7 +444,5 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
     return dt;
   }
-
-
 
 }

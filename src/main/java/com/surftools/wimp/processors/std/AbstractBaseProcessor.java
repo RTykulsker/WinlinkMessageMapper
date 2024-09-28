@@ -64,6 +64,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected IMessageManager mm;
 
   protected Set<String> dumpIds;
+  protected Set<String> filterIds;
   protected String pathName;
   protected String outputPathName;
   protected Path outputPath;
@@ -107,6 +108,11 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     dumpIds = (Set<String>) mm.getContextObject("dumpIds");
     if (dumpIds == null) {
       dumpIds = new HashSet<>();
+    }
+
+    filterIds = (Set<String>) mm.getContextObject("filterIds");
+    if (filterIds == null) {
+      filterIds = new HashSet<>();
     }
 
     outboundMessageSender = cm.getAsString(Key.OUTBOUND_MESSAGE_SENDER);

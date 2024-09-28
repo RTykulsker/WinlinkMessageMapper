@@ -66,6 +66,7 @@ public abstract class AbstractBaseParser implements IParser {
   public static final String[] DEFAULT_LATLON_TAGS = new String[] { "maplat", "gps2", "GPS2", "gpslat" };
 
   protected Set<String> dumpIds = new HashSet<>();
+  protected Set<String> filterIds = new HashSet<>();
   protected IConfigurationManager cm;
   protected IMessageManager mm;
 
@@ -79,6 +80,11 @@ public abstract class AbstractBaseParser implements IParser {
     this.mm = mm;
 
     dumpIds = (Set<String>) mm.getContextObject("dumpIds");
+    if (dumpIds == null) {
+      dumpIds = new HashSet<>();
+    }
+
+    filterIds = (Set<String>) mm.getContextObject("filterIds");
     if (dumpIds == null) {
       dumpIds = new HashSet<>();
     }

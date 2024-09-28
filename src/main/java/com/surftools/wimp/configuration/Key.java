@@ -40,6 +40,7 @@ public enum Key implements IConfigurationKey {
   PATH("path"), // path to message files
   DATABASE_PATH("databasePath"), // path to input database summary files
   DUMP_IDS("dumpIds"), // comma-delimited list of messageIds or call signs to dump message contents for
+  FILTER_IDS("filterIds"), // comma-delimited list of messageIds or call signs to filter (pass)
 
   OUTPUT_PATH("output.path"), // to override as subdir of path
   OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
