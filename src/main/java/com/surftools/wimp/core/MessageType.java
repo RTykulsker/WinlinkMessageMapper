@@ -46,7 +46,7 @@ public enum MessageType {
   CHECK_IN("check_in", "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //
   CHECK_OUT("check_out", "RMS_Express_Form_Winlink_Check_out_Viewer.xml"), //
   SPOTREP("spotrep", "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
-  FIELD_SITUATION("FSR", "RMS_Express_Form_Field Situation Report"), //
+  FIELD_SITUATION("fsr", "RMS_Express_Form_Field Situation Report"), //
   DYFI("dyfi"), //
 
   WX_LOCAL("wx_local", "RMS_Express_Form_Local Weather Report Viewer.xml"), //

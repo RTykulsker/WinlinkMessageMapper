@@ -27,14 +27,12 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.eto_2024;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,315 +41,317 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.FileUtils;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
-import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
-import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.Ics309Message;
-import com.surftools.wimp.message.PdfIcs309Message;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
-import com.surftools.wimp.processors.std.WriteProcessor;
-import com.surftools.wimp.service.outboundMessage.OutboundMessage;
-import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
+import com.surftools.wimp.processors.std.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2024-11-09: Semi-annual drill: Winlink Check, 4 sequential FSR
- * and a generated ICS-309
+ * Processor for 2024-11-09: Semi-annual drill: Winlink Check, 4 sequential FSR and a generated ICS-309
  *
  * @author bobt
  *
  */
-public class ETO_2024_11_09 extends FeedbackProcessor {
-	private static final Logger logger = LoggerFactory.getLogger(ETO_2024_11_09.class);
+public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2024_11_09.class);
 
-	private static record FsrKey(String from, long dayIndex) {
-	};
+  private static record FsrKey(String from, long dayIndex) {
+  };
 
-	private static final int N_FSR_DAYS = 4;
-	private Map<FsrKey, FieldSituationMessage> callDayFsrMap = new HashMap<>();
-	private static final String FSR_FIRST_DATE_STRING = "2024-09-19";
-	private static final DateTimeFormatter FSR_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-	private static final DateTimeFormatter FSR_DATE_TIME_FORMATTOR = DateTimeFormatter
-			.ofPattern("yyyy-MM-dd HH:mm:ss'Z'"); // 2024-09-19
-																															// 23:17:07Z
-	private static final LocalDate FSR_FIRST_DATE = LocalDate.parse(FSR_FIRST_DATE_STRING, FSR_DATE_FORMATTER);
+  private static final int N_FSR_DAYS = 4;
+  private Map<FsrKey, FieldSituationMessage> callDayFsrMap = new HashMap<>();
+  private static final String FSR_FIRST_DATE_STRING = "2024-11-05";
+  private static final DateTimeFormatter FSR_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+  private static final DateTimeFormatter FSR_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm'L'");
+  private static final DateTimeFormatter FSR_DATE_TIME_FORMATTOR = DateTimeFormatter
+      .ofPattern("yyyy-MM-dd  HH:mm:ss'L'"); // 2024-09-19
+                                             // 23:17:07Z
+  private static final LocalDate FSR_FIRST_DATE = LocalDate.parse(FSR_FIRST_DATE_STRING, FSR_DATE_FORMATTER);
 
-	private class Summary implements IWritableTable {
-		public String sender;
-		public LatLongPair location;
+  private class Summary extends BaseSummary {
 
-		public List<String> explanations;
+    // we want these messages
+    public int option;
+    public boolean optionIsDefault;
 
-		// we want these messages
-		public CheckInMessage checkInMessage;
-		public FieldSituationMessage[] fsrMessages = new FieldSituationMessage[4];
-		public PdfIcs309Message pdfIcs309Message;
+    public CheckInMessage checkInMessage;
+    public FieldSituationMessage[] fsrMessages = new FieldSituationMessage[N_FSR_DAYS];
+    public LocalDateTime[] fsrDateTimes = new LocalDateTime[N_FSR_DAYS];
+    public Ics309Message ics309Message;
 
-		public Summary(String sender) {
-			this.sender = sender;
-			this.explanations = new ArrayList<String>();
-		}
+    public int fsrMessageCount;
 
-		@Override
-		public int compareTo(IWritableTable other) {
-			var o = (Summary) other;
-			return sender.compareTo(o.sender);
-		}
+    public Summary(String from) {
+      this.from = from;
+      this.explanations = new ArrayList<String>();
+    }
 
-		@Override
-		public String[] getHeaders() {
-			return new String[] { "From", "Latitude", "Longitude", "Feedback Count", "Feedback", //
-					"CheckIn", "FSR Day 1", "FSR Day 2", "FSR Day 3", "FSR Day 4", "PDF ICS-309", //
-			};
-		}
+    @Override
+    public String[] getHeaders() {
+      var list = new ArrayList<String>();
+      list.addAll(Arrays.asList(super.getHeaders()));
+      list
+          .addAll(Arrays
+              .asList(new String[] { "Option", "Option Valid", "Check In", //
+                  "FSR Day 1", "FSR Day 2", "FSR Day 3", "FSR Day 4", //
+                  "ICS-309", "FSR Count" //
+              }));
+      return list.toArray(new String[0]);
+    }
 
-		private String mId(ExportedMessage m) {
-			return m == null ? "" : m.messageId;
-		}
+    private String mId(ExportedMessage m) {
+      return m == null ? "" : m.messageId;
+    }
 
-		@Override
-		public String[] getValues() {
-			var latitude = (location != null && location.isValid()) ? location.getLatitude() : "0.0";
-			var longitude = (location != null && location.isValid()) ? location.getLongitude() : "0.0";
+    @Override
+    public String[] getValues() {
+      var list = new ArrayList<>();
+      list.addAll(Arrays.asList(super.getValues()));
+      list
+          .addAll(Arrays
+              .asList(new String[] { String.valueOf(option), String.valueOf(!optionIsDefault), //
+                  mId(checkInMessage), //
+                  mId(fsrMessages[0]), mId(fsrMessages[1]), mId(fsrMessages[2]), mId(fsrMessages[3]),
+                  mId(ics309Message), String.valueOf(fsrMessageCount)//
+              }));
+      return list.toArray(new String[0]);
+    };
+  }
 
-			var feedback = (explanations.size() == 0) ? "Perfect messages!" : String.join("\n", explanations);
-			return new String[] { sender, latitude, longitude, //
-					String.valueOf(explanations.size()), feedback, //
-					mId(checkInMessage), mId(fsrMessages[0]), mId(fsrMessages[1]), mId(fsrMessages[2]),
-					mId(fsrMessages[3]), mId(pdfIcs309Message), //
-			};
-		}
-	}
+  @Override
+  public void initialize(IConfigurationManager cm, IMessageManager mm) {
+    super.initialize(cm, mm, logger);
 
-	private Map<String, Summary> summaryMap = new HashMap<>();
+    Ics309Message.setNDisplayActivities(6);
 
-	@Override
-	public void initialize(IConfigurationManager cm, IMessageManager mm) {
-		super.initialize(cm, mm, logger);
+    var acceptableMessageTypesList = List
+        .of( // order matters, last location wins,
+            MessageType.CHECK_IN, MessageType.FIELD_SITUATION, MessageType.PDF_ICS_309);
+    acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
+  }
 
-		Ics309Message.setNDisplayActivities(12);
+  @Override
+  protected void beforeProcessingForSender(String sender) {
+    super.beforeProcessingForSender(sender);
 
-		var acceptableMessageTypesList = List.of( // order matters, last location wins,
-				MessageType.CHECK_IN, MessageType.FIELD_SITUATION, MessageType.PDF_ICS_309);
-		acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
-	}
+    iSummary = summaryMap.getOrDefault(sender, new Summary(sender));
+    summaryMap.put(sender, iSummary);
+  }
 
-	@Override
-	protected void specificProcessing(ExportedMessage message) {
-		var summary = summaryMap.getOrDefault(sender, new Summary(sender));
+  @Override
+  protected void specificProcessing(ExportedMessage message) {
+    var summary = (Summary) iSummary;
 
-		var type = message.getMessageType();
-		if (type == MessageType.CHECK_IN) {
-			handle_CheckInMessage(summary, (CheckInMessage) message);
-		} else if (type == MessageType.FIELD_SITUATION) {
-			handle_FieldSituationMessage(summary, (FieldSituationMessage) message);
-		} else if (type == MessageType.PDF_ICS_309) {
-			handle_PdfIcs309Message(summary, (PdfIcs309Message) message);
-		} else {
-			logger.warn(
-					"Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
-		}
+    var type = message.getMessageType();
+    if (type == MessageType.CHECK_IN) {
+      handle_CheckInMessage(summary, (CheckInMessage) message);
+    } else if (type == MessageType.FIELD_SITUATION) {
+      handle_FieldSituationMessage(summary, (FieldSituationMessage) message);
+    } else if (type == MessageType.ICS_309) {
+      handle_Ics309Message(summary, (Ics309Message) message);
+    } else {
+      logger.warn("Unexpected message type: " + message.getMessageType() + " for messageId: " + message.messageId);
+    }
 
-		// last valid location wins; order of messageTypes matters
-		summary.location = (message.mapLocation != null && message.mapLocation.isValid()) ? message.mapLocation
-				: LatLongPair.INVALID;
-		summary.explanations.addAll(sts.getExplanations());
-		summaryMap.put(sender, summary);
-	}
+    // last valid location wins; order of messageTypes matters
+    iSummary.location = (message.mapLocation != null && message.mapLocation.isValid()) ? message.mapLocation
+        : LatLongPair.INVALID;
+    iSummary.explanations.addAll(sts.getExplanations());
 
-	private void handle_PdfIcs309Message(Summary summary, PdfIcs309Message m) {
-		summary.pdfIcs309Message = m;
-		count(sts.test("ICS-309 task number should be #EV", "01 Sep", m.taskNumber));
-		count(sts.test("ICS-309 task name should be #EV", "RRI Welfare Message Exercise", m.taskName));
-		count(sts.test("ICS-309 operationsal period should be #EV", "191500-201500 UTC Sep 24", m.operationalPeriod));
-		count(sts.testIfPresent("Operator Name should be present", m.operatorName));
-		count(sts.testIfPresent("Station ID should be present", m.stationId));
+    summaryMap.put(sender, iSummary);
+  }
 
-		var activitiesSubjectSet = m.activities.stream().map(a -> a.subject()).collect(Collectors.toSet());
+  private void handle_Ics309Message(Summary summary, Ics309Message m) {
+    // summary.Ics309Message = m;
+    count(sts.test("ICS-309 task number should be #EV", "01 Sep", m.taskNumber));
+    count(sts.test("ICS-309 task name should be #EV", "RRI Welfare Message Exercise", m.taskName));
+    count(sts.test("ICS-309 operationsal period should be #EV", "191500-201500 UTC Sep 24", m.operationalPeriod));
+    count(sts.testIfPresent("Operator Name should be present", m.operatorName));
+    count(sts.testIfPresent("Station ID should be present", m.stationId));
 
-		writePdf(m);
-	}
+    var activitiesSubjectSet = m.activities.stream().map(a -> a.subject()).collect(Collectors.toSet());
 
-	private void writePdf(PdfIcs309Message m) {
-		var attachmentIndices = m.pdfAttachmentIndices;
-		if (attachmentIndices == null || attachmentIndices.length() == 0) {
-			logger.warn("can't write pdf for " + m.from + ", mid: " + m.messageId + ", no attachments");
-			return;
-		}
+  }
 
-		var fields = attachmentIndices.split(",");
-		if (fields == null || fields.length == 0) {
-			logger.warn("can't write pdf for " + m.from + ", mid: " + m.messageId + ", no attachments");
-			return;
-		}
+  private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
+    summary.checkInMessage = m;
 
-		var firstIndex = Integer.valueOf(fields[0]);
-		var keyList = new ArrayList<String>(m.attachments.keySet());
-		var attachmentName = keyList.get(firstIndex);
-		var bytes = m.attachments.get(attachmentName);
-		var filePath = Path.of(outputPath.toString(), "extractedPdfs", m.from + "-" + m.messageId + "-" + "ics309.pdf");
-		try {
-			FileUtils.makeDirIfNeeded(filePath.toString());
-			Files.write(filePath, bytes);
-		} catch (IOException e) {
-			logger.error("couldn't write pdf for " + m.from + ", mId: " + m.messageId + ", " + e.getLocalizedMessage());
-		}
-	}
+    var option = 1;
+    var optionIsDefault = true;
+    var comments = m.comments;
+    if (comments != null) {
+      var fields = comments.split("\\w");
+      if (fields.length >= 2) {
+        try {
+          option = Integer.parseInt(fields[1]);
+          if (fields[0].equalsIgnoreCase("OPTION") && option >= 1 && option <= 8) {
+            optionIsDefault = false;
+          } else {
+            option = 1;
+          }
+        } catch (Exception e) {
+        }
+      } // fields.length >= 2
+    }
 
-	private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
-		summary.checkInMessage = m;
+    logger.debug("sender: " + m.from + ", option: " + option + ", is default: " + optionIsDefault);
+    var debug = true;
 
-		// TODO fixme
-	}
+    // TODO fixme
+    summary.option = option;
+    summary.optionIsDefault = optionIsDefault;
+  }
 
-	private void handle_FieldSituationMessage(Summary summary, FieldSituationMessage m) {
-		// TODO TEST THIS!!!
-		var isValidDate = false;
-		String explanation = "";
-		var formDateTimeString = m.formDateTime;
-		long daysBetween = -1;
-		if (formDateTimeString == null) {
-			explanation = "FSR DATE/TIME is null";
-		} else {
-			try {
-				var formDate = LocalDate.parse(formDateTimeString, FSR_DATE_FORMATTER);
-				daysBetween = ChronoUnit.DAYS.between(FSR_FIRST_DATE, formDate);
-				if (daysBetween < 0) {
-					explanation = "FSR DATE/TIME is before " + FSR_FIRST_DATE_STRING;
-				} else if (daysBetween >= N_FSR_DAYS) {
-					var lastDate = FSR_FIRST_DATE.plusDays(3);
-					explanation = "FSR DATE/TIME is afer " + FSR_DATE_FORMATTER.format(lastDate);
-				} else {
-					isValidDate = true;
-				}
-			} catch (Exception e) {
-				explanation = "FSR DATE/TIME could not be parsed";
-			}
-		}
+  private void handle_FieldSituationMessage(Summary summary, FieldSituationMessage m) {
+    // TODO TEST THIS!!!
+    var isValidDate = false;
+    String explanation = "";
+    var formDateTimeString = m.formDateTime;
+    long daysBetween = -1;
+    if (formDateTimeString == null) {
+      explanation = "FSR DATE/TIME is null";
+    } else {
+      try {
+        var fields = formDateTimeString.split(" ");
+        if (fields != null && fields.length >= 2) {
+          var dateString = fields[0];
+          var formDate = LocalDate.parse(dateString, FSR_DATE_FORMATTER);
 
-		count(sts.test("Form DATE/TIME value", isValidDate, formDateTimeString, explanation));
+          daysBetween = ChronoUnit.DAYS.between(FSR_FIRST_DATE, formDate);
+          if (daysBetween < 0) {
+            explanation = "FSR DATE/TIME is before " + FSR_FIRST_DATE_STRING;
+          } else if (daysBetween >= N_FSR_DAYS) {
+            var lastDate = FSR_FIRST_DATE.plusDays(3);
+            explanation = "FSR DATE/TIME is afer " + FSR_DATE_FORMATTER.format(lastDate);
+          } else {
+            isValidDate = true;
+          }
+        }
+      } catch (Exception e) {
+        explanation = "FSR DATE/TIME could not be parsed";
+      }
+    }
 
-		var isDirty = false;
-		if (isValidDate) {
-			var fsrKey = new FsrKey(m.from, daysBetween);
-			var cachedMessage = callDayFsrMap.get(fsrKey);
-			if (cachedMessage == null) {
-				isDirty = true;
-			} else {
-				var cachedDateTime = LocalDateTime.parse(cachedMessage.formDateTime, FSR_DATE_TIME_FORMATTOR);
-				var formDateTime = LocalDateTime.parse(m.formDateTime, FSR_DATE_TIME_FORMATTOR);
-				if (formDateTime.isAfter(cachedDateTime)) {
-					// this should not happen
-					logger.warn("fsr from: " + m.from + ", mId: " + m.messageId + ", d/t: " + m.formDateTime + //
-							" is afer mId: " + cachedMessage.messageId + ", d/t: " + cachedMessage.formDateTime);
-					isDirty = true;
-				}
-			}
+    count(sts.test("Form DATE/TIME value", isValidDate, formDateTimeString, explanation));
 
-			if (isDirty) {
-				callDayFsrMap.put(fsrKey, m);
-			}
-		}
-	}
+    var isDirty = false;
+    if (isValidDate) {
+      var fsrKey = new FsrKey(m.from, daysBetween);
+      var cachedMessage = callDayFsrMap.get(fsrKey);
+      if (cachedMessage == null) {
+        isDirty = true;
+      } else {
+        var cachedDateTime = LocalDateTime.parse(cachedMessage.formDateTime, FSR_DATE_TIME_FORMATTOR);
+        var formDateTime = LocalDateTime.parse(m.formDateTime, FSR_DATE_TIME_FORMATTOR);
+        if (formDateTime.isBefore(cachedDateTime)) {
+          // this should not happen
+          logger.warn("fsr from: " + m.from + ", mId: " + m.messageId + ", d/t: " + m.formDateTime + //
+              " is before mId: " + cachedMessage.messageId + ", d/t: " + cachedMessage.formDateTime);
+        }
+      }
 
-	@Override
-	protected void beforeCommonProcessing(String sender, ExportedMessage message) {
-		var messageType = message.getMessageType();
-		if (messageType == MessageType.CHECK_IN) {
-			sts.setExplanationPrefix("CheckIn: ");
-		} else if (messageType == MessageType.FIELD_SITUATION) {
-			sts.setExplanationPrefix("FSR: ");
-		} else if (messageType == MessageType.PDF_ICS_309) {
-			sts.setExplanationPrefix("ICS-309: ");
-		}
-	}
+      if (isDirty) {
+        callDayFsrMap.put(fsrKey, m);
+      }
+    }
+  }
 
-	@Override
-	protected void endProcessingForSender(String sender) {
-		var summary = summaryMap.get(sender);
+  // TODO delete
 
-		if (summary == null) {
-			return;
-		}
+  // @Override
+  // protected void beforeCommonProcessing(String sender) {
+  // // TODO Auto-generated method stub
+  // var summary = summaryMap.get(sender, new Summary(sender));
+  // }
+  //
 
-		if (summary.checkInMessage == null) {
-			summary.explanations.add("No CheckIn message received.");
-		}
+  @Override
+  protected void endProcessingForSender(String sender) {
+    var summary = (Summary) summaryMap.get(sender);
 
-		for (var i = 0; i < N_FSR_DAYS; ++i) {
-			if (summary.fsrMessages[i] == null) {
-				summary.explanations.add("No FSR Day " + (i + i) + " message received.");
-			}
-		}
+    if (summary == null) {
+      return;
+    }
 
-		if (summary.pdfIcs309Message == null) {
-			summary.explanations.add("No ICS-309 message received.");
-		}
+    if (summary.checkInMessage == null) {
+      summary.explanations.add("No CheckIn message received.");
+    }
 
-		// TODO other inter-message relationships
+    for (var i = 0; i < N_FSR_DAYS; ++i) {
+      if (summary.fsrMessages[i] == null) {
+        summary.explanations.add("No FSR Day " + (i + i) + " message received.");
+      }
+    }
 
-		// TODO histograms for this? VirtualMessage for histograms? globalCounter
-		// exerciseCounter, ExerciseMessage
-		// SummaryMessage
+    if (summary.ics309Message == null) {
+      summary.explanations.add("No ICS-309 message received.");
+    }
 
-		summaryMap.put(sender, summary);
-	}
+    // TODO other inter-message relationships
 
-	@Override
-	public void postProcess() {
-		// don't do any outbound messaging for individual messageTypes
-		var cachedOutboundMessaging = doOutboundMessaging;
-		doOutboundMessaging = false;
-		outboundMessageList.clear();
+    // TODO histograms for this? VirtualMessage for histograms? globalCounter
+    // exerciseCounter, ExerciseMessage
+    // SummaryMessage
 
-		super.postProcess();
+    summaryMap.put(sender, summary);
+  }
 
-		// fix bad locations
-		var badLocationSenders = new ArrayList<String>();
-		var summaries = summaryMap.values();
-		for (var summary : summaries) {
-			if (!summary.location.isValid()) {
-				badLocationSenders.add(summary.sender);
-			}
-		}
+  @Override
+  public void postProcess() {
+    // don't do any outbound messaging for individual messageTypes
+    var cachedOutboundMessaging = doOutboundMessaging;
+    doOutboundMessaging = false;
+    outboundMessageList.clear();
 
-		if (badLocationSenders.size() > 0) {
-			logger.info("adjusting lat/long for " + badLocationSenders.size() + " summaries: "
-					+ String.join(",", badLocationSenders));
-			var newLocations = LocationUtils.jitter(badLocationSenders.size(), LatLongPair.ZERO_ZERO, 10_000);
-			for (int i = 0; i < badLocationSenders.size(); ++i) {
-				var sender = badLocationSenders.get(i);
-				var summary = summaryMap.get(sender);
-				summary.location = newLocations.get(i);
-				summaryMap.put(sender, summary);
-			}
-		}
+    super.postProcess();
 
-		// write outbound messages, but only for summary; change subject
-		if (cachedOutboundMessaging) {
-			setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
-			for (var summary : summaryMap.values()) {
-				var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
-						: String.join("\n", summary.explanations) + OB_DISCLAIMER;
-				var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-						"Feedback on ETO " + cm.getAsString(Key.EXERCISE_DATE) + " exercise", //
-						outboundMessageFeedback, null);
-				outboundMessageList.add(outboundMessage);
+    // fix bad locations
+    var badLocationSenders = new ArrayList<String>();
+    var summaries = summaryMap.values();
+    for (var iSummary : summaries) {
+      var summary = (Summary) iSummary;
+      if (!summary.location.isValid()) {
+        badLocationSenders.add(summary.from);
+      }
+    }
 
-				var service = new OutboundMessageService(cm);
-				outboundMessageList = service.sendAll(outboundMessageList);
-				writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
-			}
-		}
+    if (badLocationSenders.size() > 0) {
+      logger
+          .info("adjusting lat/long for " + badLocationSenders.size() + " summaries: "
+              + String.join(",", badLocationSenders));
+      var newLocations = LocationUtils.jitter(badLocationSenders.size(), LatLongPair.ZERO_ZERO, 10_000);
+      for (int i = 0; i < badLocationSenders.size(); ++i) {
+        var sender = badLocationSenders.get(i);
+        var summary = (Summary) summaryMap.get(sender);
+        summary.location = newLocations.get(i);
+        summaryMap.put(sender, summary);
+      }
+    }
 
-		WriteProcessor.writeTable(new ArrayList<IWritableTable>(summaryMap.values()),
-				Path.of(outputPathName, "drill-summary.csv"));
-	}
+    // write outbound messages, but only for summary; change subject
+    // TODO fixme
+    // if (cachedOutboundMessaging) {
+    // setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);
+    // for (var summary : summaryMap.values()) {
+    // var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
+    // : String.join("\n", summary.explanations) + OB_DISCLAIMER;
+    // var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
+    // "Feedback on ETO " + cm.getAsString(Key.EXERCISE_DATE) + " exercise", //
+    // outboundMessageFeedback, null);
+    // outboundMessageList.add(outboundMessage);
+    //
+    // var service = new OutboundMessageService(cm);
+    // outboundMessageList = service.sendAll(outboundMessageList);
+    // writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
+    // }
+    // }
+
+  }
+
 }

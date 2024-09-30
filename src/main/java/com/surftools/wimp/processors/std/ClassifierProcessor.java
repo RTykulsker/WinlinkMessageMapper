@@ -104,7 +104,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
           logger.debug("messageId: " + message.messageId + ", from: " + message.from);
         }
 
-        if (!filterIds.contains(message.messageId) && !filterIds.contains(message.from)) {
+        if (filterIds.size() > 0 && !filterIds.contains(message.messageId) && !filterIds.contains(message.from)) {
           continue;
         }
 

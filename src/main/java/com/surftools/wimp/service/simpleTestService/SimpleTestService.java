@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.surftools.utils.counter.ICounter;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.service.IService;
 
 /**
@@ -92,6 +93,11 @@ public class SimpleTestService implements IService {
     ++resetCount;
 
     this.caller = caller;
+  }
+
+  public void reset(String sender, MessageType messageType, String messageId) {
+    reset(sender);
+    this.explanationPrefix = messageType.toString() + " (" + messageId + "):";
   }
 
   /**
@@ -175,20 +181,20 @@ public class SimpleTestService implements IService {
     return internalTest(entry, predicate, wrapEmpty(value), null);
   }
 
-	public TestResult test(String label, boolean predicate, String value, String altExplanation) {
-	    if (label == null) {
-	      throw new IllegalArgumentException("null label or expectedValue");
-	    }
+  public TestResult test(String label, boolean predicate, String value, String altExplanation) {
+    if (label == null) {
+      throw new IllegalArgumentException("null label or expectedValue");
+    }
 
-	    var entry = entryMap.get(label);
-	    if (entry == null) {
-	      ++addCount;
-	      entry = new TestEntry(label, null);
-	      entryMap.put(label, entry);
-	    }
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, null);
+      entryMap.put(label, entry);
+    }
 
-		return internalTest(entry, predicate, wrapEmpty(value), altExplanation);
-	  }
+    return internalTest(entry, predicate, wrapEmpty(value), altExplanation);
+  }
 
   /**
    * test for null or empty String value

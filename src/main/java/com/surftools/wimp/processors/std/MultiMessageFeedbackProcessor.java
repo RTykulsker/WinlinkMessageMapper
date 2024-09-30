@@ -45,6 +45,7 @@ import org.slf4j.Logger;
 
 import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
@@ -81,50 +82,26 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
   protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
-  /**
-   * to allow for output customization
-   */
-  protected class Explanation {
-    String messageId;
-    MessageType messageType;
-    String text;
+  public interface ISummary extends IWritableTable {
+  };
 
-    public Explanation(String text) {
-      this.messageId = messageId;
-      this.messageType = messageType;
-    }
-  }
-
-  protected class Summary implements IWritableTable {
+  // concrete, so we can initialize
+  protected class BaseSummary implements ISummary {
     public String from;
     public String to;
     public LatLongPair location;
-
-    private static List<String> keys; // aka labels; doesn't get published
-    private static String perfectMessageText;
-    private List<Explanation> explanations; // doesn't get published, but interpreted
-
-    private Map<String, String> data = new LinkedHashMap<>();
-
-    protected static void setKeys(List<String> _keys) {
-      keys = _keys;
-    }
-
-    protected void setPerfectMessageText(String _perfectMessageText) {
-      perfectMessageText = _perfectMessageText;
-    }
+    public List<String> explanations; // doesn't get published, but interpreted
+    public static String perfectMessageText = "Perfect messages!";
 
     @Override
     public int compareTo(IWritableTable o) {
-      var other = (Summary) o;
+      var other = (BaseSummary) o;
       return from.compareTo(other.from);
     }
 
     @Override
     public String[] getHeaders() {
       var list = new ArrayList<String>(List.of("From", "To", "Latitude", "Longitude", "Feedback Count", "Feedback"));
-      list.addAll(keys);
-
       return list.toArray(new String[list.size()]);
     }
 
@@ -137,19 +114,18 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
       if (explanations.size() > 0) {
         feedbackCount = String.valueOf(explanations.size());
-        feedback = "tbd";
+        feedback = String.join("\n", explanations);
       }
 
-      var list = new ArrayList<String>(List.of(from, to, latitude, longitude, "Feedback Count", "Feedback"));
-      // TODO fixme!
-      list.addAll(keys);
+      var nsTo = to == null ? "(null)" : to;
 
+      var list = new ArrayList<String>(List.of(from, nsTo, latitude, longitude, feedbackCount, feedback));
       return list.toArray(new String[list.size()]);
     }
   }
 
-  private Map<String, Summary> summaryMap = new HashMap<>();
-  protected Summary summary; // summary for current sender
+  protected Map<String, BaseSummary> summaryMap = new HashMap<>();
+  protected BaseSummary iSummary; // summary for current sender
   protected String messageId; // the mId of the current message
   protected MessageType messageType; // the messageType of the current message
 
@@ -164,6 +140,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   public Counter ppFeedBackCounter = new Counter();
 
   public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
+
+  private List<String> badLocationSenders = new ArrayList<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -183,7 +161,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
         acceptableMessageTypesSet.add(messageType);
         logger.info("will accept " + messageType.toString() + " messageTypes");
       } else {
-        throw new RuntimeException("No MessageType for: " + messageType + ", in "
+        throw new RuntimeException("No MessageType for: " + typeName + ", in "
             + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
       }
     }
@@ -213,10 +191,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     var senderIterator = mm.getSenderIterator();
     while (senderIterator.hasNext()) { // loop over senders
       sender = senderIterator.next();
-      summary = summaryMap.get(sender);
-      if (summary == null) {
-        summary = new Summary();
-      }
+      beforeProcessingForSender(sender);
+
       // process all messages for a type, in chronological order, in type order
       var map = mm.getMessagesForSender(sender);
       for (var messageType : acceptableMessageTypesSet) {
@@ -235,17 +211,18 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   }
 
   /**
-   *
-   * @param sender
-   * @param message
+   * before all messageTypes for a given sender, a chance to look at cross-message relations
    */
-  protected void beforeCommonProcessing(String sender, ExportedMessage message) {
+  protected void beforeProcessingForSender(String sender) {
   }
 
   /**
    * after all messageTypes for a given sender, a chance to look at cross-message relations
    */
   protected void endProcessingForSender(String sender) {
+    if (iSummary.location == null || !iSummary.location.isValid()) {
+      badLocationSenders.add(sender);
+    }
   }
 
   protected void beginCommonProcessing(ExportedMessage message) {
@@ -255,10 +232,28 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       logger.info("dump: " + sender);
     }
 
-    summary = summaryMap.get(sender);
-    sts.reset(sender);
+    iSummary = summaryMap.get(sender);
+    sts.reset(sender, message.getMessageType(), message.messageId);
 
-    beforeCommonProcessing(sender, message);
+    // first-in or last-in for to and location
+    boolean doFirstIn = true;
+    if (doFirstIn) {
+      if (iSummary.to == null) {
+        iSummary.to = message.to;
+      }
+
+      if (iSummary.location == null) {
+        iSummary.location = message.mapLocation;
+      }
+    } else {
+      if (message.to != null) {
+        iSummary.to = message.to;
+      }
+
+      if (message.mapLocation != null && message.mapLocation.isValid()) {
+        iSummary.location = message.mapLocation;
+      }
+    }
 
     ++ppCount;
 
@@ -275,19 +270,14 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
     sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
-    // TODO fixme
-    // te.feedbackLocation = message.msgLocation;
-    // if (te.feedbackLocation == null || te.feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
-    // te.feedbackLocation = LatLongPair.ZERO_ZERO;
-    // te.badLocationMessageIds.add(message.messageId);
-    // sts.test("LAT/LON should be provided", false, "missing");
-    // } else if (!te.feedbackLocation.isValid()) {
-    // sts.test("LAT/LON should be provided", false, "invalid " + te.feedbackLocation.toString());
-    // te.feedbackLocation = LatLongPair.ZERO_ZERO;
-    // te.badLocationMessageIds.add(message.messageId);
-    // } else {
-    // sts.test("LAT/LON should be provided", true, null);
-    // }
+    var msgLocation = message.msgLocation;
+    if (msgLocation == null || msgLocation.equals(LatLongPair.ZERO_ZERO)) {
+      sts.test("Message LAT/LON should be provided", false, "missing");
+    } else if (!msgLocation.isValid()) {
+      sts.test("Message LAT/LON should be provided", false, "invalid " + msgLocation.toString());
+    } else {
+      sts.test("Message LAT/LON should be provided", true, null);
+    }
 
     var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
     getCounter("Message sent days after window opens").increment(daysAfterOpen);
@@ -361,9 +351,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     var sb = new StringBuilder();
     var N = ppCount;
 
-    sb
-        .append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results for " + messageType.toString()
-            + ":\n");
+    sb.append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results\n");
     sb.append("Participants: " + N + "\n");
 
     // TODO fixme
@@ -384,20 +372,19 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
     logger.info(sb.toString());
 
-    // TODO fixme
-    // if (badLocationMessageIds.size() > 0) {
-    // logger
-    // .info("adjusting lat/long for " + badLocationMessageIds.size() + " messages: "
-    // + String.join(",", te.badLocationMessageIds));
-    // var newLocations = LocationUtils.jitter(badLocationMessageIds.size(), LatLongPair.ZERO_ZERO, 10_000);
-    // for (int i = 0; i < te.badLocationMessageIds.size(); ++i) {
-    // var messageId = te.badLocationMessageIds.get(i);
-    // var feedbackMessage = (FeedbackMessage) te.mIdFeedbackMap.get(messageId);
-    // var newLocation = newLocations.get(i);
-    // var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
-    // te.mIdFeedbackMap.put(messageId, newFeedbackMessage);
-    // }
-    // }
+    if (badLocationSenders.size() > 0) {
+      logger
+          .info("adjusting lat/long for " + badLocationSenders.size() + " senders: "
+              + String.join(",", badLocationSenders));
+      var newLocations = LocationUtils.jitter(badLocationSenders.size(), LatLongPair.ZERO_ZERO, 10_000);
+      for (int i = 0; i < badLocationSenders.size(); ++i) {
+        var sender = badLocationSenders.get(i);
+        var iSummary = summaryMap.get(sender);
+        var newLocation = newLocations.get(i);
+        iSummary.location = newLocation;
+        summaryMap.put(sender, iSummary);
+      }
+    }
 
     var list = new ArrayList<IWritableTable>((summaryMap.values()));
     WriteProcessor.writeTable(list, Path.of(outputPathName, "summary-feedback.csv"));
@@ -408,7 +395,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }
 
-    // TODO fixme
+    // TODO fixme or delete
     // for (var key : counterMap.keySet()) {
     // var summaryKey = messageType.name() + "_" + key;
     // var value = te.counterMap.get(key);
@@ -418,12 +405,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     // all messageTypes in one chart page
     var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
     chartService.makeCharts();
-
-  }
-
-  // TODO fixme
-  public void setExtraOutboundMessageText(String extraOutboundMessageText) {
-    extraOutboundMessageText = extraOutboundMessageText;
   }
 
   protected boolean isNull(String s) {
