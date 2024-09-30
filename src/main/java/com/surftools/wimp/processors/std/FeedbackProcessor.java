@@ -431,7 +431,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     return dt;
   }
 
-  protected static final String OB_DISCLAIMER = """
+  public static final String OB_DISCLAIMER = """
 
 
       =====================================================================================================
@@ -446,7 +446,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
       """;
 
-  protected static final String OB_NAG = """
+  public static final String OB_NAG = """
 
        =====================================================================================================
 
@@ -458,7 +458,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
        Thank you for your support!
       """;
 
-  protected static final String OB_REQUEST_FEEDBACK = """
+  public static final String OB_REQUEST_FEEDBACK = """
 
       =====================================================================================================
 

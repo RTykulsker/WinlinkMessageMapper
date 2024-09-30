@@ -86,10 +86,13 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     filterIds = makeIds(cm, Key.FILTER_IDS);
     mm.putContextObject("filterIds", filterIds);
 
-    var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,ExplicitRejection,Deduplication");
+    // var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,ExplicitRejection,Deduplication");
+    // var stdout = cm
+    // .getAsString(Key.PIPELINE_STDOUT, "CsvColumnCutter,CsvColumnHeaderRename,Write,MissingDestination,Summary");
+
+    var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication");
     var main = cm.getAsString(Key.PIPELINE_MAIN);
-    var stdout = cm
-        .getAsString(Key.PIPELINE_STDOUT, "CsvColumnCutter,CsvColumnHeaderRename,Write,MissingDestination,Summary");
+    var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary");
 
     var processorNames = new ArrayList<String>();
     for (var configName : new String[] { stdin, main, stdout }) {

@@ -52,6 +52,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.chart.AbstractBaseChartService;
+import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.service.simpleTestService.TestResult;
@@ -65,18 +66,13 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * support multiple message types
  */
 public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcessor {
-  protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
-  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
-  protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING.replaceAll("-", "/"));
-  protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-  protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
   protected static Logger logger;
+  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+
 
   protected LocalDateTime windowOpenDT = null;
   protected LocalDateTime windowCloseDT = null;
-
-  protected boolean doStsFieldValidation = true;
 
   protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
   public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
@@ -135,9 +131,9 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
   protected Set<String> secondaryDestinations = new LinkedHashSet<>();
 
-  public int ppCount = 0;
-  public int ppMessageCorrectCount = 0;
-  public Counter ppFeedBackCounter = new Counter();
+  public int ppMessageCount = 0;
+  public int ppParticipantCount = 0;
+  public int ppParticipantCorrectCount = 0;
 
   public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
 
@@ -183,7 +179,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
         secondaryDestinations.add(field.toUpperCase());
       }
     }
-
   }
 
   @Override
@@ -214,6 +209,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
    * before all messageTypes for a given sender, a chance to look at cross-message relations
    */
   protected void beforeProcessingForSender(String sender) {
+    ++ppParticipantCount;
   }
 
   /**
@@ -223,9 +219,18 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     if (iSummary.location == null || !iSummary.location.isValid()) {
       badLocationSenders.add(sender);
     }
+
+    var nExplanations = iSummary.explanations.size();
+    if (nExplanations == 0) {
+      ++ppParticipantCorrectCount;
+    }
+    getCounter("Feedback Count").increment(nExplanations);
+
+    summaryMap.put(sender, iSummary);
   }
 
   protected void beginCommonProcessing(ExportedMessage message) {
+    ++ppMessageCount;
     var sender = message.from;
 
     if (dumpIds.contains(sender)) {
@@ -255,8 +260,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       }
     }
 
-    ++ppCount;
-
     if (secondaryDestinations.size() > 0) {
       if (messageTypesRequiringSecondaryAddress.size() == 0
           || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
@@ -283,32 +286,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     getCounter("Message sent days after window opens").increment(daysAfterOpen);
   }
 
-  // TODO fixme
   protected void endCommonProcessing(ExportedMessage message) {
-    // var explanations = sts.getExplanations();
-    // var feedback = "";
-    // te.ppFeedBackCounter.increment(explanations.size());
-    // if (explanations.size() == 0) {
-    // ++te.ppMessageCorrectCount;
-    // feedback = "Perfect Message!";
-    // } else {
-    // feedback = String.join("\n", explanations);
-    // }
-    //
-    // var feedbackResult = new FeedbackResult(sender, te.feedbackLocation.getLatitude(),
-    // te.feedbackLocation.getLongitude(), explanations.size(), feedback);
-    // te.mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
-    //
-    // var outboundMessageFeedback = feedback + te.extraOutboundMessageText;
-    // var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-    // outboundMessageSubject + " " + message.messageId, outboundMessageFeedback, null);
-    // outboundMessageList.add(outboundMessage);
-    //
-    // typeEntryMap.put(message.getMessageType(), te);
+
   }
 
   /**
-   * get Counter for label, create in current te if needed
+   * get Counter for label, create if needed
    *
    * @param label
    * @return
@@ -344,18 +327,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   @Override
   public void postProcess() {
 
-    if (doStsFieldValidation) {
-      logger.info("field validation:\n" + sts.validate());
-    }
-
     var sb = new StringBuilder();
-    var N = ppCount;
-
     sb.append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results\n");
-    sb.append("Participants: " + N + "\n");
+    sb.append("Messages: " + ppMessageCount + "\n");
+    sb.append("Participants: " + ppParticipantCount + "\n");
 
-    // TODO fixme
-    sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
+    sb.append(formatPP("Correct Message Sets", ppParticipantCorrectCount, false, ppParticipantCount));
 
     var it = sts.iterator();
     while (it.hasNext()) {
@@ -390,37 +367,53 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     WriteProcessor.writeTable(list, Path.of(outputPathName, "summary-feedback.csv"));
 
     if (doOutboundMessaging) {
+      for (var summary : summaryMap.values()) {
+        var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
+            : String.join("\n", summary.explanations) + FeedbackProcessor.OB_DISCLAIMER;
+        var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
+            cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback, null);
+        outboundMessageList.add(outboundMessage);
+      }
       var service = new OutboundMessageService(cm);
       outboundMessageList = service.sendAll(outboundMessageList);
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }
-
-    // TODO fixme or delete
-    // for (var key : counterMap.keySet()) {
-    // var summaryKey = messageType.name() + "_" + key;
-    // var value = te.counterMap.get(key);
-    // summaryCounterMap.put(summaryKey, value);
-    // }
 
     // all messageTypes in one chart page
     var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
     chartService.makeCharts();
   }
 
-  protected boolean isNull(String s) {
-    return s == null || s.isEmpty();
-  }
+  // protected LocalDateTime parse(String s) {
+  // LocalDateTime dt = null;
+  // if (s == null) {
+  // return null;
+  // }
+  //
+  // try {
+  // s = s.trim().replaceAll(" +", " ");
+  // dt = LocalDateTime.from(DTF.parse(s.trim()));
+  // } catch (Exception e) {
+  // dt = LocalDateTime.from(ALT_DTF.parse(s.trim()));
+  // }
+  //
+  // return dt;
+  // }
 
-  protected LocalDateTime parse(String s) {
-    LocalDateTime dt = null;
-    if (s == null) {
-      throw new IllegalArgumentException("null input string");
+  protected LocalDateTime parse(String s, List<DateTimeFormatter> formatters) {
+    if (s == null || formatters == null || formatters.size() == 0) {
+      return null;
     }
 
-    try {
-      dt = LocalDateTime.from(DTF.parse(s.trim()));
-    } catch (Exception e) {
-      dt = LocalDateTime.from(ALT_DTF.parse(s.trim()));
+    s = s.trim().replaceAll(" +", " ");
+    LocalDateTime dt = null;
+    for (var f : formatters) {
+      try {
+        dt = LocalDateTime.from(f.parse(s.trim()));
+        break;
+      } catch (Exception e) {
+        ;
+      }
     }
 
     return dt;
