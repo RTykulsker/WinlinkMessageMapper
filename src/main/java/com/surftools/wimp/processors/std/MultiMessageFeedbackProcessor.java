@@ -69,8 +69,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   protected static Logger logger;
   public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-
-
   protected LocalDateTime windowOpenDT = null;
   protected LocalDateTime windowCloseDT = null;
 
@@ -384,22 +382,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     chartService.makeCharts();
   }
 
-  // protected LocalDateTime parse(String s) {
-  // LocalDateTime dt = null;
-  // if (s == null) {
-  // return null;
-  // }
-  //
-  // try {
-  // s = s.trim().replaceAll(" +", " ");
-  // dt = LocalDateTime.from(DTF.parse(s.trim()));
-  // } catch (Exception e) {
-  // dt = LocalDateTime.from(ALT_DTF.parse(s.trim()));
-  // }
-  //
-  // return dt;
-  // }
-
   protected LocalDateTime parse(String s, List<DateTimeFormatter> formatters) {
     if (s == null || formatters == null || formatters.size() == 0) {
       return null;
@@ -412,7 +394,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
         dt = LocalDateTime.from(f.parse(s.trim()));
         break;
       } catch (Exception e) {
-        ;
+        var debug = true;
       }
     }
 
