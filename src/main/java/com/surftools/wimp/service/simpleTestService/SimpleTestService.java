@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.surftools.utils.counter.ICounter;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.service.IService;
 
 /**
@@ -93,11 +92,6 @@ public class SimpleTestService implements IService {
     ++resetCount;
 
     this.caller = caller;
-  }
-
-  public void reset(String sender, MessageType messageType, String messageId) {
-    reset(sender);
-    this.explanationPrefix = messageType.toString() + " (" + messageId + "):";
   }
 
   /**

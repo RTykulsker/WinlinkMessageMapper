@@ -112,8 +112,8 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     };
   }
 
-	static record Option(int id, boolean hasPower) {
-	};
+  static record Option(int id, boolean hasPower) {
+  };
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -166,9 +166,21 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       var fsr = summary.fsrMessages[i];
       if (fsr != null) {
         var fsrSubject = fsr.subject;
-        count(sts.test("FSR day " + (i + 1) + " in ICS-309 activities", activitiesSubjectSet.contains(fsrSubject)));
+        count(sts
+            .test("FSR day " + (i + 1) + " message should be in ICS-309 activities",
+                activitiesSubjectSet.contains(fsrSubject)));
       }
     }
+
+    if (summary.checkInMessage != null) {
+      count(sts
+          .test("Check-In message should be in ICS-309 activities",
+              activitiesSubjectSet.contains(summary.checkInMessage.subject)));
+    } else {
+      count(sts.test("Check-In message should be in ICS-309 activities", false));
+    }
+
+    // TODO in summary countOfExMessagesNotInIcs309, countOf309ActivitiesNotInEx, both should be ZERO!
 
     summary.ics309Message = m;
   }
@@ -176,12 +188,14 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
     summary.checkInMessage = m;
 
-	var option = getOptionIdFromString(m.comments);
-	var optionIsDefault = false;
-	if (option == -1) {
-		option = 1;
-		optionIsDefault = true;
-	}
+    var option = getOptionIdFromString(m.comments);
+    var optionIsDefault = false;
+    if (option == -1) {
+      option = 1;
+      optionIsDefault = true;
+    }
+
+    count(sts.test("OPTION (via comments) should be readable", !optionIsDefault, m.comments));
 
     // #MM update summary
     summary.option = option;
@@ -254,6 +268,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
     // TODO other inter-message relationships
 
+    // #MM
     summaryMap.put(sender, summary);
   }
 
@@ -268,43 +283,44 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     int iDay = i + 1;
 
     // TODO validate all static fields
-	count(sts.test("Agency Name should be #EV", "EmComm Training Organization", m.organization));
-	count(sts.test("Precedence should be #EV", "R/ Routine", m.precedence));
-	count(sts.test("Task should be #EV", "241105", m.task));
-	count(sts.test("EMERGENT/LIFE SAFETY Need should be #EV", "NO", m.isHelpNeeded));
-	count(sts.testIfPresent("City should be present", m.city));
-	
-	var checkInOptionsString = summary.optionIsDefault ? summary.option + " (default)" : "" + summary.option;
-	var additionalComments = m.additionalComments;
-	var fsrOption = getOptionIdFromString(additionalComments);
-	var fsrOptionString = fsrOption == -1 ? "1 (default)" : String.valueOf(fsrOption);
-	count(sts.test("FSR Comments/Option should match Check In (#EV)",
-			checkInOptionsString.equalsIgnoreCase(fsrOptionString), fsrOptionString));
+    count(sts.test("Agency Name should be #EV", "EmComm Training Organization", m.organization));
+    count(sts.test("Precedence should be #EV", "R/ Routine", m.precedence));
+    count(sts.test("Task should be #EV", "241105", m.task));
+    count(sts.test("EMERGENT/LIFE SAFETY Need should be #EV", "NO", m.isHelpNeeded));
+    count(sts.testIfPresent("City should be present", m.city));
+
+    var checkInOptionsString = summary.optionIsDefault ? summary.option + " (default)" : "" + summary.option;
+    var additionalComments = m.additionalComments;
+    var fsrOption = getOptionIdFromString(additionalComments);
+    var fsrOptionString = fsrOption == -1 ? "1 (default)" : String.valueOf(fsrOption);
+    count(sts
+        .test("FSR Comments/Option should match Check In (#EV)", checkInOptionsString.equalsIgnoreCase(fsrOptionString),
+            fsrOptionString));
 
     // TODO validate fields for given day
     // for example on day 1, everything works!
   }
 
-	private int getOptionIdFromString(String comments) {
-		if (comments != null) {
-			var fields = comments.split("\\w");
-			if (fields.length >= 2) {
-				if (fields[0].equalsIgnoreCase("OPTION")) {
-					try {
-						var option = Integer.parseInt(fields[1]);
-						if (option >= 1 && option <= 8) {
-							return option;
-						}
-					} catch (Exception e) {
-						;
-					}
-				} // endif OPTION
-			} // fields.length >= 2
-		}
-		return -1;
-	}
+  private int getOptionIdFromString(String comments) {
+    if (comments != null) {
+      var fields = comments.split("\\w");
+      if (fields.length >= 2) {
+        if (fields[0].equalsIgnoreCase("OPTION")) {
+          try {
+            var option = Integer.parseInt(fields[1]);
+            if (option >= 1 && option <= 8) {
+              return option;
+            }
+          } catch (Exception e) {
+            ;
+          }
+        } // endif OPTION
+      } // fields.length >= 2
+    }
+    return -1;
+  }
 
-	@Override
+  @Override
   public void postProcess() {
     // #MM
     super.postProcess();

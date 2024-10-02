@@ -122,6 +122,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   protected BaseSummary iSummary; // summary for current sender
   protected String messageId; // the mId of the current message
   protected MessageType messageType; // the messageType of the current message
+  protected boolean doFirstIn = true; // fifo vs lifo for location, to fields
 
   protected SimpleTestService sts = new SimpleTestService();
   protected ExportedMessage message;
@@ -199,25 +200,35 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
           endCommonProcessing(message);
         } // end processing for a message
       } // end processing for a messageType
+      baseEndProcessingForSender(sender);
       endProcessingForSender(sender);
     } // end loop over senders
   }
+
+  /**
+   * derived class really must implement this
+   *
+   * @param sender
+   */
+  protected abstract void endProcessingForSender(String sender);
 
   /**
    * before all messageTypes for a given sender, a chance to look at cross-message relations
    */
   protected void beforeProcessingForSender(String sender) {
     ++ppParticipantCount;
+    sts.reset(sender);
   }
 
   /**
    * after all messageTypes for a given sender, a chance to look at cross-message relations
    */
-  protected void endProcessingForSender(String sender) {
+  protected void baseEndProcessingForSender(String sender) {
     if (iSummary.location == null || !iSummary.location.isValid()) {
       badLocationSenders.add(sender);
     }
 
+    iSummary.explanations = sts.getExplanations();
     var nExplanations = iSummary.explanations.size();
     if (nExplanations == 0) {
       ++ppParticipantCorrectCount;
@@ -236,10 +247,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     }
 
     iSummary = summaryMap.get(sender);
-    sts.reset(sender, message.getMessageType(), message.messageId);
+
+    var explanationPrefix = message.getMessageType().toString() + " (" + message.messageId + "): ";
+    sts.setExplanationPrefix(explanationPrefix);
 
     // first-in or last-in for to and location
-    boolean doFirstIn = true;
     if (doFirstIn) {
       if (iSummary.to == null) {
         iSummary.to = message.to;
@@ -394,7 +406,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
         dt = LocalDateTime.from(f.parse(s.trim()));
         break;
       } catch (Exception e) {
-			;
+        ;
       }
     }
 
