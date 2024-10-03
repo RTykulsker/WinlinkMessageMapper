@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,12 +44,13 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
+import com.surftools.wimp.message.FieldSituationMessage.ResourceType;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.processors.std.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2024-11-09: Semi-annual drill: Winlink Check, 5 sequential FSR and a generated ICS-309
+ * Processor for 2024-11-09: Semi-annual drill: Winlink Check In, 5 sequential FSR and a generated ICS-309
  *
  * @author bobt
  *
@@ -74,6 +76,8 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     public Ics309Message ics309Message;
 
     public int fsrMessageCount;
+    public int exerciseMessagesNotInIcs309; // checkIn, last FSR: should be zero
+    public int Ics309MessagesNotInExercise; // ICS-309 should only contain exercise messages
 
     public Summary(String from) {
       this.from = from;
@@ -88,7 +92,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
           .addAll(Arrays
               .asList(new String[] { "Option", "Option Valid", "Check In", //
                   "FSR Day 1", "FSR Day 2", "FSR Day 3", "FSR Day 4", "FSR Day 5", //
-                  "ICS-309", "FSR Count" //
+                  "ICS-309", "FSR Count", "Ex Msgs not in 309", "309 Msgs not in Ex"//
               }));
       return list.toArray(new String[0]);
     }
@@ -106,8 +110,9 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
               .asList(new String[] { String.valueOf(option), String.valueOf(!optionIsDefault), //
                   mId(checkInMessage), //
                   mId(fsrMessages[0]), mId(fsrMessages[1]), mId(fsrMessages[2]), mId(fsrMessages[3]),
-                  mId(fsrMessages[4]), mId(ics309Message), String.valueOf(fsrMessageCount)//
-              }));
+                  mId(fsrMessages[4]), mId(ics309Message), //
+                  String.valueOf(fsrMessageCount), //
+                  String.valueOf(exerciseMessagesNotInIcs309), String.valueOf(Ics309MessagesNotInExercise) }));
       return list.toArray(new String[0]);
     };
   }
@@ -159,28 +164,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     count(sts.testIfPresent("ICS-309 operational period should be present", m.operationalPeriod));
     count(sts.testIfPresent("Operator Name should be present", m.operatorName));
     count(sts.testIfPresent("Station ID should be present", m.stationId));
-
-    // we can do this here and now, since all FSR messages have been accumulated (but not otherwise processed)
-    var activitiesSubjectSet = m.activities.stream().map(a -> a.subject()).collect(Collectors.toSet());
-    for (int i = 0; i < N_FSR_DAYS; ++i) {
-      var fsr = summary.fsrMessages[i];
-      if (fsr != null) {
-        var fsrSubject = fsr.subject;
-        count(sts
-            .test("FSR day " + (i + 1) + " message should be in ICS-309 activities",
-                activitiesSubjectSet.contains(fsrSubject)));
-      }
-    }
-
-    if (summary.checkInMessage != null) {
-      count(sts
-          .test("Check-In message should be in ICS-309 activities",
-              activitiesSubjectSet.contains(summary.checkInMessage.subject)));
-    } else {
-      count(sts.test("Check-In message should be in ICS-309 activities", false));
-    }
-
-    // TODO in summary countOfExMessagesNotInIcs309, countOf309ActivitiesNotInEx, both should be ZERO!
 
     summary.ics309Message = m;
   }
@@ -248,7 +231,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
   @Override
   protected void endProcessingForSender(String sender) {
-    var summary = (Summary) summaryMap.get(sender);
+    var summary = (Summary) summaryMap.get(sender); // #MM
 
     if (summary.checkInMessage == null) {
       summary.explanations.add("No CheckIn message received.");
@@ -266,10 +249,41 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       summary.explanations.add("No ICS-309 message received.");
     }
 
-    // TODO other inter-message relationships
+    if (summary.ics309Message != null) {
+      var activitiesSubjectSet = summary.ics309Message.activities
+          .stream()
+            .map(a -> a.subject())
+            .collect(Collectors.toSet());
+      summary.Ics309MessagesNotInExercise = activitiesSubjectSet.size();
 
-    // #MM
-    summaryMap.put(sender, summary);
+      for (int i = 0; i < N_FSR_DAYS; ++i) {
+        var fsr = summary.fsrMessages[i];
+        if (fsr != null) {
+          var fsrSubject = fsr.subject;
+          var isContained = activitiesSubjectSet.contains(fsrSubject);
+          count(sts.test("FSR day " + (i + 1) + " message should be in ICS-309 activities", isContained));
+          summary.exerciseMessagesNotInIcs309 += isContained ? 0 : 1;
+          summary.Ics309MessagesNotInExercise -= isContained ? 1 : 0;
+        } else {
+          ;
+        }
+      }
+
+      if (summary.checkInMessage != null) {
+        var isContained = activitiesSubjectSet.contains(summary.checkInMessage.subject);
+        count(sts.test("Check-In message should be in ICS-309 activities", isContained));
+        summary.exerciseMessagesNotInIcs309 += isContained ? 0 : 1;
+        summary.Ics309MessagesNotInExercise -= isContained ? 1 : 0;
+      } else {
+        count(sts.test("Check-In message should be in ICS-309 activities", false));
+        ++summary.exerciseMessagesNotInIcs309;
+      }
+
+    }
+
+    // other inter-message relationships; there may be nothing here
+
+    summaryMap.put(sender, summary); // #MM
   }
 
   /**
@@ -280,9 +294,9 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
    */
   private void handle_fsr(Summary summary, int i) {
     var m = summary.fsrMessages[i];
-    int iDay = i + 1;
+    var explanationPrefix = m.getMessageType().toString() + " (" + m.messageId + "): ";
+    sts.setExplanationPrefix(explanationPrefix);
 
-    // TODO validate all static fields
     count(sts.test("Agency Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Precedence should be #EV", "R/ Routine", m.precedence));
     count(sts.test("Task should be #EV", "241105", m.task));
@@ -297,8 +311,78 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
         .test("FSR Comments/Option should match Check In (#EV)", checkInOptionsString.equalsIgnoreCase(fsrOptionString),
             fsrOptionString));
 
-    // TODO validate fields for given day
-    // for example on day 1, everything works!
+    // validate fields for given day. for example on day 1, everything works!
+    int iDay = i + 1;
+    var availableResourcesList = getResourcesForDayAndOption(iDay, summary.option);
+    var availableResourceSet = new HashSet<FieldSituationMessage.ResourceType>(availableResourcesList);
+
+    for (var resourceType : FieldSituationMessage.ResourceType.values()) {
+      if (resourceType == ResourceType.NOAA_DEGRADED) {
+        continue;
+      }
+
+      var resource = m.resourceMap.get(resourceType);
+      var isResourceAvailable = availableResourceSet.contains(resourceType);
+      if (isResourceAvailable) {
+        count(sts.test("Day " + iDay + " " + resourceType + " status should be #EV", "YES", resource.status()));
+        count(sts.testIfEmpty("Day " + iDay + " " + resourceType + " comments should be empty", resource.comments()));
+      } else {
+        count(sts.test("Day " + iDay + " " + resourceType + " status should be #EV", "NO", resource.status()));
+        count(sts
+            .testIfPresent("Day " + iDay + " " + resourceType + " comments NOT should be empty", resource.comments()));
+      }
+    }
+  }
+
+  private List<FieldSituationMessage.ResourceType> getResourcesForDayAndOption(int iDay, int option) {
+    var resources = new ArrayList<FieldSituationMessage.ResourceType>();
+    if (iDay == 1 || iDay == N_FSR_DAYS) { // first and last day, all resources available
+      for (var r : ResourceType.values()) {
+        if (r == ResourceType.NOAA_DEGRADED) {
+          continue;
+        } else {
+          resources.add(r);
+        }
+      }
+      return resources;
+    }
+
+    if (iDay == 2) {
+      for (var r : ResourceType.values()) {
+        if (r == ResourceType.NOAA_DEGRADED || r == ResourceType.COMMERCIAL_POWER_STABLE) {
+          continue;
+        } else {
+          resources.add(r);
+        }
+      }
+      return resources;
+    }
+
+    if (iDay == 3 || iDay == 4) {
+      var isEmergencyPowerAvailable = isEmergencyPowerAvailableForOption(option);
+      if (isEmergencyPowerAvailable) {
+        resources.add(ResourceType.AM_FM_BROADCAST);
+        resources.add(ResourceType.OTA_TV);
+        resources.add(ResourceType.SATELLITE_TV);
+        resources.add(ResourceType.WATER_WORKS);
+        resources.add(ResourceType.NATURAL_GAS_SUPPLY);
+        resources.add(ResourceType.NOAA_WEATHER_RADIO);
+      } else {
+        resources.add(ResourceType.WATER_WORKS);
+        resources.add(ResourceType.NATURAL_GAS_SUPPLY);
+        resources.add(ResourceType.NOAA_WEATHER_RADIO);
+      }
+
+    }
+
+    return resources;
+  }
+
+  private boolean isEmergencyPowerAvailableForOption(int option) {
+    if (option == 2 || option == 4 || option == 6 || option == 8) {
+      return true;
+    }
+    return false;
   }
 
   private int getOptionIdFromString(String comments) {
@@ -322,7 +406,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
   @Override
   public void postProcess() {
-    // #MM
-    super.postProcess();
+    super.postProcess();// #MM
   }
 }

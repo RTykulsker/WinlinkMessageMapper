@@ -383,7 +383,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
       for (var summary : summaryMap.values()) {
         var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
             : String.join("\n", summary.explanations) + OB_DISCLAIMER;
-        var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
+        var outboundMessage = new OutboundMessage(outboundMessageSender, summary.sender,
             "Feedback on ETO " + cm.getAsString(Key.EXERCISE_DATE) + " exercise", //
             outboundMessageFeedback, null);
         outboundMessageList.add(outboundMessage);

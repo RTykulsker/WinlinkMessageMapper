@@ -28,13 +28,20 @@ SOFTWARE.
 package com.surftools.wimp.service.outboundMessage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.service.IService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class OutboundMessageService implements IService {
+  private static final Logger logger = LoggerFactory.getLogger(OutboundMessageService.class);
+
   private IOutboundMessageEngine engine;
   private PatOutboundMessageEngine patEngine;
 
@@ -61,10 +68,36 @@ public class OutboundMessageService implements IService {
   public List<OutboundMessage> sendAll(List<OutboundMessage> inputMessageList) {
     var outputMessageList = new ArrayList<OutboundMessage>(inputMessageList.size());
 
+    var toCountMap = new HashMap<String, Integer>();
+
     for (var inputMessage : inputMessageList) {
       var messageId = engine.send(inputMessage);
       var outputMessage = new OutboundMessage(inputMessage, messageId);
       outputMessageList.add(outputMessage);
+
+      var count = toCountMap.getOrDefault(inputMessage.to(), Integer.valueOf(0));
+      toCountMap.put(inputMessage.to(), ++count);
+    }
+
+    var countToListMap = new TreeMap<Integer, List<String>>();
+    for (var to : toCountMap.keySet()) {
+      var count = toCountMap.get(to);
+      var toList = countToListMap.getOrDefault(count, new ArrayList<String>());
+      toList.add(to);
+      countToListMap.put(count, toList);
+    }
+
+    logger.info("unique messages: " + inputMessageList.size());
+    logger.info("unique recipients: " + toCountMap.size());
+    for (var count : countToListMap.descendingKeySet()) {
+      var toList = countToListMap.get(count);
+      if (count > 1) {
+        logger.info("count: " + count + ", list: " + String.join(",", toList));
+      }
+    }
+
+    if (inputMessageList.size() > 1 && toCountMap.size() == 1) {
+      logger.warn("#### WARNING: outbound messaging looks broken");
     }
 
     if (engine.getEngineType() == EngineType.PAT) {

@@ -27,6 +27,9 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 
@@ -37,6 +40,39 @@ import com.surftools.wimp.core.MessageType;
  *
  */
 public class FieldSituationMessage extends ExportedMessage {
+  public enum ResourceType {
+    POTS_LANDLINES("POTS landlines"), //
+    VOIP_LANDLINES("VOIP landlines"), //
+    CELL_VOICE("Cell phone voice calls"), //
+    CELL_TEXT("Cell phone texts"), //
+    AM_FM_BROADCAST("AM/FM Broadcast Stations"), //
+    OTA_TV("OTA TV"), //
+    SATELLITE_TV("Satellite TV"), //
+    CABLE_TV("Cable TV"), //
+    WATER_WORKS("Public Water Works"), //
+    COMMERCIAL_POWER("Commercial Power"), //
+    COMMERCIAL_POWER_STABLE("Commercial Power Stable"), //
+    NATURAL_GAS_SUPPLY("Natural Gas Supply"), //
+    INTERNET("Internet"), //
+    NOAA_WEATHER_RADIO("NOAA Weather Radio"), //
+    NOAA_DEGRADED("NOAA Weather Radio audio degraded"), //
+    ;
+
+    private final String key;
+
+    private ResourceType(String key) {
+      this.key = key;
+    }
+
+    @Override
+    public String toString() {
+      return key;
+    }
+  };
+
+  public record Resource(ResourceType type, String status, String comments) {
+  };
+
   public final String organization;
   public final LatLongPair formLocation;
   public final String precedence;
@@ -83,6 +119,8 @@ public class FieldSituationMessage extends ExportedMessage {
   public final String additionalComments;
   public final String poc;
   public final String formVersion;
+
+  public final Map<ResourceType, Resource> resourceMap;
 
   public FieldSituationMessage(ExportedMessage exportedMessage, String organization, LatLongPair formLocation, //
       String precedence, String formDateTime, String task, String formTo, String formFrom, //
@@ -155,6 +193,28 @@ public class FieldSituationMessage extends ExportedMessage {
     if (formLocation.isValid()) {
       setMapLocation(formLocation);
     }
+
+    resourceMap = new HashMap<>();
+    add(ResourceType.POTS_LANDLINES, landlineStatus, landlineComments);
+    add(ResourceType.VOIP_LANDLINES, voipStatus, voipComments);
+    add(ResourceType.CELL_VOICE, cellPhoneStatus, cellPhoneComments);
+    add(ResourceType.CELL_TEXT, cellTextStatus, cellTextComments);
+    add(ResourceType.AM_FM_BROADCAST, radioStatus, radioComments);
+    add(ResourceType.OTA_TV, tvStatus, tvComments);
+    add(ResourceType.SATELLITE_TV, satTvStatus, satTvComments);
+    add(ResourceType.CABLE_TV, cableTvStatus, cableTvComments);
+    add(ResourceType.WATER_WORKS, waterStatus, waterComments);
+    add(ResourceType.COMMERCIAL_POWER, powerStatus, powerComments);
+    add(ResourceType.COMMERCIAL_POWER_STABLE, powerStableStatus, powerStableComments);
+    add(ResourceType.NATURAL_GAS_SUPPLY, naturalGasStatus, naturalGasComments);
+    add(ResourceType.INTERNET, internetStatus, internetComments);
+    add(ResourceType.NOAA_WEATHER_RADIO, noaaStatus, noaaComments);
+    add(ResourceType.NOAA_DEGRADED, noaaAudioDegraded, noaaAudioDegradedComments);
+  }
+
+  private void add(ResourceType type, String status, String comments) {
+    var resource = new Resource(type, status, comments);
+    resourceMap.put(type, resource);
   }
 
   @Override
