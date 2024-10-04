@@ -226,7 +226,7 @@ public class FieldSituationMessage extends ExportedMessage {
         "Cell Voice Status", "Cell Voice Comments", "Cell Text Status", "Cell Text Comments", //
         "AM/FM Radio Status", "AM/FM Radio Comments", //
         "OTA TV Status", "OTA TV Comments", "Satellite TV Status", "Satellite TV Comments", "Cable TV Status",
-        "Cabke TV Comments", //
+        "Cable TV Comments", //
         "Water Status", "Water Comments", //
         "Power Status", "Power Comments", //
         "Power Stable", "Power Stable Comments", //

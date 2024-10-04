@@ -83,6 +83,7 @@ public enum MessageType {
   WA_ISNAP("wa_isnap", "RMS_Express_Form_ISNAP_WA_Viewer.xml"), //
   WA_WSDOT_BRIDGE_DAMAGE("wa_wsdot_bridge_damage", "RMS_Express_Form_WSDOT Bridge Damage Report viewer.xml"), //
   WA_WSDOT_ROADWAY_DAMAGE("wa_wsdot_roadway_damage", "RMS_Express_Form_WSDOT Roadway Damage Report viewer.xml"), //
+  WA_EYEWARN("wa_eyewarn", "RMS_Express_Form_EyeWarn_Form_Viewer.xml"), //
   ;
 
   /**
