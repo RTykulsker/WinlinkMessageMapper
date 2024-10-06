@@ -33,6 +33,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,7 +73,8 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     public boolean optionIsDefault;
 
     public CheckInMessage checkInMessage;
-    public FieldSituationMessage[] fsrMessages = new FieldSituationMessage[N_FSR_DAYS];
+    public FieldSituationMessage[] fsrMessages = new FieldSituationMessage[N_FSR_DAYS + 1];
+    public boolean[] fsrIsValid = new boolean[N_FSR_DAYS + 1];
     public Ics309Message ics309Message;
 
     public int fsrMessageCount;
@@ -109,8 +111,8 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
           .addAll(Arrays
               .asList(new String[] { String.valueOf(option), String.valueOf(!optionIsDefault), //
                   mId(checkInMessage), //
-                  mId(fsrMessages[0]), mId(fsrMessages[1]), mId(fsrMessages[2]), mId(fsrMessages[3]),
-                  mId(fsrMessages[4]), mId(ics309Message), //
+                  mId(fsrMessages[1]), mId(fsrMessages[2]), mId(fsrMessages[3]), mId(fsrMessages[4]),
+                  mId(fsrMessages[5]), mId(ics309Message), //
                   String.valueOf(fsrMessageCount), //
                   String.valueOf(exerciseMessagesNotInIcs309), String.valueOf(Ics309MessagesNotInExercise) }));
       return list.toArray(new String[0]);
@@ -219,7 +221,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
           isValidDate = true;
         }
 
-        int dayIndex = (int) daysBetween;
+        int dayIndex = ((int) daysBetween) + 1;
         summary.fsrMessages[dayIndex] = m;
       } catch (Exception e) {
         explanation = "FSR DATE/TIME could not be parsed";
@@ -237,9 +239,9 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       summary.explanations.add("No CheckIn message received.");
     }
 
-    for (var i = 0; i < N_FSR_DAYS; ++i) {
+    for (var i = 1; i <= N_FSR_DAYS; ++i) {
       if (summary.fsrMessages[i] == null) {
-        summary.explanations.add("No FSR Day " + (i + 1) + " message received.");
+        summary.explanations.add("No FSR Day " + i + " message received.");
       } else {
         handle_fsr(summary, i);
       }
@@ -256,12 +258,12 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
             .collect(Collectors.toSet());
       summary.Ics309MessagesNotInExercise = activitiesSubjectSet.size();
 
-      for (int i = 0; i < N_FSR_DAYS; ++i) {
+      for (int i = 1; i <= N_FSR_DAYS; ++i) {
         var fsr = summary.fsrMessages[i];
-        if (fsr != null) {
+        if (fsr != null && summary.fsrIsValid[i]) {
           var fsrSubject = fsr.subject;
           var isContained = activitiesSubjectSet.contains(fsrSubject);
-          count(sts.test("FSR day " + (i + 1) + " message should be in ICS-309 activities", isContained));
+          count(sts.test("FSR day " + (i) + " message should be in ICS-309 activities", isContained));
           summary.exerciseMessagesNotInIcs309 += isContained ? 0 : 1;
           summary.Ics309MessagesNotInExercise -= isContained ? 1 : 0;
         } else {
@@ -282,20 +284,63 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     }
 
     // other inter-message relationships; there may be nothing here
+    checkAscendingCreationTimestamps(summary);
 
     summaryMap.put(sender, summary); // #MM
+  }
+
+  record MX(ExportedMessage m, String explanation) {
+  };
+
+  private void checkAscendingCreationTimestamps(Summary summary) {
+    var list = new LinkedList<MX>();
+    if (summary.checkInMessage != null) {
+      list.add(new MX(summary.checkInMessage, "Check In"));
+    }
+
+    for (var iDay = 1; iDay <= N_FSR_DAYS; ++iDay) {
+      if (summary.fsrMessages[iDay] != null && summary.fsrIsValid[iDay]) {
+        list.add(new MX(summary.fsrMessages[iDay], "FSR Day " + iDay));
+      }
+    }
+
+    if (summary.ics309Message != null) {
+      list.add(new MX(summary.ics309Message, "ICS-309"));
+    }
+
+    while (list.size() > 1) {
+      var first = list.remove(0);
+      var second = list.get(0);
+
+      var firstMsgDateTime = first.m.msgDateTime;
+      var secondMsgDateTime = second.m.msgDateTime;
+      var isBefore = firstMsgDateTime.isBefore(secondMsgDateTime);
+
+      var explanation = first.explanation + "should have been created before " + second.explanation;
+      count(sts.test("Messages should be created in sequence", isBefore, explanation));
+    }
+
   }
 
   /**
    *
    * @param summary
-   * @param i:
-   *          0-based day index
+   * @param iDay:
+   *          1-based index
    */
-  private void handle_fsr(Summary summary, int i) {
-    var m = summary.fsrMessages[i];
+  private void handle_fsr(Summary summary, int iDay) {
+    var m = summary.fsrMessages[iDay];
     var explanationPrefix = m.getMessageType().toString() + " (" + m.messageId + "): ";
     sts.setExplanationPrefix(explanationPrefix);
+
+    var canSendMessage = canSendMessage(iDay, summary.option);
+    var actualMessage = summary.fsrMessages[iDay] != null;
+    var unexpectedMessageReceived = !canSendMessage && actualMessage;
+    count(sts.test("Day " + iDay + " unexpected message received", !unexpectedMessageReceived));
+    if (unexpectedMessageReceived) {
+      return;
+    }
+    summary.fsrIsValid[iDay] = true;
 
     count(sts.test("Agency Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Precedence should be #EV", "R/ Routine", m.precedence));
@@ -308,11 +353,9 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     var fsrOption = getOptionIdFromString(additionalComments);
     var fsrOptionString = fsrOption == -1 ? "1 (default)" : String.valueOf(fsrOption);
     count(sts
-        .test("FSR Comments/Option should match Check In (#EV)", checkInOptionsString.equalsIgnoreCase(fsrOptionString),
-            fsrOptionString));
+        .test("FSR Comments/Option should match Check In Comments/Option",
+            checkInOptionsString.equalsIgnoreCase(fsrOptionString), fsrOptionString));
 
-    // validate fields for given day. for example on day 1, everything works!
-    int iDay = i + 1;
     var availableResourcesList = getResourcesForDayAndOption(iDay, summary.option);
     var availableResourceSet = new HashSet<FieldSituationMessage.ResourceType>(availableResourcesList);
 
@@ -332,6 +375,20 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
             .testIfPresent("Day " + iDay + " " + resourceType + " comments NOT should be empty", resource.comments()));
       }
     }
+  }
+
+  private boolean canSendMessage(int iDay, int option) {
+    if (iDay == 1 || iDay == 2 || iDay == 5) {
+      return true;
+    }
+
+    if (iDay == 3 || iDay == 4) {
+      if (option == 4 || option == 6 || option == 8) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private List<FieldSituationMessage.ResourceType> getResourcesForDayAndOption(int iDay, int option) {
@@ -359,7 +416,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     }
 
     if (iDay == 3 || iDay == 4) {
-      var isEmergencyPowerAvailable = isEmergencyPowerAvailableForOption(option);
+      var isEmergencyPowerAvailable = (option == 2 || option == 4 || option == 6 || option == 8);
       if (isEmergencyPowerAvailable) {
         resources.add(ResourceType.AM_FM_BROADCAST);
         resources.add(ResourceType.OTA_TV);
@@ -376,13 +433,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     }
 
     return resources;
-  }
-
-  private boolean isEmergencyPowerAvailableForOption(int option) {
-    if (option == 2 || option == 4 || option == 6 || option == 8) {
-      return true;
-    }
-    return false;
   }
 
   private int getOptionIdFromString(String comments) {
