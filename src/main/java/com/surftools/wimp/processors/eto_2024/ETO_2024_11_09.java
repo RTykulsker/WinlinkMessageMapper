@@ -173,7 +173,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
     summary.checkInMessage = m;
 
-    var option = getOptionIdFromString(m.comments);
+    var option = parseOptionFromCommentString(m.comments);
     var optionIsDefault = false;
     if (option == -1) {
       option = 1;
@@ -283,7 +283,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
     }
 
-    // other inter-message relationships; there may be nothing here
     checkAscendingCreationTimestamps(summary);
 
     summaryMap.put(sender, summary); // #MM
@@ -350,7 +349,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
     var checkInOptionsString = summary.optionIsDefault ? summary.option + " (default)" : "" + summary.option;
     var additionalComments = m.additionalComments;
-    var fsrOption = getOptionIdFromString(additionalComments);
+    var fsrOption = parseOptionFromCommentString(additionalComments);
     var fsrOptionString = fsrOption == -1 ? "1 (default)" : String.valueOf(fsrOption);
     count(sts
         .test("FSR Comments/Option should match Check In Comments/Option",
@@ -392,64 +391,48 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
   }
 
   private List<FieldSituationMessage.ResourceType> getResourcesForDayAndOption(int iDay, int option) {
-    var resources = new ArrayList<FieldSituationMessage.ResourceType>();
-    if (iDay == 1 || iDay == N_FSR_DAYS) { // first and last day, all resources available
-      for (var r : ResourceType.values()) {
-        if (r == ResourceType.NOAA_DEGRADED) {
-          continue;
-        } else {
-          resources.add(r);
-        }
-      }
+    var resources = new LinkedList<FieldSituationMessage.ResourceType>(Arrays.asList(ResourceType.values()));
+    resources.remove(ResourceType.NOAA_DEGRADED);
+
+    if (iDay == 1 || iDay == N_FSR_DAYS) {
       return resources;
     }
 
     if (iDay == 2) {
-      for (var r : ResourceType.values()) {
-        if (r == ResourceType.NOAA_DEGRADED || r == ResourceType.COMMERCIAL_POWER_STABLE) {
-          continue;
-        } else {
-          resources.add(r);
-        }
-      }
+      resources.remove(ResourceType.COMMERCIAL_POWER_STABLE);
       return resources;
     }
 
-    if (iDay == 3 || iDay == 4) {
-      var isEmergencyPowerAvailable = (option == 2 || option == 4 || option == 6 || option == 8);
-      if (isEmergencyPowerAvailable) {
-        resources.add(ResourceType.AM_FM_BROADCAST);
-        resources.add(ResourceType.OTA_TV);
-        resources.add(ResourceType.SATELLITE_TV);
-        resources.add(ResourceType.WATER_WORKS);
-        resources.add(ResourceType.NATURAL_GAS_SUPPLY);
-        resources.add(ResourceType.NOAA_WEATHER_RADIO);
-      } else {
-        resources.add(ResourceType.WATER_WORKS);
-        resources.add(ResourceType.NATURAL_GAS_SUPPLY);
-        resources.add(ResourceType.NOAA_WEATHER_RADIO);
-      }
-
+    resources.clear(); // else days 3 and 4
+    resources.add(ResourceType.WATER_WORKS);
+    resources.add(ResourceType.NATURAL_GAS_SUPPLY);
+    resources.add(ResourceType.NOAA_WEATHER_RADIO);
+    var isEmergencyPowerAvailable = (option == 2 || option == 4 || option == 6 || option == 8);
+    if (isEmergencyPowerAvailable) {
+      resources.add(ResourceType.AM_FM_BROADCAST);
+      resources.add(ResourceType.OTA_TV);
+      resources.add(ResourceType.SATELLITE_TV);
+      resources.add(ResourceType.WATER_WORKS);
+      resources.add(ResourceType.NATURAL_GAS_SUPPLY);
+      resources.add(ResourceType.NOAA_WEATHER_RADIO);
     }
 
     return resources;
   }
 
-  private int getOptionIdFromString(String comments) {
+  private int parseOptionFromCommentString(String comments) {
     if (comments != null) {
       var fields = comments.split("\\w");
-      if (fields.length >= 2) {
-        if (fields[0].equalsIgnoreCase("OPTION")) {
-          try {
-            var option = Integer.parseInt(fields[1]);
-            if (option >= 1 && option <= 8) {
-              return option;
-            }
-          } catch (Exception e) {
-            ;
+      if (fields.length >= 2 && fields[0].equalsIgnoreCase("OPTION")) {
+        try {
+          var option = Integer.parseInt(fields[1]);
+          if (option >= 1 && option <= 8) {
+            return option;
           }
-        } // endif OPTION
-      } // fields.length >= 2
+        } catch (Exception e) {
+          ;
+        }
+      } // fields.length >= 2 && OPTION
     }
     return -1;
   }
