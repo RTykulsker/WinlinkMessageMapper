@@ -34,10 +34,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.message.DyfiMessage;
-import com.surftools.wimp.message.DyfiMessage.DetailLevel;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -48,8 +48,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class ETO_2024_10_17 extends FeedbackProcessor {
-  private static Logger logger = LoggerFactory.getLogger(ETO_2024_10_17.class);
+public class ETO_2024_10_17_more_details extends FeedbackProcessor {
+  private static Logger logger = LoggerFactory.getLogger(ETO_2024_10_17_more_details.class);
 
   public static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
 
@@ -82,7 +82,15 @@ public class ETO_2024_10_17 extends FeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
-    DyfiMessage.setDetailLevel(DetailLevel.LOW);
+
+    var detailLevelString = cm.getAsString(Key.DYFI_DETAIL_LEVEL, "LOW");
+    var detailLevel = DyfiMessage.DetailLevel.fromString(detailLevelString);
+    if (detailLevel == null) {
+      throw new RuntimeException("Unsupported " + Key.DYFI_DETAIL_LEVEL.toString() + " value: " + detailLevelString);
+    } else {
+      DyfiMessage.setDetailLevel(detailLevel);
+      logger.info("### using DYFI detailLevel: " + detailLevel);
+    }
   }
 
   @Override
@@ -101,6 +109,33 @@ public class ETO_2024_10_17 extends FeedbackProcessor {
     count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
     count(sts.test("Time of Earthquake should be #EV", EXPECTED_TIME, m.formDateTime.format(DYFI_TIME_FORMATTER)));
 
+    // All questions starting following the Your Location up to the Additional Comments section are populated.
+    if (DyfiMessage.getDetailLevel() == DyfiMessage.DetailLevel.MEDIUM) {
+      count(sts.testIfPresent("Situation value should be present", m.situation));
+      testPresentAbsent("If Situation/Other checked, other should be specified, else empty", m.situation,
+          m.situationOther);
+      count(sts.testIfPresent("Inside/Floor value should be present", m.situationFloor));
+      testPresentAbsent("If Inside/Floor/Other checked, other should be specified", m.situationFloor,
+          m.situationFloorOther);
+      count(sts.testIfPresent("Inside/How Tall value should be present", m.structureStories));
+      testPresentAbsent("If Inside/How Tall/Other checked, other should be specified", m.structureStories,
+          m.structureStoriesOther);
+      count(sts.testIfPresent("Where you asleep value should be present", m.situationSleep));
+      count(sts.testIfPresent("Did others feel it value should be present", m.experienceResponseOther));
+      count(sts.testIfPresent("Describe the Shaking value should be present", m.experienceShaking));
+      count(sts.testIfPresent("Your Reaction value should be present", m.experienceReaction));
+      testPresentAbsent("If Response/Other, other should be specified", m.experienceResponse,
+          m.experienceResponseOther);
+      count(sts.testIfPresent("Difficult to Stand value should be present", m.experienceStand));
+      count(sts.testIfPresent("Swinging Doors value should be present", m.effectsDoors));
+      count(sts.testIfPresent("Creaking/Noise value should be present", m.effectsSounds));
+      count(sts.testIfPresent("Objects/Rattle value should be present", m.effectsShelves));
+      count(sts.testIfPresent("Pictures/Move value should be present", m.effectsPictures));
+      count(sts.testIfPresent("Furniture(Appliances)/slide value should be present", m.effectsFurniture));
+      count(sts.testIfPresent("Heavy Appliance Affected value should be present", m.effectsAppliances));
+      count(sts.testIfPresent("Walls/Fences damaged value should be present", m.effectsWalls));
+    } // endif detailLevel == MEDIUM
+
     getCounter("Intensity").increment(m.intensity);
     getCounter("Version").increment(m.formVersion);
 
@@ -112,6 +147,35 @@ public class ETO_2024_10_17 extends FeedbackProcessor {
       } // endif words[0] contains @
     } // endif comments != null
 
+  }
+
+  /**
+   * convenience method to test if a variable is "present" or "absent", based on a predicate variable equally a specific
+   * value. Assumed use case is when predVariable == "other"
+   *
+   * @param label
+   * @param predVariable
+   * @param predValue
+   * @param variable
+   */
+  private void testPresentAbsent(String label, String predVariable, String predValue, String variable) {
+    if (predVariable.equals(predValue)) {
+      count(sts.testIfPresent(label, variable));
+    } else {
+      count(sts.testIfEmpty(label, variable));
+    }
+  }
+
+  /**
+   * convenience method to test if a variable is "present" or "absent", based on a predicate variable equally a specific
+   * value. Assumed use case is when predVariable == "other"
+   *
+   * @param label
+   * @param predVariable
+   * @param variable
+   */
+  private void testPresentAbsent(String label, String predVariable, String variable) {
+    testPresentAbsent(label, predVariable, "other", variable);
   }
 
   @Override
