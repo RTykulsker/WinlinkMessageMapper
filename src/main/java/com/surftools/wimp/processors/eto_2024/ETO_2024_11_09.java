@@ -70,14 +70,18 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
     // we want these messages
     public int option;
-    public boolean optionIsDefault;
 
     public CheckInMessage checkInMessage;
     public FieldSituationMessage[] fsrMessages = new FieldSituationMessage[N_FSR_DAYS + 1];
     public boolean[] fsrIsValid = new boolean[N_FSR_DAYS + 1];
     public Ics309Message ics309Message;
 
-    public int fsrMessageCount;
+    public int checkInCount;
+    public int validFsrMessageCount;
+    public int totalFsrCount; // includes unexpected, does not include superseded
+    public int ics309Count;
+    public int totalValidCount; // all messageTypes
+
     public int exerciseMessagesNotInIcs309; // checkIn, last FSR: should be zero
     public int Ics309MessagesNotInExercise; // ICS-309 should only contain exercise messages
 
@@ -92,9 +96,10 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       list.addAll(Arrays.asList(super.getHeaders()));
       list
           .addAll(Arrays
-              .asList(new String[] { "Option", "Option Valid", "Check In", //
-                  "FSR Day 1", "FSR Day 2", "FSR Day 3", "FSR Day 4", "FSR Day 5", //
-                  "ICS-309", "FSR Count", "Ex Msgs not in 309", "309 Msgs not in Ex"//
+              .asList(new String[] { "Option", "Check In", //
+                  "FSR Day 1", "FSR Day 2", "FSR Day 3", "FSR Day 4", "FSR Day 5", "ICS-309", //
+                  "# CheckIn", "# valid FSR", "# all FSR", "# ICS-309", "# valid Messages", //
+                  "Ex Msgs not in 309", "309 Msgs not in Ex"//
               }));
       return list.toArray(new String[0]);
     }
@@ -103,24 +108,38 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       return m == null ? "" : m.messageId;
     }
 
+    private String s(int i) {
+      return String.valueOf(i);
+    }
+
+    private String optionName(int option) {
+      switch (option) {
+      case 0:
+        return "No CheckIn received";
+      case -1:
+        return "No Option in CheckIn";
+      case -2:
+        return "Unparsable Option in CheckIn";
+      default:
+        return String.valueOf(option);
+      }
+    }
+
     @Override
     public String[] getValues() {
       var list = new ArrayList<>();
       list.addAll(Arrays.asList(super.getValues()));
       list
           .addAll(Arrays
-              .asList(new String[] { String.valueOf(option), String.valueOf(!optionIsDefault), //
+              .asList(new String[] { optionName(option), //
                   mId(checkInMessage), //
                   mId(fsrMessages[1]), mId(fsrMessages[2]), mId(fsrMessages[3]), mId(fsrMessages[4]),
                   mId(fsrMessages[5]), mId(ics309Message), //
-                  String.valueOf(fsrMessageCount), //
-                  String.valueOf(exerciseMessagesNotInIcs309), String.valueOf(Ics309MessagesNotInExercise) }));
+                  s(checkInCount), s(validFsrMessageCount), s(totalFsrCount), s(ics309Count), s(totalValidCount), //
+                  s(exerciseMessagesNotInIcs309), s(Ics309MessagesNotInExercise) }));
       return list.toArray(new String[0]);
     };
   }
-
-  static record Option(int id, boolean hasPower) {
-  };
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -168,24 +187,21 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     count(sts.testIfPresent("Station ID should be present", m.stationId));
 
     summary.ics309Message = m;
+    ++summary.ics309Count;
+    ++summary.totalValidCount;
   }
 
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
     summary.checkInMessage = m;
 
     var option = parseOptionFromCommentString(m.comments);
-    var optionIsDefault = false;
-    if (option == -1) {
-      option = 1;
-      optionIsDefault = true;
-    }
-
-    count(sts.test("OPTION (via comments) should be readable", !optionIsDefault, m.comments));
+    count(sts.test("OPTION (via comments) should be readable", option >= 1, m.comments));
 
     // #MM update summary
     summary.option = option;
-    summary.optionIsDefault = optionIsDefault;
     summary.checkInMessage = m;
+    ++summary.checkInCount;
+    ++summary.totalValidCount;
   }
 
   /**
@@ -200,8 +216,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     var isValidDate = false;
     String explanation = "";
     var formDateTimeString = m.formDateTime;
-
-    ++summary.fsrMessageCount;
 
     long daysBetween = -1;
     if (formDateTimeString == null) {
@@ -329,6 +343,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
    */
   private void handle_fsr(Summary summary, int iDay) {
     var m = summary.fsrMessages[iDay];
+    ++summary.totalFsrCount;
     var explanationPrefix = m.getMessageType().toString() + " (" + m.messageId + "): ";
     sts.setExplanationPrefix(explanationPrefix);
 
@@ -340,6 +355,8 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       return;
     }
     summary.fsrIsValid[iDay] = true;
+    ++summary.validFsrMessageCount;
+    ++summary.totalValidCount;
 
     count(sts.test("Agency Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Precedence should be #EV", "R/ Routine", m.precedence));
@@ -347,13 +364,8 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     count(sts.test("EMERGENT/LIFE SAFETY Need should be #EV", "NO", m.isHelpNeeded));
     count(sts.testIfPresent("City should be present", m.city));
 
-    var checkInOptionsString = summary.optionIsDefault ? summary.option + " (default)" : "" + summary.option;
-    var additionalComments = m.additionalComments;
-    var fsrOption = parseOptionFromCommentString(additionalComments);
-    var fsrOptionString = fsrOption == -1 ? "1 (default)" : String.valueOf(fsrOption);
-    count(sts
-        .test("FSR Comments/Option should match Check In Comments/Option",
-            checkInOptionsString.equalsIgnoreCase(fsrOptionString), fsrOptionString));
+    var fsrOption = parseOptionFromCommentString(m.additionalComments);
+    count(sts.test("FSR Comments/Option should match Check In Comments/Option", fsrOption == summary.option));
 
     var availableResourcesList = getResourcesForDayAndOption(iDay, summary.option);
     var availableResourceSet = new HashSet<FieldSituationMessage.ResourceType>(availableResourcesList);
@@ -430,11 +442,13 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
             return option;
           }
         } catch (Exception e) {
-          ;
+          return -2;
         }
       } // fields.length >= 2 && OPTION
+      return -2;
+    } else {
+      return -1;
     }
-    return -1;
   }
 
   @Override
