@@ -93,7 +93,7 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
     }
   };
 
-  public final String isExercise;
+  private final String isExercise;
   public final String formDate;
   public final String formTime;
   public final String status;
@@ -106,7 +106,7 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
   public final String inspectorName;
   public final String remarks;
 
-  public final LinkedHashMap<DamageType, String> damageMap;
+  private final LinkedHashMap<DamageType, String> damageMap;
 
   public final String commLogSendingStation;
   public final String commLogReceivingStation;
@@ -194,6 +194,22 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
 
     var values = Stream.of(prefix, damageValues, suffix).flatMap(Stream::of).toArray(String[]::new);
     return values;
+  }
+
+  public String getDamageAsString(DamageType key) {
+    return damageMap.get(key);
+  }
+
+  public boolean getDamageAsBoolean(DamageType key) {
+    var value = damageMap.get(key);
+    if (value != null && value.equals("checkbox")) {
+      return true;
+    }
+    return false;
+  }
+
+  public boolean isExercise() {
+    return isExercise != null && isExercise.equalsIgnoreCase("** THIS IS AN EXERCISE **");
   }
 
   @Override
