@@ -33,7 +33,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.WA_WSDOT_BridgeRoadwayDamageMessage;
-import com.surftools.wimp.message.WA_WSDOT_BridgeRoadwayDamageMessage.DamageType;
+import com.surftools.wimp.message.WA_WSDOT_BridgeRoadwayDamageMessage.DataType;
 
 public class WA_WSDOT_BridgeRoadwayDamageParser extends AbstractBaseParser {
 
@@ -41,43 +41,20 @@ public class WA_WSDOT_BridgeRoadwayDamageParser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
 
     try {
-      String xmlString = new String(
-          message.attachments.get(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE.attachmentName()));
-      makeDocument(message.messageId, xmlString);
+      makeDocument(message.messageId,
+          new String(message.attachments.get(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE.attachmentName())));
 
-      var isExercise = getStringFromXml("isexercise");
-      var formDate = getStringFromXml("inspectdate");
-      var formTime = getStringFromXml("inspecttime");
-      var status = getStringFromXml("status");
-      var region = getStringFromXml("region");
-      var county = getStringFromXml("county");
-      var route = getStringFromXml("route");
-      var milepost = getStringFromXml("milepost");
-      var bridgeNumber = getStringFromXml("bridgenumber");
-      var location = getStringFromXml("location");
-      var inspectorName = getStringFromXml("inspector");
-      var remarks = getStringFromXml("remarks");
-
-      var damageMap = new LinkedHashMap<DamageType, String>();
-      for (var dt : DamageType.values()) {
-        var value = getStringFromXml(dt.getFieldName());
-        damageMap.put(dt, value);
+      var dataMap = new LinkedHashMap<DataType, String>();
+      for (var dt : DataType.values()) {
+        dataMap.put(dt, getStringFromXml(dt.getFieldName()));
       }
 
-      var commLogSendingStation = getStringFromXml("sendingstation");
-      var commLogReceivingStation = getStringFromXml("receivingstation");
-      var commLogFrequencyMHz = getStringFromXml("freq");
-      var commLogReceivedLocal = getStringFromXml("timesend");
+      if (dataMap.get(DataType.VERSION) != null) {
+        var fields = dataMap.get(DataType.VERSION).split(" ");
+        dataMap.put(DataType.VERSION, fields != null && fields.length >= 4 ? fields[4] : "unknown");
+      }
 
-      var templateversion = getStringFromXml("templateversion");
-      var version = templateversion == null ? "unknown" : templateversion.split(" ")[4];
-
-      var m = new WA_WSDOT_BridgeRoadwayDamageMessage(message, //
-          isExercise, formDate, formTime, status, //
-          region, county, route, milepost, bridgeNumber, //
-          location, inspectorName, //
-          remarks, damageMap, //
-          commLogSendingStation, commLogReceivingStation, commLogFrequencyMHz, commLogReceivedLocal, version);
+      var m = new WA_WSDOT_BridgeRoadwayDamageMessage(message, dataMap);
 
       return m;
     } catch (Exception e) {

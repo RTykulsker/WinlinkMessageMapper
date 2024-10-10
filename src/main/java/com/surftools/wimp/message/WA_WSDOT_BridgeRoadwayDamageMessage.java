@@ -35,7 +35,20 @@ import java.util.stream.Stream;
 import com.surftools.wimp.core.MessageType;
 
 public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
-  public static enum DamageType {
+  public static enum DataType {
+    IS_EXERCISE("Is Exercise", "isexercise"), //
+    FORM_DATE("Form Date", "inspectdate"), //
+    FORM_TIME("Form Time", "inspecttime"), //
+    STATUS("Status of Bridge or Roadway", "status"), //
+    REGION("Region", "region"), //
+    COUNTY("County", "county"), //
+    ROUTE("Route", "route"), //
+    MILEPOST("Milepost", "milepost"), //
+    BRIDGE_NUMBER("Bridge Number (if applicable", "direction"), //
+    LOCATION("Location", "location"), //
+    INSPECTOR("Inspector's Name", "inspector"), //
+    REMARKS("Remarks", "remarks"), //
+
     APPROACHES("Bridge Approaches", "btna14"), //
     WING_WALLS("Wing Walls", "btna15"), //
     ABUTMENTS("Bridge Abutments", "btna16"), //
@@ -64,23 +77,27 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
     ROADWAY_DEBRIS("Debris on Roadway", "btna37"), //
     SLOPES("Sloughing slopes", "btna38"), //
     UNSTABLE("Unstable road blocks above roadway", "btna39"), //
-    SINKHOLE("Sinkhole", "btna40");
+    SINKHOLE("Sinkhole", "btna40"), //
+
+    SENDING_STATION("Sending Station", "sendingstation"), //
+    RECEIVING_STATION("Receiving Station", "receiving station"), //
+    RADIO_FREQUENCY("Radio frequency", "freq"), //
+    SEND_RECEIVE_TIME("Sent/Received", "timesend"), //
+
+    VERSION("Version", "templateversion") //
+    ;
 
     private final String label;
     private final String fieldName;
 
-    private DamageType(String label) {
+    private DataType(String label) {
       this.label = label;
       this.fieldName = null;
     }
 
-    private DamageType(String label, String fieldName) {
+    private DataType(String label, String fieldName) {
       this.label = label;
       this.fieldName = fieldName;
-    }
-
-    public String getLabel() {
-      return label;
     }
 
     public String getFieldName() {
@@ -93,84 +110,25 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
     }
   };
 
-  private final String isExercise;
-  public final String formDate;
-  public final String formTime;
-  public final String status;
-  public final String region;
-  public final String county;
-  public final String route;
-  public final String milepost;
-  public final String bridgeNumber;
-  public final String location;
-  public final String inspectorName;
-  public final String remarks;
-
-  private final LinkedHashMap<DamageType, String> damageMap;
-
-  public final String commLogSendingStation;
-  public final String commLogReceivingStation;
-  public final String commLogFrequencyMHz;
-  public final String commLogReceivedLocal;
-
-  public final String version;
+  private final LinkedHashMap<DataType, String> dataMap;
 
   public WA_WSDOT_BridgeRoadwayDamageMessage(ExportedMessage exportedMessage, //
-      String isExercise, String formDate, String formTime, String status, //
-      String region, String county, String route, String milepost, String bridgeNumber, //
-      String location, String inspectorName, //
-      String remarks,
-
-      LinkedHashMap<DamageType, String> damageMap, //
-
-      String commLogSendingStation, String commLogReceivingStation, String commLogFrequencyMHz,
-      String commLogReceivedLocal,
-
-      String version) {
+      LinkedHashMap<DataType, String> dataMap) {
     super(exportedMessage);
-
-    this.isExercise = isExercise;
-    this.formDate = formDate;
-    this.formTime = formTime;
-    this.status = status;
-    this.region = region;
-    this.county = county;
-    this.route = route;
-    this.milepost = milepost;
-    this.bridgeNumber = bridgeNumber;
-    this.location = location;
-    this.inspectorName = inspectorName;
-    this.remarks = remarks;
-
-    this.damageMap = damageMap;
-
-    this.commLogSendingStation = commLogSendingStation;
-    this.commLogReceivingStation = commLogReceivingStation;
-    this.commLogFrequencyMHz = commLogFrequencyMHz;
-    this.commLogReceivedLocal = commLogReceivedLocal;
-
-    this.version = version;
+    this.dataMap = dataMap;
   }
 
   @Override
   public String[] getHeaders() {
-    var prefix = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Is Exercise", "FormDate", "FormTime", "Status", //
-        "Region", "County", "Route", "Milepost", "Bridge Number", //
-        "Location", "Inspector's Name", //
-        "Remarks" }; //
+    var prefix = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude" };
 
-    var damageHeaders = Arrays
-        .stream(DamageType.values())
-          .map(dt -> dt.getLabel())
+    var dataHeaders = Arrays
+        .stream(DataType.values())
+          .map(dt -> dt.toString())
           .collect(Collectors.toList())
           .toArray(new String[0]);
 
-    var suffix = new String[] { "Sending Station", "Receiving Station", "Radio Frequency", "Sent/Received", //
-        "Version" };
-
-    var headers = Stream.of(prefix, damageHeaders, suffix).flatMap(Stream::of).toArray(String[]::new);
-    return headers;
+    return Stream.of(prefix, dataHeaders).flatMap(Stream::of).toArray(String[]::new);
   }
 
   @Override
@@ -180,28 +138,19 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
 
-    var prefix = new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        isExercise, formDate, formTime, status, //
-        region, county, route, milepost, bridgeNumber, //
-        location, inspectorName, //
-        remarks };
+    var prefix = new String[] { messageId, from, to, subject, date, time, latitude, longitude };
 
-    var damageValues = damageMap.values().toArray(new String[0]);
+    var dataValues = dataMap.values().toArray(new String[0]);
 
-    var suffix = new String[] { commLogSendingStation, commLogReceivingStation, commLogFrequencyMHz,
-        commLogReceivedLocal, //
-        version };
-
-    var values = Stream.of(prefix, damageValues, suffix).flatMap(Stream::of).toArray(String[]::new);
-    return values;
+    return Stream.of(prefix, dataValues).flatMap(Stream::of).toArray(String[]::new);
   }
 
-  public String getDamageAsString(DamageType key) {
-    return damageMap.get(key);
+  public String getDataAsString(DataType key) {
+    return dataMap.get(key);
   }
 
-  public boolean getDamageAsBoolean(DamageType key) {
-    var value = damageMap.get(key);
+  public boolean getDataAsBoolean(DataType key) {
+    var value = dataMap.get(key);
     if (value != null && value.equals("checkbox")) {
       return true;
     }
@@ -209,7 +158,8 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
   }
 
   public boolean isExercise() {
-    return isExercise != null && isExercise.equalsIgnoreCase("** THIS IS AN EXERCISE **");
+    return dataMap.get(DataType.IS_EXERCISE) != null
+        && dataMap.get(DataType.IS_EXERCISE).equalsIgnoreCase("** THIS IS AN EXERCISE **");
   }
 
   @Override
@@ -219,6 +169,6 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
 
   @Override
   public String getMultiMessageComment() {
-    return remarks;
+    return dataMap.get(DataType.REMARKS);
   }
 }
