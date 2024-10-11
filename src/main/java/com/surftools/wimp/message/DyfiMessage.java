@@ -49,7 +49,7 @@ public class DyfiMessage extends ExportedMessage {
 
   // how we discriminate between DetailLevel; set in processors
 
-  public static DetailLevel detailLevel;
+  public static DetailLevel detailLevel = DetailLevel.LOW;
 
   // common fields
   public final String exerciseId;
