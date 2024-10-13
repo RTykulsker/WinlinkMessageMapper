@@ -39,7 +39,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.DyfiMessage.DetailLevel;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
+import com.surftools.wimp.processors.std.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -48,7 +48,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class ETO_2024_10_17 extends FeedbackProcessor {
+public class ETO_2024_10_17 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2024_10_17.class);
 
   public static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";

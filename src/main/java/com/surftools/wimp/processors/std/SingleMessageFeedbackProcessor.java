@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2024, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,11 +61,13 @@ import com.surftools.wimp.service.simpleTestService.TestResult;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * more common processing, exercise processors must implement specificProcessing(...)
+ * the FeedbackProcessor was once simple and clean. Then I added multi-message support to it and it became messy. I then
+ * created the MultiMessageFeedbackProcessor and this, SingleMessageFeedbackProcessor is an attempt to restore
+ * simplicity
  *
  * support multiple message types
  */
-public abstract class FeedbackProcessor extends AbstractBaseProcessor {
+public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcessor {
   protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
   protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING.replaceAll("-", "/"));
@@ -80,45 +82,24 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected boolean doStsFieldValidation = true;
 
   protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
-  public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
+  protected Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
 
-  /**
-   * this is the context that we need for each message type, but we won't share it with subtypes
-   */
-  private class TypeEntry {
-    public SimpleTestService sts = new SimpleTestService();
+  protected int ppCount = 0;
+  protected int ppMessageCorrectCount = 0;
+  protected Counter ppFeedBackCounter = new Counter();
 
-    public int ppCount = 0;
-    public int ppMessageCorrectCount = 0;
-    public Counter ppFeedBackCounter = new Counter();
+  protected Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
 
-    public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
+  protected LatLongPair feedbackLocation = null;
+  protected Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
+  protected List<String> badLocationMessageIds = new ArrayList<String>();
 
-    public LatLongPair feedbackLocation = null;
-    public Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
-    public List<String> badLocationMessageIds = new ArrayList<String>();
+  public LocalDateTime windowOpenDt;
+  public LocalDateTime windowCloseDt;
 
-    public LocalDateTime windowOpenDt;
-    public LocalDateTime windowCloseDt;
-
-    public String extraOutboundMessageText = "";
-
-    public MessageType messageType;
-
-    @Override
-    public String toString() {
-      return messageType.name();
-    }
-
-    public TypeEntry(MessageType messageType) {
-      this.messageType = messageType;
-    }
-  }
-
-  private Map<MessageType, TypeEntry> typeEntryMap = new LinkedHashMap<>();
-  private TypeEntry te;
+  protected String extraOutboundMessageText = "";
+  protected MessageType messageType;
   protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
-
   protected SimpleTestService sts = new SimpleTestService();
   protected ExportedMessage message;
   protected String sender;
@@ -133,8 +114,12 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     var acceptableMessageTypesString = cm.getAsString(Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES);
     if (acceptableMessageTypesString != null) {
       var typeNames = acceptableMessageTypesString.split(",");
+      if (typeNames.length != 1) {
+        throw new RuntimeException("Configuration Key " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.name()
+            + " must specify exactly one messageType, not " + acceptableMessageTypesString);
+      }
       for (var typeName : typeNames) {
-        var messageType = MessageType.fromString(typeName);
+        messageType = MessageType.fromString(typeName);
         if (messageType != null) {
           acceptableMessageTypesSet.add(messageType);
           logger.info("will accept " + messageType.toString() + " messageTypes");
@@ -144,8 +129,9 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         }
       }
     } else {
-      logger.info("will accept *ALL* message types");
+      throw new RuntimeException("Configuration Key " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.name() + " not set");
     }
+    logger.info("will accept " + messageType.toString() + " messages");
 
     var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
     if (windowOpenString != null) {
@@ -164,14 +150,6 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         secondaryDestinations.add(field.toUpperCase());
       }
     }
-
-  }
-
-  protected void setWindowsForType(MessageType type, LocalDateTime typedOpenDt, LocalDateTime typedCloseDt) {
-    var te = typeEntryMap.getOrDefault(type, new TypeEntry(type));
-    te.windowOpenDt = typedOpenDt;
-    te.windowCloseDt = typedCloseDt;
-    typeEntryMap.put(type, te);
   }
 
   @Override
@@ -179,7 +157,6 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     var senderIterator = mm.getSenderIterator();
     while (senderIterator.hasNext()) { // loop over senders
       sender = senderIterator.next();
-      // how to iterate over messages?
       if (acceptableMessageTypesSet.size() > 0) {
         // process all messages for a type, in chronological order, in type order
         var map = mm.getMessagesForSender(sender);
@@ -194,13 +171,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
             endCommonProcessing(message);
           } // end processing for a message
         } // end processing for a messageType
-      } else {
-        for (var message : mm.getAllMessagesForSender(sender)) {
-          beginCommonProcessing(message);
-          specificProcessing(message);
-          endCommonProcessing(message);
-        } // end processing for a message
-      } // end if no specific acceptableMessageTypes
+      }
       endProcessingForSender(sender);
     } // end loop over senders
   }
@@ -226,17 +197,11 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       logger.info("dump: " + sender);
     }
 
-    te = typeEntryMap.getOrDefault(message.getMessageType(), new TypeEntry(message.getMessageType()));
-
-    sts = te.sts;
     sts.reset(sender);
 
     beforeCommonProcessing(sender, message);
 
-    ++te.ppCount;
-
-    windowOpenDT = te.windowOpenDt == null ? windowOpenDT : te.windowOpenDt;
-    windowCloseDT = te.windowCloseDt == null ? windowCloseDT : te.windowCloseDt;
+    ++ppCount;
 
     if (secondaryDestinations.size() > 0) {
       if (messageTypesRequiringSecondaryAddress.size() == 0
@@ -251,15 +216,15 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
     sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
-    te.feedbackLocation = message.msgLocation;
-    if (te.feedbackLocation == null || te.feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
-      te.feedbackLocation = LatLongPair.ZERO_ZERO;
-      te.badLocationMessageIds.add(message.messageId);
+    feedbackLocation = message.msgLocation;
+    if (feedbackLocation == null || feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
+      feedbackLocation = LatLongPair.ZERO_ZERO;
+      badLocationMessageIds.add(message.messageId);
       sts.test("LAT/LON should be provided", false, "missing");
-    } else if (!te.feedbackLocation.isValid()) {
-      sts.test("LAT/LON should be provided", false, "invalid " + te.feedbackLocation.toString());
-      te.feedbackLocation = LatLongPair.ZERO_ZERO;
-      te.badLocationMessageIds.add(message.messageId);
+    } else if (!feedbackLocation.isValid()) {
+      sts.test("LAT/LON should be provided", false, "invalid " + feedbackLocation.toString());
+      feedbackLocation = LatLongPair.ZERO_ZERO;
+      badLocationMessageIds.add(message.messageId);
     } else {
       sts.test("LAT/LON should be provided", true, null);
     }
@@ -271,24 +236,22 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected void endCommonProcessing(ExportedMessage message) {
     var explanations = sts.getExplanations();
     var feedback = "";
-    te.ppFeedBackCounter.increment(explanations.size());
+    ppFeedBackCounter.increment(explanations.size());
     if (explanations.size() == 0) {
-      ++te.ppMessageCorrectCount;
+      ++ppMessageCorrectCount;
       feedback = "Perfect Message!";
     } else {
       feedback = String.join("\n", explanations);
     }
 
-    var feedbackResult = new FeedbackResult(sender, te.feedbackLocation.getLatitude(),
-        te.feedbackLocation.getLongitude(), explanations.size(), feedback);
-    te.mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
+    var feedbackResult = new FeedbackResult(sender, feedbackLocation.getLatitude(), feedbackLocation.getLongitude(),
+        explanations.size(), feedback);
+    mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
 
-    var outboundMessageFeedback = feedback + te.extraOutboundMessageText;
+    var outboundMessageFeedback = feedback + extraOutboundMessageText;
     var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
         outboundMessageSubject + " " + message.messageId, outboundMessageFeedback, null);
     outboundMessageList.add(outboundMessage);
-
-    typeEntryMap.put(message.getMessageType(), te);
   }
 
   /**
@@ -298,10 +261,10 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
    * @return
    */
   protected Counter getCounter(String label) {
-    var counter = te.counterMap.get(label);
+    var counter = counterMap.get(label);
     if (counter == null) {
       counter = new Counter(label);
-      te.counterMap.put(label, counter);
+      counterMap.put(label, counter);
     }
 
     return counter;
@@ -327,78 +290,68 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
 
   @Override
   public void postProcess() {
-    for (var messageType : typeEntryMap.keySet()) {
-      te = typeEntryMap.get(messageType);
-      sts = te.sts;
 
-      beforePostProcessing(messageType);
+    beforePostProcessing(messageType);
 
-      if (doStsFieldValidation) {
-        logger.info("field validation:\n" + sts.validate());
+    if (doStsFieldValidation) {
+      logger.info("field validation:\n" + sts.validate());
+    }
+
+    var sb = new StringBuilder();
+    var N = ppCount;
+
+    sb
+        .append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results for " + messageType.toString()
+            + ":\n");
+    sb.append("Participants: " + N + "\n");
+    sb.append(formatPP("Correct Messages", ppMessageCorrectCount, false, N));
+
+    var it = sts.iterator();
+    while (it.hasNext()) {
+      var key = it.next();
+      if (sts.hasContent(key)) {
+        sb.append(sts.format(key));
       }
+    }
 
-      var sb = new StringBuilder();
-      var N = te.ppCount;
+    sb.append("\n-------------------Histograms---------------------\n");
+    for (var counterLabel : counterMap.keySet()) {
+      sb.append(formatCounter(counterLabel, counterMap.get(counterLabel)));
+    }
 
-      sb
-          .append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results for " + messageType.toString()
-              + ":\n");
-      sb.append("Participants: " + N + "\n");
-      sb.append(formatPP("Correct Messages", te.ppMessageCorrectCount, false, N));
+    logger.info(sb.toString());
 
-      var it = sts.iterator();
-      while (it.hasNext()) {
-        var key = it.next();
-        if (sts.hasContent(key)) {
-          sb.append(sts.format(key));
-        }
+    if (badLocationMessageIds.size() > 0) {
+      logger
+          .info("adjusting lat/long for " + badLocationMessageIds.size() + " messages: "
+              + String.join(",", badLocationMessageIds));
+      var newLocations = LocationUtils.jitter(badLocationMessageIds.size(), LatLongPair.ZERO_ZERO, 10_000);
+      for (int i = 0; i < badLocationMessageIds.size(); ++i) {
+        var messageId = badLocationMessageIds.get(i);
+        var feedbackMessage = (FeedbackMessage) mIdFeedbackMap.get(messageId);
+        var newLocation = newLocations.get(i);
+        var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
+        mIdFeedbackMap.put(messageId, newFeedbackMessage);
       }
+    }
 
-      sb.append("\n-------------------Histograms---------------------\n");
-      for (var counterLabel : te.counterMap.keySet()) {
-        sb.append(formatCounter(counterLabel, te.counterMap.get(counterLabel)));
-      }
+    var results = new ArrayList<>(mIdFeedbackMap.values());
+    WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
 
-      logger.info(sb.toString());
+    if (doOutboundMessaging) {
+      var service = new OutboundMessageService(cm);
+      outboundMessageList = service.sendAll(outboundMessageList);
+      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
+    }
 
-      if (te.badLocationMessageIds.size() > 0) {
-        logger
-            .info("adjusting lat/long for " + te.badLocationMessageIds.size() + " messages: "
-                + String.join(",", te.badLocationMessageIds));
-        var newLocations = LocationUtils.jitter(te.badLocationMessageIds.size(), LatLongPair.ZERO_ZERO, 10_000);
-        for (int i = 0; i < te.badLocationMessageIds.size(); ++i) {
-          var messageId = te.badLocationMessageIds.get(i);
-          var feedbackMessage = (FeedbackMessage) te.mIdFeedbackMap.get(messageId);
-          var newLocation = newLocations.get(i);
-          var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
-          te.mIdFeedbackMap.put(messageId, newFeedbackMessage);
-        }
-      }
+    for (var key : counterMap.keySet()) {
+      var summaryKey = messageType.name() + "_" + key;
+      var value = counterMap.get(key);
+      summaryCounterMap.put(summaryKey, value);
+    }
 
-      var results = new ArrayList<>(te.mIdFeedbackMap.values());
-      WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
-
-      if (doOutboundMessaging) {
-        var service = new OutboundMessageService(cm);
-        outboundMessageList = service.sendAll(outboundMessageList);
-        writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
-      }
-
-      for (var key : te.counterMap.keySet()) {
-        var summaryKey = messageType.name() + "_" + key;
-        var value = te.counterMap.get(key);
-        summaryCounterMap.put(summaryKey, value);
-      }
-
-      var chartService = AbstractBaseChartService.getChartService(cm, te.counterMap, messageType);
-      chartService.makeCharts();
-    } // end loop over message types
-
-    // all messageTypes in one chart page
-    var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
+    var chartService = AbstractBaseChartService.getChartService(cm, counterMap, messageType);
     chartService.makeCharts();
-
-    endPostProcessingForAllMessageTypes();
   }
 
   protected void beforePostProcessing(MessageType messageType) {
@@ -406,10 +359,6 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   }
 
   protected void endPostProcessingForAllMessageTypes() {
-  }
-
-  public void setExtraOutboundMessageText(String extraOutboundMessageText) {
-    te.extraOutboundMessageText = extraOutboundMessageText;
   }
 
   protected boolean isNull(String s) {

@@ -313,4 +313,45 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return maxMessageType;
   }
 
+  public static final String OB_DISCLAIMER = """
+
+
+      =====================================================================================================
+
+      DISCLAIMER: This feedback is provided for your consideration. We use the results to improve future
+      exercises. Differences in spelling, numbers or omitting whitespace  will trigger this automated message.
+      Differences in capitalization, punctuation and extra whitespace are generally ignored. You may
+      think that some of our feedback is "nit picking" and that your responses would be understood by any
+      reasonable person -- and you'd be correct! You're welcome to disagree with any or all of our feedback.
+      You're also welcome to reply via Winlink to this message or send an email to
+      ETO.Technical.Team@emcomm-training.groups.io. In any event, thank you for participating
+      in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
+      """;
+
+  public static final String OB_NAG = """
+
+       =====================================================================================================
+
+       ETO needs sponsors to be able to renew our groups.io subscription for 2024.
+       By sponsoring this group, you are helping pay the Groups.io hosting fees.
+       Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
+       Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
+       The minimum sponsorship is $5.00.
+       Thank you for your support!
+      """;
+
+  public static final String OB_REQUEST_FEEDBACK = """
+
+      =====================================================================================================
+
+      ETO would love to hear from you! Would you please take a few minutes to answer the following questions:
+      1. Were the exercise instructions clear? If not, where did they need improvement?
+      2. Did you find the exercise useful?
+      3. Did you find the above feedback useful?
+      4. What did you dislike about the exercise?
+      5. Any additional comments?
+
+      Please reply to this Winlink message or to ETO.Technical.Team@EmComm-Training.groups.io. Thank you!
+      """;
+
 }
