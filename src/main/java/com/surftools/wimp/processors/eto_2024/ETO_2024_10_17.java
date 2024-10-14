@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.DyfiMessage.DetailLevel;
 import com.surftools.wimp.message.ExportedMessage;
@@ -82,6 +83,7 @@ public class ETO_2024_10_17 extends SingleMessageFeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
+    messageType = MessageType.DYFI;
     DyfiMessage.setDetailLevel(DetailLevel.LOW);
   }
 

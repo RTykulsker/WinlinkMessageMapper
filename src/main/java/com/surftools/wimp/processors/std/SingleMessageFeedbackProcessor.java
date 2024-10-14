@@ -99,7 +99,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
 
   protected String extraOutboundMessageText = "";
   protected MessageType messageType;
-  protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
   protected SimpleTestService sts = new SimpleTestService();
   protected ExportedMessage message;
   protected String sender;
@@ -110,28 +109,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
     logger = _logger;
-
-    var acceptableMessageTypesString = cm.getAsString(Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES);
-    if (acceptableMessageTypesString != null) {
-      var typeNames = acceptableMessageTypesString.split(",");
-      if (typeNames.length != 1) {
-        throw new RuntimeException("Configuration Key " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.name()
-            + " must specify exactly one messageType, not " + acceptableMessageTypesString);
-      }
-      for (var typeName : typeNames) {
-        messageType = MessageType.fromString(typeName);
-        if (messageType != null) {
-          acceptableMessageTypesSet.add(messageType);
-          logger.info("will accept " + messageType.toString() + " messageTypes");
-        } else {
-          throw new RuntimeException("No MessageType for: " + messageType + ", in "
-              + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
-        }
-      }
-    } else {
-      throw new RuntimeException("Configuration Key " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.name() + " not set");
-    }
-    logger.info("will accept " + messageType.toString() + " messages");
 
     var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
     if (windowOpenString != null) {
@@ -157,21 +134,18 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
     var senderIterator = mm.getSenderIterator();
     while (senderIterator.hasNext()) { // loop over senders
       sender = senderIterator.next();
-      if (acceptableMessageTypesSet.size() > 0) {
-        // process all messages for a type, in chronological order, in type order
-        var map = mm.getMessagesForSender(sender);
-        for (var messageType : acceptableMessageTypesSet) {
-          var typedMessages = map.get(messageType);
-          if (typedMessages == null || typedMessages.size() == 0) {
-            continue;
-          }
-          for (var message : typedMessages) {
-            beginCommonProcessing(message);
-            specificProcessing(message);
-            endCommonProcessing(message);
-          } // end processing for a message
-        } // end processing for a messageType
+
+      // process all messages for a type, in ascending chronological order
+      var messages = mm.getMessagesForSender(sender).get(messageType);
+      if (messages == null || messages.size() == 0) {
+        continue;
       }
+      for (var message : messages) {
+        beginCommonProcessing(message);
+        specificProcessing(message);
+        endCommonProcessing(message);
+      } // end processing for a message
+
       endProcessingForSender(sender);
     } // end loop over senders
   }
