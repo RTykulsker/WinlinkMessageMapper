@@ -94,10 +94,11 @@ public class ETO_2024_10_17 extends SingleMessageFeedbackProcessor {
     var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS.toUpperCase());
     count(sts.test("To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
     count(sts.test("Event Type must be: EXERCISE", !m.isRealEvent));
-    count(sts.test("Exercise Id must be: #EV", "ETO Winlink Thursday SHAKEOUT 2024", m.exerciseId));
+    count(sts.test("Exercise Id must be: #EV", "ETO Winlink Thursday DYFI 2024", m.exerciseId));
     count(sts.test("Did You feel it must be: Yes", m.isFelt));
     var response = m.response == null ? "Not specified" : m.response;
     count(sts.test("How did you respond must be: Dropped and covered", "duck", response));
+    getCounter("Response").increment(response);
 
     // date and time should be 10/17 and 10:17
     count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
@@ -105,12 +106,15 @@ public class ETO_2024_10_17 extends SingleMessageFeedbackProcessor {
 
     getCounter("Intensity").increment(m.intensity);
     getCounter("Version").increment(m.formVersion);
+    getCounter("Feedback Count").increment(sts.getExplanations().size());
 
     if (m.comments != null) {
       var words = m.comments.split(" ");
-      if (words[0].contains("@")) { // no attempt at validation, let someone else deal with email bounces
+      if (words[0].split("@").length == 2) { // no attempt at validation, let someone else deal with email bounces
         var emailEntry = new Email(m.from, words[0]);
         emailAddresses.add(emailEntry);
+        var provider = words[0].split("@")[1].toUpperCase();
+        getCounter("Email Provider").increment(provider);
       } // endif words[0] contains @
     } // endif comments != null
 
