@@ -99,6 +99,12 @@ public class MessageManager implements IMessageManager {
     isSenderMapDirty = true;
   }
 
+  @Override
+  public void removeMessagesForSender(String sender) {
+    senderMap.remove(sender);
+    isSenderMapDirty = true;
+  }
+
   /**
    * if senderMap is dirty, then we must rebuild the messageMap before using it
    */

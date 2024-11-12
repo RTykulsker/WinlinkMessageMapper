@@ -64,7 +64,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected IMessageManager mm;
 
   protected Set<String> dumpIds;
-  protected Set<String> filterIds;
   protected String pathName;
   protected String outputPathName;
   protected Path outputPath;
@@ -108,11 +107,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     dumpIds = (Set<String>) mm.getContextObject("dumpIds");
     if (dumpIds == null) {
       dumpIds = new HashSet<>();
-    }
-
-    filterIds = (Set<String>) mm.getContextObject("filterIds");
-    if (filterIds == null) {
-      filterIds = new HashSet<>();
     }
 
     outboundMessageSender = cm.getAsString(Key.OUTBOUND_MESSAGE_SENDER);
@@ -328,17 +322,22 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
       """;
 
-  public static final String OB_NAG = """
+  public String getNagString(int year) {
+    final String src = """
 
-       =====================================================================================================
+         =====================================================================================================
 
-       ETO needs sponsors to be able to renew our groups.io subscription for 2024.
-       By sponsoring this group, you are helping pay the Groups.io hosting fees.
-       Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
-       Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
-       The minimum sponsorship is $5.00.
-       Thank you for your support!
-      """;
+         ETO needs sponsors to be able to renew our groups.io subscription for $YEAR.
+         By sponsoring this group, you are helping pay the Groups.io hosting fees.
+         Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
+         Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
+         The minimum sponsorship is $5.00.
+         Thank you for your support!
+        """;
+
+    var result = src.replaceAll("$YEAR", String.valueOf(year));
+    return result;
+  }
 
   public static final String OB_REQUEST_FEEDBACK = """
 

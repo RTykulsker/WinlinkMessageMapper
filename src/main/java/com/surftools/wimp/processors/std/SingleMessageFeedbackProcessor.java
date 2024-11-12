@@ -191,6 +191,12 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
     sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
     feedbackLocation = message.msgLocation;
+
+    var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
+    getCounter("Message sent days after window opens").increment(daysAfterOpen);
+  }
+
+  protected void endCommonProcessing(ExportedMessage message) {
     if (feedbackLocation == null || feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
       feedbackLocation = LatLongPair.ZERO_ZERO;
       badLocationMessageIds.add(message.messageId);
@@ -203,11 +209,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
       sts.test("LAT/LON should be provided", true, null);
     }
 
-    var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
-    getCounter("Message sent days after window opens").increment(daysAfterOpen);
-  }
-
-  protected void endCommonProcessing(ExportedMessage message) {
     var explanations = sts.getExplanations();
     var feedback = "";
     ppFeedBackCounter.increment(explanations.size());

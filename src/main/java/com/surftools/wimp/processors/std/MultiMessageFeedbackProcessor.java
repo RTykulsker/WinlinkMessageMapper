@@ -30,6 +30,7 @@ package com.surftools.wimp.processors.std;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   protected LocalDateTime windowCloseDT = null;
 
   protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
-  public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
+  // public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
   protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
   public interface ISummary extends IWritableTable {
@@ -200,8 +201,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
           endCommonProcessing(message);
         } // end processing for a message
       } // end processing for a messageType
+      endProcessingForSender(sender); // abstract in parent!
       baseEndProcessingForSender(sender);
-      endProcessingForSender(sender);
     } // end loop over senders
   }
 
@@ -334,6 +335,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
    */
   protected abstract void specificProcessing(ExportedMessage message);
 
+  protected String makeOutboundMessageFeedback(BaseSummary summary) {
+    var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
+        : String.join("\n", summary.explanations) + FeedbackProcessor.OB_DISCLAIMER;
+    return outboundMessageFeedback;
+  }
+
   @Override
   public void postProcess() {
 
@@ -378,9 +385,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
     if (doOutboundMessaging) {
       for (var summary : summaryMap.values()) {
-        var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
-            : String.join("\n", summary.explanations) + FeedbackProcessor.OB_DISCLAIMER;
-        var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
+        // var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
+        // : String.join("\n", summary.explanations) + FeedbackProcessor.OB_DISCLAIMER;
+        var outboundMessageFeedback = makeOutboundMessageFeedback(summary);
+        var outboundMessage = new OutboundMessage(outboundMessageSender, summary.from,
             cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback, null);
         outboundMessageList.add(outboundMessage);
       }
@@ -390,11 +398,30 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     }
 
     // all messageTypes in one chart page
-    var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
+    var chartService = AbstractBaseChartService.getChartService(cm, counterMap, null);
     chartService.makeCharts();
   }
 
-  protected LocalDateTime parse(String s, List<DateTimeFormatter> formatters) {
+  protected LocalDate parseDate(String s, List<DateTimeFormatter> formatters) {
+    if (s == null || formatters == null || formatters.size() == 0) {
+      return null;
+    }
+
+    s = s.trim().replaceAll(" +", " ");
+    LocalDate dt = null;
+    for (var f : formatters) {
+      try {
+        dt = LocalDate.from(f.parse(s.trim()));
+        break;
+      } catch (Exception e) {
+        ;
+      }
+    }
+
+    return dt;
+  }
+
+  protected LocalDateTime parseDateTime(String s, List<DateTimeFormatter> formatters) {
     if (s == null || formatters == null || formatters.size() == 0) {
       return null;
     }
@@ -411,6 +438,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     }
 
     return dt;
+  }
+
+  protected String mId(ExportedMessage m) {
+    return m == null ? "" : m.messageId;
   }
 
 }

@@ -108,6 +108,10 @@ public class ETO_2024_10_17 extends SingleMessageFeedbackProcessor {
     getCounter("Version").increment(m.formVersion);
     getCounter("Feedback Count").increment(sts.getExplanations().size());
 
+    if (feedbackLocation == null) {
+      feedbackLocation = m.formLocation;
+    }
+
     if (m.comments != null) {
       var words = m.comments.split(" ");
       if (words[0].split("@").length == 2) { // no attempt at validation, let someone else deal with email bounces

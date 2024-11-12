@@ -97,6 +97,13 @@ public interface IMessageManager {
   public void putMessagesForSender(String sender, Map<MessageType, List<ExportedMessage>> messages);
 
   /**
+   * remove all messages for sender, typically because of filtering
+   *
+   * @param sender
+   */
+  public void removeMessagesForSender(String sender);
+
+  /**
    * get list of messages for given type, typically for writing to file
    *
    * @param type

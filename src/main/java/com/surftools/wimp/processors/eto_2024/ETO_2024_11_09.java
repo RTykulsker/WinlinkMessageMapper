@@ -47,11 +47,12 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.FieldSituationMessage.ResourceType;
 import com.surftools.wimp.message.Ics309Message;
+import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2024-11-09: Semi-annual drill: Winlink Check In, 5 sequential FSR and a generated ICS-309
+ * Processor for 2024-11-09: Semi-annual drill: Winlink Check In, (up to) 5 sequential FSR and a generated ICS-309
  *
  * @author bobt
  *
@@ -102,10 +103,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
                   "Ex Msgs not in 309", "309 Msgs not in Ex"//
               }));
       return list.toArray(new String[0]);
-    }
-
-    private String mId(ExportedMessage m) {
-      return m == null ? "" : m.messageId;
     }
 
     private String s(int i) {
@@ -168,6 +165,9 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     var summary = (Summary) iSummary;
 
     var type = message.getMessageType();
+    if (type == MessageType.PLAIN) {
+      handle_PlainMessage(summary, (PlainMessage) message);
+    }
     if (type == MessageType.CHECK_IN) {
       handle_CheckInMessage(summary, (CheckInMessage) message);
     } else if (type == MessageType.FIELD_SITUATION) {
@@ -177,6 +177,10 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     }
 
     summaryMap.put(sender, iSummary);
+  }
+
+  private void handle_PlainMessage(Summary summary, PlainMessage m) {
+    count(sts.test("Message could not be identified (missing form attachment?)", false, m.messageId));
   }
 
   private void handle_Ics309Message(Summary summary, Ics309Message m) {
@@ -194,8 +198,9 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
     summary.checkInMessage = m;
 
-    var option = parseOptionFromCommentString(m.comments);
+    var option = parseOptionFromCommentString(m.comments, true);
     count(sts.test("OPTION (via comments) should be readable", option >= 1, m.comments));
+    getCounter("Chosen OPTION").increment(option);
 
     // #MM update summary
     summary.option = option;
@@ -212,18 +217,41 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
    */
   private void accumulate_FieldSituationMessage(Summary summary, FieldSituationMessage m) {
     final var parsers = List
-        .of(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'L'"), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm'L'"));
+        .of(//
+            DateTimeFormatter.ofPattern("yyyy-MM-dd"), //
+            DateTimeFormatter.ofPattern("yyyy-MM-d"), //
+            DateTimeFormatter.ofPattern("yy-MM-dd") // bobt: this should be a failure to parse
+
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'L'"), //
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm'L'"), //
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'Z'"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'PM'"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm 'PM'"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm:ss'L'"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yyyy-MM-ddHH:mm:ss'L'"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // bobt: this should be a failure to parse
+        // DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss'L'") // bobt: this should be a failure to parse
+        );
+
     var isValidDate = false;
+    String[] fields = null;
     String explanation = "";
     var formDateTimeString = m.formDateTime;
+
+    if (formDateTimeString != null) {
+      formDateTimeString = formDateTimeString.toUpperCase().replaceAll(":000L", ":00L"); // DTP allows for only 2 ss
+    }
 
     long daysBetween = -1;
     if (formDateTimeString == null) {
       explanation = "FSR DATE/TIME is null";
     } else {
       try {
-        var formDateTime = parse(formDateTimeString, parsers);
-        var formDate = formDateTime.toLocalDate();
+        fields = formDateTimeString.split(" ");
+        var formDate = parseDate(fields[0], parsers);
+        // var formDateTime = parse(formDateTimeString, parsers);
+        // var formDate = formDateTime.toLocalDate();
 
         daysBetween = ChronoUnit.DAYS.between(FSR_FIRST_DATE, formDate);
         if (daysBetween < 0) {
@@ -242,22 +270,36 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       }
     }
 
-    count(sts.test("Form DATE/TIME value", isValidDate, formDateTimeString, explanation));
+    if (!isValidDate) {
+      getCounter("Invalid FSR date").increment(formDateTimeString);
+    }
+
+    count(sts.test("FSR Form DATE/TIME value", isValidDate, formDateTimeString, explanation));
   }
 
   @Override
   protected void endProcessingForSender(String sender) {
-    var summary = (Summary) summaryMap.get(sender); // #MM
+    sts.setExplanationPrefix("");
 
+    var summary = (Summary) summaryMap.get(sender); // #MM
     if (summary.checkInMessage == null) {
       summary.explanations.add("No CheckIn message received.");
     }
 
     for (var i = 1; i <= N_FSR_DAYS; ++i) {
-      if (summary.fsrMessages[i] == null) {
-        summary.explanations.add("No FSR Day " + i + " message received.");
-      } else {
+      var shouldSendMessageOnDay = canSendMessage(i, summary.option);
+      var m = summary.fsrMessages[i];
+
+      if (shouldSendMessageOnDay && m != null) {
         handle_fsr(summary, i);
+      }
+
+      if (shouldSendMessageOnDay && m == null) {
+        summary.explanations.add("No FSR Day " + i + " message received.");
+      }
+
+      if (!shouldSendMessageOnDay && m != null) {
+        summary.explanations.add("Unexpected FSR Day " + i + " message received.");
       }
     }
 
@@ -344,7 +386,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
   private void handle_fsr(Summary summary, int iDay) {
     var m = summary.fsrMessages[iDay];
     ++summary.totalFsrCount;
-    var explanationPrefix = m.getMessageType().toString() + " (" + m.messageId + "): ";
+    var explanationPrefix = MessageType.FIELD_SITUATION.toString() + " (" + m.messageId + "): ";
     sts.setExplanationPrefix(explanationPrefix);
 
     var canSendMessage = canSendMessage(iDay, summary.option);
@@ -364,7 +406,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     count(sts.test("EMERGENT/LIFE SAFETY Need should be #EV", "NO", m.isHelpNeeded));
     count(sts.testIfPresent("City should be present", m.city));
 
-    var fsrOption = parseOptionFromCommentString(m.additionalComments);
+    var fsrOption = parseOptionFromCommentString(m.additionalComments, false);
     count(sts.test("FSR Comments/Option should match Check In Comments/Option", fsrOption == summary.option));
 
     var availableResourcesList = getResourcesForDayAndOption(iDay, summary.option);
@@ -432,19 +474,26 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
     return resources;
   }
 
-  private int parseOptionFromCommentString(String comments) {
+  private int parseOptionFromCommentString(String comments, boolean isCheckIn) {
     if (comments != null) {
-      var fields = comments.split("\\w");
+      var fields = comments.split(" ");
       if (fields.length >= 2 && fields[0].equalsIgnoreCase("OPTION")) {
         try {
-          var option = Integer.parseInt(fields[1]);
+          var optionString = fields[1].substring(0, 1); // bobt: this breaks the rules
+          var option = Integer.parseInt(optionString);
           if (option >= 1 && option <= 8) {
             return option;
           }
         } catch (Exception e) {
+          if (isCheckIn) {
+            getCounter("Failed to parse OPTION (type 2)").increment(comments);
+          }
           return -2;
         }
-      } // fields.length >= 2 && OPTION
+      } // fields.length >= 2 && !OPTION
+      if (isCheckIn) {
+        getCounter("Failed to parse OPTION (type 1)").increment(comments);
+      }
       return -2;
     } else {
       return -1;

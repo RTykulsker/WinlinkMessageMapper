@@ -71,6 +71,7 @@ import com.surftools.wimp.parser.WA_WSDOT_BridgeDamageParser;
 import com.surftools.wimp.parser.WA_WSDOT_BridgeRoadwayDamageParser;
 import com.surftools.wimp.parser.WA_WSDOT_RoadwayDamageParser;
 import com.surftools.wimp.parser.WA_WebEoc_Ics213RRParser;
+import com.surftools.wimp.parser.WelfareBulletinBoardParser;
 import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
 import com.surftools.wimp.parser.WxLocalParser;
@@ -104,10 +105,6 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       for (var message : messages) {
         if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
           logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-        }
-
-        if (filterIds.size() > 0 && !filterIds.contains(message.messageId) && !filterIds.contains(message.from)) {
-          continue;
         }
 
         var messageType = getMessageType(message);
@@ -201,6 +198,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE;
       } else if (attachmentNames.contains(MessageType.WA_EYEWARN.attachmentName())) {
         return MessageType.WA_EYEWARN;
+      } else if (attachmentNames.contains(MessageType.WELFARE_BULLETIN_BOARD.attachmentName())) {
+        return MessageType.WELFARE_BULLETIN_BOARD;
       }
     }
     /**
@@ -297,6 +296,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.WA_WSDOT_ROADWAY_DAMAGE, new WA_WSDOT_RoadwayDamageParser());
     parserMap.put(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE, new WA_WSDOT_BridgeRoadwayDamageParser());
     parserMap.put(MessageType.WA_EYEWARN, new WA_EyewarnParser());
+
+    parserMap.put(MessageType.WELFARE_BULLETIN_BOARD, new WelfareBulletinBoardParser());
 
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);
