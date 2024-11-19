@@ -299,9 +299,10 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       }
 
       if (!shouldSendMessageOnDay && m != null) {
-        summary.explanations.add("Unexpected FSR Day " + i + " message received.");
+        summary.explanations.add("Unexpected FSR Day " + i + " message (" + m.messageId + ") received.");
       }
     }
+    sts.setExplanationPrefix("");
 
     if (summary.ics309Message == null) {
       summary.explanations.add("No ICS-309 message received.");
@@ -317,8 +318,19 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
       for (int i = 1; i <= N_FSR_DAYS; ++i) {
         var fsr = summary.fsrMessages[i];
         if (fsr != null && summary.fsrIsValid[i]) {
-          var fsrSubject = fsr.subject;
+          var fsrSubject = fsr.subject.replaceAll("  ", " ");
           var isContained = activitiesSubjectSet.contains(fsrSubject);
+
+          // if (false) {
+          // var list = new ArrayList<String>(activitiesSubjectSet);
+          // Collections.sort(list);
+          // logger.info("from: " + summary.from);
+          // logger.info("fsrSubject: " + fsrSubject);
+          // logger.info("day: " + i);
+          // logger.info("activitiesSubjectSet: \n" + String.join("\n", list));
+          // logger.info("isContained: " + isContained);
+          // }
+
           count(sts.test("FSR day " + (i) + " message should be in ICS-309 activities", isContained));
           summary.exerciseMessagesNotInIcs309 += isContained ? 0 : 1;
           summary.Ics309MessagesNotInExercise -= isContained ? 1 : 0;
@@ -386,7 +398,7 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
   private void handle_fsr(Summary summary, int iDay) {
     var m = summary.fsrMessages[iDay];
     ++summary.totalFsrCount;
-    var explanationPrefix = MessageType.FIELD_SITUATION.toString() + " (" + m.messageId + "): ";
+    var explanationPrefix = MessageType.FIELD_SITUATION.toString() + " (" + m.messageId + ") [Day " + iDay + "]: ";
     sts.setExplanationPrefix(explanationPrefix);
 
     var canSendMessage = canSendMessage(iDay, summary.option);

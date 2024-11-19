@@ -229,7 +229,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       badLocationSenders.add(sender);
     }
 
-    iSummary.explanations = sts.getExplanations();
+    iSummary.explanations.addAll(sts.getExplanations());
     var nExplanations = iSummary.explanations.size();
     if (nExplanations == 0) {
       ++ppParticipantCorrectCount;

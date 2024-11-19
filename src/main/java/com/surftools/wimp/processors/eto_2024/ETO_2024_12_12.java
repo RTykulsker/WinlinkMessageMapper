@@ -30,6 +30,7 @@ package com.surftools.wimp.processors.eto_2024;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,14 +139,90 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics213RRMessage(Summary summary, Ics213RRMessage m) {
-    // TODO implement
-    // count(sts.test("ICS-309 task number should be #EV", "241109", m.taskNumber));
+    count(sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization));
+    count(sts.test("Box 1: Incident Name should be #EV", "Exercise Santa Wish List", m.incidentName));
+    count(sts.testIfPresent("Box 2: Date/Time should be present", m.activityDateTime));
+    count(sts.test("Box 3 Resource Request Number should be #EV", " Santa 001", m.requestNumber));
+
+    final List<String> resourceList = List
+        .of(//
+            "Wolf River Silver Bullet 1000", //
+            "LDG Electronics AT-1000ProII Automatic Antenna Tuner", //
+            "Heil Sound PRO 7 Headset", //
+            "Bioenno Power BLF-1220A LiFePO4 Battery", //
+            "RigExpert Antenna Analyzer AA-55ZOOM", //
+            "Kenwood TS-990S HF/6 Meter Base Transceiver", //
+            "DX Engineering Hat DXE-HAT" //
+        );
+
+    var lineItems = m.lineItems;
+    for (var index = 0; index < lineItems.size(); ++index) {
+      var lineNumber = index + 1;
+      var lineItem = lineItems.get(index);
+
+      if (lineNumber >= 1 && lineNumber <= 7) {
+        count(sts.test("Box 4 line " + lineNumber + ": Qty should be #EV", "1", lineItem.quantity()));
+        count(sts.testIfEmpty("Box 4 line " + lineNumber + ": Kind should be empty", lineItem.kind()));
+        count(sts.testIfEmpty("Box 4 line " + lineNumber + ": Type should be empty", lineItem.type()));
+
+        // order matters
+        count(sts
+            .test("Box 4 line " + lineNumber + ": Item Description should be #EV", resourceList.get(index),
+                lineItem.item()));
+
+        count(sts
+            .test("Box 4 line " + lineNumber + ": Requested Date/Time should be #EV", "2024-12-25",
+                lineItem.requestedDateTime()));
+        count(sts
+            .testIfEmpty("Box 4 line " + lineNumber + ": Estimated Date/Time should be empty",
+                lineItem.estimatedDateTime()));
+        count(sts.testIfEmpty("Box 4 line " + lineNumber + ": Cost should be empty", lineItem.cost()));
+      } else {
+        count(sts.testIfEmpty("Box 4 line 8: Qty should be empty", lineItem.quantity()));
+        count(sts.testIfEmpty("Box 4 line 8: Kind should be empty", lineItem.kind()));
+        count(sts.testIfEmpty("Box 4 line 8: Type should be empty", lineItem.type()));
+        count(sts.testIfEmpty("Box 4 line 8: Item Description should be empty", lineItem.item()));
+        count(sts.testIfEmpty("Box 4 line 8: Requested Date/Time should be empty", lineItem.requestedDateTime()));
+        count(sts.testIfEmpty("Box 4 line 8: Estimated Date/Time should be empty", lineItem.estimatedDateTime()));
+        count(sts.testIfEmpty("Box 4 line 8: Cost should be empty", lineItem.cost()));
+      }
+    }
+
+    count(sts.testIfPresent("Box 5, Delivery Location should be present", m.delivery));
+    count(sts.test("Box 6 Substitutes should be #EV", "DX Engineering", m.delivery));
+    sts.testIfPresent("Box 7 Requested By should be present", m.requestedBy);
+    count(sts.test("Box 8 Priority should be #EV", "Routine", m.priority));
+    count(sts.test("Bo 9 Section Chief Name should be #EV", "Bernard Elf", m.approvedBy));
+
+    count(sts.testIfEmpty("Box 10 Logistics Order Number should be empty", m.logisticsOrderNumber));
+    count(sts.testIfEmpty("Box 11 Supplier Info should be empty", m.supplierInfo));
+    count(sts.testIfEmpty("Box 12 Supplier Name should be empty", m.supplierName));
+    count(sts.testIfEmpty("Box 12A Supplier POC should be empty", m.supplierPointOfContact));
+    count(sts.testIfEmpty("Box 13 Logistics Notes should be empty", m.supplyNotes));
+    count(sts.testIfEmpty("Box 14 Logistics Authorized By should be empty", m.logisticsAuthorizer));
+    count(sts.testIfEmpty("Box 15 Logistics Authorized Date/Time should be empty", m.logisticsDateTime));
+    count(sts.testIfEmpty("Box 16 Order Requested By should be empty", m.orderedBy));
+
+    count(sts.testIfEmpty("Box 17 Finance Reply/Comments should be empty", m.financeComments));
+    count(sts.testIfEmpty("Box 18 Finance Section Chief Name should be empty", m.financeName));
+    count(sts.testIfEmpty("Box 19 Finance Date/Time should be empty", m.financeDateTime));
 
     // #MM update summary
+    var allRequests = String.join("\n", lineItems.stream().map(a -> a.item()).collect(Collectors.toList()));
+    summary.allRequests = allRequests;
     summary.ics213RRMessage = m;
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
+
+    final var resourceNames = List.of("Santa Claus", "Mrs. Claus", "Rudolf", "The Grinch", "the Nutcracker");
+    final var ucResourceNames = resourceNames.stream().map(a -> a.toUpperCase()).collect(Collectors.toList());
+
+    final var icsPositions = List
+        .of("Incident Commander", "Public Information Officer", "Safety Officer", "Liaison Officer",
+            "Operations Section Chief", "Finance Section Chief", "Logistics Section Chief",
+            "Finance/Admin Section Chief");
+    final var ucPositions = icsPositions.stream().map(a -> a.toUpperCase()).collect(Collectors.toList());
 
     // TODO implement
     // count(sts.test("OPTION (via comments) should be readable", option >= 1, m.comments));
