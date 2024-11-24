@@ -58,7 +58,10 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
   private String sender;
   private String source;
 
-  public PatOutboundMessageEngine(IConfigurationManager cm) {
+  private final String extraContent;
+
+  public PatOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
+    this.extraContent = extraContent;
 
     execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_PAT_EXEC_PATH);
     if (execPath == null || execPath.isEmpty()) {
@@ -116,7 +119,11 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
     final LocalDateTime nowUTC = LocalDateTime.now(Clock.systemUTC());
     final String dateString = nowUTC.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
 
-    var body = m.body().replaceAll("\n", SEP);
+    var body = m.body();
+    if (extraContent != null) {
+      body = body + extraContent;
+    }
+    body = body.replaceAll("\n", SEP);
     body = body.replaceAll("\\u009d", "");
     var to = expandToAddresses(m.to());
 

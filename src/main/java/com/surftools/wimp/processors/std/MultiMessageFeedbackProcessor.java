@@ -139,6 +139,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
   private List<String> badLocationSenders = new ArrayList<>();
 
+  protected String outboundMessageExtraContent = FeedbackProcessor.OB_DISCLAIMER;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
@@ -337,7 +339,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
   protected String makeOutboundMessageFeedback(BaseSummary summary) {
     var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
-        : String.join("\n", summary.explanations) + FeedbackProcessor.OB_DISCLAIMER;
+        : String.join("\n", summary.explanations);
     return outboundMessageFeedback;
   }
 
@@ -385,14 +387,14 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
 
     if (doOutboundMessaging) {
       for (var summary : summaryMap.values()) {
-        // var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
-        // : String.join("\n", summary.explanations) + FeedbackProcessor.OB_DISCLAIMER;
         var outboundMessageFeedback = makeOutboundMessageFeedback(summary);
         var outboundMessage = new OutboundMessage(outboundMessageSender, summary.from,
             cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback, null);
         outboundMessageList.add(outboundMessage);
       }
-      var service = new OutboundMessageService(cm);
+
+      var service = new OutboundMessageService(cm, outboundMessageExtraContent);
+
       outboundMessageList = service.sendAll(outboundMessageList);
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }

@@ -23,6 +23,8 @@
 		<opencsv.version>5.5</opencsv.version>
 		<pdfbox.version>3.0.3</pdfbox.version>
 		<itextpdf.version>5.5.13.4</itextpdf.version>
+		<string.similarity.version>2.0.0</string.similarity.version>
+		<stanford.nlp.version>4.5.6</stanford.nlp.version>
 		<junit.version>4.13.1</junit.version>
 	</properties>
 
@@ -74,7 +76,28 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>${logback.version}</version>
-		</dependency>		
+		</dependency>
+
+		<dependency>
+			<groupId>info.debatty</groupId>
+			<artifactId>java-string-similarity</artifactId>
+			<version>${string.similarity.version}</version>
+		</dependency>
+
+		<!--
+		<dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${stanford.nlp.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${stanford.nlp.version}</version>
+            <classifier>models</classifier>
+        </dependency>
+		-->
 
 		<dependency>
 			<groupId>junit</groupId>

@@ -639,11 +639,19 @@ public class SimpleTestService implements IService {
     return String.join("\n", explanations);
   }
 
-  public String toAlphaNumericString(String s) {
+  public static String toKey(String s) {
     if (s == null) {
       return null;
     }
     return s.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+  }
+
+  public String toAlphaNumericString(String s) {
+    // if (s == null) {
+    // return null;
+    // }
+    // return s.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+    return toKey(s);
   }
 
   public String toAlphaNumericWords(String s) {

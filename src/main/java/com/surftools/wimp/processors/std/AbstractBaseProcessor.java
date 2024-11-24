@@ -308,8 +308,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   }
 
   public static final String OB_DISCLAIMER = """
-
-
       =====================================================================================================
 
       DISCLAIMER: This feedback is provided for your consideration. We use the results to improve future
@@ -325,14 +323,17 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   public String getNagString(int year) {
     final String src = """
 
-         =====================================================================================================
 
-         ETO needs sponsors to be able to renew our groups.io subscription for $YEAR.
-         By sponsoring this group, you are helping pay the Groups.io hosting fees.
-         Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
-         Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
-         The minimum sponsorship is $5.00.
-         Thank you for your support!
+        =====================================================================================================
+
+        ETO needs sponsors to be able to renew our groups.io subscription for $YEAR.
+        By sponsoring this group, you are helping pay the Groups.io hosting fees.
+        Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
+        Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
+        The minimum sponsorship is $5.00.
+
+        Thank you for your support!
+
         """;
 
     var result = src.replaceAll("$YEAR", String.valueOf(year));

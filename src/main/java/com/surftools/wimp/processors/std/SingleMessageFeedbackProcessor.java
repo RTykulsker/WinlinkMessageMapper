@@ -105,6 +105,8 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
   protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
   protected Set<String> secondaryDestinations = new LinkedHashSet<>();
 
+  protected String extraContent = FeedbackProcessor.OB_DISCLAIMER;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
@@ -314,7 +316,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
     WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
 
     if (doOutboundMessaging) {
-      var service = new OutboundMessageService(cm);
+      var service = new OutboundMessageService(cm, extraContent);
       outboundMessageList = service.sendAll(outboundMessageList);
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }
