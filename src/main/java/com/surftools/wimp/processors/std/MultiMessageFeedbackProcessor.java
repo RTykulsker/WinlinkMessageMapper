@@ -446,4 +446,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     return m == null ? "" : m.messageId;
   }
 
+  protected String toKey(String s) {
+    if (s == null) {
+      return "";
+    }
+    return s.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+  }
+
 }

@@ -27,13 +27,22 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.eto_2024;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -47,7 +56,6 @@ import com.surftools.wimp.message.Ics214Message;
 import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.processors.std.MultiMessageFeedbackProcessor;
-import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 import info.debatty.java.stringsimilarity.experimental.Sift4;
@@ -61,23 +69,9 @@ import info.debatty.java.stringsimilarity.experimental.Sift4;
 public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_12_12.class);
 
-  private static final List<String> RESOURCE_LIST = List
-      .of(//
-          "Wolf River Silver Bullet 1000", //
-          "LDG Electronics AT-1000ProII Automatic Antenna Tuner", //
-          "Heil Sound PRO 7 Headset", //
-          "Bioenno Power BLF-1220A LiFePO4 Battery", //
-          "RigExpert Antenna Analyzer AA-55ZOOM", //
-          "Kenwood TS-990S HF/6 Meter Base Transceiver", //
-          "DX Engineering Hat DXE-HAT" //
-      );
+  private static final int NUMBER_OF_ACTIVITIES_TO_BE_NICE = 2;
 
-  private static final List<String> RESOURCE_KEYS = RESOURCE_LIST
-      .stream()
-        .map(s -> SimpleTestService.toKey(s))
-        .collect(Collectors.toList());
-
-  private static final Set<String> RESOURCE_KEY_SET = new HashSet<>(RESOURCE_KEYS);
+  private boolean hasSentimentService = false;
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
@@ -107,7 +101,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       list
           .addAll(Arrays
               .asList(new String[] { "Ics213RR mId", "Ics214 mId", //
-                  "Resources", "Requests", "Activities", //
+                  "Requests", "Resources", "Activities", //
                   "Activity Count", "Is Nice", "Sentiment", //
               }));
       return list.toArray(new String[0]);
@@ -142,6 +136,33 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
 
     outboundMessageExtraContent = getNagString(2025) + FeedbackProcessor.OB_DISCLAIMER;
+
+    hasSentimentService = testSentimentService();
+    if (!hasSentimentService) {
+      logger.error("#### SentimentServer not running! #####");
+      final int SLEEP_SECONDS = 60;
+      logger.error("#### Sleeping for " + SLEEP_SECONDS + " seconds! #####");
+      try {
+        TimeUnit.SECONDS.sleep(SLEEP_SECONDS);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  private boolean testSentimentService() {
+    try {
+      var httpClient = HttpClient.newBuilder().build();
+      var request = HttpRequest.newBuilder().uri(URI.create("http://localhost:7000/status")).GET().build();
+      var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      var statusCode = response.statusCode();
+      var body = response.body();
+      logger.info("statusCode: " + statusCode + ", body: " + body);
+      return body.equals("alive");
+    } catch (Exception e) {
+      logger.error("error getting sentimentServer status: " + e.getLocalizedMessage());
+      return false;
+    }
   }
 
   @Override
@@ -174,13 +195,29 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics213RRMessage(Summary summary, Ics213RRMessage m) {
+
+    final List<String> REQUEST_LIST = List
+        .of(//
+            "Wolf River Silver Bullet 1000", //
+            "LDG Electronics AT-1000ProII Automatic Antenna Tuner", //
+            "Heil Sound PRO 7 Headset", //
+            "Bioenno Power BLF-1220A LiFePO4 Battery", //
+            "RigExpert Antenna Analyzer AA-55ZOOM", //
+            "Kenwood TS-990S HF/6 Meter Base Transceiver", //
+            "DX Engineering Hat DXE-HAT" //
+        );
+
+    final List<String> REQUEST_KEYS = REQUEST_LIST.stream().map(s -> toKey(s)).collect(Collectors.toList());
+
+    final Set<String> REQUEST_KEY_SET = new HashSet<>(REQUEST_KEYS);
+
     count(sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Box 1: Incident Name should be #EV", "Exercise Santa Wish List", m.incidentName));
     count(sts.testIfPresent("Box 2: Date/Time should be present", m.activityDateTime));
     count(sts.test("Box 3 Resource Request Number should be #EV", " Santa 001", m.requestNumber));
 
     var lineItems = m.lineItems;
-    var foundArray = new boolean[RESOURCE_LIST.size()];
+    var foundArray = new boolean[REQUEST_LIST.size()];
     var allLinesInOrder = true;
     for (var index = 0; index < lineItems.size(); ++index) {
       var lineNumber = index + 1;
@@ -194,14 +231,14 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
         // order DOES NOT matter
         var item = lineItem.item();
         var key = sts.toAlphaNumericString(item);
-        var isFound = RESOURCE_KEY_SET.contains(key);
-        var bestIndex = findBestMatchingResourceIndex(item);
-        var bestResource = RESOURCE_LIST.get(bestIndex);
+        var isFound = REQUEST_KEY_SET.contains(key);
+        var bestIndex = findBestMatchingIndex(item, REQUEST_LIST, REQUEST_KEYS);
+        var bestRequest = REQUEST_LIST.get(bestIndex);
         if (isFound) {
           foundArray[bestIndex] = true;
-          count(sts.test("Box 4 line " + lineNumber + ": Item Description should be #EV", bestResource, item));
+          count(sts.test("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item));
         } else {
-          count(sts.test_2line("Box 4 line " + lineNumber + ": Item Description should be #EV", bestResource, item));
+          count(sts.test_2line("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item));
         }
 
         if (bestIndex != index) {
@@ -228,9 +265,9 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
     count(sts.test("Box 4: All items should be in order", allLinesInOrder));
 
-    for (var index = 0; index < RESOURCE_LIST.size(); ++index) {
+    for (var index = 0; index < REQUEST_LIST.size(); ++index) {
       var isFound = foundArray[index];
-      count(sts.test("Box 4: item " + RESOURCE_LIST.get(index) + " requested", isFound));
+      count(sts.test("Box 4: item " + REQUEST_LIST.get(index) + " requested", isFound));
     }
 
     count(sts.testIfPresent("Box 5, Delivery Location should be present", m.delivery));
@@ -260,23 +297,183 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
+    final Map<String, String> RESOURCE_MAP = Map
+        .of(//
+            "Santa Clause", "Logistics Unit Leader", //
+            "Mrs. Claus", "Incident Commander", //
+            "Rudolf", "Ground Support Unit Leader", //
+            "The Grinch", "Supply Unit Leader", //
+            "The Nutcracker", "Food Unit Leader");
 
-    final var resourceNames = List.of("Santa Claus", "Mrs. Claus", "Rudolf", "The Grinch", "the Nutcracker");
-    final var ucResourceNames = resourceNames.stream().map(a -> a.toUpperCase()).collect(Collectors.toList());
+    final List<String> RESOURCE_LIST = RESOURCE_MAP.keySet().stream().collect(Collectors.toList());
 
-    final var icsPositions = List
-        .of("Incident Commander", "Public Information Officer", "Safety Officer", "Liaison Officer",
-            "Operations Section Chief", "Finance Section Chief", "Logistics Section Chief",
-            "Finance/Admin Section Chief");
-    final var ucPositions = icsPositions.stream().map(a -> a.toUpperCase()).collect(Collectors.toList());
+    final List<String> RESOURCE_KEYS = RESOURCE_LIST.stream().map(s -> toKey(s)).collect(Collectors.toList());
 
-    // TODO implement
-    // count(sts.test("OPTION (via comments) should be readable", option >= 1, m.comments));
+    final Set<String> RESOURCE_KEY_SET = new HashSet<>(RESOURCE_KEYS);
 
-    // TODO search for 213RR messageId
+    final Map<String, String> RESOURCE_KEY_MAP = new HashMap<>();
+
+    if (RESOURCE_KEY_MAP.size() == 0) {
+      for (var key : RESOURCE_MAP.keySet()) {
+        RESOURCE_KEY_MAP.put(toKey(key), RESOURCE_MAP.get(key));
+      }
+    }
+
+    count(sts.test("Box 1 Incident Name should be #EV", "Exercise Santa Wish List", m.incidentName));
+    count(sts.test("Box 1 Page # should be #EV", "1", m.page));
+
+    // this will be a nightmare, maybe just check for presence
+    count(sts.testIfPresent("Box 2 Op Period From should be present", m.opFrom));
+    count(sts.testIfPresent("Box 2 Op Period To should be present", m.opTo));
+
+    var selfResource = m.selfResource;
+    count(sts.testIfPresent("Box 3 Name should be present", selfResource.name()));
+    count(sts.testIfPresent("Box 4 ICS Position should be present", selfResource.icsPosition()));
+
+    // link 213RR messageId
+    if (summary.ics213RRMessage != null) {
+      var trueMid = summary.ics213RRMessage.messageId;
+      var reportedMid = m.selfResource.homeAgency();
+      var areLinked = toKey(trueMid).equals(toKey(reportedMid));
+      count(sts
+          .test("Box 5: Home Agency and Unit should match ICS-213-RR messageId", areLinked, //
+              reportedMid,
+              "Box 5: Home Agency and Unit should match ICS-213-RR messageId: " + trueMid + ", not " + reportedMid));
+
+    } else {
+      count(sts
+          .test("Box 5: Home Agency and Unit should match ICS-213-RR messageId: #EV", false, null,
+              "because no ICS-213-RR received"));
+    }
+
+    var resources = m.assignedResources;
+    var foundArray = new boolean[RESOURCE_LIST.size()];
+    var allResourcesInOrder = true;
+    for (var index = 0; index < resources.size(); ++index) {
+      var lineNumber = index + 1;
+      var resource = resources.get(index);
+
+      if (lineNumber >= 1 && lineNumber <= 5) {
+        // order DOES NOT matter
+        var name = resource.name();
+        var key = sts.toAlphaNumericString(name);
+        var isFound = RESOURCE_KEY_SET.contains(key);
+        var bestIndex = findBestMatchingIndex(name, RESOURCE_LIST, RESOURCE_KEYS);
+        var bestResource = RESOURCE_LIST.get(bestIndex);
+        if (isFound) {
+          foundArray[bestIndex] = true;
+          count(sts.test("Box 6 line " + lineNumber + ": Name should be #EV", bestResource, name));
+
+          // ICS position
+          var expectedIcsPosition = RESOURCE_KEY_MAP.get(key);
+          count(sts
+              .test("Box 6 line " + lineNumber + ": ICS Position should be #EV", expectedIcsPosition,
+                  resource.icsPosition()));
+        } else {
+          System.err
+              .println("not found: name: " + name + ", bestIndex: " + bestIndex + ", bestResouce: " + bestResource);
+          count(sts.test_2line("Box 6 line " + lineNumber + ": Name should be #EV", bestResource, name));
+        }
+
+        if (bestIndex != index) {
+          allResourcesInOrder = false;
+        }
+
+        count(sts
+            .testIfEmpty("Box 6 line " + lineNumber + ": Home Agency and Unit should be empty", resource.homeAgency()));
+
+      } else {
+        count(sts.testIfEmpty("Box 6 line " + lineNumber + ": Name should be empty", resource.name()));
+        count(sts.testIfEmpty("Box 6 line " + lineNumber + ": ICS Position should be empty", resource.icsPosition()));
+        count(sts
+            .testIfEmpty("Box 6 line " + lineNumber + ": Home Agency and Unit should be empty", resource.homeAgency()));
+      }
+    } // end loop over lines
+
+    count(sts.test("Box 6: All items should be in order", allResourcesInOrder));
+
+    for (var index = 0; index < RESOURCE_LIST.size(); ++index) {
+      var isFound = foundArray[index];
+      count(sts.test("Box 6: resource " + RESOURCE_LIST.get(index) + " not found", isFound));
+    }
+
+    var activities = m.activities;
+    var allActivitiesList = activities
+        .stream()
+          .map(a -> a.activities())
+          .filter(Objects::nonNull)
+          .collect(Collectors.toList());
+
+    var isNice = allActivitiesList.size() >= NUMBER_OF_ACTIVITIES_TO_BE_NICE;
+    count(sts
+        .test("Number of Notable Activites should be at least " + NUMBER_OF_ACTIVITIES_TO_BE_NICE, isNice,
+            " not: " + String.valueOf(allActivitiesList.size())));
+
+    var allActivities = String.join("\n", allActivitiesList);
+
+    var expectedPreparedBy = selfResource.name() + "/" + selfResource.icsPosition();
+    count(sts.test("Box 9 Prepared By should match Boxes 3 and 4: #EV", expectedPreparedBy, m.preparedBy));
+
+    var sentiment = getSentiment(allActivities);
 
     // #MM update summary
+    var allResourcesList = resources
+        .stream()
+          .filter(Objects::nonNull)
+          .filter(a -> a.name() != null)
+          .map(a -> a.name() + ", " + a.icsPosition())
+          .collect(Collectors.toList());
+    var allResources = String.join("\n", allResourcesList);
+
     summary.ics214Message = m;
+    summary.allResources = allResources;
+    summary.allActivities = allActivities;
+    summary.activityCount = allActivitiesList.size();
+    summary.isNice = isNice;
+    summary.sentiment = sentiment;
+
+  }
+
+  private String getSentiment(String allActivities) {
+    if (!hasSentimentService) {
+      return ("n/a");
+    }
+
+    if (allActivities == null) {
+      return "null";
+    }
+
+    try {
+      var httpClient = HttpClient.newBuilder().build();
+      var formData = Map.of("q", allActivities);
+      var request = HttpRequest
+          .newBuilder()
+            .uri(URI.create("http://localhost:7000/query"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(HttpRequest.BodyPublishers.ofString(getFormDataAsString(formData)))
+            .build();
+      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      var statusCode = response.statusCode();
+      var body = response.body();
+      logger.debug("statusCode: " + statusCode + ", body: " + body);
+      return body;
+    } catch (Exception e) {
+      logger.error("error getting sentimentServer status: " + e.getLocalizedMessage());
+      return "error";
+    }
+  }
+
+  private String getFormDataAsString(Map<String, String> formData) {
+    var sb = new StringBuilder();
+    for (var entry : formData.entrySet()) {
+      if (sb.length() > 0) {
+        sb.append("&");
+      }
+      sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
+      sb.append("=");
+      sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+    }
+    return sb.toString();
   }
 
   @Override
@@ -292,8 +489,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       summary.explanations.add("No ICS-214 message received.");
     }
 
-    // TODO naught/nice, sentiment, nag
-
     summaryMap.put(sender, summary); // #MM
   }
 
@@ -302,18 +497,18 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     super.postProcess();// #MM
   }
 
-  private int findBestMatchingResourceIndex(String searchName) {
+  private int findBestMatchingIndex(String searchName, List<String> nameList, List<String> keyList) {
     var searchKey = sts.toAlphaNumericString(searchName);
     var sifter = new Sift4();
     var rankedMap = new TreeMap<Double, List<Integer>>();
-    for (var i = 0; i < RESOURCE_LIST.size(); ++i) {
-      var key = RESOURCE_KEYS.get(i);
-      var name = RESOURCE_LIST.get(i);
+    for (var i = 0; i < nameList.size(); ++i) {
+      var key = keyList.get(i);
+      var name = nameList.get(i);
       var distance = sifter.distance(searchKey, key);
       var list = rankedMap.getOrDefault(distance, new ArrayList<Integer>());
       list.add(i);
       rankedMap.put(distance, list);
-      logger.debug("resource: " + name + ", score: " + distance);
+      logger.debug("request: " + name + ", score: " + distance);
     }
 
     var firstEntry = rankedMap.firstEntry();
@@ -325,48 +520,4 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     return list.get(0);
   }
 
-  // https://medium.com/@varun85gupta/harnessing-sentiment-analysis-with-java-a-step-by-step-guide-using-nlp-f464398bb664
-  // https://blogs.oracle.com/javamagazine/post/java-sentiment-analysis-stanford-corenlp
-
-  /**
-   * public static void main(String[] args) { // Initialize the Stanford NLP pipeline Properties properties = new
-   * Properties(); properties.put("tokenize.whitespace", "true"); properties.put("ssplit.eolonly", "true");
-   * properties.put("annotators", "tokenize, ssplit, parse, sentiment");
-   *
-   * StanfordCoreNLP pipeline = new StanfordCoreNLP(properties);
-   *
-   * var sampleTexts = List .of( // // "Simplest codings is the best place to learn and grow. I am glad to be here.", //
-   * // "I hate this place. I am not coming back here again. I am very disappointed.", // "Signed in Hospital Command
-   * Center", // "Received appointment as Safety Officer", // "Participated in Incident Briefing", // "Developed
-   * Incident Action Plan Safety Analysis 215A and presented to Incident commander for approval.", // "Participated in
-   * Command and General Staff Meeting" // );
-   *
-   * var mergedTexts = List.of(String.join(". ", sampleTexts));
-   *
-   * var useSingleTexts = true; var texts = (useSingleTexts) ? sampleTexts : mergedTexts;
-   *
-   * for (var text : texts) { var sentiment = getSentiment(text, pipeline); System.out.println("Text: " + text + ",
-   * Sentiment: " + sentiment); // // estimatingSentiment(text, pipeline); // System.out.println(); }
-   *
-   * }
-   *
-   * private static String getSentiment(String text, StanfordCoreNLP pipeline) { // Create an Annotation object with the
-   * input text Annotation annotation = new Annotation(text);
-   *
-   * // Run all the NLP annotators on the text pipeline.annotate(annotation);
-   *
-   * // Extract the sentiment from the annotation CoreMap sentence =
-   * annotation.get(CoreAnnotations.SentencesAnnotation.class).get(0); String sentiment =
-   * sentence.get(SentimentCoreAnnotations.SentimentClass.class);
-   *
-   * return sentiment; }
-   *
-   * public static void estimatingSentiment(String text, StanfordCoreNLP pipeline) { int sentimentInt; String
-   * sentimentName; Annotation annotation = pipeline.process(text); for (CoreMap sentence :
-   * annotation.get(CoreAnnotations.SentencesAnnotation.class)) { Tree tree =
-   * sentence.get(SentimentAnnotatedTree.class); sentimentInt = RNNCoreAnnotations.getPredictedClass(tree);
-   * sentimentName = sentence.get(SentimentCoreAnnotations.SentimentClass.class); System.out.println(sentimentName +
-   * "\t" + sentimentInt + "\t" + sentence); } }
-   *
-   **/
 }
