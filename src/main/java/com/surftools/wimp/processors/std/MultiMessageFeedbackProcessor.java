@@ -27,15 +27,9 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -55,8 +49,6 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.chart.AbstractBaseChartService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
-import com.surftools.wimp.service.simpleTestService.SimpleTestService;
-import com.surftools.wimp.service.simpleTestService.TestResult;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -66,15 +58,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  *
  * support multiple message types
  */
-public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcessor {
-  protected static Logger logger;
-  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedbackProcessor {
 
-  protected LocalDateTime windowOpenDT = null;
-  protected LocalDateTime windowCloseDT = null;
-
-  protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
-  // public Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
   protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
   public interface ISummary extends IWritableTable {
@@ -125,12 +110,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   protected MessageType messageType; // the messageType of the current message
   protected boolean doFirstIn = true; // fifo vs lifo for location, to fields
 
-  protected SimpleTestService sts = new SimpleTestService();
-  protected ExportedMessage message;
-  protected String sender;
-  protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
-  protected Set<String> secondaryDestinations = new LinkedHashSet<>();
-
   public int ppMessageCount = 0;
   public int ppParticipantCount = 0;
   public int ppParticipantCorrectCount = 0;
@@ -144,7 +123,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
-    logger = _logger;
 
     var acceptableMessageTypesString = cm.getAsString(Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES);
     if (acceptableMessageTypesString == null) {
@@ -164,23 +142,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       }
     }
 
-    var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
-    if (windowOpenString != null) {
-      windowOpenDT = LocalDateTime.from(DTF.parse(windowOpenString));
-    }
-
-    var windowCloseString = cm.getAsString(Key.EXERCISE_WINDOW_CLOSE);
-    if (windowCloseString != null) {
-      windowCloseDT = LocalDateTime.from(DTF.parse(windowCloseString));
-    }
-
-    var secondaryDestinationsString = cm.getAsString(Key.SECONDARY_DESTINATIONS);
-    if (secondaryDestinationsString != null) {
-      var fields = secondaryDestinationsString.split(",");
-      for (var field : fields) {
-        secondaryDestinations.add(field.toUpperCase());
-      }
-    }
   }
 
   @Override
@@ -213,11 +174,13 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
    *
    * @param sender
    */
+  @Override
   protected abstract void endProcessingForSender(String sender);
 
   /**
    * before all messageTypes for a given sender, a chance to look at cross-message relations
    */
+  @Override
   protected void beforeProcessingForSender(String sender) {
     ++ppParticipantCount;
     sts.reset(sender);
@@ -226,6 +189,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
   /**
    * after all messageTypes for a given sender, a chance to look at cross-message relations
    */
+
   protected void baseEndProcessingForSender(String sender) {
     if (iSummary.location == null || !iSummary.location.isValid()) {
       badLocationSenders.add(sender);
@@ -241,13 +205,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     summaryMap.put(sender, iSummary);
   }
 
+  @Override
   protected void beginCommonProcessing(ExportedMessage message) {
-    ++ppMessageCount;
-    var sender = message.from;
+    super.beginCommonProcessing(message);
 
-    if (dumpIds.contains(sender)) {
-      logger.info("dump: " + sender);
-    }
+    ++ppMessageCount;
 
     iSummary = summaryMap.get(sender);
 
@@ -273,19 +235,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       }
     }
 
-    if (secondaryDestinations.size() > 0) {
-      if (messageTypesRequiringSecondaryAddress.size() == 0
-          || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
-        var addressList = (message.toList + "," + message.ccList).toUpperCase();
-        for (var ev : secondaryDestinations) {
-          count(sts.test("To and/or CC addresses should contain " + ev, addressList.contains(ev)));
-        }
-      }
-    }
-
-    sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
-    sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
-
     var msgLocation = message.msgLocation;
     if (msgLocation == null || msgLocation.equals(LatLongPair.ZERO_ZERO)) {
       sts.test("Message LAT/LON should be provided", false, "missing");
@@ -295,39 +244,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
       sts.test("Message LAT/LON should be provided", true, null);
     }
 
-    var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
-    getCounter("Message sent days after window opens").increment(daysAfterOpen);
   }
 
+  @Override
   protected void endCommonProcessing(ExportedMessage message) {
 
-  }
-
-  /**
-   * get Counter for label, create if needed
-   *
-   * @param label
-   * @return
-   */
-  protected Counter getCounter(String label) {
-    var counter = counterMap.get(label);
-    if (counter == null) {
-      counter = new Counter(label);
-      counterMap.put(label, counter);
-    }
-
-    return counter;
-  }
-
-  /**
-   * get a TestResult!
-   *
-   * @param testResult
-   */
-  protected void count(TestResult testResult) {
-    var label = testResult.key();
-    var result = testResult.ok();
-    getCounter(label).increment(result ? "correct" : "incorrect");
   }
 
   /**
@@ -335,8 +256,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
    *
    * @param message
    */
+  @Override
   protected abstract void specificProcessing(ExportedMessage message);
 
+  @Override
   protected String makeOutboundMessageFeedback(BaseSummary summary) {
     var outboundMessageFeedback = (summary.explanations.size() == 0) ? "Perfect messages!"
         : String.join("\n", summary.explanations);
@@ -402,55 +325,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseProcesso
     // all messageTypes in one chart page
     var chartService = AbstractBaseChartService.getChartService(cm, counterMap, null);
     chartService.makeCharts();
-  }
-
-  protected LocalDate parseDate(String s, List<DateTimeFormatter> formatters) {
-    if (s == null || formatters == null || formatters.size() == 0) {
-      return null;
-    }
-
-    s = s.trim().replaceAll(" +", " ");
-    LocalDate dt = null;
-    for (var f : formatters) {
-      try {
-        dt = LocalDate.from(f.parse(s.trim()));
-        break;
-      } catch (Exception e) {
-        ;
-      }
-    }
-
-    return dt;
-  }
-
-  protected LocalDateTime parseDateTime(String s, List<DateTimeFormatter> formatters) {
-    if (s == null || formatters == null || formatters.size() == 0) {
-      return null;
-    }
-
-    s = s.trim().replaceAll(" +", " ");
-    LocalDateTime dt = null;
-    for (var f : formatters) {
-      try {
-        dt = LocalDateTime.from(f.parse(s.trim()));
-        break;
-      } catch (Exception e) {
-        ;
-      }
-    }
-
-    return dt;
-  }
-
-  protected String mId(ExportedMessage m) {
-    return m == null ? "" : m.messageId;
-  }
-
-  protected String toKey(String s) {
-    if (s == null) {
-      return "";
-    }
-    return s.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
   }
 
 }

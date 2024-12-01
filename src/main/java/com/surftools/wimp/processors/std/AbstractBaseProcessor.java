@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,6 +60,12 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
   protected Logger logger;
+
+  protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
+  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
+  protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING.replaceAll("-", "/"));
+  protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+  protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
   protected IConfigurationManager cm;
   protected IMessageManager mm;

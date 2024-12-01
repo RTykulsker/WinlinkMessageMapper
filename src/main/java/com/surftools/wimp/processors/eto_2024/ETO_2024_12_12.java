@@ -35,7 +35,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +43,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,7 +271,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     }
 
     count(sts.testIfPresent("Box 5, Delivery Location should be present", m.delivery));
-    count(sts.test("Box 6 Substitutes should be #EV", "DX Engineering", m.delivery));
+    count(sts.test("Box 6 Substitutes should be #EV", "DX Engineering", m.substitutes));
     sts.testIfPresent("Box 7 Requested By should be present", m.requestedBy);
     count(sts.test("Box 8 Priority should be #EV", "Routine", m.priority));
     count(sts.test("Box 9 Section Chief Name should be #EV", "Bernard Elf", m.approvedBy));
@@ -297,27 +297,20 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
-    final Map<String, String> RESOURCE_MAP = Map
-        .of(//
-            "Santa Clause", "Logistics Unit Leader", //
-            "Mrs. Claus", "Incident Commander", //
-            "Rudolf", "Ground Support Unit Leader", //
-            "The Grinch", "Supply Unit Leader", //
-            "The Nutcracker", "Food Unit Leader");
+    final var RESOURCE_LIST = List.of("Santa Claus", "Mrs. Claus", "Rudolf", "The Grinch", "The Nutcracker");
 
-    final List<String> RESOURCE_LIST = RESOURCE_MAP.keySet().stream().collect(Collectors.toList());
+    final var RESOURCE_VALUES = List
+        .of("Logistics Unit Leader", "Incident Commander", "Ground Support Unit Leader", "Supply Unit Leader",
+            "Food Unit Leader");
 
     final List<String> RESOURCE_KEYS = RESOURCE_LIST.stream().map(s -> toKey(s)).collect(Collectors.toList());
 
     final Set<String> RESOURCE_KEY_SET = new HashSet<>(RESOURCE_KEYS);
 
-    final Map<String, String> RESOURCE_KEY_MAP = new HashMap<>();
-
-    if (RESOURCE_KEY_MAP.size() == 0) {
-      for (var key : RESOURCE_MAP.keySet()) {
-        RESOURCE_KEY_MAP.put(toKey(key), RESOURCE_MAP.get(key));
-      }
-    }
+    final var RESOURCE_KEY_MAP = IntStream
+        .range(0, RESOURCE_KEYS.size())
+          .boxed()
+          .collect(Collectors.toMap(RESOURCE_KEYS::get, RESOURCE_VALUES::get));
 
     count(sts.test("Box 1 Incident Name should be #EV", "Exercise Santa Wish List", m.incidentName));
     count(sts.test("Box 1 Page # should be #EV", "1", m.page));
@@ -482,11 +475,11 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
     var summary = (Summary) summaryMap.get(sender); // #MM
     if (summary.ics213RRMessage == null) {
-      summary.explanations.add("No ICS-213-RR message received.");
+      summary.explanations.add("No ICS-213-RR message received, so Santa doesn't know what's on you wish list!");
     }
 
     if (summary.ics214Message == null) {
-      summary.explanations.add("No ICS-214 message received.");
+      summary.explanations.add("No ICS-214 message received, so Santa doesn't know if you've been naughty or nice!");
     }
 
     summaryMap.put(sender, summary); // #MM

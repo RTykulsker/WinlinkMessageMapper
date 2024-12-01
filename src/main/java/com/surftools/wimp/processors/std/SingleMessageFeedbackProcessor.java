@@ -27,19 +27,13 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 
@@ -56,32 +50,18 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.chart.AbstractBaseChartService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
-import com.surftools.wimp.service.simpleTestService.SimpleTestService;
-import com.surftools.wimp.service.simpleTestService.TestResult;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * the FeedbackProcessor was once simple and clean. Then I added multi-message support to it and it became messy. I then
- * created the MultiMessageFeedbackProcessor and this, SingleMessageFeedbackProcessor is an attempt to restore
- * simplicity
  *
- * support multiple message types
+ * I created the MultiMessageFeedbackProcessor and this, SingleMessageFeedbackProcessor is an attempt to restore
+ * simplicity
  */
-public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcessor {
-  protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
-  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
-  protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING.replaceAll("-", "/"));
-  protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-  protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
-  protected static Logger logger;
-
-  protected LocalDateTime windowOpenDT = null;
-  protected LocalDateTime windowCloseDT = null;
+public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbackProcessor {
 
   protected boolean doStsFieldValidation = true;
 
-  protected List<String> excludedPieChartCounterLabels = new ArrayList<>();
   protected Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
 
   protected int ppCount = 0;
@@ -94,18 +74,10 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
   protected Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
   protected List<String> badLocationMessageIds = new ArrayList<String>();
 
-  public LocalDateTime windowOpenDt;
-  public LocalDateTime windowCloseDt;
-
   protected String extraOutboundMessageText = "";
-  protected MessageType messageType;
-  protected SimpleTestService sts = new SimpleTestService();
-  protected ExportedMessage message;
-  protected String sender;
-  protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
-  protected Set<String> secondaryDestinations = new LinkedHashSet<>();
-
   protected String extraContent = FeedbackProcessor.OB_DISCLAIMER;
+
+  protected MessageType messageType;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -163,41 +135,24 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
   /**
    * after all messageTypes for a given sender, a chance to look at cross-message relations
    */
+  @Override
   protected void endProcessingForSender(String sender) {
   }
 
+  @Override
   protected void beginCommonProcessing(ExportedMessage message) {
-    var sender = message.from;
+    super.beginCommonProcessing(message);
 
-    if (dumpIds.contains(sender)) {
-      logger.info("dump: " + sender);
-    }
-
+    ++ppCount;
     sts.reset(sender);
 
     beforeCommonProcessing(sender, message);
 
-    ++ppCount;
-
-    if (secondaryDestinations.size() > 0) {
-      if (messageTypesRequiringSecondaryAddress.size() == 0
-          || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
-        var addressList = (message.toList + "," + message.ccList).toUpperCase();
-        for (var ev : secondaryDestinations) {
-          count(sts.test("To and/or CC addresses should contain " + ev, addressList.contains(ev)));
-        }
-      }
-    }
-
-    sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
-    sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
-
     feedbackLocation = message.msgLocation;
 
-    var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
-    getCounter("Message sent days after window opens").increment(daysAfterOpen);
   }
 
+  @Override
   protected void endCommonProcessing(ExportedMessage message) {
     if (feedbackLocation == null || feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
       feedbackLocation = LatLongPair.ZERO_ZERO;
@@ -232,37 +187,11 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
   }
 
   /**
-   * get Counter for label, create in current te if needed
-   *
-   * @param label
-   * @return
-   */
-  protected Counter getCounter(String label) {
-    var counter = counterMap.get(label);
-    if (counter == null) {
-      counter = new Counter(label);
-      counterMap.put(label, counter);
-    }
-
-    return counter;
-  }
-
-  /**
-   * get a TestResult!
-   *
-   * @param testResult
-   */
-  protected void count(TestResult testResult) {
-    var label = testResult.key();
-    var result = testResult.ok();
-    getCounter(label).increment(result ? "correct" : "incorrect");
-  }
-
-  /**
    * this is the exercise-specific method to be implemented
    *
    * @param message
    */
+  @Override
   protected abstract void specificProcessing(ExportedMessage message);
 
   @Override
@@ -336,25 +265,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseProcess
   }
 
   protected void endPostProcessingForAllMessageTypes() {
-  }
-
-  protected boolean isNull(String s) {
-    return s == null || s.isEmpty();
-  }
-
-  protected LocalDateTime parse(String s) {
-    LocalDateTime dt = null;
-    if (s == null) {
-      throw new IllegalArgumentException("null input string");
-    }
-
-    try {
-      dt = LocalDateTime.from(DTF.parse(s.trim()));
-    } catch (Exception e) {
-      dt = LocalDateTime.from(ALT_DTF.parse(s.trim()));
-    }
-
-    return dt;
   }
 
 }

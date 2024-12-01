@@ -121,7 +121,7 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
 
     var body = m.body();
     if (extraContent != null) {
-      body = body + extraContent;
+      body = body + "\n" + extraContent;
     }
     body = body.replaceAll("\n", SEP);
     body = body.replaceAll("\\u009d", "");
