@@ -339,7 +339,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       var areLinked = toKey(trueMid).equals(toKey(reportedMid));
       count(sts
           .test("Box 5: Home Agency and Unit should match ICS-213-RR messageId", areLinked, //
-              reportedMid,
+              null,
               "Box 5: Home Agency and Unit should match ICS-213-RR messageId: " + trueMid + ", not " + reportedMid));
 
     } else {
@@ -382,8 +382,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
           valueLineList.add(String.valueOf(lineNumber));
           valueLinesMap.put(expectedIcsPosition, valueLineList);
         } else {
-          System.err
-              .println("not found: name: " + name + ", bestIndex: " + bestIndex + ", bestResouce: " + bestResource);
+          logger.debug("not found: name: " + name + ", bestIndex: " + bestIndex + ", bestResouce: " + bestResource);
           count(sts.test_2line("Box 6 line " + lineNumber + ": Name should be #EV", bestResource, name));
         }
 
