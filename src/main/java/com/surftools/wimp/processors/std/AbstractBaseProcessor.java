@@ -330,7 +330,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   public String getNagString(int year) {
     final String src = """
 
-
         =====================================================================================================
 
         ETO needs sponsors to be able to renew our groups.io subscription for $YEAR.
@@ -343,7 +342,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
         """;
 
-    var result = src.replaceAll("$YEAR", String.valueOf(year));
+    var result = src.replaceAll("\\$YEAR", String.valueOf(year));
     return result;
   }
 

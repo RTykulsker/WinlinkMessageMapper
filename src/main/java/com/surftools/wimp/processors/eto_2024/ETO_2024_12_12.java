@@ -35,6 +35,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -219,6 +220,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     var lineItems = m.lineItems;
     var foundArray = new boolean[REQUEST_LIST.size()];
     var allLinesInOrder = true;
+    var nameLinesMap = new HashMap<String, List<String>>();
     for (var index = 0; index < lineItems.size(); ++index) {
       var lineNumber = index + 1;
       var lineItem = lineItems.get(index);
@@ -237,6 +239,11 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
         if (isFound) {
           foundArray[bestIndex] = true;
           count(sts.test("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item));
+
+          var name = REQUEST_LIST.get(bestIndex);
+          var lineList = nameLinesMap.getOrDefault(name, new ArrayList<String>());
+          lineList.add(String.valueOf(lineNumber));
+          nameLinesMap.put(name, lineList);
         } else {
           count(sts.test_2line("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item));
         }
@@ -263,11 +270,13 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       }
     } // end loop over lines
 
-    count(sts.test("Box 4: All items should be in order", allLinesInOrder));
+    count(sts.test("Box 4: All requests should be in order", allLinesInOrder));
+
+    testForDupes(nameLinesMap, "request");
 
     for (var index = 0; index < REQUEST_LIST.size(); ++index) {
       var isFound = foundArray[index];
-      count(sts.test("Box 4: item " + REQUEST_LIST.get(index) + " requested", isFound));
+      count(sts.test("Box 4: item " + REQUEST_LIST.get(index) + " NOT requested", isFound));
     }
 
     count(sts.testIfPresent("Box 5, Delivery Location should be present", m.delivery));
@@ -342,6 +351,8 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     var resources = m.assignedResources;
     var foundArray = new boolean[RESOURCE_LIST.size()];
     var allResourcesInOrder = true;
+    var nameLinesMap = new HashMap<String, List<String>>();
+    var valueLinesMap = new HashMap<String, List<String>>();
     for (var index = 0; index < resources.size(); ++index) {
       var lineNumber = index + 1;
       var resource = resources.get(index);
@@ -357,11 +368,19 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
           foundArray[bestIndex] = true;
           count(sts.test("Box 6 line " + lineNumber + ": Name should be #EV", bestResource, name));
 
+          var lineList = nameLinesMap.getOrDefault(name, new ArrayList<String>());
+          lineList.add(String.valueOf(lineNumber));
+          nameLinesMap.put(name, lineList);
+
           // ICS position
           var expectedIcsPosition = RESOURCE_KEY_MAP.get(key);
           count(sts
               .test("Box 6 line " + lineNumber + ": ICS Position should be #EV", expectedIcsPosition,
                   resource.icsPosition()));
+
+          var valueLineList = valueLinesMap.getOrDefault(RESOURCE_KEY_SET, new ArrayList<String>());
+          valueLineList.add(String.valueOf(lineNumber));
+          valueLinesMap.put(expectedIcsPosition, valueLineList);
         } else {
           System.err
               .println("not found: name: " + name + ", bestIndex: " + bestIndex + ", bestResouce: " + bestResource);
@@ -383,7 +402,10 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       }
     } // end loop over lines
 
-    count(sts.test("Box 6: All items should be in order", allResourcesInOrder));
+    count(sts.test("Box 6: All resources should be in order", allResourcesInOrder));
+
+    testForDupes(nameLinesMap, "resource");
+    testForDupes(valueLinesMap, "resource Value");
 
     for (var index = 0; index < RESOURCE_LIST.size(); ++index) {
       var isFound = foundArray[index];
@@ -403,6 +425,30 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
             " not: " + String.valueOf(allActivitiesList.size())));
 
     var allActivities = String.join("\n", allActivitiesList);
+
+    var activityLineNumber = 0;
+    var activityDateTimeLinesMap = new HashMap<String, List<String>>();
+    var activityLinesMap = new HashMap<String, List<String>>();
+    for (var a : activities) {
+      ++activityLineNumber;
+      if (isFull(a.dateTimeString()) && isFull(a.activities())) {
+        var dtString = a.dateTimeString().trim();
+        count(sts
+            .test("activity line #" + activityLineNumber + " should start with 12-25-2024",
+                dtString.startsWith("12-25-2024"), dtString));
+
+        var activityDateTimeList = activityDateTimeLinesMap.getOrDefault(dtString, new ArrayList<String>());
+        activityDateTimeList.add(String.valueOf(activityLineNumber));
+        activityDateTimeLinesMap.put(dtString, activityDateTimeList);
+
+        var activityList = activityLinesMap.getOrDefault(a.activities(), new ArrayList<String>());
+        activityList.add(String.valueOf(activityLineNumber));
+        activityLinesMap.put(a.activities(), activityList);
+      }
+    }
+
+    testForDupes(activityDateTimeLinesMap, "Activity Date/Time");
+    testForDupes(activityLinesMap, "Activity");
 
     var expectedPreparedBy = selfResource.name() + "/" + selfResource.icsPosition();
     count(sts.test("Box 9 Prepared By should match Boxes 3 and 4: #EV", expectedPreparedBy, m.preparedBy));
@@ -424,7 +470,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     summary.activityCount = allActivitiesList.size();
     summary.isNice = isNice;
     summary.sentiment = sentiment;
-
   }
 
   private String getSentiment(String allActivities) {
@@ -454,19 +499,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       logger.error("error getting sentimentServer status: " + e.getLocalizedMessage());
       return "error";
     }
-  }
-
-  private String getFormDataAsString(Map<String, String> formData) {
-    var sb = new StringBuilder();
-    for (var entry : formData.entrySet()) {
-      if (sb.length() > 0) {
-        sb.append("&");
-      }
-      sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
-      sb.append("=");
-      sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-    }
-    return sb.toString();
   }
 
   @Override
@@ -513,4 +545,29 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     return list.get(0);
   }
 
+  protected void testForDupes(Map<String, List<String>> map, String label) {
+    for (var key : map.keySet()) {
+      var lines = map.get(key);
+      if (lines.size() > 1) {
+        count(sts
+            .test(label + ": " + key + " found on multiple lines", false, null, //
+                label + ": " + key + " found on multiple lines: " + String.join(",", lines)));
+      } else {
+        count(sts.test(label + ": " + key + " found on multiple lines", true));
+      }
+    }
+  }
+
+  private String getFormDataAsString(Map<String, String> formData) {
+    var sb = new StringBuilder();
+    for (var entry : formData.entrySet()) {
+      if (sb.length() > 0) {
+        sb.append("&");
+      }
+      sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
+      sb.append("=");
+      sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+    }
+    return sb.toString();
+  }
 }

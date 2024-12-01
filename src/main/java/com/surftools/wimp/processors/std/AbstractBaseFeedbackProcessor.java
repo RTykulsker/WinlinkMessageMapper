@@ -245,4 +245,7 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
     return s.toLowerCase().replaceAll("[^A-Za-z0-9]", "");
   }
 
+  protected boolean isFull(String s) {
+    return s != null && !s.isEmpty();
+  }
 }
