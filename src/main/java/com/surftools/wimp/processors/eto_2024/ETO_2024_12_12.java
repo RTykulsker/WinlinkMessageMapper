@@ -208,7 +208,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
             "DX Engineering Hat DXE-HAT" //
         );
 
-    final List<String> REQUEST_KEYS = REQUEST_LIST.stream().map(s -> toKey(s)).collect(Collectors.toList());
+    final List<String> REQUEST_KEYS = REQUEST_LIST.stream().map(s -> toKey(s)).toList();
 
     final Set<String> REQUEST_KEY_SET = new HashSet<>(REQUEST_KEYS);
 
@@ -299,8 +299,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     count(sts.testIfEmpty("Box 19 Finance Date/Time should be empty", m.financeDateTime));
 
     // #MM update summary
-    var allRequests = String
-        .join("\n", lineItems.stream().map(a -> a.item()).filter(Objects::nonNull).collect(Collectors.toList()));
+    var allRequests = String.join("\n", lineItems.stream().map(a -> a.item()).filter(Objects::nonNull).toList());
     summary.allRequests = allRequests;
     summary.ics213RRMessage = m;
   }
@@ -312,7 +311,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
         .of("Logistics Unit Leader", "Incident Commander", "Ground Support Unit Leader", "Supply Unit Leader",
             "Food Unit Leader");
 
-    final List<String> RESOURCE_KEYS = RESOURCE_LIST.stream().map(s -> toKey(s)).collect(Collectors.toList());
+    final List<String> RESOURCE_KEYS = RESOURCE_LIST.stream().map(s -> toKey(s)).toList();
 
     final Set<String> RESOURCE_KEY_SET = new HashSet<>(RESOURCE_KEYS);
 
@@ -412,11 +411,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     }
 
     var activities = m.activities;
-    var allActivitiesList = activities
-        .stream()
-          .map(a -> a.activities())
-          .filter(Objects::nonNull)
-          .collect(Collectors.toList());
+    var allActivitiesList = activities.stream().map(a -> a.activities()).filter(Objects::nonNull).toList();
 
     var isNice = allActivitiesList.size() >= NUMBER_OF_ACTIVITIES_TO_BE_NICE;
     count(sts
@@ -457,10 +452,9 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     // #MM update summary
     var allResourcesList = resources
         .stream()
-          .filter(Objects::nonNull)
-          .filter(a -> a.name() != null)
+          .filter(a -> a != null && a.name() != null)
           .map(a -> a.name() + ", " + a.icsPosition())
-          .collect(Collectors.toList());
+          .toList();
     var allResources = String.join("\n", allResourcesList);
 
     summary.ics214Message = m;
