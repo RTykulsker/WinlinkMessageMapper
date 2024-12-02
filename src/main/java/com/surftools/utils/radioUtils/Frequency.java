@@ -28,6 +28,9 @@ SOFTWARE.
 package com.surftools.utils.radioUtils;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * abstraction for a radio frequency
@@ -79,6 +82,81 @@ public class Frequency {
 
   public Band bandOf() {
     return Band.of(frequencyHz.doubleValue() / unit.multiplier(), unit);
+  }
+
+  public boolean isHF() {
+    return isHF(true);
+  }
+
+  public boolean isHF(boolean hamBandsOnly) {
+    if (!isValid()) {
+      return false;
+    }
+
+    if (hamBandsOnly) {
+      var band = Band.of(getFrequencyHz(), FreqUnit.HZ);
+      if (band == null) {
+        return false;
+      }
+    }
+
+    return getFrequencyHz() < 30_000_000d;
+  }
+
+  public boolean isVHF() {
+    return isVHF(true);
+  }
+
+  public boolean isVHF(boolean hamBandsOnly) {
+    if (!isValid()) {
+      return false;
+    }
+
+    if (hamBandsOnly) {
+      var band = Band.of(getFrequencyHz(), FreqUnit.HZ);
+      if (band == null) {
+        return false;
+      }
+    }
+
+    return 30_000_000d <= getFrequencyHz() && getFrequencyHz() < 300_000_000d;
+  }
+
+  public boolean isUHF() {
+    return isUHF(true);
+  }
+
+  public boolean isUHF(boolean hamBandsOnly) {
+    if (!isValid()) {
+      return false;
+    }
+
+    if (hamBandsOnly) {
+      var band = Band.of(getFrequencyHz(), FreqUnit.HZ);
+      if (band == null) {
+        return false;
+      }
+    }
+
+    return getFrequencyHz() >= 300_000_000d;
+  }
+
+  public boolean isWX() {
+    if (!isValid()) {
+      return false;
+    }
+
+    final List<Double> WX_FREQUENCIES_MHZ = List.of(162.400, 162.425, 162.450, 162.475, 162.500, 162.525, 162.550);
+    final List<Double> WX_FREQUENCIES_HZ = WX_FREQUENCIES_MHZ.stream().map(d -> d * 1_000_000d).toList();
+    final Set<Double> WX_FREQUENCY_SET = new HashSet<Double>(WX_FREQUENCIES_HZ);
+
+    Double doubleFreq = Double.valueOf(getFrequencyHz());
+
+    if (!WX_FREQUENCY_SET.contains(doubleFreq)) {
+      return false;
+    }
+
+    return true;
   }
 
   @Override
