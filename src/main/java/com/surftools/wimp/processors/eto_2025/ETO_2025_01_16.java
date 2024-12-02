@@ -34,6 +34,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.radioUtils.Frequency;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -112,7 +113,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
   private void handleRadioEntries(Ics205RadioPlanMessage m, List<RadioEntry> entries) {
     count(sts.test("Number of Radio Channels defined should be #EV", "10", String.valueOf(entries.size())));
 
-    Double vhfRepeaterOffset = null;
+    Frequency vhfRepeaterOffset = null;
     for (var index = 0; index < entries.size(); ++index) {
       var entry = entries.get(index);
       var lineNumber = index + 1;
@@ -127,43 +128,53 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         count(sts.testIfPresent("Channel Name should be present", entry.channelName()));
         count(sts.test("Assignment should be #EV", "Local amateurs", entry.assignment()));
 
-        var rxFreq = toDouble(entry.rxFrequency());
-        count(sts.test("RX freq should be parsable", isDouble(rxFreq), entry.rxFrequency()));
-        if (lineNumber == 1) {
-          count(sts.test("RX freq should be in VHF band", isVhf(rxFreq), entry.rxFrequency()));
-        } else {
-          count(sts.test("RX freq should be in UHF band", isUhf(rxFreq), entry.rxFrequency()));
+        var rxFreq = new Frequency(entry.rxFrequency());
+        count(sts.test("RX freq should be parsable", rxFreq.isValid(), entry.rxFrequency()));
+        if (rxFreq.isValid()) {
+          var rxBand = rxFreq.bandOf();
+          if (rxBand != null) {
+            if (lineNumber == 1) {
+              count(sts.test("RX freq should be in VHF band", rxBand.isVHF(), entry.rxFrequency()));
+            } else {
+              count(sts.test("RX freq should be in UHF band", rxBand.isUHF(), entry.rxFrequency()));
+            }
+          }
         }
-
         var rxIsNarrowOrWide = isNarrowOrWide(entry.rxNarrowWide());
-        count(sts.test("RX N or W is N or W", rxIsNarrowOrWide, entry.rxNarrowWide()));
+        count(sts.test("RX Narrow or Wide should be N or W", rxIsNarrowOrWide, entry.rxNarrowWide()));
 
-        var txFreq = toDouble(entry.txFrequency());
-        count(sts.test("TX freq should be parsable", isDouble(txFreq), entry.txFrequency()));
-        if (lineNumber == 1) {
-          count(sts.test("TX freq should be in VHF band", isVhf(rxFreq), entry.txFrequency()));
-        } else {
-          count(sts.test("TX freq should be in UHF band", isUhf(rxFreq), entry.txFrequency()));
+        var txFreq = new Frequency(entry.txFrequency());
+        count(sts.test("TX freq should be parsable", txFreq.isValid(), entry.txFrequency()));
+        if (txFreq.isValid()) {
+          var txBand = txFreq.bandOf();
+          if (txBand != null) {
+            if (lineNumber == 1) {
+              count(sts.test("TX freq should be in VHF band", txBand.isVHF(), entry.txFrequency()));
+            } else {
+              count(sts.test("TX freq should be in UHF band", txBand.isUHF(), entry.txFrequency()));
+            }
+          }
         }
 
         var txIsNarrowOrWide = isNarrowOrWide(entry.txNarrowWide());
-        count(sts.test("TX N or W is N or W", txIsNarrowOrWide, entry.txNarrowWide()));
+        count(sts.test("TX Narrow or Wide should be N or W", txIsNarrowOrWide, entry.txNarrowWide()));
 
         count(sts.test("Mode should be A, D, or M", isModeValid(entry.mode()), entry.mode()));
         count(sts.testIfEmpty("Remarks should be empty", entry.remarks()));
 
         if (lineNumber == 1) {
-          if (isVhf(rxFreq) && isVhf(txFreq)) {
-            vhfRepeaterOffset = txFreq - rxFreq;
+          if (rxFreq.bandOf().isVHF() && txFreq.bandOf().isVHF()) {
+            vhfRepeaterOffset = txFreq.subtract(rxFreq);
           }
         }
 
         if (lineNumber == 2) {
-          if (isUhf(rxFreq) && isUhf(txFreq)) {
+          if (rxFreq.bandOf().isUHF() && txFreq.bandOf().isUHF()) {
             count(sts.test("UHF RX and TX frequency should be different", rxFreq != txFreq));
             if (vhfRepeaterOffset != null) {
-              double uhfRepeaterOffset = txFreq - rxFreq;
-              var sum = Math.signum(vhfRepeaterOffset) + Math.signum(uhfRepeaterOffset);
+              Frequency uhfRepeaterOffset = txFreq.subtract(rxFreq);
+              var sum = Math.signum(vhfRepeaterOffset.getFrequencyHz())
+                  + Math.signum(uhfRepeaterOffset.getFrequencyHz());
               count(sts.test("VHF and UHF repeater offset directions should be different", sum == 0));
             }
           }
@@ -181,7 +192,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         count(sts.testIfPresent("Channel Name should be present", entry.channelName()));
         count(sts.test("Assignment should be #EV", "All units/agencies", entry.assignment()));
         count(sts.test("RX freq should be a WX frequency", isWxFrequency(entry.rxFrequency()), entry.rxFrequency()));
-        count(sts.test("RX N or W should be #EV", "W", entry.rxNarrowWide()));
+        count(sts.test("RX Narrow or Wide should be #EV", "W", entry.rxNarrowWide()));
         count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
         count(sts.testIfEmpty("TX Freq should be present", entry.txFrequency()));
         count(sts.testIfEmpty("TX N or W should be blank", entry.txNarrowWide()));
@@ -202,29 +213,39 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         count(sts.test("Function should be #EV", "WL2K P2P", entry.function()));
         count(sts.testIfPresent("Channel Name should be present", entry.channelName()));
         count(sts.testIfPresent("Assignment should be present", entry.assignment()));
-        count(sts.test("RX freq should be parsable", isDouble(toDouble(entry.rxFrequency())), entry.rxFrequency()));
-        count(sts.testIfEmpty("RX N or W should be blank", entry.rxNarrowWide()));
-        count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
+        var rxFreq = new Frequency(entry.rxFrequency());
         count(sts
-            .test("TX Freq should be should be parsable", isDouble(toDouble(entry.txFrequency())),
+            .test("RX freq should be an HF frequency", rxFreq.isValid() && rxFreq.bandOf().isHF(),
+                entry.rxFrequency()));
+        count(sts.testIfEmpty("RX Narrow or Wide should be blank", entry.rxNarrowWide()));
+        count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
+        var txFreq = new Frequency(entry.txFrequency());
+        count(sts
+            .test("TX Freq should be should be an HF frequency", txFreq.isValid() && txFreq.bandOf().isHF(),
                 entry.txFrequency()));
-        count(sts.testIfEmpty("TX N or W should be blank", entry.txNarrowWide()));
+        count(sts.testIfEmpty("TX Narrow or Wide should be blank", entry.txNarrowWide()));
         count(sts.testIfEmpty("TX Tone should be blank", entry.txTone()));
         count(sts.testIfEmpty("Remarks should be empty", entry.remarks()));
       } // endif HF Winlink P2P
 
       if (lineNumber >= 5 && lineNumber <= 10) {
-        sts.setExplanationPrefix(baseExplanation + " (WFX Frequencies): ");
+        sts.setExplanationPrefix(baseExplanation + " (WFD HF Frequencies): ");
         count(sts
             .test("Function should start with Amateur", entry.function().toLowerCase().startsWith("amateur"),
                 entry.function()));
         count(sts.testIfEmpty("Channel Name should be blank", entry.channelName()));
         count(sts.testIfPresent("Assignment should be present", entry.assignment()));
-        count(sts.testIfPresent("RX Freq should be present", entry.rxFrequency()));
-        count(sts.testIfEmpty("RX N or W should be blank", entry.rxNarrowWide()));
+        var rxFreq = new Frequency(entry.rxFrequency());
+        count(sts
+            .test("RX freq should be an HF frequency", rxFreq.isValid() && rxFreq.bandOf().isHF(),
+                entry.rxFrequency()));
+        count(sts.testIfEmpty("RX Narrow or Wide should be blank", entry.rxNarrowWide()));
         count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
-        count(sts.testIfPresent("TX Freq should be present", entry.txFrequency()));
-        count(sts.testIfEmpty("TX N or W should be blank", entry.txNarrowWide()));
+        var txFreq = new Frequency(entry.txFrequency());
+        count(sts
+            .test("TX Freq should be should be an HF frequency", txFreq.isValid() && txFreq.bandOf().isHF(),
+                entry.txFrequency()));
+        count(sts.testIfEmpty("TX Narrow or Wide should be blank", entry.txNarrowWide()));
         count(sts.testIfEmpty("TX Tone should be blank", entry.txTone()));
         count(sts.test("Mode should be A, D, or M", isModeValid(entry.mode()), entry.mode()));
         count(sts.testIfPresent("Remarks should be present", entry.remarks()));
@@ -233,40 +254,18 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     } // end loop over lines
   }
 
-  private boolean isVhf(Double freq) {
-    if (freq == null) {
-      return false;
-    }
-
-    if (freq >= 144d && freq <= 148d) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private boolean isUhf(Double freq) {
-    if (freq == null) {
-      return false;
-    }
-
-    if (freq >= 420d && freq <= 450d) {
-      return true;
-    }
-
-    return false;
-  }
-
   private boolean isWxFrequency(String freqString) {
     final List<Double> WX_FREQUENCIES = List.of(162.400, 162.425, 162.450, 162.475, 162.500, 162.525, 162.550);
     final Set<Double> WX_FREQUENCY_SET = new HashSet<Double>(WX_FREQUENCIES);
 
-    var freq = toDouble(freqString);
-    if (!isDouble(freq)) {
+    var freq = new Frequency(freqString);
+    if (!freq.isValid()) {
       return false;
     }
 
-    if (!WX_FREQUENCY_SET.contains(freq)) {
+    Double doubleFreq = Double.valueOf(freq.getFrequencyHz());
+
+    if (!WX_FREQUENCY_SET.contains(doubleFreq)) {
       return false;
     }
 
@@ -310,19 +309,4 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     return false;
   }
 
-  private Double toDouble(String value) {
-    if (value == null || value.isEmpty()) {
-      return null;
-    }
-
-    try {
-      return Double.valueOf(value);
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  private boolean isDouble(Double d) {
-    return d != null;
-  }
 }
