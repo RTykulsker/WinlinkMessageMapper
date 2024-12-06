@@ -107,6 +107,8 @@ public enum Key implements IConfigurationKey {
   CHART_CONFIG("chartConfig"), // as a JSON blob
 
   DYFI_DETAIL_LEVEL("dyfi.detailLevel"), // to control number of fields, etc.
+
+  WEB_SERVER_PORT("web.serverPort"), // that we listen on
   ;
 
   private final String key;
