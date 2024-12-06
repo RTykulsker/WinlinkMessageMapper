@@ -379,7 +379,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
 
       if (doOutboundMessaging) {
-        var service = new OutboundMessageService(cm);
+		var service = new OutboundMessageService(cm, mm);
         outboundMessageList = service.sendAll(outboundMessageList);
         writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }

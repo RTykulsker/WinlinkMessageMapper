@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.service.IService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -48,8 +49,11 @@ public class OutboundMessageService implements IService {
     this(cm, null);
   }
 
-  public OutboundMessageService(IConfigurationManager cm, String extraContent) {
-    ;
+	public OutboundMessageService(IConfigurationManager cm, IMessageManager mm) {
+		this(cm, mm, null);
+	}
+
+	public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent) {
     var engineTypeString = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, EngineType.PAT.name());
     var engineType = EngineType.valueOf(engineTypeString);
     if (engineType == null) {
@@ -59,8 +63,12 @@ public class OutboundMessageService implements IService {
 
     switch (engineType) {
     case PAT:
-      engine = new PatOutboundMessageEngine(cm, extraContent);
+		engine = new PatOutboundMessageEngine(cm, extraContent);
       break;
+
+	case WEB:
+		engine = new WebOutboundMessageEngine(cm, mm);
+		break;
 
     default:
       throw new RuntimeException("Could not find engine for " + engineType.name());

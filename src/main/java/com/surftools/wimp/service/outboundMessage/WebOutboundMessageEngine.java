@@ -27,6 +27,41 @@ SOFTWARE.
 
 package com.surftools.wimp.service.outboundMessage;
 
-public enum EngineType {
-	PAT, WINLINK_CMS, WEB
+import java.util.HashMap;
+import java.util.Map;
+
+import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.utils.config.IConfigurationManager;
+
+public class WebOutboundMessageEngine implements IOutboundMessageEngine {
+	private final Map<String, String> fromMessageMap = new HashMap<>();
+
+	public WebOutboundMessageEngine(IConfigurationManager cm, IMessageManager mm) {
+		mm.putContextObject("webOutboundMessage", fromMessageMap);
+  }
+
+  @Override
+  	/**
+	 * add to map
+	 */
+  public String send(OutboundMessage m) {
+	fromMessageMap.put(m.to(), m.body());
+	return "";
+  }
+
+  @Override
+  public void finalizeSend() {
+
+}
+
+  @Override
+  public boolean isReady() {
+		return true;
+  }
+
+  @Override
+  public EngineType getEngineType() {
+		return EngineType.WEB;
+  }
+
 }
