@@ -56,345 +56,344 @@ import com.surftools.wimp.parser.AbstractBaseParser;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class BaseReadProcessor extends AbstractBaseProcessor {
-	protected Logger logger;
+  protected DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
-	protected DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
+  private Set<String> expectedDestinations = new LinkedHashSet<>();
+  private Set<String> secondaryDestinations = new LinkedHashSet<>();
 
-	private Set<String> expectedDestinations = new LinkedHashSet<>();
-	private Set<String> secondaryDestinations = new LinkedHashSet<>();
+  static record LocationResult(LatLongPair location, String source) {
+  };
 
-	static record LocationResult(LatLongPair location, String source) {
-	};
+  @Override
+  public void initialize(IConfigurationManager cm, IMessageManager mm) {
+    super.initialize(cm, mm);
 
-	@Override
-	public void initialize(IConfigurationManager cm, IMessageManager mm) {
-		super.initialize(cm, mm);
+    var expectedDestinationsString = cm.getAsString(Key.EXPECTED_DESTINATIONS);
+    if (expectedDestinationsString != null) {
+      var fields = expectedDestinationsString.split(",");
+      for (var field : fields) {
+        expectedDestinations.add(field);
+      }
 
-		var expectedDestinationsString = cm.getAsString(Key.EXPECTED_DESTINATIONS);
-		if (expectedDestinationsString != null) {
-			var fields = expectedDestinationsString.split(",");
-			for (var field : fields) {
-				expectedDestinations.add(field);
-			}
+      logger.info("Expected Destinations: " + expectedDestinations.toString());
+    }
 
-			logger.info("Expected Destinations: " + expectedDestinations.toString());
-		}
+    var secondaryDestinationsString = cm.getAsString(Key.SECONDARY_DESTINATIONS);
+    if (secondaryDestinationsString != null) {
+      var fields = secondaryDestinationsString.split(",");
+      for (var field : fields) {
+        secondaryDestinations.add(field);
+      }
 
-		var secondaryDestinationsString = cm.getAsString(Key.SECONDARY_DESTINATIONS);
-		if (secondaryDestinationsString != null) {
-			var fields = secondaryDestinationsString.split(",");
-			for (var field : fields) {
-				secondaryDestinations.add(field);
-			}
+      logger.info("Secondary Destinations: " + secondaryDestinations.toString());
+    }
+  }
 
-			logger.info("Secondary Destinations: " + secondaryDestinations.toString());
-		}
-	}
+  @Override
+  public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
+    super.initialize(cm, mm, _logger);
+  }
 
-	public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
-		super.initialize(cm, mm, _logger);
-	}
+  protected List<ExportedMessage> parseExportedMessages(InputStream inputStream) {
+    List<ExportedMessage> messages = new ArrayList<>();
 
-	protected List<ExportedMessage> parseExportedMessages(InputStream inputStream) {
-		List<ExportedMessage> messages = new ArrayList<>();
+    var iNode = 0;
+    var nNodes = 0;
+    try {
+      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+      dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      Document doc = db.parse(inputStream);
+      doc.getDocumentElement().normalize();
+      NodeList nodeList = doc.getElementsByTagName("message");
+      nNodes = nodeList.getLength();
+      for (iNode = 0; iNode < nNodes; ++iNode) {
+        Node node = nodeList.item(iNode);
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+          Element element = (Element) node;
+          ExportedMessage message = readMessage(element);
+          messages.add(message);
+        } // end if XML Message Node
+      } // end for over messages
+    } catch (Exception e) {
+      logger
+          .error("Exception processing imput stream, message " + iNode + " of " + nNodes
+              + " (maybe not exported Winlink Messages XML file) : " + e.getLocalizedMessage());
+    }
 
-		var iNode = 0;
-		var nNodes = 0;
-		try {
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document doc = db.parse(inputStream);
-			doc.getDocumentElement().normalize();
-			NodeList nodeList = doc.getElementsByTagName("message");
-			nNodes = nodeList.getLength();
-			for (iNode = 0; iNode < nNodes; ++iNode) {
-				Node node = nodeList.item(iNode);
-				if (node.getNodeType() == Node.ELEMENT_NODE) {
-					Element element = (Element) node;
-					ExportedMessage message = readMessage(element);
-					messages.add(message);
-				} // end if XML Message Node
-			} // end for over messages
-		} catch (Exception e) {
-			logger.error("Exception processing imput stream, message " + iNode + " of " + nNodes
-					+ " (maybe not exported Winlink Messages XML file) : " + e.getLocalizedMessage());
-		}
+    return messages;
+  }
 
-		return messages;
-	}
+  private ExportedMessage readMessage(Element element) {
 
-	private ExportedMessage readMessage(Element element) {
+    var messageId = element.getElementsByTagName("id").item(0).getTextContent();
+    var subject = element.getElementsByTagName("subject").item(0).getTextContent();
+    var dtString = element.getElementsByTagName("time").item(0).getTextContent();
+    var sender = element.getElementsByTagName("sender").item(0).getTextContent();
+    var source = element.getElementsByTagName("source").item(0).getTextContent();
+    var mime = element.getElementsByTagName("mime").item(0).getTextContent();
 
-		var messageId = element.getElementsByTagName("id").item(0).getTextContent();
-		var subject = element.getElementsByTagName("subject").item(0).getTextContent();
-		var dtString = element.getElementsByTagName("time").item(0).getTextContent();
-		var sender = element.getElementsByTagName("sender").item(0).getTextContent();
-		var source = element.getElementsByTagName("source").item(0).getTextContent();
-		var mime = element.getElementsByTagName("mime").item(0).getTextContent();
+    var isP2p = false;
+    var v = element.getElementsByTagName("peertopeer");
+    if (v != null && v.item(0) != null && v.item(0).getTextContent() != null) {
+      isP2p = Boolean.parseBoolean(v.item(0).getTextContent());
+    }
 
-		var isP2p = false;
-		var v = element.getElementsByTagName("peertopeer");
-		if (v != null && v.item(0) != null && v.item(0).getTextContent() != null) {
-			isP2p = Boolean.parseBoolean(v.item(0).getTextContent());
-		}
+    if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
+      logger.debug("messageId: " + messageId + ", sender: " + sender);
+    }
 
-		if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
-			logger.debug("messageId: " + messageId + ", sender: " + sender);
-		}
+    var locationResult = parseLocation(element, mime, sender, messageId);
 
-		var locationResult = parseLocation(element, mime, sender, messageId);
+    var localDateTime = LocalDateTime.parse(dtString, DT_FORMATTER);
 
-		var localDateTime = LocalDateTime.parse(dtString, DT_FORMATTER);
+    String[] mimeLines = mime.split("\\n");
 
-		String[] mimeLines = mime.split("\\n");
+    var recipients = getRecipients(mimeLines);
+    if (recipients == null) {
+      logger.error("null recipients: messageId: " + messageId + ", from " + sender);
+    }
+    String recipient = recipients[0];
+    String toList = recipients[1];
+    String ccList = recipients[2];
 
-		var recipients = getRecipients(mimeLines);
-		if (recipients == null) {
-			logger.error("null recipients: messageId: " + messageId + ", from " + sender);
-		}
-		String recipient = recipients[0];
-		String toList = recipients[1];
-		String ccList = recipients[2];
+    ExportedMessage message = null;
+    String plainContent = null;
+    Map<String, byte[]> attachments = null;
 
-		ExportedMessage message = null;
-		String plainContent = null;
-		Map<String, byte[]> attachments = null;
+    var parser = AbstractBaseParser.makeMimeMessageParser(messageId, mime);
+    if (parser == null) {
+      message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
+          localDateTime, locationResult.location, locationResult.source, //
+          mime, plainContent, attachments, isP2p);
+      return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
+    }
 
-		var parser = AbstractBaseParser.makeMimeMessageParser(messageId, mime);
-		if (parser == null) {
-			message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
-					localDateTime, locationResult.location, locationResult.source, //
-					mime, plainContent, attachments, isP2p);
-			return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
-		}
+    plainContent = parser.getPlainContent();
+    attachments = AbstractBaseParser.getAttachments(parser);
 
-		plainContent = parser.getPlainContent();
-		attachments = AbstractBaseParser.getAttachments(parser);
+    message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
+        localDateTime, locationResult.location, locationResult.source, //
+        mime, plainContent, attachments, isP2p);
 
-		message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
-				localDateTime, locationResult.location, locationResult.source, //
-				mime, plainContent, attachments, isP2p);
+    return message;
+  }
 
-		return message;
-	}
+  /**
+   * location may be missing, present as "40.187500N, 92.541667W", or even "40.187500N, 92.541667W (GRID SQUARE)"
+   *
+   * @param element
+   * @return
+   */
+  private LocationResult parseLocation(Element element, String mime, String sender, String messageId) {
+    LatLongPair location = null;
+    String source = null;
 
-	/**
-	 * location may be missing, present as "40.187500N, 92.541667W", or even
-	 * "40.187500N, 92.541667W (GRID SQUARE)"
-	 *
-	 * @param element
-	 * @return
-	 */
-	private LocationResult parseLocation(Element element, String mime, String sender, String messageId) {
-		LatLongPair location = null;
-		String source = null;
+    if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
+      logger.debug("messageId: " + messageId + ", sender: " + sender);
+    }
 
-		if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
-			logger.debug("messageId: " + messageId + ", sender: " + sender);
-		}
+    try {
+      var locationString = element.getElementsByTagName("location").item(0).getTextContent();
+      if (locationString != null) {
+        var fields = locationString.split(",");
+        if (fields.length >= 2) {
+          var latString = fields[0].substring(0, fields[0].length() - 1);
+          if (fields[0].endsWith("S")) {
+            latString = "-" + latString.trim();
+          }
 
-		try {
-			var locationString = element.getElementsByTagName("location").item(0).getTextContent();
-			if (locationString != null) {
-				var fields = locationString.split(",");
-				if (fields.length >= 2) {
-					var latString = fields[0].substring(0, fields[0].length() - 1);
-					if (fields[0].endsWith("S")) {
-						latString = "-" + latString.trim();
-					}
+          var subfields = fields[1].trim().split(" ");
+          var lonString = subfields[0].substring(0, subfields[0].length() - 1);
+          if (subfields[0].endsWith("W")) {
+            lonString = "-" + lonString.trim();
+          }
 
-					var subfields = fields[1].trim().split(" ");
-					var lonString = subfields[0].substring(0, subfields[0].length() - 1);
-					if (subfields[0].endsWith("W")) {
-						lonString = "-" + lonString.trim();
-					}
+          location = new LatLongPair(latString, lonString);
 
-					location = new LatLongPair(latString, lonString);
+          var leftParenIndex = fields[1].indexOf("(");
+          var rightParenIndex = fields[1].indexOf(")");
+          if (leftParenIndex >= 0 && rightParenIndex >= 0 && leftParenIndex < rightParenIndex) {
+            source = fields[1].substring(leftParenIndex + 1, rightParenIndex);
+          }
+        } else {
+          if (mime != null) {
+            // looking for something like: X-Location: 38.660000N, 122.870667W (SPECIFIED)
+            var mimeLines = mime.split("\n");
+            for (var line : mimeLines) {
+              line = line.toUpperCase();
+              if (line.startsWith("X-LOCATION:")) {
+                fields = line.split(" ");
+                if (fields.length >= 4) {
+                  var latString = fields[1].substring(0, fields[0].length() - 2);
+                  if (fields[0].endsWith("S")) {
+                    latString = "-" + latString.trim();
+                  }
 
-					var leftParenIndex = fields[1].indexOf("(");
-					var rightParenIndex = fields[1].indexOf(")");
-					if (leftParenIndex >= 0 && rightParenIndex >= 0 && leftParenIndex < rightParenIndex) {
-						source = fields[1].substring(leftParenIndex + 1, rightParenIndex);
-					}
-				} else {
-					if (mime != null) {
-						// looking for something like: X-Location: 38.660000N, 122.870667W (SPECIFIED)
-						var mimeLines = mime.split("\n");
-						for (var line : mimeLines) {
-							line = line.toUpperCase();
-							if (line.startsWith("X-LOCATION:")) {
-								fields = line.split(" ");
-								if (fields.length >= 4) {
-									var latString = fields[1].substring(0, fields[0].length() - 2);
-									if (fields[0].endsWith("S")) {
-										latString = "-" + latString.trim();
-									}
+                  var lonString = fields[2].substring(0, fields[2].length() - 1);
+                  if (fields[2].endsWith("W")) {
+                    lonString = "-" + lonString.trim();
+                  }
 
-									var lonString = fields[2].substring(0, fields[2].length() - 1);
-									if (fields[2].endsWith("W")) {
-										lonString = "-" + lonString.trim();
-									}
+                  location = new LatLongPair(latString, lonString);
 
-									location = new LatLongPair(latString, lonString);
+                  source = "OTHER";
+                  if (line.contains("GRID SQUARE")) {
+                    source = "GRID SQUARE";
+                  } else if (line.contains("SPECIFIED")) {
+                    source = "SPECIFIED";
+                  } else if (line.contains("GPS")) {
+                    source = "GPS";
+                  } else {
+                    source = "UNKNOWN";
+                  }
 
-									source = "OTHER";
-									if (line.contains("GRID SQUARE")) {
-										source = "GRID SQUARE";
-									} else if (line.contains("SPECIFIED")) {
-										source = "SPECIFIED";
-									} else if (line.contains("GPS")) {
-										source = "GPS";
-									} else {
-										source = "UNKNOWN";
-									}
+                  break;
+                } // end if 4 fields in X-Location
+              } // end if X-Location line
+            } // end loop over mimeLines
+          } // end if mime != null
+        } // end if <location> tag has 2 fields
+      } // end if location string
+    } catch (Exception e) {
+      ;
+    }
 
-									break;
-								} // end if 4 fields in X-Location
-							} // end if X-Location line
-						} // end loop over mimeLines
-					} // end if mime != null
-				} // end if <location> tag has 2 fields
-			} // end if location string
-		} catch (Exception e) {
-			;
-		}
+    var locationResult = new LocationResult(location, source);
+    return locationResult;
+  }
 
-		var locationResult = new LocationResult(location, source);
-		return locationResult;
-	}
+  // Subject: DYFI Automatic Entry - Winlink EXERCISE
+  // To: SMTP:dyfi_reports_automated@usgs.gov,
+  // ETO-02@winlink.org
+  // Cc: KC3DOW@winlink.org,
+  // W3IHP@winlink.org,
+  // SMTP:kc3dow@kanidor.com,
+  // SMTP:w3ihp@jmbventures.com
+  // Message-ID: Z4VVKSSM1GII
 
-	// Subject: DYFI Automatic Entry - Winlink EXERCISE
-	// To: SMTP:dyfi_reports_automated@usgs.gov,
-	// ETO-02@winlink.org
-	// Cc: KC3DOW@winlink.org,
-	// W3IHP@winlink.org,
-	// SMTP:kc3dow@kanidor.com,
-	// SMTP:w3ihp@jmbventures.com
-	// Message-ID: Z4VVKSSM1GII
+  /**
+   *
+   * @param mimeLines
+   * @return array of Strings
+   *
+   *         0 -- the "recipient"
+   *
+   *         1 -- the toList
+   *
+   *         2 -- the ccList
+   */
+  public String[] getRecipients(String[] mimeLines) {
+    List<String> toList = new ArrayList<String>();
+    List<String> ccList = new ArrayList<String>();
+    List<String> theList = null;
 
-	/**
-	 *
-	 * @param mimeLines
-	 * @return array of Strings
-	 *
-	 *         0 -- the "recipient"
-	 *
-	 *         1 -- the toList
-	 *
-	 *         2 -- the ccList
-	 */
-	public String[] getRecipients(String[] mimeLines) {
-		List<String> toList = new ArrayList<String>();
-		List<String> ccList = new ArrayList<String>();
-		List<String> theList = null;
+    boolean isFound = false;
+    for (String line : mimeLines) {
+      if (line.startsWith("Message-ID: ")) {
+        break;
+      }
 
-		boolean isFound = false;
-		for (String line : mimeLines) {
-			if (line.startsWith("Message-ID: ")) {
-				break;
-			}
+      if (line.startsWith("To: ")) {
+        isFound = true;
+        theList = toList;
+      }
 
-			if (line.startsWith("To: ")) {
-				isFound = true;
-				theList = toList;
-			}
+      if (line.startsWith("Cc: ")) {
+        isFound = true;
+        theList = ccList;
+      }
 
-			if (line.startsWith("Cc: ")) {
-				isFound = true;
-				theList = ccList;
-			}
+      if (isFound) {
+        line = pre_fixAddress(line);
+        if (line != null && !line.isBlank()) {
+          theList.add(line);
+        }
+      } else {
+        continue;
+      }
+    } // end for over lines
 
-			if (isFound) {
-				line = pre_fixAddress(line);
-				if (line != null && !line.isBlank()) {
-					theList.add(line);
-				}
-			} else {
-				continue;
-			}
-		} // end for over lines
+    List<String> addresses = new ArrayList<>();
+    addresses.addAll(toList);
+    addresses.addAll(ccList);
 
-		List<String> addresses = new ArrayList<>();
-		addresses.addAll(toList);
-		addresses.addAll(ccList);
+    if (addresses.size() == 0) {
+      return null;
+    }
 
-		if (addresses.size() == 0) {
-			return null;
-		}
+    logger.debug("found " + addresses.size() + " addresses: " + String.join(", ", addresses));
 
-		logger.debug("found " + addresses.size() + " addresses: " + String.join(", ", addresses));
+    String address = chooseBestAddress(addresses);
+    address = post_fix(address);
 
-		String address = chooseBestAddress(addresses);
-		address = post_fix(address);
+    var strings = new String[] { address, String.join(",", toList), String.join(",", ccList) };
+    return strings;
+  } // end getRecipients
 
-		var strings = new String[] { address, String.join(",", toList), String.join(",", ccList) };
-		return strings;
-	} // end getRecipients
+  /**
+   * clean up line, strip leading To: Cc: and space, strip trailing ,
+   *
+   * @param line
+   * @return
+   */
+  public String pre_fixAddress(String line) {
+    if (line == null) {
+      return null;
+    }
 
-	/**
-	 * clean up line, strip leading To: Cc: and space, strip trailing ,
-	 *
-	 * @param line
-	 * @return
-	 */
-	public String pre_fixAddress(String line) {
-		if (line == null) {
-			return null;
-		}
+    if (line.startsWith("To: ") || line.startsWith("Cc: ")) {
+      String[] fields = line.split(" ");
+      line = fields[1];
+    }
 
-		if (line.startsWith("To: ") || line.startsWith("Cc: ")) {
-			String[] fields = line.split(" ");
-			line = fields[1];
-		}
+    if (line.endsWith(",")) {
+      line = line.substring(0, line.length() - 1);
+    }
+    return line.trim();
+  }
 
-		if (line.endsWith(",")) {
-			line = line.substring(0, line.length() - 1);
-		}
-		return line.trim();
-	}
+  /**
+   * remove leading "SMTP:", trailing "@..."
+   *
+   * @param address
+   * @return
+   */
+  private String post_fix(String address) {
+    final String smtp = "SMTP:";
+    if (address.startsWith(smtp)) {
+      address = address.substring(smtp.length());
+    }
 
-	/**
-	 * remove leading "SMTP:", trailing "@..."
-	 *
-	 * @param address
-	 * @return
-	 */
-	private String post_fix(String address) {
-		final String smtp = "SMTP:";
-		if (address.startsWith(smtp)) {
-			address = address.substring(smtp.length());
-		}
+    int atIndex = address.indexOf("@");
+    if (atIndex >= 0) {
+      address = address.substring(0, atIndex);
+    }
+    return address;
+  }
 
-		int atIndex = address.indexOf("@");
-		if (atIndex >= 0) {
-			address = address.substring(0, atIndex);
-		}
-		return address;
-	}
+  /**
+   * choose the best out of potentially many addresses
+   *
+   * @param addresses
+   * @return
+   */
+  private String chooseBestAddress(List<String> addresses) {
 
-	/**
-	 * choose the best out of potentially many addresses
-	 *
-	 * @param addresses
-	 * @return
-	 */
-	private String chooseBestAddress(List<String> addresses) {
+    for (var address : addresses) {
+      if (expectedDestinations.contains(post_fix(address))) {
+        return address;
+      }
+    }
 
-		for (var address : addresses) {
-			if (expectedDestinations.contains(post_fix(address))) {
-				return address;
-			}
-		}
+    for (var address : addresses) {
+      if (secondaryDestinations.contains(post_fix(address))) {
+        return address;
+      }
+    }
 
-		for (var address : addresses) {
-			if (secondaryDestinations.contains(post_fix(address))) {
-				return address;
-			}
-		}
+    // last ditch
+    return addresses.get(0);
 
-		// last ditch
-		return addresses.get(0);
-
-	}
+  }
 }

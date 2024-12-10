@@ -27,14 +27,23 @@ SOFTWARE.
 
 package com.surftools.wimp.web;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.MessageManager;
 import com.surftools.wimp.processors.std.PipelineProcessor;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 
 import io.javalin.Javalin;
@@ -58,6 +67,12 @@ public class WimpWebServer {
 
   private static final Logger logger = LoggerFactory.getLogger(WimpWebServer.class);
 
+  private IConfigurationManager cm;
+  private IMessageManager mm;
+  private String pathString;
+
+  private IProcessor pipeline;
+
   @Option(name = "--configurationFile", usage = "path to configuration file", required = false)
   private String configurationFileName = "configuration.txt";
 
@@ -80,14 +95,15 @@ public class WimpWebServer {
     try {
       logger.info("begin");
 
-      var cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
-      var mm = new MessageManager();
+      cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
+      mm = new MessageManager();
+      pathString = cm.getAsString(Key.PATH);
 
       // TODO see if we can instantiate and initialize once, then call pipeline.process() once for each web request
-      var pipeline = new PipelineProcessor();
+      pipeline = new PipelineProcessor();
       pipeline.initialize(cm, mm);
-      pipeline.process();
-      pipeline.postProcess();
+      // pipeline.process();
+      // pipeline.postProcess();
 
       final int port = cm.getAsInt(Key.WEB_SERVER_PORT, 3200);
       if (!WebUtils.isPortAvailable(port)) {
@@ -99,14 +115,40 @@ public class WimpWebServer {
       final String serverUrl = "http://" + ipAddress + ":" + port;
       logger.info("listening on port: " + serverUrl);
 
+      var uploadHandler = new UploadHandler();
       var app = Javalin.create();
+      app.get("/", new InitHandler());
       app.get("/status", new StatusHandler());
-      app.post("upload", new UploadHandler());
+      app.post("/upload", uploadHandler);
+      app.post("/uploadXHR", uploadHandler);
       app.start(port);
       logger.info("started on port: " + port);
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
       System.exit(1);
+    }
+  }
+
+  class InitHandler implements Handler {
+    private String pageHtml = "";
+
+    InitHandler() {
+      try {
+        var htmlPath = Path.of(pathString, "index.html");
+        var rawHtml = Files.readString(htmlPath);
+
+        // TODO fixup page
+        pageHtml = rawHtml;
+      } catch (IOException e) {
+        logger.error("Exception initializing InitHandler: " + e.getLocalizedMessage());
+        System.exit(1);
+      }
+    }
+
+    @Override
+    public void handle(Context ctx) throws Exception {
+      ctx.html(pageHtml);
+      ctx.status(HttpStatus.OK);
     }
   }
 
@@ -123,44 +165,61 @@ public class WimpWebServer {
 
     @Override
     public void handle(Context ctx) throws Exception {
+      System.err.println("upload!");
+      // TODO get export sender from line 6: <callsign>KM6SO</callsign>
+      // TODO write to common log
+
       // https://javalin.io/tutorials/html-forms-example
 
-      // String viewContent = null;
-      // String requestPath = ctx.req().getPathInfo();
-      // if (requestPath.equals(FILE_UPLOAD_URL)) {
-      // logger.info("requestPath: " + requestPath);
-      //
-      // // handle form upload; gets placed into a multipart ...
-      // MultipartConfigElement multipartConfigElement = new MultipartConfigElement("");
-      // request.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement);
-      // Part file = request.raw().getPart("file"); // file is name of the upload form
-      //
-      // if (file == null) {
-      // Utils.warn(cm, ConfigurationKey.EMSG_NO_UPLOAD_FILE, null);
-      // response.status(401);
-      // return cm.getAsString(ConfigurationKey.EMSG_NO_UPLOAD_FILE);
-      // }
-      //
-      // InputStream is = file.getInputStream();
-      // viewContent = new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.joining("\n"));
-      // } else if (requestPath.equals(XHR_UPLOAD_URL)) {
-      // viewContent = ctx.req().body();
-      // }
-      //
-      // String fileName = request.headers("X_FILENAME");
-      // logger.info("receivedfilename: " + fileName + ", " + viewContent.length() + " bytes");
-      //
-      // if (viewContent == null || viewContent.length() == 0) {
-      // Utils.warn(cm, ConfigurationKey.EMSG_NO_UPLOAD_FILE, null);
-      // response.status(401);
-      // return cm.getAsString(ConfigurationKey.EMSG_NO_UPLOAD_FILE);
-      // }
-      //
-      // FormResults results = generateResults(viewContent);
-      // serverLogger.info(commonLogFormat(request, results.displayFormName, results));
-      // response.status(results.responseCode);
-      // return results.resultString;
-      // }
+      var req = ctx.req();
+      var requestPath = req.getPathInfo();
+      var fileContent = "";
+
+      String fileName = req.getHeader("X_FILENAME");
+      logger.info("receivedfilename: " + fileName);
+
+      if (requestPath.equals("/uploadXHR")) {
+        var reader = req.getReader();
+        String text = reader.lines().collect(Collectors.joining("\n"));
+        fileContent = text;
+      } else {
+        var map = ctx.uploadedFileMap();
+        for (var fileNameX : map.keySet()) {
+          var list = map.get(fileNameX);
+          var uploadedFile = list.get(0);
+          logger.info(uploadedFile.toString());
+        }
+      }
+
+      mm.putContextObject("webReqestMessages", fileContent);
+      pipeline.process();
+      pipeline.postProcess();
+
+      @SuppressWarnings("unchecked")
+      var webMessageMap = (Map<String, String>) mm.getContextObject("webOutboundMessage");
+      if (webMessageMap == null) {
+        ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
+        ctx.result("null map");
+      } else {
+        var stringOutput = String.join("\n", webMessageMap.values());
+        ctx.result(stringOutput);
+      }
     }
   }
+
+  // private String commonLogFormat(Request request, String displayFormName, FormResults results) {
+  // // [10/Oct/2000:13:55:36 -0700]
+  // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
+  // String timeString = formatter.format(ZonedDateTime.of(LocalDateTime.now(), ZoneId.systemDefault()));
+  //
+  // StringBuilder sb = new StringBuilder();
+  // sb.append(request.ip());
+  // sb.append(" - - [");
+  // sb.append(timeString);
+  // sb.append("] ");
+  // sb.append("\"POST" + request.pathInfo() + "/" + displayFormName + "\"");
+  // sb.append(" " + results.responseCode + " ");
+  // sb.append(results.resultString.length());
+  // return sb.toString();
+  // }
 }

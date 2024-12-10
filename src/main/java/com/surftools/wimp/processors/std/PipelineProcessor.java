@@ -115,6 +115,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
       }
     }
 
+    logger.info("Processors: " + String.join(",", processors.stream().map(p -> p.getName()).toList()));
   }
 
   public Set<String> makeIds(IConfigurationManager cm, Key key) {

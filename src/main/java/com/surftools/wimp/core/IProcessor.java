@@ -48,4 +48,12 @@ public interface IProcessor {
    * run after processors complete their normal message processing
    */
   public void postProcess();
+
+  public default String getName() {
+    var fullName = getClass().getName();
+    var fields = fullName.split("\\.");
+    var lastName = fields[fields.length - 1];
+    lastName = lastName.replaceAll("Processor", "");
+    return lastName;
+  }
 }
