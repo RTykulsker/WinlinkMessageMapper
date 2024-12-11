@@ -27,16 +27,27 @@ SOFTWARE.
 
 package com.surftools.wimp.web;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
@@ -70,11 +81,10 @@ public class WimpWebServer {
   private IConfigurationManager cm;
   private IMessageManager mm;
   private String pathString;
-
   private IProcessor pipeline;
 
-  @Option(name = "--configurationFile", usage = "path to configuration file", required = false)
-  private String configurationFileName = "configuration.txt";
+  @Option(name = "--configurationFile", usage = "path to configuration file, default: webConfig.txt", required = false)
+  private String configurationFileName = "webConfig.txt";
 
   public static void main(String[] args) {
     WimpWebServer app = new WimpWebServer();
@@ -99,11 +109,8 @@ public class WimpWebServer {
       mm = new MessageManager();
       pathString = cm.getAsString(Key.PATH);
 
-      // TODO see if we can instantiate and initialize once, then call pipeline.process() once for each web request
       pipeline = new PipelineProcessor();
       pipeline.initialize(cm, mm);
-      // pipeline.process();
-      // pipeline.postProcess();
 
       final int port = cm.getAsInt(Key.WEB_SERVER_PORT, 3200);
       if (!WebUtils.isPortAvailable(port)) {
@@ -111,18 +118,11 @@ public class WimpWebServer {
         System.exit(1);
       }
 
-      final String ipAddress = WebUtils.getLocalIPv4Address();
-      final String serverUrl = "http://" + ipAddress + ":" + port;
-      logger.info("listening on port: " + serverUrl);
-
-      var uploadHandler = new UploadHandler();
       var app = Javalin.create();
       app.get("/", new InitHandler());
-      app.get("/status", new StatusHandler());
-      app.post("/upload", uploadHandler);
-      app.post("/uploadXHR", uploadHandler);
+      app.post("/upload", new UploadHandler());
       app.start(port);
-      logger.info("started on port: " + port);
+      logger.info("Web server started on: " + "http://" + WebUtils.getLocalIPv4Address() + ":" + port);
     } catch (Exception e) {
       logger.error("Exception running, " + e.getMessage(), e);
       System.exit(1);
@@ -134,15 +134,26 @@ public class WimpWebServer {
 
     InitHandler() {
       try {
-        var htmlPath = Path.of(pathString, "index.html");
-        var rawHtml = Files.readString(htmlPath);
+        var getHtmlFromFile = false;
+        var rawHtml = "";
+        if (getHtmlFromFile) {
+          var htmlPath = Path.of(pathString, "index.html");
+          rawHtml = Files.readString(htmlPath);
+        } else {
+          rawHtml = WebUtils.makeInitialPageHtml();
+          System.err.println(rawHtml);
+        }
 
-        // TODO fixup page
+        rawHtml = rawHtml.replaceAll("#EN", cm.getAsString(Key.EXERCISE_NAME));
+        rawHtml = rawHtml.replaceAll("#ED", cm.getAsString(Key.EXERCISE_DESCRIPTION));
+        rawHtml = rawHtml.replaceAll("#OPEN", cm.getAsString(Key.EXERCISE_WINDOW_OPEN));
+        rawHtml = rawHtml.replaceAll("#CLOSE", cm.getAsString(Key.EXERCISE_WINDOW_CLOSE));
         pageHtml = rawHtml;
-      } catch (IOException e) {
+      } catch (Exception e) {
         logger.error("Exception initializing InitHandler: " + e.getLocalizedMessage());
         System.exit(1);
       }
+
     }
 
     @Override
@@ -152,74 +163,89 @@ public class WimpWebServer {
     }
   }
 
-  class StatusHandler implements Handler {
-
-    @Override
-    public void handle(Context ctx) throws Exception {
-      ctx.result("alive");
-      ctx.status(HttpStatus.OK);
-    }
-  }
-
   class UploadHandler implements Handler {
 
     @Override
     public void handle(Context ctx) throws Exception {
-      System.err.println("upload!");
-      // TODO get export sender from line 6: <callsign>KM6SO</callsign>
-      // TODO write to common log
-
-      // https://javalin.io/tutorials/html-forms-example
-
-      var req = ctx.req();
-      var requestPath = req.getPathInfo();
-      var fileContent = "";
-
-      String fileName = req.getHeader("X_FILENAME");
-      logger.info("receivedfilename: " + fileName);
-
-      if (requestPath.equals("/uploadXHR")) {
-        var reader = req.getReader();
-        String text = reader.lines().collect(Collectors.joining("\n"));
-        fileContent = text;
-      } else {
-        var map = ctx.uploadedFileMap();
-        for (var fileNameX : map.keySet()) {
-          var list = map.get(fileNameX);
-          var uploadedFile = list.get(0);
-          logger.info(uploadedFile.toString());
-        }
-      }
+      var responseText = "";
+      var responseStatus = HttpStatus.OK;
+      var fileName = ctx.req().getHeader("X_FILENAME");
+      var fileContent = ctx.req().getReader().lines().collect(Collectors.joining("\n"));
+      var callsign = getExportCallsign(fileContent);
+      logger.info("received file: " + fileName + ", from call: " + callsign);
 
       mm.putContextObject("webReqestMessages", fileContent);
       pipeline.process();
       pipeline.postProcess();
 
       @SuppressWarnings("unchecked")
-      var webMessageMap = (Map<String, String>) mm.getContextObject("webOutboundMessage");
-      if (webMessageMap == null) {
-        ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
-        ctx.result("null map");
+      var feedbackMap = (Map<String, String>) mm.getContextObject("webOutboundMessage");
+      if (feedbackMap == null) {
+        responseStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        responseText = "Server Error";
+      } else if (feedbackMap.size() == 0) {
+        responseStatus = HttpStatus.BAD_REQUEST;
+        responseText = "No exported messages in file: " + fileName + ", perhaps not an exported message file";
       } else {
-        var stringOutput = String.join("\n", webMessageMap.values());
-        ctx.result(stringOutput);
+        var sb = new StringBuilder()
+            .append("<div>Received " + mm.getOriginalMessages().size() + " messages exported from " + callsign
+                + "<p/></div>\n");
+
+        sb.append("<pre>\n");
+        var senders = new ArrayList<String>(feedbackMap.keySet());
+        Collections.sort(senders);
+        for (var sender : senders) {
+          var feedback = feedbackMap.get(sender);
+          sb.append("sender: " + sender + "\n");
+          sb.append(feedback + "\n\n");
+        }
+        sb.append("</pre>\n");
+        responseText = sb.toString();
       }
+
+      ctx.status(responseStatus);
+      ctx.result(responseText);
+
+      logItAll(ctx, fileContent, fileName, responseStatus, responseText, callsign);
+    }
+
+    private String getExportCallsign(String fileContent) {
+      try {
+        var dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        var db = dbf.newDocumentBuilder();
+        var doc = db.parse(new ByteArrayInputStream(fileContent.getBytes()));
+        doc.getDocumentElement().normalize();
+
+        var nodeList = doc.getElementsByTagName("callsign");
+        var nNodes = nodeList.getLength();
+        for (var iNode = 0; iNode < nNodes; ++iNode) {
+          var node = nodeList.item(iNode);
+          if (node.getNodeType() == Node.ELEMENT_NODE) {
+            var element = (Element) node;
+            return element.getTextContent();
+          } // end if
+        } // end for
+      } catch (Exception e) {
+        logger.error("Exception processing exported messages : " + e.getLocalizedMessage());
+      }
+      return "unknown callsign";
     }
   }
 
-  // private String commonLogFormat(Request request, String displayFormName, FormResults results) {
-  // // [10/Oct/2000:13:55:36 -0700]
-  // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
-  // String timeString = formatter.format(ZonedDateTime.of(LocalDateTime.now(), ZoneId.systemDefault()));
-  //
-  // StringBuilder sb = new StringBuilder();
-  // sb.append(request.ip());
-  // sb.append(" - - [");
-  // sb.append(timeString);
-  // sb.append("] ");
-  // sb.append("\"POST" + request.pathInfo() + "/" + displayFormName + "\"");
-  // sb.append(" " + results.responseCode + " ");
-  // sb.append(results.resultString.length());
-  // return sb.toString();
-  // }
+  private void logItAll(Context ctx, String fileContent, String fileName, HttpStatus responseStatus,
+      String responseText, String callsign) {
+    // TODO write request
+    // TODO write response
+    // TODO write common log: host ident authuser date request status bytes
+
+    var now = LocalDateTime.now();
+    var commonLogDTFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
+    var timeString = commonLogDTFormatter.format(ZonedDateTime.of(now, ZoneId.systemDefault()));
+
+    var clString = ctx.req().getRemoteHost() + " " + callsign + " - [" + timeString + "] \"POST /upload/" + fileName
+        + "\" " + responseStatus.getCode() + " " + responseText.length();
+
+    logger.info("Common log: " + clString);
+  }
 }

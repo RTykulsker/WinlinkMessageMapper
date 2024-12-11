@@ -28,11 +28,9 @@ SOFTWARE.
 package com.surftools.wimp.processors.eto_2024;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,7 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -58,6 +55,7 @@ import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.processors.std.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
+import com.surftools.wimp.web.WebUtils;
 
 import info.debatty.java.stringsimilarity.experimental.Sift4;
 
@@ -72,7 +70,8 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
   private static final int NUMBER_OF_ACTIVITIES_TO_BE_NICE = 2;
 
-  private boolean hasSentimentService = false;
+  // for people with trouble following inconsistent instructions
+  final boolean ALLOW_INCONSISTENT_DATE_START_PROCESSING = true;
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
@@ -88,7 +87,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
     public int activityCount;
     public boolean isNice;
-    public String sentiment;
 
     public Summary(String from) {
       this.from = from;
@@ -103,7 +101,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
           .addAll(Arrays
               .asList(new String[] { "Ics213RR mId", "Ics214 mId", //
                   "Requests", "Resources", "Activities", //
-                  "Activity Count", "Is Nice", "Sentiment", //
+                  "Activity Count", "Is Nice", //
               }));
       return list.toArray(new String[0]);
     }
@@ -120,7 +118,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
           .addAll(Arrays
               .asList(new String[] { mId(ics213RRMessage), mId(ics214Message), //
                   allRequests, allResources, allActivities, //
-                  s(activityCount), Boolean.toString(isNice), sentiment, //
+                  s(activityCount), Boolean.toString(isNice), //
               }));
 
       return list.toArray(new String[0]);
@@ -138,32 +136,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
     outboundMessageExtraContent = getNagString(2025) + FeedbackProcessor.OB_DISCLAIMER;
 
-    hasSentimentService = testSentimentService();
-    if (!hasSentimentService) {
-      logger.error("#### SentimentServer not running! #####");
-      final int SLEEP_SECONDS = 60;
-      logger.error("#### Sleeping for " + SLEEP_SECONDS + " seconds! #####");
-      try {
-        TimeUnit.SECONDS.sleep(SLEEP_SECONDS);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-  private boolean testSentimentService() {
-    try {
-      var httpClient = HttpClient.newBuilder().build();
-      var request = HttpRequest.newBuilder().uri(URI.create("http://localhost:7000/status")).GET().build();
-      var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      var statusCode = response.statusCode();
-      var body = response.body();
-      logger.info("statusCode: " + statusCode + ", body: " + body);
-      return body.equals("alive");
-    } catch (Exception e) {
-      logger.error("error getting sentimentServer status: " + e.getLocalizedMessage());
-      return false;
-    }
   }
 
   @Override
@@ -252,9 +224,18 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
           allLinesInOrder = false;
         }
 
-        count(sts
-            .test("Box 4 line " + lineNumber + ": Requested Date/Time should be #EV", "2024-12-25",
-                lineItem.requestedDateTime()));
+        var requestedDate = lineItem.requestedDateTime() == null ? "(null)" : lineItem.requestedDateTime();
+        if (ALLOW_INCONSISTENT_DATE_START_PROCESSING) {
+          var resourceDateOk = startsWithAnyOf(requestedDate, List.of("2024-12-25", "12/25/2024"));
+          count(sts
+              .test("Box 4 line " + lineNumber + ": Requested Date/Time should start with 2024-12-25", resourceDateOk,
+                  requestedDate));
+        } else {
+          count(sts
+              .test("Box 4 line " + lineNumber + ": Requested Date/Time should be #EV", "2024-12-25",
+                  lineItem.requestedDateTime()));
+        }
+
         count(sts
             .testIfEmpty("Box 4 line " + lineNumber + ": Estimated Date/Time should be empty",
                 lineItem.estimatedDateTime()));
@@ -427,9 +408,16 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       ++activityLineNumber;
       if (isFull(a.dateTimeString()) && isFull(a.activities())) {
         var dtString = a.dateTimeString().trim();
-        count(sts
-            .test("activity line #" + activityLineNumber + " should start with 12-25-2024",
-                dtString.startsWith("12-25-2024"), dtString));
+
+        if (ALLOW_INCONSISTENT_DATE_START_PROCESSING) {// for people with trouble following inconsistent instructions
+          count(sts
+              .test("activity line #" + activityLineNumber + " should start with 12-25-2024",
+                  startsWithAnyOf(dtString, List.of("12-25-2024", "2024-12-25")), dtString));
+        } else {
+          count(sts
+              .test("activity line #" + activityLineNumber + " should start with 12-25-2024",
+                  dtString.startsWith("12-25-2024"), dtString));
+        }
 
         var activityDateTimeList = activityDateTimeLinesMap.getOrDefault(dtString, new ArrayList<String>());
         activityDateTimeList.add(String.valueOf(activityLineNumber));
@@ -447,8 +435,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     var expectedPreparedBy = selfResource.name() + "/" + selfResource.icsPosition();
     count(sts.test("Box 9 Prepared By should match Boxes 3 and 4: #EV", expectedPreparedBy, m.preparedBy));
 
-    var sentiment = getSentiment(allActivities);
-
     // #MM update summary
     var allResourcesList = resources
         .stream()
@@ -462,10 +448,38 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     summary.allActivities = allActivities;
     summary.activityCount = allActivitiesList.size();
     summary.isNice = isNice;
-    summary.sentiment = sentiment;
   }
 
-  private String getSentiment(String allActivities) {
+  public boolean startsWithAnyOf(String needle, List<String> list) {
+    if (needle == null) {
+      return false;
+    }
+
+    for (var s : list) {
+      if (s == null) {
+        return false;
+      }
+
+      if (needle.toLowerCase().startsWith(s.toLowerCase())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * call external service to return "sentiment" of a String
+   *
+   * turns out not to be useful over the concatentation of activities
+   *
+   * @param allActivities
+   * @param hasSentimentService
+   * @return
+   */
+  @SuppressWarnings("unused")
+  @Deprecated
+  private String getSentiment(String allActivities, boolean hasSentimentService) {
     if (!hasSentimentService) {
       return ("n/a");
     }
@@ -481,7 +495,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
           .newBuilder()
             .uri(URI.create("http://localhost:7000/query"))
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(getFormDataAsString(formData)))
+            .POST(HttpRequest.BodyPublishers.ofString(WebUtils.getFormDataAsString(formData)))
             .build();
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       var statusCode = response.statusCode();
@@ -549,18 +563,5 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
         count(sts.test(label + ": " + key + " found on multiple lines", true));
       }
     }
-  }
-
-  private String getFormDataAsString(Map<String, String> formData) {
-    var sb = new StringBuilder();
-    for (var entry : formData.entrySet()) {
-      if (sb.length() > 0) {
-        sb.append("&");
-      }
-      sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
-      sb.append("=");
-      sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-    }
-    return sb.toString();
   }
 }
