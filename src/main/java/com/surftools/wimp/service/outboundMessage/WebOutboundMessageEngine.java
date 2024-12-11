@@ -34,34 +34,36 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class WebOutboundMessageEngine implements IOutboundMessageEngine {
-	private final Map<String, String> fromMessageMap = new HashMap<>();
+  private Map<String, String> fromMessageMap;
+  private IMessageManager mm;
 
-	public WebOutboundMessageEngine(IConfigurationManager cm, IMessageManager mm) {
-		mm.putContextObject("webOutboundMessage", fromMessageMap);
+  public WebOutboundMessageEngine(IConfigurationManager cm, IMessageManager mm) {
+    this.fromMessageMap = new HashMap<>();
+    this.mm = mm;
   }
 
   @Override
-  	/**
-	 * add to map
-	 */
+  /**
+   * add to map
+   */
   public String send(OutboundMessage m) {
-	fromMessageMap.put(m.to(), m.body());
-	return "";
+    fromMessageMap.put(m.to(), m.body());
+    return "";
   }
 
   @Override
   public void finalizeSend() {
-
-}
+    mm.putContextObject("webOutboundMessage", fromMessageMap);
+  }
 
   @Override
   public boolean isReady() {
-		return true;
+    return true;
   }
 
   @Override
   public EngineType getEngineType() {
-		return EngineType.WEB;
+    return EngineType.WEB;
   }
 
 }

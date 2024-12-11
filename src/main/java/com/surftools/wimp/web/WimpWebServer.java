@@ -109,9 +109,6 @@ public class WimpWebServer {
       mm = new MessageManager();
       pathString = cm.getAsString(Key.PATH);
 
-      pipeline = new PipelineProcessor();
-      pipeline.initialize(cm, mm);
-
       final int port = cm.getAsInt(Key.WEB_SERVER_PORT, 3200);
       if (!WebUtils.isPortAvailable(port)) {
         logger.error("Web server port: " + port + " in use, exiting!");
@@ -134,14 +131,14 @@ public class WimpWebServer {
 
     InitHandler() {
       try {
-        var getHtmlFromFile = false;
+        var getHtmlFromFile = true;
         var rawHtml = "";
         if (getHtmlFromFile) {
           var htmlPath = Path.of(pathString, "index.html");
           rawHtml = Files.readString(htmlPath);
         } else {
           rawHtml = WebUtils.makeInitialPageHtml();
-          System.err.println(rawHtml);
+          // System.err.println(rawHtml);
         }
 
         rawHtml = rawHtml.replaceAll("#EN", cm.getAsString(Key.EXERCISE_NAME));
@@ -174,7 +171,10 @@ public class WimpWebServer {
       var callsign = getExportCallsign(fileContent);
       logger.info("received file: " + fileName + ", from call: " + callsign);
 
+      mm = new MessageManager();
       mm.putContextObject("webReqestMessages", fileContent);
+      pipeline = new PipelineProcessor();
+      pipeline.initialize(cm, mm);
       pipeline.process();
       pipeline.postProcess();
 

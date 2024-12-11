@@ -49,11 +49,11 @@ public class OutboundMessageService implements IService {
     this(cm, null);
   }
 
-	public OutboundMessageService(IConfigurationManager cm, IMessageManager mm) {
-		this(cm, mm, null);
-	}
+  public OutboundMessageService(IConfigurationManager cm, IMessageManager mm) {
+    this(cm, mm, null);
+  }
 
-	public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent) {
+  public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent) {
     var engineTypeString = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, EngineType.PAT.name());
     var engineType = EngineType.valueOf(engineTypeString);
     if (engineType == null) {
@@ -63,18 +63,16 @@ public class OutboundMessageService implements IService {
 
     switch (engineType) {
     case PAT:
-		engine = new PatOutboundMessageEngine(cm, extraContent);
+      engine = new PatOutboundMessageEngine(cm, extraContent);
       break;
 
-	case WEB:
-		engine = new WebOutboundMessageEngine(cm, mm);
-		break;
+    case WEB:
+      engine = new WebOutboundMessageEngine(cm, mm);
+      break;
 
     default:
       throw new RuntimeException("Could not find engine for " + engineType.name());
     }
-
-    ;
   }
 
   public List<OutboundMessage> sendAll(List<OutboundMessage> inputMessageList) {
@@ -112,9 +110,7 @@ public class OutboundMessageService implements IService {
       logger.warn("#### WARNING: outbound messaging looks broken");
     }
 
-    if (engine.getEngineType() == EngineType.PAT) {
-      ((PatOutboundMessageEngine) engine).finalizeSend();
-    }
+    engine.finalizeSend();
 
     return outputMessageList;
   }

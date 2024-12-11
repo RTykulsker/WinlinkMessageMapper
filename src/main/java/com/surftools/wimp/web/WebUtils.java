@@ -115,7 +115,6 @@ public class WebUtils {
         <html lang="en">
         <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Winlink Exported Message Feedback Preview</title>
 
         <style>
@@ -213,6 +212,8 @@ public class WebUtils {
         <fieldset>
         <legend>Exported Message File Upload</legend>
 
+        <input type="hidden" id="MAX_FILE_SIZE" name="MAX_FILE_SIZE" value="300000" />
+
         <div class="flex-container">
           <div class="flex-left">
             <label for="fileselect">View file to upload:</label>
@@ -269,9 +270,8 @@ public class WebUtils {
 
           // upload files
           function UploadFile(file) {
-              var maxFileSize = 3000000;
             var xhr = new XMLHttpRequest();
-            if (xhr.upload && file.size <= maxFileSize) {
+            if (xhr.upload && file.size <= $id("MAX_FILE_SIZE").value) {
               xhr.onreadystatechange = function(e) {
                 if (xhr.readyState == 4) {
                   // document.write(xhr.response);
@@ -322,7 +322,7 @@ public class WebUtils {
         </script>
         </body>
         </html>
-                """;
+                        """;
     return s;
   }
 }

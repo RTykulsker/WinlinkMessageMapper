@@ -316,8 +316,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
         outboundMessageList.add(outboundMessage);
       }
 
-		var service = new OutboundMessageService(cm, mm, outboundMessageExtraContent);
-
+      var service = new OutboundMessageService(cm, mm, outboundMessageExtraContent);
       outboundMessageList = service.sendAll(outboundMessageList);
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }

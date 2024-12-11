@@ -28,7 +28,6 @@ SOFTWARE.
 package com.surftools.wimp.core;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,21 +37,28 @@ import com.surftools.wimp.message.ExportedMessage;
 
 public class MessageManager implements IMessageManager {
 
-  private final Map<String, Object> contextMap;
+  private final Map<String, Object> contextMap = new HashMap<>();
 
-  private List<ExportedMessage> messageList;
+  private List<ExportedMessage> messageList = new ArrayList<>();
 
   // source of truth
-  private final Map<String, Map<MessageType, List<ExportedMessage>>> senderMap;
+  private final Map<String, Map<MessageType, List<ExportedMessage>>> senderMap = new HashMap<>();
 
   // convenience object, once senderMap is not dirty
-  private final Map<MessageType, List<ExportedMessage>> messageMap;
+  private final Map<MessageType, List<ExportedMessage>> messageMap = new HashMap<>();
   private boolean isSenderMapDirty = false;
 
   public MessageManager() {
-    this.contextMap = new HashMap<>();
-    this.senderMap = new HashMap<>();
-    this.messageMap = new HashMap<>();
+    clear();
+  }
+
+  @Override
+  public void clear() {
+    contextMap.clear();
+    messageList.clear();
+    senderMap.clear();
+    messageMap.clear();
+    isSenderMapDirty = false;
   }
 
   @Override
@@ -67,7 +73,8 @@ public class MessageManager implements IMessageManager {
 
   @Override
   public void load(List<ExportedMessage> messages) {
-    messageList = Collections.unmodifiableList(messages);
+    messageList.clear();
+    messageList.addAll(messages);
 
     // convert to our source of truth!
     senderMap.clear();
@@ -79,8 +86,9 @@ public class MessageManager implements IMessageManager {
       list.add(message);
       map.put(type, list);
       senderMap.put(from, map);
-      isSenderMapDirty = true;
     }
+    isSenderMapDirty = true;
+    rebuildMessageMap();
   }
 
   @Override

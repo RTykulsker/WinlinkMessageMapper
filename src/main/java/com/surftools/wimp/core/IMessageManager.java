@@ -125,4 +125,9 @@ public interface IMessageManager {
    */
   public Iterator<String> getSenderIterator();
 
+  /**
+   * clear all messages
+   */
+  public void clear();
+
 }

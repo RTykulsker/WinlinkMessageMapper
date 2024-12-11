@@ -75,7 +75,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected String outputPathName;
   protected Path outputPath;
 
-  protected List<OutboundMessage> outboundMessageList = new ArrayList<OutboundMessage>();
+  protected List<OutboundMessage> outboundMessageList;
   protected String outboundMessageSender;
   protected String outboundMessageSubject;
   protected boolean doOutboundMessaging;
@@ -120,6 +120,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     outboundMessageSubject = cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);
     doOutboundMessaging = outboundMessageSender != null && outboundMessageSubject != null
         && !outboundMessageSender.isEmpty() && !outboundMessageSubject.isEmpty();
+    outboundMessageList = new ArrayList<>();
   }
 
   @Override
