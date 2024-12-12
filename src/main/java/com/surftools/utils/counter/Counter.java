@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("rawtypes")
 public class Counter implements ICounter {
@@ -40,7 +41,12 @@ public class Counter implements ICounter {
   protected String name;
 
   public Counter() {
+  }
 
+  @Override
+  public String toString() {
+    return "name: " + name + ", map: "
+        + map.keySet().stream().map(key -> key + "->" + map.get(key)).collect(Collectors.joining(",", "{", "}"));
   }
 
   public Counter(String name) {

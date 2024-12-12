@@ -68,8 +68,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
   protected int ppMessageCorrectCount = 0;
   protected Counter ppFeedBackCounter = new Counter();
 
-  protected Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
-
   protected LatLongPair feedbackLocation = null;
   protected Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
   protected List<String> badLocationMessageIds = new ArrayList<String>();
@@ -245,7 +243,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
 
     if (doOutboundMessaging) {
-		var service = new OutboundMessageService(cm, mm, extraContent);
+      var service = new OutboundMessageService(cm, mm, extraContent);
       outboundMessageList = service.sendAll(outboundMessageList);
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }

@@ -50,6 +50,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class PatOutboundMessageEngine implements IOutboundMessageEngine {
   private static final Logger logger = LoggerFactory.getLogger(PatOutboundMessageEngine.class);
 
+  private IConfigurationManager cm;
   private boolean isReady;
   private String execPath;;
 
@@ -60,7 +61,11 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
 
   private final String extraContent;
 
+  private StringBuilder allOutput = new StringBuilder();
+
   public PatOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
+    this.cm = cm;
+
     this.extraContent = extraContent;
 
     execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_PAT_EXEC_PATH);
@@ -153,6 +158,8 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
     } catch (Exception e) {
       logger.error("Exception writing b2f file: " + outputPath + ", " + e.getLocalizedMessage());
     }
+
+    allOutput.append(m.to() + "\n" + m.body() + "\n\n");
     return messageId;
   }
 
@@ -160,6 +167,13 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
   public void finalizeSend() {
     if (!isReady) {
       return;
+    }
+
+    try {
+      var path = cm.getAsString(Key.PATH);
+      Files.writeString(Path.of(path, "allFeedback.txt"), allOutput.toString());
+    } catch (Exception e) {
+      logger.error("error writing allFeedback.txt: " + e.getLocalizedMessage());
     }
 
     var args = new String[] { execPath, "--send-only", "--mbox", "\"" + mailboxPath.toString() + "\"", "connect",

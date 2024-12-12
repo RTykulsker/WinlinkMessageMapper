@@ -76,6 +76,12 @@ public abstract class AbstractBaseChartService implements IChartService {
     counterMap = _counterMap;
     messageType = _messageType;
 
+    if (counterMap.size() == 0) {
+      logger.warn("### initializing with " + counterMap.size() + " potential charts");
+    } else {
+      logger.info("initializing with " + counterMap.size() + " potential charts");
+    }
+
     for (var counterLabel : counterMap.keySet()) {
       var counter = counterMap.get(counterLabel);
       counterList.add(counter);

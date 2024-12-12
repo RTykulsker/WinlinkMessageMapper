@@ -30,7 +30,6 @@ package com.surftools.wimp.processors.std;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,6 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 
-import com.surftools.utils.counter.Counter;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
@@ -113,8 +111,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
   public int ppMessageCount = 0;
   public int ppParticipantCount = 0;
   public int ppParticipantCorrectCount = 0;
-
-  public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
 
   private List<String> badLocationSenders = new ArrayList<>();
 

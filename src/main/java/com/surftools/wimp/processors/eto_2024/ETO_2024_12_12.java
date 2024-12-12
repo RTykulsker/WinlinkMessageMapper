@@ -208,16 +208,20 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
         var isFound = REQUEST_KEY_SET.contains(key);
         var bestIndex = findBestMatchingIndex(item, REQUEST_LIST, REQUEST_KEYS);
         var bestRequest = REQUEST_LIST.get(bestIndex);
+
+        // what if the match is bad?
+        getCounter("Box 4 line " + lineNumber + " item").increment(item);
+        getCounter("Box 4 line " + lineNumber + " closest matching item").increment(bestRequest);
         if (isFound) {
           foundArray[bestIndex] = true;
-          count(sts.test("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item));
+          sts.test("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item);
 
           var name = REQUEST_LIST.get(bestIndex);
           var lineList = nameLinesMap.getOrDefault(name, new ArrayList<String>());
           lineList.add(String.valueOf(lineNumber));
           nameLinesMap.put(name, lineList);
         } else {
-          count(sts.test_2line("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item));
+          sts.test_2line("Box 4 line " + lineNumber + ": Item Description should be #EV", bestRequest, item);
         }
 
         if (bestIndex != index) {
@@ -253,15 +257,22 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
     count(sts.test("Box 4: All requests should be in order", allLinesInOrder));
 
-    testForDupes(nameLinesMap, "request");
+    // Too much information; also redundant!
+    var doTooMuch = false;
+    if (doTooMuch) {
+      testForDupes(nameLinesMap, "request");
 
-    for (var index = 0; index < REQUEST_LIST.size(); ++index) {
-      var isFound = foundArray[index];
-      count(sts.test("Box 4: item " + REQUEST_LIST.get(index) + " NOT requested", isFound));
+      for (var index = 0; index < REQUEST_LIST.size(); ++index) {
+        var isFound = foundArray[index];
+        count(sts.test("Box 4: item " + REQUEST_LIST.get(index) + " NOT requested", isFound));
+      }
     }
 
     count(sts.testIfPresent("Box 5, Delivery Location should be present", m.delivery));
+
     count(sts.test("Box 6 Substitutes should be #EV", "DX Engineering", m.substitutes));
+    getCounter("Box 6 Substitutes").increment(m.substitutes);
+
     sts.testIfPresent("Box 7 Requested By should be present", m.requestedBy);
     count(sts.test("Box 8 Priority should be #EV", "Routine", m.priority));
     count(sts.test("Box 9 Section Chief Name should be #EV", "Bernard Elf", m.approvedBy));
@@ -429,11 +440,15 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       }
     }
 
-    testForDupes(activityDateTimeLinesMap, "Activity Date/Time");
+    var doTooMuch = false;
+    if (doTooMuch) {
+      testForDupes(activityDateTimeLinesMap, "Activity Date/Time");
+    }
     testForDupes(activityLinesMap, "Activity");
 
     var expectedPreparedBy = selfResource.name() + "/" + selfResource.icsPosition();
-    count(sts.test("Box 9 Prepared By should match Boxes 3 and 4: #EV", expectedPreparedBy, m.preparedBy));
+    var isMatch = toKey(expectedPreparedBy).equals(toKey(m.preparedBy));
+    count(sts.test("Box 9 Prepared By should match Boxes 3 and 4", isMatch, m.preparedBy));
 
     // #MM update summary
     var allResourcesList = resources
