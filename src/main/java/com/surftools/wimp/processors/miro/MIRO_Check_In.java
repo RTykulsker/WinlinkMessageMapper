@@ -48,10 +48,8 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.MiroCheckInMessage;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
-import com.surftools.wimp.service.outboundMessage.OutboundMessage;
-import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
+import com.surftools.wimp.processors.std.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -62,7 +60,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class MIRO_Check_In extends FeedbackProcessor {
+public class MIRO_Check_In extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(MIRO_Check_In.class);
 
   private static final MultiDateTimeParser parser = new MultiDateTimeParser(
@@ -251,19 +249,16 @@ public class MIRO_Check_In extends FeedbackProcessor {
   }
 
   private Map<String, List<GradedMiroMessage>> oldMessages;
-
-  private int ppCount = 0;
-  private int ppResilienceCount = 0;
   private List<IWritableTable> results = new ArrayList<IWritableTable>();
-
   private RmsGatewayService rmsGatewayService;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    oldMessages = makeOldMessageMap();
+    messageType = MessageType.MIRO_CHECK_IN;
 
+    oldMessages = makeOldMessageMap();
     rmsGatewayService = new RmsGatewayService(cm);
   }
 
@@ -327,6 +322,7 @@ public class MIRO_Check_In extends FeedbackProcessor {
 
     if (doOutboundMessaging) {
       var sb = new StringBuilder();
+      sb.append("\n\n");
       sb.append("Thank you for participating in our monthly MIRO Winlink Wednesday exercise ");
       sb.append("and for submitting a MIRO Check In v2.0.0 message.\n\n");
 
@@ -343,11 +339,8 @@ public class MIRO_Check_In extends FeedbackProcessor {
 
       var totalMessageContent = getTotalMessageContent(from, mm.getMessagesForSender(from));
       sb.append(totalMessageContent);
-
       var feedback = sb.toString();
-      var outboundMessage = new OutboundMessage(outboundMessageSender, from, outboundMessageSubject + " " + m.messageId,
-          feedback, null);
-      outboundMessageList.add(outboundMessage);
+      extraOutboundMessageText = feedback;
     } // end doOutboundMessaging
 
   }
@@ -400,10 +393,6 @@ public class MIRO_Check_In extends FeedbackProcessor {
   public void postProcess() {
     super.postProcess();
 
-    var sb = new StringBuilder();
-    sb.append("\nMiro Check In messages: " + ppCount + "\n");
-    sb.append(formatPP("Messages with resilient channel", ppResilienceCount, ppCount));
-
     Collections.sort(results);
     writeTable("exercise-miro_check_in.csv", results);
 
@@ -415,12 +404,6 @@ public class MIRO_Check_In extends FeedbackProcessor {
     var writables = new ArrayList<IWritableTable>();
     writables.addAll(allGradedMessages);
     writeTable("cumulative-miro_check_in.csv", writables);
-
-    if (doOutboundMessaging) {
-      var service = new OutboundMessageService(cm);
-      outboundMessageList = service.sendAll(outboundMessageList);
-      writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
-    }
   }
 
   private Map<String, List<GradedMiroMessage>> makeOldMessageMap() {
