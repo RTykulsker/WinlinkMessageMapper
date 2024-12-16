@@ -328,8 +328,8 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       in this exercise. We look forward to seeing you at our next Winlink Thursday Exercise!
       """;
 
-  public String getNagString(int year) {
-    final String src1 = """
+  public String getNagString(int year, int textId) {
+    final String text_2023 = """
 
         =====================================================================================================
 
@@ -343,7 +343,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
         """;
 
-    final String src2 = """
+    final String text_2024 = """
 
         =========================================================================================================
 
@@ -372,8 +372,9 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
          """;
 
-    var src = src2;
-    var result = src.replaceAll("\\$YEAR", String.valueOf(year));
+    final var texts = new String[] { null, text_2023, text_2024 };
+    var text = texts[textId];
+    var result = text.replaceAll("\\$YEAR", String.valueOf(year));
     return result;
   }
 
