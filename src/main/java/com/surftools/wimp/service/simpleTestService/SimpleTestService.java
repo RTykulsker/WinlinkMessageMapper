@@ -134,6 +134,12 @@ public class SimpleTestService implements IService {
 
     expectedValue = entry.expectedValue;
     var predicate = value != null && toAlphaNumericWords(value).equalsIgnoreCase(expectedValue);
+
+    if (expectedValue.equals("DX Engineering") && !predicate) {
+      @SuppressWarnings("unused")
+      var debug = true;
+    }
+
     return internalTest(entry, predicate, wrap(value), null);
   }
 

@@ -134,6 +134,10 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
                                                                                            // location wins,
     acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
 
+    var altNagString = """
+
+        """;
+
     outboundMessageExtraContent = getNagString(2025) + FeedbackProcessor.OB_DISCLAIMER;
 
   }
@@ -270,11 +274,16 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
     count(sts.testIfPresent("Box 5, Delivery Location should be present", m.delivery));
 
+    var debug = false;
+    if (!toKey(m.substitutes).equals("DX  Engineering")) {
+      debug = true;
+    }
     count(sts.test("Box 6 Substitutes should be #EV", "DX Engineering", m.substitutes));
     getCounter("Box 6 Substitutes").increment(m.substitutes);
 
     sts.testIfPresent("Box 7 Requested By should be present", m.requestedBy);
     count(sts.test("Box 8 Priority should be #EV", "Routine", m.priority));
+    getCounter("Box Priorities").increment(m.priority);
     count(sts.test("Box 9 Section Chief Name should be #EV", "Bernard Elf", m.approvedBy));
 
     count(sts.testIfEmpty("Box 10 Logistics Order Number should be empty", m.logisticsOrderNumber));

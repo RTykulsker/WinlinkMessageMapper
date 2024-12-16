@@ -329,7 +329,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       """;
 
   public String getNagString(int year) {
-    final String src = """
+    final String src1 = """
 
         =====================================================================================================
 
@@ -343,6 +343,36 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
         """;
 
+    final String src2 = """
+
+        =========================================================================================================
+
+         Please consider supporting ETO operations by making a cash donation and/or sponsoring
+         our groups.io site. Our goal for cash donations is $500 which would be used to cover
+         the hosting fees for our website, annual governmental fees, bank fees and a post office box.
+         The goal for sponsorship of our groups.io site is $220 which covers the fees for 2025.
+
+         You can make cash donations on our website by using this link:
+             https://emcomm-training.org/Donate.html
+         Note: Cash donations are tax-deductible as allowed by law.
+
+         You can use this link to sponsor our group:
+             https://emcomm-training.groups.io/g/main/sponsor
+         Note:  Sponsorships are not tax deductible since the money is paid to groups.io.
+         The minimum sponsorship is $5.00.
+
+         If you want to donate using another payment method, please send an email to
+         emcommtrainingorg@gmail.com.
+
+         Thank you for your support !!!!!!
+
+         EmComm Training Organization is a nonprofit, tax-exempt charitable organization
+         (tax ID number 92-2282844) under Section 501(c)(3) of the Internal Revenue Code.
+         Donations are tax-deductible as allowed by law.
+
+         """;
+
+    var src = src2;
     var result = src.replaceAll("\\$YEAR", String.valueOf(year));
     return result;
   }

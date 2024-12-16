@@ -27,7 +27,11 @@ SOFTWARE.
 
 package com.surftools.wimp.web;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -49,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import com.surftools.utils.FileUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
@@ -80,7 +85,8 @@ public class WimpWebServer {
 
   private IConfigurationManager cm;
   private IMessageManager mm;
-  private String pathString;
+  private String pathName;
+  private String outputPathName;
   private IProcessor pipeline;
 
   @Option(name = "--configurationFile", usage = "path to configuration file, default: webConfig.txt", required = false)
@@ -107,7 +113,12 @@ public class WimpWebServer {
 
       cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
       mm = new MessageManager();
-      pathString = cm.getAsString(Key.PATH);
+      pathName = cm.getAsString(Key.PATH);
+      outputPathName = cm.getAsString(Key.OUTPUT_PATH);
+      if (outputPathName == null) {
+        outputPathName = Path.of(pathName, "webOutput").toString();
+      }
+      FileUtils.makeDirIfNeeded(Path.of(outputPathName));
 
       final int port = cm.getAsInt(Key.WEB_SERVER_PORT, 3200);
       if (!WebUtils.isPortAvailable(port)) {
@@ -131,10 +142,11 @@ public class WimpWebServer {
 
     InitHandler() {
       try {
+        // TODO fixme
         var getHtmlFromFile = true;
         var rawHtml = "";
         if (getHtmlFromFile) {
-          var htmlPath = Path.of(pathString, "index.html");
+          var htmlPath = Path.of(pathName, "index.html");
           rawHtml = Files.readString(htmlPath);
         } else {
           rawHtml = WebUtils.makeInitialPageHtml();
@@ -239,13 +251,45 @@ public class WimpWebServer {
     // TODO write response
     // TODO write common log: host ident authuser date request status bytes
 
-    var now = LocalDateTime.now();
-    var commonLogDTFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
-    var timeString = commonLogDTFormatter.format(ZonedDateTime.of(now, ZoneId.systemDefault()));
+    // outputPath/
+    // ____commonLog.txt //
+    // ________/<call-sign>/ //
+    // ____________<time-stamp> //
+    // ________________<request-file-name> //
+    // ________________response.txt
 
-    var clString = ctx.req().getRemoteHost() + " " + callsign + " - [" + timeString + "] \"POST /upload/" + fileName
-        + "\" " + responseStatus.getCode() + " " + responseText.length();
+    FileUtils.makeDirIfNeeded(Path.of(outputPathName, callsign));
+    var now = LocalDateTime.now();
+
+    var senderTimestamp = WebUtils.makeTimestamp();
+    FileUtils.makeDirIfNeeded(Path.of(outputPathName, callsign, senderTimestamp));
+    try {
+      Files.writeString(Path.of(outputPathName, callsign, senderTimestamp, fileName), fileContent);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    try {
+      Files.writeString(Path.of(outputPathName, callsign, senderTimestamp, "response.txt"), responseText);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    var commonLogDTFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
+    var clTimestamp = commonLogDTFormatter.format(ZonedDateTime.of(now, ZoneId.systemDefault()));
+
+    var clString = ctx.req().getRemoteHost() + " " + callsign + " - [" + clTimestamp + "] \"POST /upload/" + fileName
+        + "\" " + responseStatus.getCode() + " " + responseText.length() + "\n";
 
     logger.info("Common log: " + clString);
+
+    var clName = Path.of(outputPathName, "commonLog.txt").toString();
+    try (var writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(clName, true), "UTF-8"))) {
+      writer.write(clString);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }
