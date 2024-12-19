@@ -340,7 +340,7 @@ public class MIRO_Check_In extends SingleMessageFeedbackProcessor {
       var totalMessageContent = getTotalMessageContent(from, mm.getMessagesForSender(from));
       sb.append(totalMessageContent);
       var feedback = sb.toString();
-      extraOutboundMessageText = feedback;
+      outboundMessageExtraContent = feedback;
     } // end doOutboundMessaging
 
   }

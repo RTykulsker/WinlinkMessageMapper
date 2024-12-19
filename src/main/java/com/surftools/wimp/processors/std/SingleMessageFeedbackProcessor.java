@@ -72,8 +72,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
   protected Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
   protected List<String> badLocationMessageIds = new ArrayList<String>();
 
-  protected String extraOutboundMessageText = "";
-  protected String extraContent = FeedbackProcessor.OB_DISCLAIMER;
+  protected String outboundMessageExtraContent = FeedbackProcessor.OB_DISCLAIMER;
 
   protected MessageType messageType;
 
@@ -178,7 +177,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
         explanations.size(), feedback);
     mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
 
-    var outboundMessageFeedback = feedback + extraOutboundMessageText;
+    var outboundMessageFeedback = feedback;
     var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
         outboundMessageSubject + " " + message.messageId, outboundMessageFeedback, null);
     outboundMessageList.add(outboundMessage);
@@ -243,7 +242,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
 
     if (doOutboundMessaging) {
-      var service = new OutboundMessageService(cm, mm, extraContent);
+      var service = new OutboundMessageService(cm, mm, outboundMessageExtraContent);
       outboundMessageList = service.sendAll(outboundMessageList);
       writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
     }
