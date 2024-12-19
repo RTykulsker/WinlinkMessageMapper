@@ -54,7 +54,6 @@ public class FrequencyTest {
     var rxFreq = new Frequency("147.16");
     var offsetFreq = txFreq.subtract(rxFreq);
     var expectedOffset = new Frequency("600", FreqUnit.KHZ);
-    var areEqual = expectedOffset.equals(offsetFreq);
     assertEquals("offset should be 600 kHz", expectedOffset, offsetFreq);
   }
 }
