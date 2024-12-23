@@ -57,20 +57,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
     messageType = MessageType.ICS_205_RADIO_PLAN;
 
-    var extraOutboundMessageText = """
-
-        ###############################################################
-
-        Rob,
-
-        Thanks for the test message. I hope the exercise instructions are updated, because
-        the field width for the "Function" on the WX line is too short to allow for:
-        "ECCC Weatherradio Info"
-
-        Cheers,
-
-        Bob, KM6SO
-        """;
+    var extraOutboundMessageText = "";
 
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
