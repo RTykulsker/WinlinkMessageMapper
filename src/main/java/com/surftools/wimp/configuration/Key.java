@@ -50,14 +50,6 @@ public enum Key implements IConfigurationKey {
 
   IMAGE_MAX_SIZE("image.maxSize"), // of attached images
 
-  MULIIPLE_CHOICE_MESSAGE_TYPE("multipleChoice.messageType"), // type of message for MultipleChoice grading
-  MULTIPLE_CHOICE_VALID_RESPONSES("multipleChoice.validResponses"), // comma-delimited list;
-  MULTIPLE_CHOICE_CORRECT_RESPONSES("multipleChoice.correctResponses"), // comma-delimitedList
-  MULTIPLE_CHOICE_ALLOW_STOP_CHARS("multipleChoice.allowStopChars"), // boolean
-  MULTIPLE_CHOICE_FORCE_CASE("multipleChoice.forceCase"), // boolean, all comparisons in upper-case
-  MULITPLE_CHOICE_ALLOW_QUOTES("multipleChoice.allowQuotes"), // boolean, allow quotes around responses
-  MULTIPLE_CHOICE_ALLOW_TRIM("multipleChoice.allowTrim"), // boolean allow trim around responses
-
   OVERRIDE_LOCATION_PATH("overrideLocation.path"), // path to file with override locations
 
   P2P_TARGET_PATH("p2p.targetPath"), // for P2P processing, target (destination) definitions

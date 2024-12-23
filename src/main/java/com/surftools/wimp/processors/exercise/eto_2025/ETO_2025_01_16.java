@@ -55,10 +55,9 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
+
     messageType = MessageType.ICS_205_RADIO_PLAN;
-
     var extraOutboundMessageText = "";
-
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
 

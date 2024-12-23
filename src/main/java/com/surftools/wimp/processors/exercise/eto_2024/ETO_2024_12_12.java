@@ -27,10 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2024;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -55,7 +51,6 @@ import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
-import com.surftools.wimp.web.WebUtils;
 
 import info.debatty.java.stringsimilarity.experimental.Sift4;
 
@@ -480,46 +475,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     }
 
     return false;
-  }
-
-  /**
-   * call external service to return "sentiment" of a String
-   *
-   * turns out not to be useful over the concatentation of activities
-   *
-   * @param allActivities
-   * @param hasSentimentService
-   * @return
-   */
-  @SuppressWarnings("unused")
-  @Deprecated
-  private String getSentiment(String allActivities, boolean hasSentimentService) {
-    if (!hasSentimentService) {
-      return ("n/a");
-    }
-
-    if (allActivities == null) {
-      return "null";
-    }
-
-    try {
-      var httpClient = HttpClient.newBuilder().build();
-      var formData = Map.of("q", allActivities);
-      var request = HttpRequest
-          .newBuilder()
-            .uri(URI.create("http://localhost:7000/query"))
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(WebUtils.getFormDataAsString(formData)))
-            .build();
-      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      var statusCode = response.statusCode();
-      var body = response.body();
-      logger.debug("statusCode: " + statusCode + ", body: " + body);
-      return body;
-    } catch (Exception e) {
-      logger.error("error getting sentimentServer status: " + e.getLocalizedMessage());
-      return "error";
-    }
   }
 
   @Override

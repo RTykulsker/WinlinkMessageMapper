@@ -68,7 +68,7 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
 
     this.extraContent = extraContent;
 
-    execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_PAT_EXEC_PATH);
+    execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_PAT_EXEC_PATH, "/usr/bin/pat");
     if (execPath == null || execPath.isEmpty()) {
       logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SENDER.name() + " not defined");
       return;

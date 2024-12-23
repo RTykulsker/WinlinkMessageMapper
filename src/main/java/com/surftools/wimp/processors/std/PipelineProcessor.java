@@ -86,7 +86,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     mm.putContextObject("dumpIds", dumpIds);
 
     var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication,Filter");
-    var main = cm.getAsString(Key.PIPELINE_MAIN);
+    var main = cm.getAsString(Key.PIPELINE_MAIN, "");
     var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary");
 
     var processorNames = new ArrayList<String>();
@@ -97,7 +97,9 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
       var fields = configName.split(",");
       for (var field : fields) {
-        processorNames.add(field);
+        if (field != null && !field.isEmpty()) {
+          processorNames.add(field);
+        }
       }
     }
 
