@@ -45,6 +45,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.RejectionMessage;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class SummaryProcessor extends AbstractBaseProcessor {

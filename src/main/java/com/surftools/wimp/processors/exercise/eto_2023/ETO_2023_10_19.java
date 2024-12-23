@@ -43,7 +43,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.DyfiMessage;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.service.FieldTestService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;

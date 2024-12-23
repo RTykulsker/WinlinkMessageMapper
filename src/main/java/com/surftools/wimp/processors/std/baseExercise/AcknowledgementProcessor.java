@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.std;
+package com.surftools.wimp.processors.std.baseExercise;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +41,8 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;

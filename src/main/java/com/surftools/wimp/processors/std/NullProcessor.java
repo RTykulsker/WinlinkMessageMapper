@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class NullProcessor extends AbstractBaseProcessor {

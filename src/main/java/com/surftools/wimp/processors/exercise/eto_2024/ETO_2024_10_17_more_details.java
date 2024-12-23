@@ -39,7 +39,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
+import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

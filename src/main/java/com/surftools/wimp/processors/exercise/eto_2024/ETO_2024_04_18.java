@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.HospitalStatusMessage;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
+import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

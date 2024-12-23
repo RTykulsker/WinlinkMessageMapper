@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.std;
+package com.surftools.wimp.processors.std.baseExercise;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -44,6 +44,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.AbstractBaseChartService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;

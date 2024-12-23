@@ -46,8 +46,8 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.EtoCheckInV2Message;
 import com.surftools.wimp.message.Ics213Message;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

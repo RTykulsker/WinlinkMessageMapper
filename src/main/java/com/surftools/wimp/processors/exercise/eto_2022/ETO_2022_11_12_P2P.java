@@ -40,8 +40,8 @@ import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.processors.std.AbstractBaseP2PProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseP2PProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

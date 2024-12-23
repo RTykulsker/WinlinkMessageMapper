@@ -46,8 +46,8 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics214Message;
 import com.surftools.wimp.message.PlainMessage;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 

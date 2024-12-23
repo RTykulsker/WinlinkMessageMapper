@@ -42,7 +42,7 @@ import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.CheckInMessage;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;

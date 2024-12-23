@@ -46,9 +46,9 @@ import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.FieldSituationMessage.ResourceType;
+import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.PlainMessage;
-import com.surftools.wimp.processors.std.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

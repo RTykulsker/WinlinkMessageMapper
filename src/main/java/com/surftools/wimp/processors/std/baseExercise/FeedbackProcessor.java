@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.std;
+package com.surftools.wimp.processors.std.baseExercise;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -53,6 +53,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.AbstractBaseChartService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;

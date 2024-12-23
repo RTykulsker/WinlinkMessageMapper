@@ -49,7 +49,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.MiroCheckInMessage;
 import com.surftools.wimp.processors.std.ReadProcessor;
-import com.surftools.wimp.processors.std.SingleMessageFeedbackProcessor;
+import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.service.rmsGateway.RmsGatewayService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 

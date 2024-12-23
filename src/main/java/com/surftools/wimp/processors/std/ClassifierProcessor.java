@@ -76,6 +76,7 @@ import com.surftools.wimp.parser.WindshieldDamageParser;
 import com.surftools.wimp.parser.WxHurricaneParser;
 import com.surftools.wimp.parser.WxLocalParser;
 import com.surftools.wimp.parser.WxSevereParser;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

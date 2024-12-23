@@ -52,8 +52,8 @@ import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

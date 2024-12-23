@@ -44,8 +44,8 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.Ics213Message;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

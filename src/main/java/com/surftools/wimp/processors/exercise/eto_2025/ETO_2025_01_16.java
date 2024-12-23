@@ -40,7 +40,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics205RadioPlanMessage;
 import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
-import com.surftools.wimp.processors.std.SingleMessageFeedbackProcessor;
+import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

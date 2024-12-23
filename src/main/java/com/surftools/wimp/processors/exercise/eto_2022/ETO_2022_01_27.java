@@ -43,7 +43,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.Ics213Message;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

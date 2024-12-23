@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.std;
+package com.surftools.wimp.processors.exercise.other;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -49,6 +49,8 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

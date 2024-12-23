@@ -37,7 +37,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.HospitalBedMessage;
 import com.surftools.wimp.message.HospitalStatusMessage;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
+import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

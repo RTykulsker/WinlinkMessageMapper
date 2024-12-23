@@ -42,9 +42,9 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.Ics213ReplyMessage;
-import com.surftools.wimp.processors.std.AbstractBaseProcessor;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.SummaryProcessor.ParticipantHistory;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 import com.surftools.wimp.processors.std.WriteProcessor;
 

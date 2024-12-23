@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.std;
+package com.surftools.wimp.processors.std.baseExercise;
 
 import java.io.BufferedWriter;
 import java.io.File;

@@ -37,7 +37,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.Ics309Message.Activity;
-import com.surftools.wimp.processors.std.FeedbackProcessor;
+import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 

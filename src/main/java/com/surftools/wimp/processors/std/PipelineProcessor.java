@@ -42,6 +42,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.MessageManager;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PipelineProcessor extends AbstractBaseProcessor {
@@ -83,10 +84,6 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
     dumpIds = makeIds(cm, Key.DUMP_IDS);
     mm.putContextObject("dumpIds", dumpIds);
-
-    // var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,ExplicitRejection,Deduplication");
-    // var stdout = cm
-    // .getAsString(Key.PIPELINE_STDOUT, "CsvColumnCutter,CsvColumnHeaderRename,Write,MissingDestination,Summary");
 
     var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication,Filter");
     var main = cm.getAsString(Key.PIPELINE_MAIN);
