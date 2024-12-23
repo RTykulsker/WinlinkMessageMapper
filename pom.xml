@@ -25,6 +25,7 @@
 		<itextpdf.version>5.5.13.4</itextpdf.version>
 		<string.similarity.version>2.0.0</string.similarity.version>
 		<javalin.version>6.3.0</javalin.version>	
+		<fuzzywuzzy.version>1.4.0</fuzzywuzzy.version>
 		<junit.version>4.13.1</junit.version>
 	</properties>
 
@@ -88,6 +89,12 @@
 			<groupId>io.javalin</groupId>
 			<artifactId>javalin</artifactId>
 			<version>${javalin.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>me.xdrop</groupId>
+			<artifactId>fuzzywuzzy</artifactId>
+			<version>${fuzzywuzzy.version}</version>
 		</dependency>
 
 		<dependency>

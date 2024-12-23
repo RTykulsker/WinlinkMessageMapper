@@ -33,6 +33,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.Test;
 
 public class SimpleTestServiceTest {
@@ -113,5 +115,139 @@ public class SimpleTestServiceTest {
       System.out.println(actual);
       assertEquals(expected, actual);
     }
+  }
+
+  @Test
+  public void test_fuzzy_validation() {
+    {
+      var sts = new SimpleTestService();
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Simple, 90);
+      var result = sts.testFuzzy(fuzzyQuery, "simple ratio 1: #EV", "mysmilarstring", "myawfullysimilarstirng");
+      assertNotNull(result);
+      assertFalse(result.ok());
+      assertEquals(72, Integer.parseInt(result.extraData()));
+    }
+
+    {
+      var sts = new SimpleTestService();
+      var threshhold = 72;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Simple, threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "simple ratio 1: #EV", "mysmilarstring", "myawfullysimilarstirng");
+      assertNotNull(result);
+      assertTrue(result.ok());
+      assertEquals(threshhold, Integer.parseInt(result.extraData()));
+    }
+
+    {
+      var sts = new SimpleTestService();
+      var threshhold = 97;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Simple, threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "simple ratio 2: #EV", "mysmilarstring", "mysimilarstring");
+      assertNotNull(result);
+      assertTrue(result.ok());
+      assertEquals(threshhold, Integer.parseInt(result.extraData()));
+    }
+
+    {
+      var sts = new SimpleTestService();
+      var threshhold = 71;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Partial, threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "partial ratio 1: #EV", "similar", "somewhresimlrbetweenthisstring");
+      assertNotNull(result);
+      assertTrue(result.ok());
+      assertEquals(threshhold, Integer.parseInt(result.extraData()));
+    }
+
+    {
+      var sts = new SimpleTestService();
+      var threshhold = 100;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.TokenSort, threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "token sort ratio 1: #EV", "order words out of", "words out of order");
+      assertNotNull(result);
+      assertTrue(result.ok());
+      assertEquals(threshhold, Integer.parseInt(result.extraData()));
+    }
+
+    {
+      var sts = new SimpleTestService();
+      var threshhold = 97;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Weighted, threshhold);
+      var result = sts
+          .testFuzzy(fuzzyQuery, "weighted ratio 1: #EV", "The quick brown fox jimps ofver the small lazy dog",
+              "the quick brown fox jumps over the small lazy dog");
+      assertNotNull(result);
+      assertTrue(result.ok());
+      assertEquals(threshhold, Integer.parseInt(result.extraData()));
+    }
+
+  }
+
+  record Pair(String expected, String actual) {
+  }
+
+  @Test
+  public void test_fuzzy_real_world() {
+    var passList = List
+        .of(//
+            new Pair(//
+                "LDG Electronics AT-1000ProII Automatic Antenna Tuner", //
+                "LDG Electronics AT-1000Proll Automatic Antenna Tuner"), //
+            new Pair(//
+                "Wolf River Silver Bullet 1000", //
+                "Wold River Silver Bullet 1000"), //
+            new Pair(//
+                "Kenwood TS-990S HF/6 Meter Base Transceiver", //
+                "Kenwood TS990S HF/6 Meter Base Transceiver"), //
+            new Pair( //
+                "Wolf River Silver Bullet 1000", //
+                "A. Wolf River Silver Bullet 1000"), //
+            new Pair( //
+                "Exercise Santa Wish List", //
+                "Exeercise Santa Wish List"), //
+            new Pair( //
+                "Heil Sound PRO 7 Headset", //
+                "Heil Sound PRO7 Headset"), //
+            new Pair(//
+                "The Nutcracker", //
+                "Nutcracker"), //
+            new Pair( //
+                "LDG Electronics AT-1000ProII Automatic Antenna Tune", //
+                "LDG lectronics AT-1000Proli Automatic Antenna Tuner") //
+        //
+        );
+
+    var failList = List
+        .of(//
+            new Pair("The Grinch", "Grinch"), //
+            new Pair("Wolf River Silver Bullet 1000", "Wolf RiverSilve rBulle t1000"), //
+            new Pair("Heil Sound PRO 7 Headset", "Digirig sound card")//
+        //
+        );
+
+    for (var i = 0; i < passList.size(); ++i) {
+      var index = i + 1;
+      var pair = passList.get(i);
+      var sts = new SimpleTestService();
+      var threshhold = 95;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Weighted, threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "weighted real world #" + index + ": #EV", pair.expected, pair.actual);
+      assertNotNull("pair: " + index, result);
+      assertTrue("pair: " + index, result.ok());
+      assertTrue("pair: " + index, Integer.parseInt(result.extraData()) >= threshhold);
+    }
+
+    for (var i = 0; i < failList.size(); ++i) {
+      var index = i + 1;
+      var pair = failList.get(i);
+      var sts = new SimpleTestService();
+      var threshhold = 96;
+      var fuzzyQuery = new FuzzyQuery(FuzzyType.Weighted, threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "weighted real world #" + index + ": #EV", pair.expected, pair.actual);
+      assertNotNull("pair: " + index, result);
+      assertFalse("pair: " + index, result.ok());
+      assertTrue("pair: " + index, Integer.parseInt(result.extraData()) < threshhold);
+      System.out.println("expected: " + pair.expected + ", actual: " + pair.actual + ", fuzzy: " + result.extraData());
+    }
+
   }
 }

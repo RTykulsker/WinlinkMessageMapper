@@ -37,8 +37,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.surftools.utils.counter.ICounter;
 import com.surftools.wimp.service.IService;
+
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 /**
  * Support testing and accumulating statistics on whether or not a value matches an expected value.
@@ -65,6 +70,7 @@ import com.surftools.wimp.service.IService;
  *
  */
 public class SimpleTestService implements IService {
+  private static final Logger logger = LoggerFactory.getLogger(SimpleTestService.class);
 
   private final Map<String, TestEntry> entryMap = new LinkedHashMap<>();
   private List<String> explanations = new ArrayList<>();
@@ -432,6 +438,81 @@ public class SimpleTestService implements IService {
   }
 
   /**
+   * fuzzy match; see: https://github.com/xdrop/fuzzywuzzy
+   *
+   * @param fuzzyQuery
+   * @param rawLabel
+   * @param expectedValue
+   * @param value
+   * @return
+   */
+  public TestResult testFuzzy(FuzzyQuery fuzzyQuery, String rawLabel, String expectedValue, String value) {
+    if (fuzzyQuery == null) {
+      throw new IllegalArgumentException("null fuzzyQuery");
+    }
+
+    var fuzzyType = fuzzyQuery.type();
+    if (fuzzyType == null) {
+      throw new IllegalArgumentException("null fuzzyQuery.type");
+    }
+
+    if (fuzzyQuery.threshhold() < 0 || fuzzyQuery.threshhold() > 100) {
+      throw new IllegalArgumentException("invalid fuzzy threshhold");
+    }
+
+    if (rawLabel == null) {
+      throw new IllegalArgumentException("null label");
+    }
+
+    var label = rawLabel.contains("#EV") && expectedValue != null //
+        ? rawLabel.replaceAll("#EV", expectedValue)
+        : rawLabel;
+
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, toAlphaNumericWords(expectedValue));
+      entryMap.put(label, entry);
+    }
+
+    var fuzzyResult = -1;
+    var predicate = value != null;
+    if (predicate) {
+      expectedValue = entry.expectedValue;
+      var cookedValue = toAlphaNumericWords(value);
+
+      switch (fuzzyType) {
+      case FuzzyType.Simple:
+        fuzzyResult = FuzzySearch.ratio(expectedValue, cookedValue);
+        break;
+      case FuzzyType.Partial:
+        fuzzyResult = FuzzySearch.partialRatio(expectedValue, cookedValue);
+        break;
+      case FuzzyType.TokenSort:
+        fuzzyResult = FuzzySearch.tokenSortRatio(expectedValue, cookedValue);
+        break;
+      case FuzzyType.TokenSet:
+        fuzzyResult = FuzzySearch.tokenSetRatio(expectedValue, cookedValue);
+        break;
+      case FuzzyType.Weighted:
+        fuzzyResult = FuzzySearch.weightedRatio(expectedValue, cookedValue);
+        break;
+      default:
+        break;
+      }
+
+      logger
+          .debug("fuzzyQuery: " + fuzzyQuery + ", ev: " + expectedValue + ", value:" + toAlphaNumericString(value)
+              + ", result: " + fuzzyResult);
+
+      predicate = fuzzyResult >= fuzzyQuery.threshhold();
+    }
+
+    var internalResult = internalTest(entry, predicate, wrap(value), null);
+    return TestResult.withExtraData(internalResult, String.valueOf(fuzzyResult));
+  }
+
+  /**
    * our package-private test method, used by ALL testXXX(...) calls
    *
    * @param entry
@@ -466,7 +547,7 @@ public class SimpleTestService implements IService {
       explanations.add(explanation);
     }
 
-    return new TestResult(predicate, entry.label, possiblePoints, explanation);
+    return new TestResult(predicate, entry.label, possiblePoints, explanation, null);
   }
 
   private String reformat_ShouldBe_Not(String s) {

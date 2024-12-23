@@ -43,7 +43,8 @@ import java.util.Map;
 public class WebUtils {
 
   public static boolean isPortAvailable(int port) {
-    try (Socket ignored = new Socket("localhost", port)) {
+    try (@SuppressWarnings("unused")
+    Socket ignored = new Socket("localhost", port)) {
       return false;
     } catch (IOException ignored) {
       return true;

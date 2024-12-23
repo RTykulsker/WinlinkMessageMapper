@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2023, Robert Tykulsker
+Copyright (c) 2024, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.service.simpleTestService;
 
-/**
- * the result of testing a value against expectedValue
- */
-public record TestResult(boolean ok, String key, double points, String explanation, String extraData) {
-
-  public static TestResult withExtraData(TestResult r, String extraData) {
-    return new TestResult(r.ok(), r.key(), r.points(), r.explanation(), extraData);
-  }
+public enum FuzzyType {
+  Simple, Partial, TokenSort, TokenSet, Weighted
 }
