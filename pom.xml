@@ -154,8 +154,8 @@
 					</platforms>					
 					<programs>
 						<program>
-							<mainClass>com.surftools.winlinkMessageMapper.tool.WinlinkMessageMapper</mainClass>
-							<id>wimp</id>
+							<mainClass>com.surftools.wimp.web.WimpWebServer</mainClass>
+							<id>wws</id>
 						</program>
 						<program>
 						<mainClass>com.surftools.winlinkMessageMapper.tool.P2PMapper</mainClass>
