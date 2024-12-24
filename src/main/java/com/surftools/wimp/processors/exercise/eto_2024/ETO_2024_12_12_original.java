@@ -104,10 +104,6 @@ public class ETO_2024_12_12_original extends MultiMessageFeedbackProcessor {
       return list.toArray(new String[0]);
     }
 
-    private String s(int i) {
-      return String.valueOf(i);
-    }
-
     @Override
     public String[] getValues() {
       var list = new ArrayList<>();
@@ -462,6 +458,7 @@ public class ETO_2024_12_12_original extends MultiMessageFeedbackProcessor {
     summary.isNice = isNice;
   }
 
+  @Override
   public boolean startsWithAnyOf(String needle, List<String> list) {
     if (needle == null) {
       return false;

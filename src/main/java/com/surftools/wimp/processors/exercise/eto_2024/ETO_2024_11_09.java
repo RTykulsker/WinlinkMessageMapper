@@ -46,9 +46,9 @@ import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.FieldSituationMessage.ResourceType;
-import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.message.Ics309Message;
 import com.surftools.wimp.message.PlainMessage;
+import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -103,10 +103,6 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
                   "Ex Msgs not in 309", "309 Msgs not in Ex"//
               }));
       return list.toArray(new String[0]);
-    }
-
-    private String s(int i) {
-      return String.valueOf(i);
     }
 
     private String optionName(int option) {

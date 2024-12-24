@@ -40,7 +40,6 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics214Message;
-import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.baseExercise.FeedbackProcessor;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -55,8 +54,6 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ETO_2024_12_12.class);
-
-  private static final int NUMBER_OF_ACTIVITIES_TO_BE_NICE = 2;
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
@@ -91,10 +88,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       return list.toArray(new String[0]);
     }
 
-    private String s(int i) {
-      return String.valueOf(i);
-    }
-
     @Override
     public String[] getValues() {
       var list = new ArrayList<>();
@@ -113,13 +106,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
-
-    // #MM must define acceptableMessages
-    var acceptableMessageTypesList = List.of(MessageType.ICS_213_RR, MessageType.ICS_214); // order matters, last
-                                                                                           // location wins,
-    acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
     outboundMessageExtraContent = getNagString(2025, 2) + FeedbackProcessor.OB_DISCLAIMER;
-
   }
 
   @Override
@@ -136,19 +123,13 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     var summary = (Summary) iSummary;
 
     var type = message.getMessageType();
-    if (type == MessageType.PLAIN) {
-      handle_PlainMessage(summary, (PlainMessage) message);
-    } else if (type == MessageType.ICS_213_RR) {
+    if (type == MessageType.ICS_213_RR) {
       handle_Ics213RRMessage(summary, (Ics213RRMessage) message);
     } else if (type == MessageType.ICS_214) {
       handle_Ics214Message(summary, (Ics214Message) message);
     }
 
     summaryMap.put(sender, iSummary);
-  }
-
-  private void handle_PlainMessage(Summary summary, PlainMessage message) {
-    count(sts.test("Message could not be identified (missing form attachment?)", false, message.messageId));
   }
 
   private void handle_Ics213RRMessage(Summary summary, Ics213RRMessage m) {
@@ -229,7 +210,6 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
-
     count(sts.test("Box 1 Incident Name should be #EV", "Exercise Santa Wish List", m.incidentName));
     count(sts.test("Box 1 Page # should be #EV", "1", m.page));
 
@@ -277,30 +257,30 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
       count(sts
           .testIfEmpty("Box 6 line " + lineNumber + ": Home Agency and Unit should be empty", resource.homeAgency()));
-
     } // end loop over lines
 
     var activities = m.activities;
     var allActivitiesList = activities.stream().map(a -> a.activities()).filter(Objects::nonNull).toList();
-
-    var isNice = allActivitiesList.size() >= NUMBER_OF_ACTIVITIES_TO_BE_NICE;
-    count(sts
-        .test("Number of Notable Activites should be at least " + NUMBER_OF_ACTIVITIES_TO_BE_NICE, isNice,
-            " not: " + String.valueOf(allActivitiesList.size())));
-
     var allActivities = String.join("\n", allActivitiesList);
 
+    var validActivityCount = 0;
     var activityLineNumber = 0;
     for (var a : activities) {
       ++activityLineNumber;
       if (isFull(a.dateTimeString()) && isFull(a.activities())) {
+        ++validActivityCount;
         var dtString = a.dateTimeString().trim();
-
         count(sts
             .test("activity line #" + activityLineNumber + " should start with 12-25-2024",
                 startsWithAnyOf(dtString, List.of("12-25-2024", "2024-12-25")), dtString));
       }
     }
+
+    final int NUMBER_OF_ACTIVITIES_TO_BE_NICE = 2;
+    var isNice = validActivityCount >= NUMBER_OF_ACTIVITIES_TO_BE_NICE;
+    count(sts
+        .test("Number of Notable Activites should be at least " + NUMBER_OF_ACTIVITIES_TO_BE_NICE, isNice,
+            " not: " + String.valueOf(validActivityCount)));
 
     var expectedPreparedBy = selfResource.name() + "/" + selfResource.icsPosition();
     var isMatch = toKey(expectedPreparedBy).equals(toKey(m.preparedBy));
@@ -317,7 +297,7 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
     summary.ics214Message = m;
     summary.allResources = allResources;
     summary.allActivities = allActivities;
-    summary.activityCount = allActivitiesList.size();
+    summary.activityCount = validActivityCount;
     summary.isNice = isNice;
   }
 
