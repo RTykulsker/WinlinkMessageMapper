@@ -52,7 +52,6 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
@@ -295,24 +294,22 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
   }
 
-  /**
-   * return the most common messageType
-   *
-   * @return
-   */
-  protected MessageType getMostCommonMessageType() {
-    var it = mm.getMessageTypeIteror();
-    var maxCount = -1;
-    MessageType maxMessageType = null;
-    while (it.hasNext()) {
-      var messageType = it.next();
-      var list = mm.getMessagesForType(messageType);
-      if (list.size() > maxCount) {
-        maxCount = list.size();
-        maxMessageType = messageType;
+  public boolean startsWithAnyOf(String needle, List<String> list) {
+    if (needle == null) {
+      return false;
+    }
+
+    for (var s : list) {
+      if (s == null) {
+        return false;
+      }
+
+      if (needle.toLowerCase().startsWith(s.toLowerCase())) {
+        return true;
       }
     }
-    return maxMessageType;
+
+    return false;
   }
 
   public static final String OB_DISCLAIMER = """

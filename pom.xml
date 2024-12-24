@@ -23,7 +23,6 @@
 		<opencsv.version>5.5</opencsv.version>
 		<pdfbox.version>3.0.3</pdfbox.version>
 		<itextpdf.version>5.5.13.4</itextpdf.version>
-		<string.similarity.version>2.0.0</string.similarity.version>
 		<javalin.version>6.3.0</javalin.version>	
 		<fuzzywuzzy.version>1.4.0</fuzzywuzzy.version>
 		<diff-match-patch.version>1.2</diff-match-patch.version>
@@ -78,12 +77,6 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>${logback.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>info.debatty</groupId>
-			<artifactId>java-string-similarity</artifactId>
-			<version>${string.similarity.version}</version>
 		</dependency>
 
 		<dependency>
