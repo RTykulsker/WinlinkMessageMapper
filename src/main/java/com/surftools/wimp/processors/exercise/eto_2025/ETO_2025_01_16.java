@@ -182,7 +182,6 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         sts.setExplanationPrefix(baseExplanation + " (WX): ");
         var isCanadian = isCanadian(m.from);
 
-        // TODO this will probably become ECCC Weatherradio
         count(sts
             .test("Function should be #EV", isCanadian ? "ECCC Weatheradio Info" : "NWS Weather Info",
                 entry.function()));

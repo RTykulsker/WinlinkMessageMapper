@@ -26,6 +26,7 @@
 		<string.similarity.version>2.0.0</string.similarity.version>
 		<javalin.version>6.3.0</javalin.version>	
 		<fuzzywuzzy.version>1.4.0</fuzzywuzzy.version>
+		<diff-match-patch.version>1.2</diff-match-patch.version>
 		<junit.version>4.13.1</junit.version>
 	</properties>
 
@@ -95,6 +96,12 @@
 			<groupId>me.xdrop</groupId>
 			<artifactId>fuzzywuzzy</artifactId>
 			<version>${fuzzywuzzy.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bitbucket.cowwoc</groupId>
+			<artifactId>diff-match-patch</artifactId>
+			<version>${diff-match-patch.version}</version>
 		</dependency>
 
 		<dependency>

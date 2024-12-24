@@ -142,15 +142,13 @@ public class WimpWebServer {
 
     InitHandler() {
       try {
-        // TODO fixme
-        var getHtmlFromFile = true;
+        var getHtmlFromFile = false;
         var rawHtml = "";
         if (getHtmlFromFile) {
           var htmlPath = Path.of(pathName, "index.html");
           rawHtml = Files.readString(htmlPath);
         } else {
           rawHtml = WebUtils.makeInitialPageHtml();
-          // System.err.println(rawHtml);
         }
 
         rawHtml = rawHtml.replaceAll("#EN", cm.getAsString(Key.EXERCISE_NAME));

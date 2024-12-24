@@ -97,7 +97,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
       var fields = configName.split(",");
       for (var field : fields) {
-        if (field != null && !field.isEmpty()) {
+        if (field != null && !field.isEmpty() && !field.equals("(null)")) {
           processorNames.add(field);
         }
       }

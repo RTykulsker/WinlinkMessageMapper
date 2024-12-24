@@ -259,7 +259,7 @@ public class WebUtils {
             var files = e.target.files || e.dataTransfer.files;
 
             if (files.length > 1) {
-              alert("Please only drop one Winlink \"exported messages\" XML file");
+              alert("Please only drop one Winlink \\"exported messages\\" XML file");
               return;
             }
 
@@ -271,8 +271,13 @@ public class WebUtils {
 
           // upload files
           function UploadFile(file) {
+              var maxFileSize = 30000000;
+              if (file.size > maxFileSize) {
+                  alert("File too big, max size: " + maxFileSize + " bytes");
+                  return;
+              }
             var xhr = new XMLHttpRequest();
-            if (xhr.upload && file.size <= $id("MAX_FILE_SIZE").value) {
+            if (xhr.upload) {
               xhr.onreadystatechange = function(e) {
                 if (xhr.readyState == 4) {
                   // document.write(xhr.response);
@@ -323,7 +328,7 @@ public class WebUtils {
         </script>
         </body>
         </html>
-                        """;
+                """;
     return s;
   }
 }
