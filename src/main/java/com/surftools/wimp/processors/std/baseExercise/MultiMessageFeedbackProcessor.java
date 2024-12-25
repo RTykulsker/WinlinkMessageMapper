@@ -131,22 +131,13 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
 
-    var acceptableMessageTypesString = cm.getAsString(Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES);
-    if (acceptableMessageTypesString == null) {
-      throw new RuntimeException(
-          "Must specify " + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + " in configuration");
+    if (acceptableMessageTypesSet == null || acceptableMessageTypesSet.size() == 0) {
+      logger.error("acceptableMessageTypesSet not initialized in exercise processor. Exiting!");
+      System.exit(1);
     }
 
-    var typeNames = acceptableMessageTypesString.split(",");
-    for (var typeName : typeNames) {
-      var messageType = MessageType.fromString(typeName);
-      if (messageType != null) {
-        acceptableMessageTypesSet.add(messageType);
-        logger.info("will accept " + messageType.toString() + " messageTypes");
-      } else {
-        throw new RuntimeException("No MessageType for: " + typeName + ", in "
-            + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
-      }
+    for (var type : acceptableMessageTypesSet) {
+      logger.info("will accept " + type.toString() + " messages");
     }
 
   }

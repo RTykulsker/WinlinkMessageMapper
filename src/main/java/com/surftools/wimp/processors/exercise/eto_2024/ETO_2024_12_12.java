@@ -29,6 +29,7 @@ package com.surftools.wimp.processors.exercise.eto_2024;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -105,8 +106,9 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    super.initialize(cm, mm, logger);
+    acceptableMessageTypesSet = new LinkedHashSet<MessageType>(List.of(MessageType.ICS_213_RR, MessageType.ICS_214));
     outboundMessageExtraContent = getNagString(2025, 2) + FeedbackProcessor.OB_DISCLAIMER;
+    super.initialize(cm, mm, logger);
   }
 
   @Override
