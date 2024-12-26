@@ -40,8 +40,9 @@ public enum Key implements IConfigurationKey {
   PATH("path"), // path to message files
   DATABASE_PATH("databasePath"), // path to input database summary files
   DUMP_IDS("dumpIds"), // comma-delimited list of messageIds or call signs to dump message contents for
-  FILTER_INCLUDE_SENDERS("filterIncludeIds"), // comma-delimited list of call signs to filter include
-  FILTER_EXCLUDE_SENDERS("filterExcludeIds"), // comma-delimited list of call signs to filter exclude
+
+  FILTER_INCLUDE_SENDERS("filterIncludeSenders"), // comma-delimited list of call signs to filter include
+  FILTER_EXCLUDE_SENDERS("filterExcludeSenders"), // comma-delimited list of call signs to filter exclude
 
   OUTPUT_PATH("output.path"), // to override as subdir of path
   OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
@@ -49,6 +50,10 @@ public enum Key implements IConfigurationKey {
   DEDUPLICATION_RULES("deduplication.rules"), // json string: {messageTypeName:rule,...}
 
   IMAGE_MAX_SIZE("image.maxSize"), // of attached images
+
+  MULTIPLE_CHOICE_MESSAGE_TYPE("multipleChoice.messageType"), // check_in, etc.
+  MULTIPLE_CHOICE_VALID_RESPONSES("multipleChoice.validResponses"), // comma-delimited string
+  MULTIPLE_CHOICE_CORRECT_RESPONSES("multipleChoice.correctResponses"), // comma-delimited string
 
   OVERRIDE_LOCATION_PATH("overrideLocation.path"), // path to file with override locations
 

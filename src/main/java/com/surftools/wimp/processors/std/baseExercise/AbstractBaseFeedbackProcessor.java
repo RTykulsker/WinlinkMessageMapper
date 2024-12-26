@@ -136,11 +136,13 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
       }
     }
 
-    sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
-    sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
+    if (windowOpenDT != null && windowCloseDT != null) {
+      sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
+      sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
 
-    var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
-    getCounter("Message sent days after window opens").increment(daysAfterOpen);
+      var daysAfterOpen = DAYS.between(windowOpenDT, message.msgDateTime);
+      getCounter("Message sent days after window opens").increment(daysAfterOpen);
+    }
   }
 
   protected void endCommonProcessing(ExportedMessage message) {

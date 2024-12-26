@@ -146,7 +146,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
     beforeCommonProcessing(sender, message);
 
-    feedbackLocation = message.msgLocation;
+    feedbackLocation = message.mapLocation;
 
   }
 
