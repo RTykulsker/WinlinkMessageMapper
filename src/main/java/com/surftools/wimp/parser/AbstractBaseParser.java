@@ -380,4 +380,14 @@ public abstract class AbstractBaseParser implements IParser {
     return map;
   }
 
+  protected String getVersion(String tagName) {
+    var version = "";
+    var templateVersion = getStringFromXml(tagName);
+    if (templateVersion != null) {
+      var fields = templateVersion.split(" ");
+      version = fields[fields.length - 1]; // last field
+    }
+
+    return version;
+  }
 }

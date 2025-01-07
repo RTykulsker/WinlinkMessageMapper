@@ -46,6 +46,7 @@ import com.surftools.wimp.parser.DyfiParser;
 import com.surftools.wimp.parser.EtoCheckInParser;
 import com.surftools.wimp.parser.EtoCheckInV2Parser;
 import com.surftools.wimp.parser.EtoResumeParser;
+import com.surftools.wimp.parser.EyewarnParser;
 import com.surftools.wimp.parser.FieldSituationParser;
 import com.surftools.wimp.parser.HospitalBedParser;
 import com.surftools.wimp.parser.HospitalStatusParser;

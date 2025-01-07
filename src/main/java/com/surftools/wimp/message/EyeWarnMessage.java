@@ -46,13 +46,18 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
     public String toShortString() {
       return date + " " + time + " " + text;
     }
+
+    public String toLongString() {
+      return "Color: " + color + ", " + toShortString();
+    }
   };
 
   public final String exerciseOrIncident;
   public final String formDate;
   public final String formTime;
+  public final String ncs;
   public final String incidentName;
-  public final int totalCheckIns;
+  public final String totalCheckIns;
 
   public final List<EyeWarnDetail> redDetails;
   public final List<EyeWarnDetail> yellowDetails;
@@ -62,8 +67,8 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
 
   public EyeWarnMessage(ExportedMessage exportedMessage, //
       String exerciseOrIncident, //
-      String formDate, String formTime, //
-      String incidentName, int totalCheckins, //
+      String formDate, String formTime, String ncs, //
+      String incidentName, String totalCheckins, //
       List<EyeWarnDetail> redDetails, List<EyeWarnDetail> yellowDetails, List<EyeWarnDetail> greenDetails, //
       String version) {
     super(exportedMessage);
@@ -72,6 +77,7 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
 
     this.formDate = formDate;
     this.formTime = formTime;
+    this.ncs = ncs;
 
     this.incidentName = incidentName;
     this.totalCheckIns = totalCheckins;
@@ -93,7 +99,7 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
         "Msg Date/Time", "Msg Lat/Long", //
 
         "Type", //
-        "Form Date", "Form Time", //
+        "Form Date", "Form Time", "NCS", //
         "Incident Name", "Total Check-ins", //
         "# Red", "Red Reports", //
         "# Yellow", "Yellow Reports", //
@@ -112,8 +118,8 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
         msgLocation == null ? "" : msgLocation.toString(), //
 
         exerciseOrIncident, //
-        formDate, formTime, //
-        incidentName, String.valueOf(totalCheckIns), //
+        formDate, formTime, ncs, //
+        incidentName, totalCheckIns, //
 
         String.valueOf(redDetails.size()), //
         String.join("\n", redDetails.stream().map(s -> s.toShortString()).toList()), //
@@ -150,8 +156,7 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
   }
 
   private ExportedMessage makeEyewarnDetailMessage(EyeWarnMessage eyeWarnMessage, EyeWarnDetail detail) {
-    // TODO Auto-generated method stub
-    return null;
+    return new EyeWarnDetailMessage(eyeWarnMessage, detail);
   }
 
   @Override

@@ -29,15 +29,17 @@ package com.surftools.wimp.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.WindshieldDamageAssessmentMessage;
-import com.surftools.wimp.message.WindshieldDamageAssessmentMessage.DamageEntry;
+import com.surftools.wimp.message.EyeWarnMessage;
+import com.surftools.wimp.message.EyeWarnMessage.EyeWarnDetail;
 
 /**
  * parser for Eyewarn Messages, custom SnoVArc
@@ -56,38 +58,27 @@ public class EyewarnParser extends AbstractBaseParser {
     }
 
     try {
-
       String xmlString = new String(message.attachments.get(MessageType.EYEWARN.attachmentName()));
 
       makeDocument(message.messageId, xmlString);
 
-      var organization = getStringFromXml("title");
-      var jurisdiction = getStringFromXml("jur");
-      var missionIncidentId = getStringFromXml("misnum");
-      var formType = getStringFromXml("status");
-      var eventType = getStringFromXml("event");
-      var description = getStringFromXml("other");
-      var surveyArea = getStringFromXml("surarea");
-      var surveyTeam = getStringFromXml("surteam");
-      var eventStartDate = getStringFromXml("datetime1");
-      var surveyDate = getStringFromXml("date");
-      var totalLossString = getStringFromXml("dollar16");
+      var exerciseOrIncident = getStringFromXml("form-exercise");
+      var formDate = getStringFromXml("form-date");
+      var formTime = getStringFromXml("form-time");
+      var ncs = getStringFromXml("form-ncs");
+      var incidentName = getStringFromXml("form-name");
+      var totalCheckins = getStringFromXml("form-checkins");
+      var parseme = getStringFromXml("parseme");
+      var redReports = makeDetails(parseme, "RED");
+      var yellowReports = makeDetails(parseme, "YELLOW");
+      var greenReports = makeDetails(parseme, "GREEN");
+      var version = getVersion("template-version");
 
-      var damageEntries = makeDamageEntries();
-
-      var comments = getStringFromXml("comments");
-
-      var version = "";
-      var templateVersion = getStringFromXml("templateversion");
-
-      if (templateVersion != null) {
-        var fields = templateVersion.split(" ");
-        version = fields[fields.length - 1]; // last field
-      }
-
-      WindshieldDamageAssessmentMessage m = new WindshieldDamageAssessmentMessage(message, organization, jurisdiction,
-          missionIncidentId, formType, eventType, description, surveyArea, surveyTeam, eventStartDate, surveyDate,
-          damageEntries, totalLossString, comments, version);
+      var m = new EyeWarnMessage(message, exerciseOrIncident, //
+          formDate, formTime, ncs, //
+          incidentName, totalCheckins, //
+          redReports, yellowReports, greenReports, //
+          version);
 
       return m;
     } catch (Exception e) {
@@ -95,27 +86,25 @@ public class EyewarnParser extends AbstractBaseParser {
     }
   }
 
-  private List<DamageEntry> makeDamageEntries() {
-
-    var list = new ArrayList<DamageEntry>();
-    for (int i = 1; i <= 15; ++i) {
-      var description = "";
-      if (i >= 1 && i <= 12) {
-        description = DamageEntry.getName(i);
-      } else {
-        description = getStringFromXml("other" + i);
-      }
-      var affected = getStringFromXml("aff" + i);
-      var minor = getStringFromXml("min" + i);
-      var major = getStringFromXml("maj" + i);
-      var destroyed = getStringFromXml("des" + i);
-      var total = getStringFromXml("total" + i);
-      var lossString = getStringFromXml("dollar" + i);
-      var lossAmount = getStringFromXml("hdollar" + i);
-      var entry = new DamageEntry(description, affected, minor, major, destroyed, total, //
-          lossString, lossAmount);
-      list.add(entry);
+  @SuppressWarnings("unchecked")
+  private List<EyeWarnDetail> makeDetails(String blob, String color) {
+    var list = new ArrayList<EyeWarnDetail>();
+    if (blob == null) {
+      return list;
     }
+    var key = color.toLowerCase() + "Reports";
+
+    blob = blob.trim();
+    ObjectMapper mapper = new ObjectMapper();
+    Map<String, String> map = null;
+    try {
+      map = mapper.readValue(blob, Map.class);
+      var data1 = map.get(key);
+      System.err.println("key: " + key + ", data: " + data1);
+    } catch (Exception e) {
+      throw new RuntimeException("can't parse json: " + e.getLocalizedMessage());
+    }
+
     return list;
   }
 
