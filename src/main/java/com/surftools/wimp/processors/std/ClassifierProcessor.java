@@ -35,6 +35,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.wimp.core.IDetailableMessage;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IParser;
 import com.surftools.wimp.core.MessageType;
@@ -119,6 +120,16 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         var list = tmpMessageMap.getOrDefault(parsedMessageType, new ArrayList<ExportedMessage>());
         list.add(parsedMessage);
         tmpMessageMap.put(parsedMessageType, list);
+
+        if (parsedMessage instanceof IDetailableMessage) {
+          var detailableMessage = (IDetailableMessage) parsedMessage;
+          var detailType = detailableMessage.getDetailMessageType();
+          var existingDetailList = tmpMessageMap.getOrDefault(detailType, new ArrayList<ExportedMessage>());
+          var newDetailList = detailableMessage.getDetailMessages();
+          existingDetailList.addAll(newDetailList);
+          tmpMessageMap.put(detailType, existingDetailList);
+        }
+
       } // end loop over messages
 
       mm.load(tmpMessageMap);
@@ -201,6 +212,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         return MessageType.WA_EYEWARN;
       } else if (attachmentNames.contains(MessageType.WELFARE_BULLETIN_BOARD.attachmentName())) {
         return MessageType.WELFARE_BULLETIN_BOARD;
+      } else if (attachmentNames.contains(MessageType.EYEWARN.attachmentName())) {
+        return MessageType.EYEWARN;
       }
     }
     /**
@@ -299,6 +312,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.WA_EYEWARN, new WA_EyewarnParser());
 
     parserMap.put(MessageType.WELFARE_BULLETIN_BOARD, new WelfareBulletinBoardParser());
+
+    parserMap.put(MessageType.EYEWARN, new EyewarnParser());
 
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);

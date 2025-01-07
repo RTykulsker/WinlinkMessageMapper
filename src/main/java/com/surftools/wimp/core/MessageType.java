@@ -88,6 +88,10 @@ public enum MessageType {
   WA_EYEWARN("wa_eyewarn", "RMS_Express_Form_EyeWarn_Form_Viewer.xml"), //
 
   WELFARE_BULLETIN_BOARD("welfare_bulletin_board", "RMS_Express_Form_Welfare Bulletin Board viewer.xml"), //
+
+  EYEWARN("eyewarn", "RMS_Express_Form_Eyewarn.xml"), // custom form from SnoVArc
+  EYEWARN_DETAIL("eyewarn_details"), // generated details
+
   ;
 
   /**

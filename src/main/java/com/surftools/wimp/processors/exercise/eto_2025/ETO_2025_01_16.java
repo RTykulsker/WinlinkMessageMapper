@@ -72,14 +72,14 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     if (dateTimePrepared == null) {
       count(sts.test("Date/Time Prepared should be present and in exercise window", false));
     } else {
-      count(sts.testOnOrAfter("Date/Time Prepared should be on or after", windowOpenDT, dateTimePrepared, DTF));
-      count(sts.testOnOrBefore("Date/Time Prepared should be on or before", windowCloseDT, dateTimePrepared, DTF));
+      count(sts.testOnOrAfter("Date/Time Prepared should be on or after #EV", windowOpenDT, dateTimePrepared, DTF));
+      count(sts.testOnOrBefore("Date/Time Prepared should be on or before #EV", windowCloseDT, dateTimePrepared, DTF));
     }
 
-    count(sts.test("Operational Period Date From should be #EV", "January 25", m.dateFrom));
-    count(sts.test("Operational Period Date To should be #EV", "January 26", m.dateTo));
-    count(sts.test("Operational Period Time From should be #EV", "1600 UTC", m.timeFrom));
-    count(sts.test("Operational Period Time To should be #EV", "2159 UTC", m.timeTo));
+    count(sts.test("Operational Period Date From should be #EV", "1/25/2025", m.dateFrom));
+    count(sts.test("Operational Period Date To should be #EV", "1/26/2025", m.dateTo));
+    count(sts.test("Operational Period Time From should be #EV", "16:00 UTC", m.timeFrom));
+    count(sts.test("Operational Period Time To should be #EV", "21:59 UTC", m.timeTo));
 
     handleRadioEntries(m, m.radioEntries);
     sts.setExplanationPrefix("");
@@ -92,7 +92,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
             String.valueOf(nSpecialInstructionFields)));
     count(sts
         .test("Special Instructions Field #1 should match call sign",
-            specialInstructionFields[0].equalsIgnoreCase(m.from)));
+            specialInstructionFields[0].equalsIgnoreCase(m.from), specialInstructionFields[0]));
 
     var approvedBy = m.approvedBy == null ? "" : m.approvedBy;
     var approvedByFields = Arrays
@@ -110,8 +110,8 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     if (dateTimeApproved == null) {
       count(sts.test("Date/Time Approved should be present and in exercise window", false));
     } else {
-      count(sts.testOnOrAfter("Date/Time Approved should be on or after", windowOpenDT, dateTimeApproved, DTF));
-      count(sts.testOnOrBefore("Date/Time Approved should be on or before", windowCloseDT, dateTimeApproved, DTF));
+      count(sts.testOnOrAfter("Date/Time Approved should be on or after #EV", windowOpenDT, dateTimeApproved, DTF));
+      count(sts.testOnOrBefore("Date/Time Approved should be on or before #EV", windowCloseDT, dateTimeApproved, DTF));
     }
 
     count(sts.test("IAP Page should be #EV", "5", m.iapPage));
@@ -218,7 +218,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         count(sts.test("TX Freq should be should be an HF frequency in MHz", txFreq.isHF(), entry.txFrequency()));
         count(sts.testIfEmpty("TX Narrow or Wide should be blank", entry.txNarrowWide()));
         count(sts.testIfEmpty("TX Tone should be blank", entry.txTone()));
-        count(sts.testIfEmpty("Remarks should be empty", entry.remarks()));
+        count(sts.testIfPresent("Remarks should be present", entry.remarks()));
       } // endif HF Winlink P2P
 
       if (lineNumber >= 5 && lineNumber <= 10) {
