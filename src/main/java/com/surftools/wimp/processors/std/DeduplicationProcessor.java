@@ -65,6 +65,7 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
     // override default rule of only last
     typeRuleMap.put(MessageType.PLAIN, 0);
     typeRuleMap.put(MessageType.REJECTS, 0);
+    typeRuleMap.put(MessageType.EYEWARN_DETAIL, 0);
 
     var typeRuleString = cm.getAsString(Key.DEDUPLICATION_RULES);
     if (typeRuleString != null) {

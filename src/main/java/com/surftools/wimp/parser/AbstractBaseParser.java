@@ -238,7 +238,7 @@ public abstract class AbstractBaseParser implements IParser {
 
   public void makeDocument(String messageId, String xmlString) {
     xmlString = xmlString.trim().replaceFirst("^([\\W]+)<", "<");
-    xmlString = removeBetween(xmlString, "<parseme>", "</parseme>");
+    // xmlString = removeBetween(xmlString, "<parseme>", "</parseme>");
 
     if (!xmlString.endsWith(">")) {
       xmlString += ">";
@@ -270,7 +270,7 @@ public abstract class AbstractBaseParser implements IParser {
    * @param endString
    * @return
    */
-  private String removeBetween(String source, String beginString, String endString) {
+  protected String removeBetween(String source, String beginString, String endString) {
     if (source == null || beginString == null || endString == null) {
       return source;
     }

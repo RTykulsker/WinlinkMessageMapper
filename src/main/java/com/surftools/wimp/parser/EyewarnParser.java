@@ -29,7 +29,6 @@ package com.surftools.wimp.parser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +85,6 @@ public class EyewarnParser extends AbstractBaseParser {
     }
   }
 
-  @SuppressWarnings("unchecked")
   private List<EyeWarnDetail> makeDetails(String blob, String color) {
     var list = new ArrayList<EyeWarnDetail>();
     if (blob == null) {
@@ -96,16 +94,54 @@ public class EyewarnParser extends AbstractBaseParser {
 
     blob = blob.trim();
     ObjectMapper mapper = new ObjectMapper();
-    Map<String, String> map = null;
+
     try {
-      map = mapper.readValue(blob, Map.class);
-      var data1 = map.get(key);
-      System.err.println("key: " + key + ", data: " + data1);
+      var root = mapper.readTree(blob);
+      var reportsNode = root.findValues(key);
+      for (var reportsList : reportsNode) {
+        for (var map : reportsList) {
+          var date = formatDate(map.get("date").asText());
+          var time = formatTime(map.get("time").asText());
+          var text = map.get("data").asText();
+          var detail = new EyeWarnDetail(color, date, time, text);
+          list.add(detail);
+        }
+      }
+
     } catch (Exception e) {
       throw new RuntimeException("can't parse json: " + e.getLocalizedMessage());
     }
 
     return list;
+  }
+
+  /**
+   * format time
+   *
+   * input: 1970-01-01T16:39:00.000Z green 1
+   *
+   * output: 16:39
+   *
+   * @param input
+   * @return
+   */
+  private String formatTime(String input) {
+    return input.substring(11, 11 + 5);
+  }
+
+  /**
+   * format date
+   *
+   * input: 2025-01-07T08:00:00.000Z
+   *
+   * output: 01/07/2025
+   *
+   * @param input
+   * @return
+   */
+  private String formatDate(String input) {
+    var fields = input.substring(0, 10).split("-");
+    return fields[1] + "/" + fields[2] + "/" + fields[0];
   }
 
 }

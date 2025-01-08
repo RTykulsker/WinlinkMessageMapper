@@ -48,7 +48,7 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
     }
 
     public String toLongString() {
-      return "Color: " + color + ", " + toShortString();
+      return color + " " + toShortString();
     }
   };
 
@@ -148,15 +148,11 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
     var returnList = new ArrayList<ExportedMessage>();
     for (var detailList : List.of(redDetails, yellowDetails, greenDetails)) {
       for (var detail : detailList) {
-        var detailMessage = makeEyewarnDetailMessage(this, detail);
+        var detailMessage = new EyeWarnDetailMessage(this, detail);
         returnList.add(detailMessage);
       }
     }
     return returnList;
-  }
-
-  private ExportedMessage makeEyewarnDetailMessage(EyeWarnMessage eyeWarnMessage, EyeWarnDetail detail) {
-    return new EyeWarnDetailMessage(eyeWarnMessage, detail);
   }
 
   @Override

@@ -42,8 +42,7 @@ public class EyeWarnDetailMessage extends ExportedMessage {
   public final EyeWarnMessage m;
   public final EyeWarnDetail detail;
 
-  public EyeWarnDetailMessage(EyeWarnMessage exportedMessage, //
-      EyeWarnDetail detail) {
+  public EyeWarnDetailMessage(EyeWarnMessage exportedMessage, EyeWarnDetail detail) {
     super(exportedMessage);
 
     this.m = exportedMessage;
