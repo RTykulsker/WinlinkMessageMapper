@@ -59,7 +59,8 @@ public class EyewarnParser extends AbstractBaseParser {
     try {
       String xmlString = new String(message.attachments.get(MessageType.EYEWARN.attachmentName()));
 
-      makeDocument(message.messageId, xmlString);
+		// we REALLY want the parsme!
+		makeDocument(message.messageId, xmlString, false);
 
       var exerciseOrIncident = getStringFromXml("form-exercise");
       var formDate = getStringFromXml("form-date");
