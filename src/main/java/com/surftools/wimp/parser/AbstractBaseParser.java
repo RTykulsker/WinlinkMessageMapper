@@ -236,18 +236,18 @@ public abstract class AbstractBaseParser implements IParser {
     return null;
   }
 
-	public void makeDocument(String messageId, String xmlString) {
-		makeDocument(messageId, xmlString, true);
-	}
+  public void makeDocument(String messageId, String xmlString) {
+    makeDocument(messageId, xmlString, true);
+  }
 
-	public void makeDocument(String messageId, String xmlString, boolean removeParseme) {
+  public void makeDocument(String messageId, String xmlString, boolean removeParseme) {
     xmlString = xmlString.trim().replaceFirst("^([\\W]+)<", "<");
 
-	// I don't know why I generally DON'T want parsme, but I NEED it for
-	// EyeWarnMessage
-	if (removeParseme) {
-		xmlString = removeBetween(xmlString, "<parseme>", "</parseme>");
-	}
+    // I don't remember why I generally DON'T want parsme, //
+    // but I NEED it for EyeWarnMessage
+    if (removeParseme) {
+      xmlString = removeBetween(xmlString, "<parseme>", "</parseme>");
+    }
 
     if (!xmlString.endsWith(">")) {
       xmlString += ">";
