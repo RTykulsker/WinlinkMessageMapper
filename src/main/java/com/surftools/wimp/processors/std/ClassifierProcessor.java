@@ -216,7 +216,22 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       } else if (attachmentNames.contains(MessageType.EYEWARN.attachmentName())) {
         return MessageType.EYEWARN;
       }
+
+      /**
+       * try FormData based
+       */
+      final var formDataKey = "FormData.txt";
+      if (attachmentNames.contains(formDataKey)) {
+        var formDataString = new String(attachments.get(formDataKey));
+        var lines = formDataString.split("\n");
+        var mapFileNameLine = lines[0];
+        var mapFileName = mapFileNameLine.split("=")[1];
+        if (mapFileName.startsWith("Winlink Check-in")) {
+          return MessageType.CHECK_IN;
+        }
+      }
     }
+
     /**
      * subject-based
      */

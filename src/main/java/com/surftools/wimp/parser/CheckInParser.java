@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.MultiDateTimeParser;
+import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.CheckInMessage;
@@ -82,52 +83,100 @@ public class CheckInParser extends AbstractBaseParser {
       logger.info("exportedMessage: " + message);
     }
 
-    try {
-      String xmlString = new String(message.attachments.get(messageType.attachmentName()));
-      makeDocument(message.messageId, xmlString);
+    var isTemplate = message.attachments.get(messageType.attachmentName()) != null;
+    if (isTemplate) {
+      try {
+        String xmlString = new String(message.attachments.get(messageType.attachmentName()));
+        makeDocument(message.messageId, xmlString);
 
-      var organization = getStringFromXml("organization");
-      var formDateTime = parseFormDateTime();
-      var contactName = getStringFromXml("contactname");
-      var initialOperators = getStringFromXml("assigned");
+        var organization = getStringFromXml("organization");
+        var formDateTime = parseFormDateTime();
+        var contactName = getStringFromXml("contactname");
+        var initialOperators = getStringFromXml("assigned");
 
-      var status = getStringFromXml("status");
-      var service = getStringFromXml("service");
-      var band = getStringFromXml("band");
-      var mode = getStringFromXml("session");
+        var status = getStringFromXml("status");
+        var service = getStringFromXml("service");
+        var band = getStringFromXml("band");
+        var mode = getStringFromXml("session");
 
-      var locationString = getStringFromXml("location");
-      var mgrs = getStringFromXml("mgrs");
-      var gridSquare = getStringFromXml("grid");
-      var formLocation = getLatLongFromXml(null);
-      if (formLocation == null) {
-        return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
+        var locationString = getStringFromXml("location");
+        var mgrs = getStringFromXml("mgrs");
+        var gridSquare = getStringFromXml("grid");
+        var formLocation = getLatLongFromXml(null);
+        if (formLocation == null) {
+          return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
+        }
+
+        var comments = getStringFromXml("comments");
+        var version = parseVersion();
+
+        CheckInMessage m = null;
+        if (messageType == MessageType.CHECK_IN) {
+          m = new CheckInMessage(message, organization, //
+              formDateTime, contactName, initialOperators, //
+              status, service, band, mode, //
+              locationString, formLocation, mgrs, gridSquare, //
+              comments, version);
+        } else if (messageType == MessageType.CHECK_OUT) {
+          m = new CheckOutMessage(message, organization, //
+              formDateTime, contactName, initialOperators, //
+              status, service, band, mode, //
+              locationString, formLocation, mgrs, gridSquare, //
+              comments, version);
+        } else {
+          return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
+        }
+
+        return m;
+      } catch (Exception e) {
+        return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
       }
+    } else {
+      try {
+        final var formDataKey = "FormData.txt";
+        var formDataString = new String(message.attachments.get(formDataKey));
+        var lines = formDataString.split("\n");
 
-      var comments = getStringFromXml("comments");
-      var version = parseVersion();
+        var organization = get(lines, 8);
+        var formDateTime = parser.parse(get(lines, 11));
+        var contactName = get(lines, 14);
+        var initialOperators = get(lines, 15);
 
-      CheckInMessage m = null;
-      if (messageType == MessageType.CHECK_IN) {
-        m = new CheckInMessage(message, organization, //
-            formDateTime, contactName, initialOperators, //
-            status, service, band, mode, //
-            locationString, formLocation, mgrs, gridSquare, //
-            comments, version);
-      } else if (messageType == MessageType.CHECK_OUT) {
-        m = new CheckOutMessage(message, organization, //
-            formDateTime, contactName, initialOperators, //
-            status, service, band, mode, //
-            locationString, formLocation, mgrs, gridSquare, //
-            comments, version);
-      } else {
-        return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
+        var status = get(lines, 16);
+        var service = get(lines, 17);
+        var band = get(lines, 18);
+        var mode = get(lines, 19);
+
+        var locationString = get(lines, 20);
+        var mgrs = get(lines, 23);
+        var gridSquare = get(lines, 24);
+        var formLocation = new LatLongPair(get(lines, 21), get(lines, 22));
+        var comments = get(lines, 25);
+        var version = get(lines, 1).split(" ")[2];
+
+        CheckInMessage m = null;
+        if (messageType == MessageType.CHECK_IN) {
+          m = new CheckInMessage(message, organization, //
+              formDateTime, contactName, initialOperators, //
+              status, service, band, mode, //
+              locationString, formLocation, mgrs, gridSquare, //
+              comments, version);
+        } else if (messageType == MessageType.CHECK_OUT) {
+          m = new CheckOutMessage(message, organization, //
+              formDateTime, contactName, initialOperators, //
+              status, service, band, mode, //
+              locationString, formLocation, mgrs, gridSquare, //
+              comments, version);
+        } else {
+          return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
+        }
+
+        return m;
+      } catch (Exception e) {
+        return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
       }
-
-      return m;
-    } catch (Exception e) {
-      return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
+
   }
 
   private LocalDateTime parseFormDateTime() {
@@ -159,6 +208,10 @@ public class CheckInParser extends AbstractBaseParser {
       version = fields[fields.length - 1]; // last field
     }
     return version;
+  }
+
+  private String get(String[] lines, int lineNumber) {
+    return lines[lineNumber - 1].split("=")[1];
   }
 
 }

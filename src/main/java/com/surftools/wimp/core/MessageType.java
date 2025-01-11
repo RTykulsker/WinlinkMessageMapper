@@ -43,7 +43,7 @@ public enum MessageType {
   ACK("ack", null), //
   POSITION("position"), //
 
-  CHECK_IN("check_in", "RMS_Express_Form_Winlink_Check_In_Viewer.xml"), //
+  CHECK_IN("check_in", "RMS_Express_Form_Winlink_Check_In_Viewer.xml", "Winlink Check-in"), //
   CHECK_OUT("check_out", "RMS_Express_Form_Winlink_Check_out_Viewer.xml"), //
   SPOTREP("spotrep", "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
   FIELD_SITUATION("fsr", "RMS_Express_Form_Field Situation Report"), //
@@ -102,10 +102,16 @@ public enum MessageType {
 
   private final String key;
   private final String attachmentName;
+  private final String formDataName;
 
-  private MessageType(String key, String attachmentName) {
+  private MessageType(String key, String attachmentName, String formDataName) {
     this.key = key;
     this.attachmentName = attachmentName;
+    this.formDataName = formDataName;
+  }
+
+  private MessageType(String key, String attachmentName) {
+    this(key, attachmentName, null);
   }
 
   private MessageType(String key) {
@@ -136,6 +142,10 @@ public enum MessageType {
 
   public String attachmentName() {
     return attachmentName;
+  }
+
+  public String formDataName() {
+    return formDataName;
   }
 
 }
