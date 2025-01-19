@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,6 +199,59 @@ public class SimpleTestService implements IService {
       entry = new TestEntry(label, null);
       entryMap.put(label, entry);
     }
+
+    return internalTest(entry, predicate, wrapEmpty(value), altExplanation);
+  }
+
+  public TestResult testList(String label, List<String> list, String value) {
+    return testList(label, list, value, null);
+  }
+
+  public TestResult testList(String rawLabel, List<String> list, String value, String altExplanation) {
+    if (rawLabel == null) {
+      throw new IllegalArgumentException("null label or expectedValue");
+    }
+
+    var label = rawLabel.contains("#EV") && list != null //
+        ? rawLabel.replaceAll("#EV", "[" + String.join(",", list) + "]")
+        : rawLabel;
+
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, null);
+      entryMap.put(label, entry);
+    }
+
+    var predicate = list.contains(value);
+    return internalTest(entry, predicate, wrapEmpty(value), altExplanation);
+  }
+
+  public TestResult testRegex(String label, String regexString, String value) {
+    return testRegex(label, regexString, value, null);
+  }
+
+  /**
+   *
+   * @param label
+   * @param regexString
+   * @param value
+   * @param altExplanation
+   * @return
+   */
+  public TestResult testRegex(String label, String regexString, String value, String altExplanation) {
+    if (label == null) {
+      throw new IllegalArgumentException("null label or expectedValue");
+    }
+
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, null);
+      entryMap.put(label, entry);
+    }
+
+    var predicate = Pattern.compile(regexString).matcher(value).find();
 
     return internalTest(entry, predicate, wrapEmpty(value), altExplanation);
   }

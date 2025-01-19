@@ -32,10 +32,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * abstraction for a radio frequency
  */
 public class Frequency {
+  private static Logger logger = LoggerFactory.getLogger(Frequency.class);
+
+  private static final boolean ALLOW_TWO_DECIMAL_POINTS = true;
+  private static final boolean ALLOW_SMASHED_UNITS = true;
+  private static final boolean ALLOW_COMMAS_INSTEAD_OF_PERIODS = true;
 
   private BigDecimal frequencyHz;
   private String freqString;
@@ -51,10 +59,45 @@ public class Frequency {
 
   public Frequency(String freqString, FreqUnit unit) {
     if (freqString != null && !freqString.isEmpty() && unit != null) {
+
+      var multiplier = new BigDecimal(unit.multiplier());
+
+      if (ALLOW_TWO_DECIMAL_POINTS) {
+        var count = freqString.length() - freqString.replaceAll("\\.", "").length();
+        if (count == 2) {
+          var lastIndex = freqString.lastIndexOf(".");
+          var sb = new StringBuilder(freqString);
+          freqString = sb.deleteCharAt(lastIndex).toString();
+        }
+      }
+
+      if (ALLOW_SMASHED_UNITS) {
+        if (freqString.endsWith("MHz") || freqString.endsWith("MHZ")) {
+          freqString = freqString.replace("MHz", "");
+          freqString = freqString.replace("MHZ", "");
+        }
+
+        if (freqString.endsWith("kHz")) {
+          freqString = freqString.replace("kHz", "");
+          unit = FreqUnit.HZ;
+        }
+      }
+
+      if (ALLOW_COMMAS_INSTEAD_OF_PERIODS) {
+        freqString = freqString.replaceAll(",", "\\.");
+      }
+
+      freqString = freqString.trim();
+
+      try {
+        frequencyHz = new BigDecimal(freqString).multiply(multiplier);
+      } catch (Exception e) {
+        logger.warn("could not parse frequency: " + freqString);
+        frequencyHz = new BigDecimal("-1");
+      }
+
       this.freqString = freqString;
       this.unit = unit;
-      var multiplier = new BigDecimal(unit.multiplier());
-      frequencyHz = new BigDecimal(freqString).multiply(multiplier);
     }
   }
 
@@ -82,6 +125,10 @@ public class Frequency {
 
   public Band bandOf() {
     return Band.of(frequencyHz.doubleValue() / unit.multiplier(), unit);
+  }
+
+  public boolean isAmateurFrequency() {
+    return isHF() || isVHF() || isUHF();
   }
 
   public boolean isHF() {

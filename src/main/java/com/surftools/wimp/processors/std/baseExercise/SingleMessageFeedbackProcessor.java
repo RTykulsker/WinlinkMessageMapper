@@ -67,7 +67,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
   protected int ppCount = 0;
   protected int ppMessageCorrectCount = 0;
-  protected Counter ppFeedBackCounter = new Counter();
 
   protected LatLongPair feedbackLocation = null;
   protected Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
@@ -166,7 +165,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
     var explanations = sts.getExplanations();
     var feedback = "";
-    ppFeedBackCounter.increment(explanations.size());
+    getCounter("Feedback Count").increment(explanations.size());
     if (explanations.size() == 0) {
       ++ppMessageCorrectCount;
       feedback = "Perfect Message!";

@@ -27,7 +27,9 @@ SOFTWARE.
 
 package com.surftools.utils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,5 +54,38 @@ public class MultiDateTimeParser {
       }
     }
     throw new RuntimeException("could not parse DateTime: " + s);
+  }
+
+  public LocalDateTime parseDateTime(String s) {
+    for (var formatter : formatters) {
+      try {
+        return LocalDateTime.parse(s.trim(), formatter);
+      } catch (Exception e) {
+        ;
+      }
+    }
+    return LocalDateTime.MIN;
+  }
+
+  public LocalDate parseDate(String s) {
+    for (var formatter : formatters) {
+      try {
+        return LocalDate.parse(s.trim(), formatter);
+      } catch (Exception e) {
+        ;
+      }
+    }
+    return LocalDate.MIN;
+  }
+
+  public LocalTime parseTime(String s) {
+    for (var formatter : formatters) {
+      try {
+        return LocalTime.parse(s.trim(), formatter);
+      } catch (Exception e) {
+        ;
+      }
+    }
+    return LocalTime.MIN;
   }
 }

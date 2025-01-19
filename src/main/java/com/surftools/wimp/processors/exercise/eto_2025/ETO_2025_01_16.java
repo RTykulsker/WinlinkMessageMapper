@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2025;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -34,6 +36,7 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.utils.radioUtils.Frequency;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
@@ -57,6 +60,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
 
     messageType = MessageType.ICS_205_RADIO_PLAN;
+    doStsFieldValidation = false;
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
@@ -72,14 +76,28 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     if (dateTimePrepared == null) {
       count(sts.test("Date/Time Prepared should be present and in exercise window", false));
     } else {
+      count(sts.test("Date/Time Prepared should be present and in exercise window", true));
       count(sts.testOnOrAfter("Date/Time Prepared should be on or after #EV", windowOpenDT, dateTimePrepared, DTF));
       count(sts.testOnOrBefore("Date/Time Prepared should be on or before #EV", windowCloseDT, dateTimePrepared, DTF));
     }
 
-    count(sts.test("Operational Period Date From should be #EV", "1/25/2025", m.dateFrom));
-    count(sts.test("Operational Period Date To should be #EV", "1/26/2025", m.dateTo));
-    count(sts.test("Operational Period Time From should be #EV", "16:00 UTC", m.timeFrom));
-    count(sts.test("Operational Period Time To should be #EV", "21:59 UTC", m.timeTo));
+    var opDateFormatter = new MultiDateTimeParser(List
+        .of("M/dd/yyyy", "MM/dd/yy", "MM/dd/yyyy", "yyyy-MM-dd", "yyyy-M-dd", "M-dd-yyyy", "yyyy/MM/dd", "M/dd/yy"));
+
+    count(sts
+        .test("Operational Period Date From should be 1/25/2025",
+            opDateFormatter.parseDate(m.dateFrom).equals(LocalDate.of(2025, 01, 25)), m.dateFrom));
+    count(sts
+        .test("Operational Period Date To should be 1/26/2025",
+            opDateFormatter.parseDate(m.dateTo).equals(LocalDate.of(2025, 01, 26)), m.dateTo));
+
+    var opTimeFormatter = new MultiDateTimeParser(List.of("HH:mm 'UTC'", "HHmm 'UTC'", "HHmm", "HH:mm", "HH:mm'UTC'"));
+    count(sts
+        .test("Operational Period Time From should be 16:00 UTC",
+            opTimeFormatter.parseTime(m.timeFrom).equals(LocalTime.of(16, 0)), m.timeFrom));
+    count(sts
+        .test("Operational Period Time To should be 21:59 UTC",
+            opTimeFormatter.parseTime(m.timeTo).equals(LocalTime.of(21, 59)), m.timeTo));
 
     handleRadioEntries(m, m.radioEntries);
     sts.setExplanationPrefix("");
@@ -104,7 +122,11 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     var areThere2Fields = approvedByFields.size() == 2;
     count(
         sts.test("Approved By should have two fields", areThere2Fields, String.valueOf(nApprovedByFields), approvedBy));
-    count(sts.test("Approved By Field #2 should match call sign", approvedByFields.get(1).equalsIgnoreCase(m.from)));
+    if (areThere2Fields) {
+      count(sts.test("Approved By Field #2 should match call sign", approvedByFields.get(1).equalsIgnoreCase(m.from)));
+    } else {
+      count(sts.test("Approved By Field #2 should match call sign", false));
+    }
 
     var dateTimeApproved = parseDateTime(m.dateTimePrepared, List.of(DTF, ALT_DTF));
     if (dateTimeApproved == null) {
@@ -191,7 +213,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         count(sts.test("RX freq should be a WX frequency", new Frequency(rfFreqString).isWX(), rfFreqString));
         count(sts.test("RX Narrow or Wide should be #EV", "W", entry.rxNarrowWide()));
         count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
-        count(sts.testIfEmpty("TX Freq should be present", entry.txFrequency()));
+        count(sts.testIfEmpty("TX Freq should be blank", entry.txFrequency()));
         count(sts.testIfEmpty("TX N or W should be blank", entry.txNarrowWide()));
         count(sts.testIfEmpty("TX Tone should be blank", entry.txTone()));
         count(sts.test("Mode should be #EV", "A", (entry.mode() == null ? "(blank)" : entry.mode())));
@@ -211,29 +233,32 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
         count(sts.testIfPresent("Channel Name should be present", entry.channelName()));
         count(sts.testIfPresent("Assignment should be present", entry.assignment()));
         var rxFreq = new Frequency(entry.rxFrequency());
-        count(sts.test("RX freq should be an HF frequency in MHz", rxFreq.isHF(), entry.rxFrequency()));
+        count(sts.test("RX freq should be an HF frequency in MHz", rxFreq.isHF(), rxFreq.toString()));
         count(sts.testIfEmpty("RX Narrow or Wide should be blank", entry.rxNarrowWide()));
         count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
         var txFreq = new Frequency(entry.txFrequency());
-        count(sts.test("TX Freq should be should be an HF frequency in MHz", txFreq.isHF(), entry.txFrequency()));
+        count(sts.test("TX Freq should be should be an HF frequency in MHz", txFreq.isHF(), txFreq.toString()));
         count(sts.testIfEmpty("TX Narrow or Wide should be blank", entry.txNarrowWide()));
         count(sts.testIfEmpty("TX Tone should be blank", entry.txTone()));
         count(sts.testIfPresent("Remarks should be present", entry.remarks()));
       } // endif HF Winlink P2P
 
       if (lineNumber >= 5 && lineNumber <= 10) {
-        sts.setExplanationPrefix(baseExplanation + " (WFD HF Frequencies): ");
-        count(sts
-            .test("Function should start with Amateur", entry.function().toLowerCase().startsWith("amateur"),
-                entry.function()));
+        sts.setExplanationPrefix(baseExplanation + " (WFD Frequencies): ");
+        var function = entry.function() == null ? "" : entry.function().toLowerCase();
+        count(sts.test("Function should start with Amateur", function.startsWith("amateur"), function));
         count(sts.testIfEmpty("Channel Name should be blank", entry.channelName()));
         count(sts.testIfPresent("Assignment should be present", entry.assignment()));
         var rxFreq = entry.rxFrequency();
-        count(sts.test("RX freq should be an HF frequency in MHz", new Frequency(rxFreq).isHF(), rxFreq));
+        count(sts
+            .test("RX freq should be an Amateur HF frequency in MHz", new Frequency(rxFreq).isAmateurFrequency(),
+                rxFreq));
         count(sts.testIfEmpty("RX Narrow or Wide should be blank", entry.rxNarrowWide()));
         count(sts.testIfEmpty("RX Tone should be blank", entry.rxTone()));
         var txFreq = entry.txFrequency();
-        count(sts.test("TX Freq should be should be an HF frequency in MHz", new Frequency(txFreq).isHF(), txFreq));
+        count(sts
+            .test("TX Freq should be should be an Amateur HF frequency in MHz",
+                new Frequency(txFreq).isAmateurFrequency(), txFreq));
         count(sts.testIfEmpty("TX Narrow or Wide should be blank", entry.txNarrowWide()));
         count(sts.testIfEmpty("TX Tone should be blank", entry.txTone()));
         count(sts.test("Mode should be A, D, or M", isModeValid(entry.mode()), entry.mode()));
