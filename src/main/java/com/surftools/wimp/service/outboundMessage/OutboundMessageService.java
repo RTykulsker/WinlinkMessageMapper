@@ -54,16 +54,19 @@ public class OutboundMessageService implements IService {
   }
 
   public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent) {
-    var engineTypeString = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, EngineType.PAT.name());
-    var engineType = EngineType.valueOf(engineTypeString);
+    var engineTypeName = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, EngineType.PAT.name());
+    var engineType = EngineType.valueOf(engineTypeName);
     if (engineType == null) {
-      throw new RuntimeException(
-          "Configuration key: " + Key.OUTBOUND_MESSAGE_ENGINE_TYPE.name() + ", could not find engine");
+      throw new RuntimeException("Could not find engineType for: " + engineTypeName);
     }
 
     switch (engineType) {
     case PAT:
       engine = new PatOutboundMessageEngine(cm, extraContent);
+      break;
+
+    case REGISTRY:
+      engine = new RegistryOutboundMessageEngine(cm, extraContent);
       break;
 
     case WEB:

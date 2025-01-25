@@ -92,7 +92,9 @@ public enum Key implements IConfigurationKey {
   OUTBOUND_MESSAGE_SOURCE("outboundMessage.source"), // mbo address
   OUTBOUND_MESSAGE_SENDER("outboundMessage.sender"), // from address
   OUTBOUND_MESSAGE_SUBJECT("outboundMessage.subject"), // message subject
-  OUTBOUND_MESSAGE_PAT_EXEC_PATH("outboundMessage.pat.execPath"), // where to find PAT executable
+  OUTBOUND_MESSAGE_ENGINE_PATH("outboundMessage.enginePath"), // where to find engine-specific path
+  OUTBOUND_MESSAGE_MESSAGE_PATH("outboundMessage.messagePath"), // where to write message files; not needed for PAT,
+                                                                // needed for REGISTRY
 
   CMS_AUTHORIZATION_KEY("cms.authorizationKey"), // for CMS access
   CMS_CACHE_CHANNELS("cms.cacheChannels"), // onto local disk

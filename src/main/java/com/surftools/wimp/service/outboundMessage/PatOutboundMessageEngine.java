@@ -30,16 +30,9 @@ package com.surftools.wimp.service.outboundMessage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,28 +40,16 @@ import com.surftools.utils.FileUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
-public class PatOutboundMessageEngine implements IOutboundMessageEngine {
+public class PatOutboundMessageEngine extends AbstractBaseOutboundMessageEngine {
   private static final Logger logger = LoggerFactory.getLogger(PatOutboundMessageEngine.class);
 
-  private IConfigurationManager cm;
-  private boolean isReady;
-  private String execPath;;
-
+  private String execPath;
   private Path mailboxPath;
-  private Path outboxPath;
-  private String sender;
-  private String source;
-
-  private final String extraContent;
-
-  private StringBuilder allOutput = new StringBuilder();
 
   public PatOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
-    this.cm = cm;
+    super(cm, extraContent);
 
-    this.extraContent = extraContent;
-
-    execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_PAT_EXEC_PATH, "/usr/bin/pat");
+    execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_PATH, "/usr/bin/pat");
     if (execPath == null || execPath.isEmpty()) {
       logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SENDER.name() + " not defined");
       return;
@@ -76,18 +57,6 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
 
     if (!new File(execPath).exists()) {
       logger.error("Pat exec: " + execPath + " not found");
-      return;
-    }
-
-    sender = cm.getAsString(Key.OUTBOUND_MESSAGE_SENDER);
-    if (sender == null) {
-      logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SENDER.name() + " not defined");
-      return;
-    }
-
-    source = cm.getAsString(Key.OUTBOUND_MESSAGE_SOURCE);
-    if (sender == null) {
-      logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SOURCE.name() + " not defined");
       return;
     }
 
@@ -104,83 +73,13 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
   }
 
   @Override
-  /**
-   * generate a b2f file representing message for PAT to send later
-   */
-  public String send(OutboundMessage m) {
-    if (!isReady) {
-      logger.warn("NO outbound message sent for: " + m);
-      return null;
-    }
-
-    // see https://winlink.org/B2F
-    String messageId = m.messageId();
-    if (m.messageId() == null || m.messageId().isEmpty()) {
-      messageId = generateMid(m.toString());
-    }
-
-    final String SEP = "\r\n";
-
-    final LocalDateTime nowUTC = LocalDateTime.now(Clock.systemUTC());
-    final String dateString = nowUTC.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
-
-    var body = m.body();
-    if (extraContent != null) {
-      body = body + "\n" + extraContent;
-    }
-    body = body.replaceAll("\n", SEP);
-    body = body.replaceAll("\\u009d", "");
-    var to = expandToAddresses(m.to());
-
-    var doDebugToAddress = false;
-    if (doDebugToAddress) {
-      to = expandToAddresses("RTykulsker@gmail.com");
-    }
-
-    var sb = new StringBuilder();
-    sb.append("Mid: " + messageId + SEP);
-    sb.append("Body: " + (body.length() + SEP.length()) + SEP);
-    sb.append("Content-Transfer-Encoding: 8bit" + SEP);
-    sb.append("Content-Type: text/plain; charset=ISO-8859-1" + SEP);
-    sb.append("Date: " + dateString + SEP);
-    sb.append("From: " + sender + SEP);
-    sb.append("Mbo: " + source + SEP);
-    sb.append("Subject: " + m.subject() + SEP);
-    sb.append("To: " + to + SEP);
-    sb.append("Type: Private" + SEP);
-    sb.append(SEP);
-    sb.append(body + SEP);
-
-    var outputPath = Path.of(outboxPath.toString(), messageId + ".b2f");
-    try {
-      Files.writeString(outputPath, sb.toString());
-      logger.debug("wrote b2f file: " + outputPath);
-    } catch (Exception e) {
-      logger.error("Exception writing b2f file: " + outputPath + ", " + e.getLocalizedMessage());
-    }
-
-    allOutput.append(m.to() + "\n" + m.body() + "\n\n");
-    return messageId;
-  }
-
-  @Override
   public void finalizeSend() {
-    if (!isReady) {
-      return;
-    }
-
-    try {
-      var path = cm.getAsString(Key.PATH);
-      Files.writeString(Path.of(path, "allFeedback.txt"), allOutput.toString());
-    } catch (Exception e) {
-      logger.error("error writing allFeedback.txt: " + e.getLocalizedMessage());
-    }
+    super.finalizeSend();
 
     var args = new String[] { execPath, "--send-only", "--mbox", "\"" + mailboxPath.toString() + "\"", "connect",
         "telnet" };
 
     var reallyDoIt = false;
-
     if (reallyDoIt) {
       logger.info("ready to execute: " + String.join(" ", args));
       var processBuilder = new ProcessBuilder(args);
@@ -208,46 +107,8 @@ public class PatOutboundMessageEngine implements IOutboundMessageEngine {
   }
 
   @Override
-  public boolean isReady() {
-    return isReady;
-  }
-
-  @Override
   public EngineType getEngineType() {
     return EngineType.PAT;
-  }
-
-  /**
-   * fix addresses: add "SMTP:" to non-Winlink addresses
-   *
-   * @param toAddressString
-   * @return
-   */
-  private String expandToAddresses(String toAddressString) {
-    var list = new ArrayList<String>();
-    var addresses = toAddressString.split(",");
-    for (var address : addresses) {
-      if (address.contains("@") && !address.toLowerCase().endsWith("@winlink.org")) {
-        address = "SMTP:" + address;
-      }
-      list.add(address);
-    }
-    return String.join(",", list);
-  }
-
-  public static String generateMid(String string) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("MD5");
-      String stringToHash = string + System.nanoTime();
-      md.update(stringToHash.getBytes());
-      byte[] digest = md.digest();
-      Base32 base32 = new Base32();
-      String encodedString = base32.encodeToString(digest);
-      String subString = encodedString.substring(0, 12);
-      return subString;
-    } catch (Exception e) {
-      throw new RuntimeException("could not generate messageId: " + e.getMessage());
-    }
   }
 
 }
