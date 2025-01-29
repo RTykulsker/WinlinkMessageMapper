@@ -63,11 +63,11 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
 	count(sts.testIfEmpty("Incident Name should be #EV", m.incidentName));
 
-	count(sts.test("Form To should match clearinghouse", m.to.equals(m.formTo), m.formTo));
+	count(sts.test("Form To should be #EV", "AA6XC, EOC Net Control", m.formTo));
 	count(sts.test("Form From should start with callsign", m.formFrom.startsWith(m.from), m.formFrom));
-	count(sts.test("Form From should end with 'ETO Winlink Thursday Participant'",
+	count(sts.test("Form From should end with 'Operator'",
 			m.formFrom.endsWith("ETO Winlink Thursday Participant"), m.formFrom));
-	count(sts.test("Form Subject should be #EV", "Water Rescue",m.formSubject));
+	count(sts.test("Form Subject should be #EV", "Water Rescue Required", m.formSubject));
 	
 	count(sts.testIfPresent("Form Date should be present", m.formDate));
 	count(sts.testIfPresent("Form Time should be present", m.formTime));
