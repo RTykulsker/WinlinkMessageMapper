@@ -61,7 +61,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbackProcessor {
 
-  protected boolean doStsFieldValidation = true;
+  protected boolean doStsFieldValidation = false;
 
   protected Map<String, Counter> summaryCounterMap = new LinkedHashMap<String, Counter>();
 

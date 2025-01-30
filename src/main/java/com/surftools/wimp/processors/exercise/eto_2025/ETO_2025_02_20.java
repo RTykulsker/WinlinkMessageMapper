@@ -51,7 +51,6 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
 
     messageType = MessageType.ICS_213;
-    doStsFieldValidation = false;
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
@@ -78,7 +77,6 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
 
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
     count(sts.test("Position/Title should be #EV", "Operator", m.position));
-
   }
 
 }
