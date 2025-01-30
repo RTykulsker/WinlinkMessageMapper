@@ -78,6 +78,7 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
 
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
     count(sts.test("Position/Title should be #EV", "Operator", m.position));
+
   }
 
 }
