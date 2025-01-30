@@ -50,7 +50,7 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-	messageType = MessageType.ICS_213;
+    messageType = MessageType.ICS_213;
     doStsFieldValidation = false;
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
@@ -58,32 +58,26 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-		var m = (Ics213Message) message;
+    var m = (Ics213Message) message;
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
-	count(sts.testIfEmpty("Incident Name should be #EV", m.incidentName));
+    count(sts.testIfEmpty("Incident Name should be #EV", m.incidentName));
+    count(sts.test("Form To should be #EV", "AA6XC, EOC Net Control", m.formTo));
+    count(sts.test("Form From should start with callsign", m.formFrom.startsWith(m.from), m.formFrom));
+    count(sts.test("Form From should end with 'Operator'", m.formFrom.endsWith("Operator"), m.formFrom));
+    count(sts.test("Form Subject should be #EV", "Water Rescue", m.formSubject));
+    count(sts.testIfPresent("Form Date should be present", m.formDate));
+    count(sts.testIfPresent("Form Time should be present", m.formTime));
 
-	count(sts.test("Form To should match clearinghouse", m.to.equals(m.formTo), m.formTo));
-	count(sts.test("Form From should start with callsign", m.formFrom.startsWith(m.from), m.formFrom));
-	count(sts.test("Form From should end with 'ETO Winlink Thursday Participant'",
-			m.formFrom.endsWith("ETO Winlink Thursday Participant"), m.formFrom));
-	count(sts.test("Form Subject should be #EV", "Water Rescue",m.formSubject));
-	
-	count(sts.testIfPresent("Form Date should be present", m.formDate));
-	count(sts.testIfPresent("Form Time should be present", m.formTime));
-	
-	var expectedText = """
-			One canoe with two canoeists is trapped in a log jam. Both are wearing life vests with no apparent injuries. A second canoe is capsized and two canoeists are in the water wearing life vests. Both are hanging on the rock. Injuries to these two are unknown. This incident is located approximately 11 miles from town.
-			""";
-	// TODO any string manipulation?
-	var actualText = m.formMessage;
-	count(sts.test_2line("Message text should be #EV", expectedText, actualText));
+    var expectedText = """
+        One canoe with two canoeists is trapped in a log jam. Both are wearing life vests with no apparent injuries. A second canoe is capsized and two canoeists are in the water wearing life vests. Both are hanging on the rock. Injuries to these two are unknown. This incident is located approximately 11 miles from town.
+        """;
+    // TODO any string manipulation?
+    var actualText = m.formMessage;
+    count(sts.test_2line("Message text should be #EV", expectedText, actualText));
 
-	// TODO waiting for actual requirements
-	count(sts.testIfPresent("Approved by should be present", m.approvedBy));
-
-	// TODO waiting for actual requirements
-	count(sts.testIfPresent("Position/Title should be present", m.position));
+    count(sts.testIfPresent("Approved by should be present", m.approvedBy));
+    count(sts.test("Position/Title should be #EV", "Operator", m.position));
   }
 
 }
