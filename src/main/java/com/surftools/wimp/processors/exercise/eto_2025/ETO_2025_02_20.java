@@ -59,21 +59,20 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
   protected void specificProcessing(ExportedMessage message) {
     var m = (Ics213Message) message;
 
+    var x = sts.getExplanations();
+
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
-    count(sts.testIfEmpty("Incident Name should be #EV", m.incidentName));
-    count(sts.test("Form To should be #EV", "AA6XC, EOC Net Control", m.formTo));
+    count(sts.testIfEmpty("Incident Name should be empty", m.incidentName));
+    count(sts.test("Form To should be #EV", "AA6XC, Net Control", m.formTo));
     count(sts.test("Form From should start with callsign", m.formFrom.startsWith(m.from), m.formFrom));
     count(sts.test("Form From should end with 'Operator'", m.formFrom.endsWith("Operator"), m.formFrom));
-    count(sts.test("Form Subject should be #EV", "Water Rescue", m.formSubject));
+    count(sts.test("Form Subject should be #EV", "Water Rescue Required", m.formSubject));
     count(sts.testIfPresent("Form Date should be present", m.formDate));
     count(sts.testIfPresent("Form Time should be present", m.formTime));
 
-    var expectedText = """
-        One canoe with two canoeists is trapped in a log jam. Both are wearing life vests with no apparent injuries. A second canoe is capsized and two canoeists are in the water wearing life vests. Both are hanging on the rock. Injuries to these two are unknown. This incident is located approximately 11 miles from town.
-        """;
-    // TODO any string manipulation?
-    var actualText = m.formMessage;
-    count(sts.test_2line("Message text should be #EV", expectedText, actualText));
+    var expectedText = "One canoe with two canoeists is trapped in a log jam. Both are wearing life vests with no apparent injuries. A second canoe is capsized and two canoeists are in the water wearing life vests. Both are clinging to the rock. Injuries to these two are unknown. This incident is located approximately 11 miles from town";
+
+    count(sts.test_2line("Message text should be #EV", expectedText, m.formMessage));
 
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
     count(sts.test("Position/Title should be #EV", "Operator", m.position));

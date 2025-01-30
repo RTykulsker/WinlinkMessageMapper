@@ -138,11 +138,9 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
   @Override
   protected void beginCommonProcessing(ExportedMessage message) {
-    super.beginCommonProcessing(message);
-
     ++ppCount;
     sts.reset(sender);
-
+    super.beginCommonProcessing(message);
     beforeCommonProcessing(sender, message);
 
     feedbackLocation = message.mapLocation;
