@@ -49,17 +49,13 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
-
     messageType = MessageType.ICS_213;
-    var extraOutboundMessageText = "";
-    outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var m = (Ics213Message) message;
-
-    var x = sts.getExplanations();
+    final var expectedText = "A canoe capsized about 11 miles west of town. Two canoeists with vests are clinging to a rock";
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.testIfEmpty("Incident Name should be empty", m.incidentName));
@@ -69,11 +65,7 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
     count(sts.test("Form Subject should be #EV", "Water Rescue Required", m.formSubject));
     count(sts.testIfPresent("Form Date should be present", m.formDate));
     count(sts.testIfPresent("Form Time should be present", m.formTime));
-
-    var expectedText = "One canoe with two canoeists is trapped in a log jam. Both are wearing life vests with no apparent injuries. A second canoe is capsized and two canoeists are in the water wearing life vests. Both are clinging to the rock. Injuries to these two are unknown. This incident is located approximately 11 miles from town";
-
     count(sts.test_2line("Message text should be #EV", expectedText, m.formMessage));
-
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
     count(sts.test("Position/Title should be #EV", "Operator", m.position));
   }
