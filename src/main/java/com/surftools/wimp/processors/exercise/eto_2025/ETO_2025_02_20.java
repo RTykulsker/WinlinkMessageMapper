@@ -55,12 +55,11 @@ public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var m = (Ics213Message) message;
-    final var expectedText = "A canoe capsized about 11 miles west of town. Two canoeists with vests are clinging to a rock";
+    final var expectedText = "A canoe capsized about 11 miles west of town. Two canoeists wearing life vests are clinging to a rock.";
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.testIfEmpty("Incident Name should be empty", m.incidentName));
     count(sts.test("Form To should be #EV", "AA6XC, Net Control", m.formTo));
-    count(sts.test("Form From should start with callsign", m.formFrom.startsWith(m.from), m.formFrom));
     count(sts.test("Form From should end with 'Operator'", m.formFrom.endsWith("Operator"), m.formFrom));
     count(sts.test("Form Subject should be #EV", "Water Rescue Required", m.formSubject));
     count(sts.testIfPresent("Form Date should be present", m.formDate));
