@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.counter.ICounter;
+import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.service.IService;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
@@ -872,5 +873,10 @@ public class SimpleTestService implements IService {
   public void setExplanationPrefix(String explanationPrefix) {
     this.explanationPrefix = explanationPrefix;
   }
+
+	public void testNotNull(String string, DyfiMessage dyfiMessage) {
+		// TODO Auto-generated method stub
+
+	}
 
 } // end class SimpleTestService
