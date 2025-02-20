@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.counter.ICounter;
-import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.service.IService;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
@@ -142,11 +141,6 @@ public class SimpleTestService implements IService {
 
     expectedValue = entry.expectedValue;
     var predicate = value != null && toAlphaNumericWords(value).equalsIgnoreCase(expectedValue);
-
-    if (expectedValue.equals("DX Engineering") && !predicate) {
-      @SuppressWarnings("unused")
-      var debug = true;
-    }
 
     return internalTest(entry, predicate, wrap(value), null);
   }
@@ -567,6 +561,17 @@ public class SimpleTestService implements IService {
     return TestResult.withExtraData(internalResult, String.valueOf(fuzzyResult));
   }
 
+  public TestResult testNotNull(String label, Object object) {
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, "");
+      entryMap.put(label, entry);
+    }
+
+    return internalTest(entry, object != null, null, null);
+  }
+
   /**
    * our package-private test method, used by ALL testXXX(...) calls
    *
@@ -873,10 +878,5 @@ public class SimpleTestService implements IService {
   public void setExplanationPrefix(String explanationPrefix) {
     this.explanationPrefix = explanationPrefix;
   }
-
-	public void testNotNull(String string, DyfiMessage dyfiMessage) {
-		// TODO Auto-generated method stub
-
-	}
 
 } // end class SimpleTestService

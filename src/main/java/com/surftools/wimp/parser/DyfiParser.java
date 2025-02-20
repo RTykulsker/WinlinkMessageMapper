@@ -45,7 +45,7 @@ public class DyfiParser extends AbstractBaseParser {
 
   private static final Logger logger = LoggerFactory.getLogger(DyfiParser.class);
 
-  private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
+  private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("M/dd/yyyy HH:mm");
 
   @SuppressWarnings("unchecked")
   @Override
@@ -90,6 +90,7 @@ public class DyfiParser extends AbstractBaseParser {
       } catch (Exception e) {
         ;
       }
+
       String location = map.get("ciim_mapAddress");
       String latitude = map.get("ciim_mapLat");
       String longitude = map.get("ciim_mapLon");

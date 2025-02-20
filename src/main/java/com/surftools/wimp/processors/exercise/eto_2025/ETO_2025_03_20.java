@@ -33,40 +33,33 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.Ics213Message;
+import com.surftools.wimp.message.Ics213ReplyMessage;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * ICS-213, first of two parts
+ * ICS-213 reply
  *
  * @author bobt
  *
  */
-public class ETO_2025_02_20 extends SingleMessageFeedbackProcessor {
-  private static Logger logger = LoggerFactory.getLogger(ETO_2025_02_20.class);
+public class ETO_2025_03_20 extends SingleMessageFeedbackProcessor {
+  private static Logger logger = LoggerFactory.getLogger(ETO_2025_03_20.class);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
-    messageType = MessageType.ICS_213;
+    messageType = MessageType.ICS_213_REPLY;
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    var m = (Ics213Message) message;
-    final var expectedText = "A canoe capsized about 11 miles west of town. Two canoeists wearing life vests are clinging to a rock.";
+    var m = (Ics213ReplyMessage) message;
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
-    count(sts.testIfEmpty("Incident Name should be empty", m.incidentName));
-    count(sts.test("Form To should be #EV", "AA6XC, Net Control", m.formTo));
-    count(sts.test("Form From should end with 'Operator'", m.formFrom.toLowerCase().endsWith("operator"), m.formFrom));
-    count(sts.test("Form Subject should be #EV", "Water Rescue Required", m.formSubject));
-    count(sts.testIfPresent("Form Date should be present", m.formDate));
-    count(sts.testIfPresent("Form Time should be present", m.formTime));
-    count(sts.test_2line("Message text should be #EV", expectedText, m.formMessage));
-    count(sts.testIfPresent("Approved by should be present", m.approvedBy));
-    count(sts.test("Position/Title should be #EV", "Operator", m.position));
+    count(sts.test("Reply should be #EV", "Coordinates are 38.673144,-90.719145. Yes", m.reply));
+    count(sts.test("Reply by should be #EV", "John", m.replyBy));
+    count(sts.test("Reply Position should be ##EV", "On-Site Operator", m.replyPosition));
   }
 
 }
