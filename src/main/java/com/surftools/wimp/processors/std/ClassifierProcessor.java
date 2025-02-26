@@ -59,6 +59,7 @@ import com.surftools.wimp.parser.Ics214Parser;
 import com.surftools.wimp.parser.Ics309Parser;
 import com.surftools.wimp.parser.MiroCheckInParser;
 import com.surftools.wimp.parser.PdfIcs309Parser;
+import com.surftools.wimp.parser.PegelstandParser;
 import com.surftools.wimp.parser.PlainParser;
 import com.surftools.wimp.parser.PositionParser;
 import com.surftools.wimp.parser.QuickParser;
@@ -262,6 +263,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return MessageType.RRI_REPLY_WELFARE_RADIOGRRAM;
     } else if (subject.startsWith("ACK:")) {
       return MessageType.ACK;
+    } else if (subject.startsWith("Pegelstand Report")) {
+      return MessageType.PEGELSTAND;
     }
 
     // other
@@ -330,6 +333,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.WELFARE_BULLETIN_BOARD, new WelfareBulletinBoardParser());
 
     parserMap.put(MessageType.EYEWARN, new EyewarnParser());
+    parserMap.put(MessageType.PEGELSTAND, new PegelstandParser());
 
     for (IParser parser : parserMap.values()) {
       parser.initialize(cm, mm);

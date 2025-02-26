@@ -122,6 +122,7 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
         }
 
         // ExportedMessage implements Comparable, by sortTime
+
         Collections.sort(inputList);
 
         if (rule > 0) {

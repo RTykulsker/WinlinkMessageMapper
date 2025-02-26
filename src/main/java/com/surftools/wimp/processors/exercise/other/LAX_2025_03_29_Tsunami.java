@@ -32,18 +32,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.wimp.core.ContentParser;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.core.ContentParser.ParseResult;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.CheckOutMessage;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics214Message;
+import com.surftools.wimp.message.PegelstandMessage;
 import com.surftools.wimp.message.WelfareBulletinBoardMessage;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -58,14 +62,12 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(LAX_2025_03_29_Tsunami.class);
 
   protected static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
+
   protected static final DateTimeFormatter DYFI_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   protected static final DateTimeFormatter DYFI_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
   protected static final String EXPECTED_DATE = "03/29/2025";
   protected static final String EXPECTED_TIME = "08:29";
-
-  protected static final String IS_EXERCISE_PHRASE = "This is an Exercise";
-  protected static final String GROUP_AFFILIATION_PHRASE = "Group Affiliation:";
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
@@ -78,9 +80,20 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     public Ics213Message ics213Message;
     public CheckOutMessage checkOutMessage;
     public Ics214Message ics214Message;
+    public PegelstandMessage pegelstandMessage;
 
     public int messageCount;
     public int feedbackBand;
+
+    public String dyfiIsExercise;
+    public String dyfiGroups;
+
+    public String ciIsExercise;
+    public String ciGroups;
+    public String ciOperationalCapabilities;
+    public String ciDeploymentPosture;
+    public String ciInTsunamiZone;
+    public String ciInFloodZone;
 
     public Summary(String from) {
       this.from = from;
@@ -93,8 +106,15 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       list.addAll(Arrays.asList(super.getHeaders()));
       list
           .addAll(Arrays
-              .asList(new String[] { "DYFI", "Check In", "Welfare", "Ics213", "Check Out", "Ics214", //
-                  "# Messages", "Feedback Band" }));
+              .asList(new String[] { "DYFI", "Check In", "Welfare", "Ics213", "Check Out", "Ics214", "Pegelstand", //
+                  "# Messages", "Feedback Band", //
+
+                  "DYFI IsExercise", "DYFI Groups", //
+
+                  "Check-In IsExercise", "Check-In Groups", "Operational Capabilities", "Deployment Posture",
+                  "In Tsunami Zone", "In Flood Zone",//
+
+              }));
       return list.toArray(new String[0]);
     }
 
@@ -105,8 +125,16 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       list
           .addAll(Arrays
               .asList(new String[] { mId(dyfiMessage), mId(checkInMessage), //
-                  mId(welfareMessage), mId(ics213Message), mId(checkOutMessage), mId(ics214Message), //
-                  s(messageCount), s(feedbackBand) }));
+                  mId(welfareMessage), mId(ics213Message), mId(checkOutMessage), mId(ics214Message),
+                  mId(pegelstandMessage), //
+                  s(messageCount), s(feedbackBand), //
+
+                  dyfiIsExercise, dyfiGroups, //
+
+                  ciIsExercise, ciGroups, ciOperationalCapabilities, ciDeploymentPosture, ciInTsunamiZone,
+                  ciInFloodZone, //
+              }));
+
       return list.toArray(new String[0]);
     };
   }
@@ -114,7 +142,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   final static List<MessageType> acceptableMessageTypesList = List
       .of( // order matters, last location wins,
           MessageType.DYFI, MessageType.CHECK_IN, MessageType.WELFARE_BULLETIN_BOARD, MessageType.ICS_213,
-          MessageType.CHECK_OUT, MessageType.ICS_214);
+          MessageType.CHECK_OUT, MessageType.ICS_214, MessageType.PEGELSTAND);
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -153,6 +181,8 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       handle_CheckOutMessage(summary, (CheckOutMessage) message);
     } else if (type == MessageType.ICS_214) {
       handle_Ics214Message(summary, (Ics214Message) message);
+    } else if (type == MessageType.PEGELSTAND) {
+      handlePegelstandMessage(summary, (PegelstandMessage) message);
     }
 
     summaryMap.put(sender, iSummary);
@@ -166,7 +196,9 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     for (var list : List.of(message.toList, message.ccList)) {
       var addresses = list.split(",");
       for (var address : addresses) {
-        addressSet.add(address);
+        if (!isNull(address)) {
+          addressSet.add(address);
+        }
       }
     }
 
@@ -193,17 +225,51 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     }
 
     var comments = m.comments;
+    if (!isNull(comments)) {
+      var cp = new ContentParser(comments);
+      var pr = new ParseResult(null, null, null);
 
-    isExercise("Comments line 1", comments, IS_EXERCISE_PHRASE, 1);
-    processGroupAffiliation("Comments line 2", comments, GROUP_AFFILIATION_PHRASE, 2);
+      pr = cp.isExerciseFirstWord("Comments", "EXERCISE");
+      if (pr.error() == null) {
+        count(sts.test("Comments first word is #EV", "EXERCISE", (String) pr.context()));
+      } else {
+        count(sts.test("Comments first word is EXERCISE", false, (String) pr.context()));
+      }
+      summary.dyfiIsExercise = pr.value();
 
-    // date and time should be 10/17 and 10:17
+      // comma-delimited, starting on 2nd word, stopping on first word that starts with digit
+      pr = cp.getDYFIGroupAffiliation(",", 2, "\\d+.");
+      if (pr.error() == null) {
+
+        @SuppressWarnings("unchecked")
+        var groupSet = (Set<String>) pr.context();
+        for (var groupName : groupSet) {
+          getCounter("DYFI Group Affiliation").increment(groupName);
+        }
+        summary.dyfiGroups = pr.value();
+        count(sts.test("DYFI Comments Group Affiliation parsed ok", true));
+      } else {
+        summary.dyfiGroups = "";
+        count(sts.test("DYFI Comments Group Affiliation parsed ok", false, (String) pr.context()));
+      }
+
+      // summary.dyfiGroups = processGroupAffiliation("Comments", comments, null);
+      count(sts.test("Comments parsed", true));
+    } else {
+      count(sts.test("Comments first word is EXERCISE", false, "null comments"));
+      summary.dyfiIsExercise = "(null)";
+
+      count(sts.test("Comments parsed", false, "null comments"));
+      summary.dyfiGroups = "(null)";
+    }
+
     var dateTime = m.formDateTime;
     if (dateTime != null) {
       count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
       count(sts.test("Time of Earthquake should be #EV", EXPECTED_TIME, m.formDateTime.format(DYFI_TIME_FORMATTER)));
     } else {
-      // TODO
+      count(sts.test("Date of Earthquake should be " + EXPECTED_DATE, false));
+      count(sts.test("Time of Earthquake should be " + EXPECTED_TIME, false));
     }
 
     getCounter("Intensity").increment(m.intensity);
@@ -214,93 +280,82 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     ++summary.messageCount;
   }
 
-  /**
-   * test if the comments/message starts with the phrase "This is an Exercise"
-   *
-   * @param label
-   * @param comments
-   * @param isExercisePhrase
-   * @param lineNumber
-   *          (1-based
-   */
-  private void isExercise(String label, String comments, String isExercisePhrase, Integer lineNumber) {
-    boolean isContained = false;
-    String context = null;
-
-    if (comments != null) {
-      if (lineNumber == null) {
-        context = comments;
-        isContained = sts
-            .toAlphaNumericWords(comments)
-              .toLowerCase()
-              .contains(sts.toAlphaNumericWords(isExercisePhrase).toLowerCase());
-      } else {
-        var lines = comments.split("\n");
-        if (lines.length >= lineNumber) {
-          var line = lines[lineNumber - 1];
-          context = line;
-          isContained = sts
-              .toAlphaNumericWords(line)
-                .toLowerCase()
-                .contains(sts.toAlphaNumericWords(isExercisePhrase).toLowerCase());
-        }
-      }
-    }
-
-    count(sts.test(label + " should be " + isExercisePhrase, isContained, context));
-  }
-
-  /**
-   *
-   * @param label
-   * @param comments
-   * @param groupAffiliationPhrase
-   * @param lineNumber
-   */
-  protected void processGroupAffiliation(String label, String comments, String groupAffiliationPhrase, int lineNumber) {
-    if (comments != null) {
-      var lines = comments.split("\n");
-      if (lines.length >= lineNumber) {
-        var line = lines[lineNumber];
-
-        var startsWith = sts
-            .toAlphaNumericWords(line)
-              .toLowerCase()
-              .contains(sts.toAlphaNumericWords(groupAffiliationPhrase).toLowerCase());
-
-        if (startsWith) {
-          var fields = line.split(":");
-          if (fields.length >= 2) {
-            var groupString = fields[1];
-            for (var rawGroupName : groupString.split(",")) {
-              if (isNull(rawGroupName)) {
-                continue;
-              }
-              var groupName = rawGroupName.trim().toUpperCase();
-              getCounter(label + " Group Affiliation").increment(groupName);
-            }
-            count(sts.test(label + " Group Affiliation parsed", true, line));
-          } else {
-            count(sts.test(label + " Group Affiliation parsed", false, line));
-          }
-        } else {
-          count(sts.test(label + " Group Affiliation parsed", false, line));
-        }
-      } else {
-        count(sts.test(label + " Group Affiliation parsed", false, comments));
-      }
-    } else {
-      count(sts.test(label + " Group Affiliation parsed", false, comments));
-    }
-  }
-
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
     sts.setExplanationPrefix("(checkin) ");
     accumulateAddresses("Check In addresses", m);
 
+    // TODO
+    // var comments = m.comments;
+    // if (!isNull(comments)) {
+    // summary.ciIsExercise = isExercise("Comments", comments, 1);
+    // summary.ciGroups = processGroupAffiliation("Comments", comments, 2);
+    // summary.ciOperationalCapabilities = getCommentLineValues(comments, "Operational Capabilities", 3);
+    // summary.ciDeploymentPosture = getCommentLineValues(comments, "Deployment POSTURE", 4);
+    // summary.ciInTsunamiZone = getCommentLineValues(comments, "Station in Tsunami Zone", 5);
+    // summary.ciInFloodZone = getCommentLineValues(comments, "Station in area prone to flooding", 6);
+    // count(sts.test("Comments parsed", true));
+    // } else {
+    // summary.ciIsExercise = Boolean.FALSE;
+    // summary.ciGroups = "";
+    // summary.ciOperationalCapabilities = "";
+    // summary.ciDeploymentPosture = "";
+    // summary.ciInTsunamiZone = "";
+    // summary.ciInFloodZone = "";
+    // count(sts.test("Comments parsed", false));
+    // }
+
+    // count(sts.test("EXERCISE should be in first word of Comments", summary.ciIsExercise));
+    // count(sts.test("Group Affiliation should be second line of Comments", summary.ciGroups.length() > 0));
+    // count(sts
+    // .test("Operational Capabilities should be third line of Comments",
+    // summary.ciOperationalCapabilities.length() > 0));
+
     // #MM update summary
     summary.checkInMessage = m;
+
     ++summary.messageCount;
+  }
+
+  /**
+   *
+   * @param comments
+   * @param key
+   * @param lineNumber
+   * @return
+   */
+  private String getCommentLineValues(String comments, String key, int lineNumber) {
+    if (isNull(comments)) {
+      return null;
+    }
+
+    var lines = comments.split("\n");
+    if (lines == null || lines.length < lineNumber) {
+      return null;
+    }
+
+    var line = lines[lineNumber - 1];
+    if (isNull(line)) {
+      return null;
+    }
+
+    var anwLine = sts.toAlphaNumericWords(line);
+    var anwKey = sts.toAlphaNumericWords(key);
+    if (!anwLine.toLowerCase().contains(anwKey.toLowerCase())) {
+      return null;
+    }
+
+    var startIndex = anwLine.toLowerCase().indexOf(anwKey.toLowerCase());
+    if (startIndex == -1) {
+      return null;
+    }
+
+    var subString = line.substring(startIndex + key.length());
+    var c = subString.charAt(0);
+    if (c == ':') {
+      subString = line.substring(startIndex + key.length() + 1);
+    }
+
+    return subString.strip();
   }
 
   private void handle_WelfareMessage(Summary summary, WelfareBulletinBoardMessage m) {
@@ -339,6 +394,15 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     ++summary.messageCount;
   }
 
+  private void handlePegelstandMessage(Summary summary, PegelstandMessage m) {
+    sts.setExplanationPrefix("(pegelstand) ");
+    accumulateAddresses("Pegelstand addresses", m);
+
+    // #MM update summary
+    summary.pegelstandMessage = m;
+    ++summary.messageCount;
+  }
+
   @Override
   protected void endProcessingForSender(String sender) {
     sts.setExplanationPrefix("(summary) ");
@@ -356,9 +420,6 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
 
     summaryMap.put(sender, summary); // #MM
   }
-
-  record MX(ExportedMessage m, String explanation) {
-  };
 
   private void checkAscendingCreationTimestamps(Summary summary) {
 

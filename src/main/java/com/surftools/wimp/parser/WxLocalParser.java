@@ -28,13 +28,14 @@ SOFTWARE.
 package com.surftools.wimp.parser;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -43,7 +44,6 @@ import com.surftools.wimp.message.WxLocalMessage;
 public class WxLocalParser extends AbstractBaseParser {
   private static final Logger logger = LoggerFactory.getLogger(WxLocalParser.class);
 
-  private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] { "gps", "GPS" };
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
@@ -51,11 +51,21 @@ public class WxLocalParser extends AbstractBaseParser {
   private static final String SPEED_SUFFFIX = " MPH";
   private static final String TEMP_SUFFIX = " F";
 
+  private static MultiDateTimeParser mdtp;
+
   static {
     var set = new LinkedHashSet<String>();
     set.addAll(Arrays.asList(DEFAULT_LATLON_TAGS));
     set.addAll(Arrays.asList(OVERRIDE_LAT_LON_TAG_NAMES));
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
+
+    mdtp = new MultiDateTimeParser(List
+        .of(//
+            "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", //
+            "M/d/yyyy HH:mm:ss", //
+            "MM/dd/yyyy HH:mm a", "MM/dd/yyyy HH:mm 'PM'", "MM/dd/yyyy HH:mm  'AM'", "yyyy-MM-dd HH:mm a"
+        //
+        ));
   }
 
   @Override
@@ -77,9 +87,9 @@ public class WxLocalParser extends AbstractBaseParser {
 
       LocalDateTime formDateTime = null;
       try {
-        formDateTime = LocalDateTime.parse(getStringFromXml("datetime"), DT_FORMATTER);
+        formDateTime = mdtp.parse(getStringFromXml("datetime"));
       } catch (Exception e) {
-        ;
+        logger.warn("### could not parse " + getStringFromXml("datetime") + " for " + message.from);
       }
 
       var locationString = getStringFromXml("location");
@@ -94,11 +104,16 @@ public class WxLocalParser extends AbstractBaseParser {
       temperature = formatTemperature(temperature, unitsString, message.from);
       windspeed = formatWindspeed(windspeed, unitsString, message.from);
       String range = makeRange(temperature);
+      String maxGusts = getStringFromXml("maxgusts");
+      maxGusts = formatWindspeed(maxGusts, unitsString, message.from);
+
+      var warningType = getStringFromXml("warning");
+      var warningField = getStringFromXml("warningfld");
 
       String comments = getStringFromXml("comments");
       WxLocalMessage m = new WxLocalMessage(message, organization, formLocation, //
           formDateTime, locationString, city, state, county, //
-          temperature, windspeed, range, comments);
+          temperature, windspeed, range, maxGusts, warningType, warningField, comments);
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());

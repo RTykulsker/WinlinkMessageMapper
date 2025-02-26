@@ -42,6 +42,11 @@ public class HospitalBedMessage extends ExportedMessage {
   public final LatLongPair formLocation;
   public final String facility;
 
+  public final String streetAddress;
+  public final String city;
+  public final String state;
+  public final String zip;
+
   public final String contactPerson;
   public final String contactPhone;
   public final String contactEmail;
@@ -80,6 +85,7 @@ public class HospitalBedMessage extends ExportedMessage {
   public HospitalBedMessage(ExportedMessage exportedMessage, //
       LocalDateTime formDateTime, LatLongPair formLocation, //
       String organization, boolean isExercise, String facility, //
+      String streetAddress, String city, String state, String zip, //
       String contactPerson, String contactPhone, String contactEmail, //
       String emergencyBedCount, String emergencyBedNotes, //
       String pediatricsBedCount, String pediatricsBedNotes, //
@@ -98,6 +104,10 @@ public class HospitalBedMessage extends ExportedMessage {
     this.formLocation = formLocation;
 
     this.facility = facility;
+    this.streetAddress = streetAddress;
+    this.city = city;
+    this.state = state;
+    this.zip = zip;
 
     this.contactPerson = contactPerson;
     this.contactPhone = contactPhone;
@@ -147,7 +157,9 @@ public class HospitalBedMessage extends ExportedMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Organization", "IsExercise", "Facility", "ContactPerson", "ContactPhone", "ContactEmail", //
+        "Organization", "IsExercise", "Facility", //
+        "Street Address", "City", "State", "Zip", //
+        "ContactPerson", "ContactPhone", "ContactEmail", //
         "MedicalBedCount", "MedicalBedNotes", //
         "CriticalBedCount", "CriticalBedNotes", //
         "TotalBedCount", "AdditionalComments", "Version"//
@@ -162,7 +174,9 @@ public class HospitalBedMessage extends ExportedMessage {
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        organization, String.valueOf(isExercise), facility, contactPerson, contactPhone, contactEmail, //
+        organization, String.valueOf(isExercise), facility, //
+        streetAddress, city, state, zip, //
+        contactPerson, contactPhone, contactEmail, //
         medicalBedCount, medicalBedNotes, //
         criticalBedCount, criticalBedNotes, //
         totalBedCount, additionalComments, version//

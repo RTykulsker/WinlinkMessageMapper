@@ -29,7 +29,7 @@ package com.surftools.wimp.processors.std.baseExercise;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +46,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.AbstractBaseChartService;
+import com.surftools.wimp.service.outboundMessage.AbstractBaseOutboundMessageEngine;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -111,9 +112,13 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     public String s(int i) {
       return String.valueOf(i);
     }
+
+    public String s(boolean b) {
+      return String.valueOf(b);
+    }
   }
 
-  protected Map<String, BaseSummary> summaryMap = new HashMap<>();
+  protected Map<String, BaseSummary> summaryMap = new LinkedHashMap<>();
   protected BaseSummary iSummary; // summary for current sender
   protected String messageId; // the mId of the current message
   protected MessageType messageType; // the messageType of the current message
@@ -309,8 +314,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     if (doOutboundMessaging) {
       for (var summary : summaryMap.values()) {
         var outboundMessageFeedback = makeOutboundMessageFeedback(summary);
+        // var outboundMessage = new OutboundMessage(outboundMessageSender, summary.from,
+        // cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback, null);
         var outboundMessage = new OutboundMessage(outboundMessageSender, summary.from,
-            cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback, null);
+            cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback,
+            AbstractBaseOutboundMessageEngine.generateMid(outboundMessageFeedback));
         outboundMessageList.add(outboundMessage);
       }
 

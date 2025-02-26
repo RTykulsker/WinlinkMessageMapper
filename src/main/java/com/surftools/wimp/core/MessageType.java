@@ -92,6 +92,7 @@ public enum MessageType {
   EYEWARN("eyewarn", "RMS_Express_Form_Eyewarn.xml"), // custom form from SnoVArc
   EYEWARN_DETAIL("eyewarn_details"), // generated details
 
+  PEGELSTAND("pegelstand"), // German water level message, for Tsunami 2025
   ;
 
   /**

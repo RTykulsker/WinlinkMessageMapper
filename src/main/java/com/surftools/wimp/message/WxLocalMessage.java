@@ -44,11 +44,15 @@ public class WxLocalMessage extends ExportedMessage {
   public final String temperature;
   public final String windspeed;
   public final String range;
+  public final String maxGusts;
+  public final String warningType;
+  public final String warningField;
   public final String comments;
 
   public WxLocalMessage(ExportedMessage exportedMessage, String organization, LatLongPair formLocation, //
       LocalDateTime formDateTime, String locationString, String city, String state, String county, //
-      String temperature, String windspeed, String range, String comments) {
+      String temperature, String windspeed, String range, String maxGusts, String warningType, String warningField,
+      String comments) {
     super(exportedMessage);
 
     this.organization = organization;
@@ -63,6 +67,11 @@ public class WxLocalMessage extends ExportedMessage {
     this.temperature = temperature;
     this.windspeed = windspeed;
     this.range = range;
+    this.maxGusts = maxGusts;
+
+    this.warningType = warningType;
+    this.warningField = warningField;
+
     this.comments = comments;
 
     if (formLocation.isValid()) {
@@ -80,7 +89,7 @@ public class WxLocalMessage extends ExportedMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization", //
         "Location", "City", "State", "County", //
-        "Temperature", "Windspeed", "Range", "Comments", };
+        "Temperature", "Windspeed", "Range", "Max Gusts", "Warning Type", "Warning Field", "Comments", };
   }
 
   @Override
@@ -92,7 +101,7 @@ public class WxLocalMessage extends ExportedMessage {
 
     return new String[] { messageId, from, to, subject, date, time, lat, lon, organization, //
         locationString, city, state, county, //
-        temperature, windspeed, range, comments };
+        temperature, windspeed, range, maxGusts, warningType, warningField, comments };
   }
 
   @Override

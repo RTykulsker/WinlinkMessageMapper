@@ -84,6 +84,9 @@ public class OutboundMessageService implements IService {
     var toCountMap = new HashMap<String, Integer>();
 
     for (var inputMessage : inputMessageList) {
+      if (inputMessage.to() == null) {
+        continue;
+      }
       var messageId = engine.send(inputMessage);
       var outputMessage = new OutboundMessage(inputMessage, messageId);
       outputMessageList.add(outputMessage);
