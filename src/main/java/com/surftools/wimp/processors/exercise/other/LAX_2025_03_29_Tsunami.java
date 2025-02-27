@@ -31,16 +31,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.wimp.core.ContentParser;
+import com.surftools.utils.ContentParser;
+import com.surftools.utils.ContentParser.ParseResult;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.core.ContentParser.ParseResult;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.CheckOutMessage;
 import com.surftools.wimp.message.DyfiMessage;
@@ -144,6 +145,8 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
           MessageType.DYFI, MessageType.CHECK_IN, MessageType.WELFARE_BULLETIN_BOARD, MessageType.ICS_213,
           MessageType.CHECK_OUT, MessageType.ICS_214, MessageType.PEGELSTAND);
 
+  final static LinkedHashSet<String> senderGroupSet = new LinkedHashSet<>();
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     // #MM must define acceptableMessages
@@ -159,6 +162,8 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM must instantiate a derived Summary object
     iSummary = summaryMap.getOrDefault(sender, new Summary(sender));
     summaryMap.put(sender, iSummary);
+
+    senderGroupSet.clear();
   }
 
   @Override
@@ -416,13 +421,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     sts.testNotNull("Checkout message not received", summary.checkOutMessage);
     sts.testNotNull("Ics214 message not received", summary.ics214Message);
 
-    checkAscendingCreationTimestamps(summary);
-
     summaryMap.put(sender, summary); // #MM
-  }
-
-  private void checkAscendingCreationTimestamps(Summary summary) {
-
   }
 
   @Override

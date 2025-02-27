@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.exercise.other;
+package com.surftools.utils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -38,7 +38,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.wimp.core.ContentParser;
+import com.surftools.utils.ContentParser;
 
 public class ContentParserTest {
   private static final Logger logger = LoggerFactory.getLogger(ContentParserTest.class);

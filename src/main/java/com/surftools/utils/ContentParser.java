@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.utils;
 
 import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
