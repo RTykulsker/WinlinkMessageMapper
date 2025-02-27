@@ -62,7 +62,8 @@ public class WxLocalParser extends AbstractBaseParser {
     mdtp = new MultiDateTimeParser(List
         .of(//
             "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", //
-            "M/d/yyyy HH:mm:ss", //
+            "yyyy-MM-dd HH:mm:ss'Z'", //
+            "M/d/yyyy HH:mm:ss", "M/d/yyyy HH:mm:ss a", "M/d/yyyy h:mm:ss a", "M/d/yyyy  h:mm:ss a", //
             "MM/dd/yyyy HH:mm a", "MM/dd/yyyy HH:mm 'PM'", "MM/dd/yyyy HH:mm  'AM'", "yyyy-MM-dd HH:mm a"
         //
         ));
@@ -87,7 +88,7 @@ public class WxLocalParser extends AbstractBaseParser {
 
       LocalDateTime formDateTime = null;
       try {
-        formDateTime = mdtp.parse(getStringFromXml("datetime"));
+        formDateTime = mdtp.parse(getStringFromXml("datetime").replaceAll("  ", " "));
       } catch (Exception e) {
         logger.warn("### could not parse " + getStringFromXml("datetime") + " for " + message.from);
       }

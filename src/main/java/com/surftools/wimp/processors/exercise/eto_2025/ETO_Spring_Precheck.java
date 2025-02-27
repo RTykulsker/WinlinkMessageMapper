@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.processors.exercise.eto_2025;
 
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +99,13 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       return list.toArray(new String[0]);
     };
   }
+
+  final static Map<Integer, DecimalFormat> decimalFormatMap = Map
+      .of(0, new DecimalFormat("0."), //
+          1, new DecimalFormat("0.#"), //
+          2, new DecimalFormat("0.##"), //
+          3, new DecimalFormat("0.###"), //
+          4, new DecimalFormat("0.####"));
 
   final static List<MessageType> acceptableMessageTypesList = List
       .of( // order matters, last location wins,
@@ -185,9 +194,10 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     var skipLines = 2;
     var lines = ReadProcessor.readCsvFileIntoFieldsArray(inputPath, ',', false, skipLines);
 
-    // Assignee, City in Colorado, Setup, Exercise, Latitude, Longitude, Zip Code, Report Date Time, Reporting Facility,
-    // Street Address, Contact Person, Contact Phone Number, Contact Email, Emergency Beds, Critical Care Beds, ALL
-    // Other Beds, Additional Comments
+    // Assignee, City, Setup, Exercise, Report Date Time, Reporting Facility, Street Address, City, State, Zip,
+    // Latitude, Longitude, Contact Person, Contact Phone, Contact Email, Emergency Beds, Critical Care Beds, ALL Other
+    // Beds, Additional Comments
+
     final var dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
     for (var line : lines) {
       var mId = makeMessageId("HB");
@@ -195,9 +205,9 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var to = "ETO-DRILL";
 
       var subject = "TBD";
-      var localTime = LocalTime.parse(line[7].split(" ")[1], dtf).truncatedTo(ChronoUnit.MINUTES);
+      var localTime = LocalTime.parse(line[4].split(" ")[1], dtf).truncatedTo(ChronoUnit.MINUTES);
       var dateTime = LocalDateTime.of(LocalDate.of(2025, 5, 5), localTime);
-      var msgLocation = new LatLongPair(line[4], line[5]);
+      var msgLocation = new LatLongPair(line[10], line[11]);
       var locationSource = "eto";
       var mime = "";
       var plainContent = String.join(",", line);
@@ -213,21 +223,22 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var formLocation = msgLocation;
       var formDateTime = dateTime;
 
-      var facility = line[8];
-      var streetAddress = line[9];
-      var city = line[1];
-      var state = "CO";
-      var zip = line[6];
+      var facility = line[5];
+      var streetAddress = line[6];
+      var city = line[7];
+      var state = line[8];
+      var zip = line[9];
 
-      var contactPerson = line[10];
-      var contactPhone = line[11];
-      var contactEmail = line[12];
-      var emergencyBedCount = line[13];
-      var criticalBedCount = line[14];
-      var allOtherBedCounts = "0";
+      var contactPerson = line[12];
+      var contactPhone = line[13];
+      var contactEmail = line[14];
+
+      var emergencyBedCount = line[15];
+      var criticalBedCount = line[16];
+      var allOtherBedCounts = line[17];
       var notes = "";
-      var totalBedCount = String.valueOf(Integer.parseInt(line[13]) + Integer.parseInt(line[14]));
-      var comments = line[16];
+      var totalBedCount = String.valueOf(Integer.parseInt(emergencyBedCount) + Integer.parseInt(criticalBedCount));
+      var comments = line[18];
 
       var hbMessage = new HospitalBedMessage(exportedMessage, formDateTime, formLocation, //
           organization, true, facility, //
@@ -260,7 +271,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     // City, County, State, LAT. LON, POTS, VOIP, Cell voice, Text Carrier, Cell text, Text Carrier,
     // Radio Station, OATV,Station, Satellite TV, Cable TV, Provider, Public Water, Commercial Power, Provider
     // Power Stable, Provider, Natural Gas, Internet, Provider, NOAA WX Functioning, NOAA WX Degraded,
-    // Additional Comments
+    // Additional Comments, POC
 
     final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'Z'");
     for (var line : lines) {
@@ -336,7 +347,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var noaaAudioDegradedComments = "";
 
       var additionalComments = line[37];
-      var poc = line[0].split(",")[0].strip();
+      var poc = line[38];
 
       var fsrMessage = new FieldSituationMessage(exportedMessage, organization, formLocation, //
           precedence, formDateTimeString, task, formTo, formFrom, //
@@ -420,8 +431,10 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatch("City", db.city, m.city);
     dbMatch("State", db.state, m.state);
     dbMatch("Zip", db.zip, m.zip);
-    dbMatch("Form Latitude", db.formLocation.getLatitude(), m.formLocation.getLatitude());
-    dbMatch("Form Longitude", db.formLocation.getLongitude(), m.formLocation.getLongitude());
+
+    dbMatchLatLon("Form Latitude", 3, db.formLocation.getLatitude(), m.formLocation.getLatitude());
+    dbMatchLatLon("Form Longitude", 3, db.formLocation.getLongitude(), m.formLocation.getLongitude());
+
     dbMatch("Contact Person", db.contactPerson, m.contactPerson);
     dbMatch("Contact Phone Number", db.contactPhone, m.contactPhone);
     dbMatch("Contact Email", db.contactEmail, m.contactEmail);
@@ -480,6 +493,14 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     count(sts.test(sms(label), predicate, reason));
   }
 
+  private void dbMatchLatLon(String label, int decimalPlaces, String dbValue, String mValue) {
+    dbValue = decimalFormatMap.get(decimalPlaces).format(Double.parseDouble(dbValue));
+    mValue = decimalFormatMap.get(decimalPlaces).format(Double.parseDouble(mValue));
+    var predicate = dbValue.equals(mValue);
+    var reason = mValue + ", but spreadsheet value of: " + dbValue;
+    count(sts.test(sms(label), predicate, reason));
+  }
+
   private void dbMatchBed(String label, String dbValue, String mValue) {
     var predicate = (dbValue.equals("0")) ? mValue.equals("0") || isNull(mValue) : dbValue.equals(mValue);
     dbValue = isNull(dbValue) ? "(blank)" : dbValue;
@@ -512,8 +533,8 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatch("City", db.city, m.city);
     dbMatch("State", db.state, m.state);
     dbMatch("County", db.county, m.county);
-    dbMatch("Form Latitude", db.formLocation.getLatitude(), m.formLocation.getLatitude());
-    dbMatch("Form Longitude", db.formLocation.getLongitude(), m.formLocation.getLongitude());
+    dbMatchLatLon("Form Latitude", 3, db.formLocation.getLatitude(), m.formLocation.getLatitude());
+    dbMatchLatLon("Form Longitude", 3, db.formLocation.getLongitude(), m.formLocation.getLongitude());
     dbMatch("Temperature", db.temperature, m.temperature);
     dbMatch("Windspeed", db.windspeed, m.windspeed);
     dbMatch("Max Gusts", db.maxGusts, m.maxGusts);
@@ -550,8 +571,8 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatch("County", db.county, m.county);
     dbMatch("State", db.state, m.state);
     dbMatch("Territory", db.territory, m.territory);
-    dbMatch("Form Latitude", db.formLocation.getLatitude(), m.formLocation.getLatitude());
-    dbMatch("Form Longitude", db.formLocation.getLongitude(), m.formLocation.getLongitude());
+    dbMatchLatLon("Form Latitude", 3, db.formLocation.getLatitude(), m.formLocation.getLatitude());
+    dbMatchLatLon("Form Longitude", 3, db.formLocation.getLongitude(), m.formLocation.getLongitude());
 
     dbMatch("POTS landlines functioning", db.landlineStatus, m.landlineStatus);
     dbMatch("POTS landlines provider", db.landlineComments, m.landlineComments);

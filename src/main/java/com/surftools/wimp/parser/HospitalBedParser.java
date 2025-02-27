@@ -61,7 +61,7 @@ public class HospitalBedParser extends AbstractBaseParser {
     mdtp = new MultiDateTimeParser(List
         .of(//
             "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "M/d/yyyy H:mm:ss", //
-            "M/d/yyyy HH:mm:ss", //
+            "M/d/yyyy HH:mm:ss", "M/d/yyyy HH:mm:ss a", "M/d/yyyy H:mm:ss a", //
             "MM/dd/yyyy HH:mm a", "MM/dd/yyyy HH:mm 'PM'", "MM/dd/yyyy HH:mm  'AM'", "yyyy-MM-dd HH:mm a"
         //
         ));
@@ -79,7 +79,6 @@ public class HospitalBedParser extends AbstractBaseParser {
 
       var formLocation = getLatLongFromXml(null);
       if (formLocation == null) {
-        // return reject(message, RejectType.CANT_PARSE_LATLONG, MERGED_LAT_LON_TAG_NAMES);
         formLocation = LatLongPair.INVALID;
       }
 

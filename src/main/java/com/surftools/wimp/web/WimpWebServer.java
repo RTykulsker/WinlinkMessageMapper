@@ -171,6 +171,7 @@ public class WimpWebServer {
   }
 
   class UploadHandler implements Handler {
+    ThreadLocal<Path> senderPath = new ThreadLocal<>();
 
     @Override
     public void handle(Context ctx) throws Exception {
@@ -180,6 +181,7 @@ public class WimpWebServer {
       var fileContent = ctx.req().getReader().lines().collect(Collectors.joining("\n"));
       var callsign = getExportCallsign(fileContent);
       logger.info("received file: " + fileName + ", from call: " + callsign);
+      log_request(ctx, fileContent, fileName, callsign);
 
       mm = new MessageManager();
       mm.putContextObject("webReqestMessages", fileContent);
@@ -216,7 +218,7 @@ public class WimpWebServer {
       ctx.status(responseStatus);
       ctx.result(responseText);
 
-      logItAll(ctx, fileContent, fileName, responseStatus, responseText, callsign);
+      log_response(ctx, fileContent, fileName, responseStatus, responseText, callsign);
     }
 
     private String getExportCallsign(String fileContent) {
@@ -241,53 +243,52 @@ public class WimpWebServer {
       }
       return "unknown callsign";
     }
-  }
 
-  private void logItAll(Context ctx, String fileContent, String fileName, HttpStatus responseStatus,
-      String responseText, String callsign) {
-    // TODO write request
-    // TODO write response
-    // TODO write common log: host ident authuser date request status bytes
+    private void log_request(Context ctx, String fileContent, String fileName, String callsign) {
+      // outputPath/
+      // ____commonLog.txt //
+      // ________/<call-sign>/ //
+      // ____________<time-stamp> //
+      // ________________<request-file-name> //
+      // ________________response.txt
 
-    // outputPath/
-    // ____commonLog.txt //
-    // ________/<call-sign>/ //
-    // ____________<time-stamp> //
-    // ________________<request-file-name> //
-    // ________________response.txt
+      FileUtils.makeDirIfNeeded(Path.of(outputPathName, callsign));
 
-    FileUtils.makeDirIfNeeded(Path.of(outputPathName, callsign));
-    var now = LocalDateTime.now();
+      var senderTimestamp = WebUtils.makeTimestamp();
+      var path = FileUtils.makeDirIfNeeded(Path.of(outputPathName, callsign, senderTimestamp));
+      senderPath.set(path);
+      try {
+        Files.writeString(Path.of(path.toString(), fileName), fileContent);
+      } catch (Exception e) {
+        logger.error("Error writing request from " + callsign + ", " + e.getLocalizedMessage());
+      }
 
-    var senderTimestamp = WebUtils.makeTimestamp();
-    FileUtils.makeDirIfNeeded(Path.of(outputPathName, callsign, senderTimestamp));
-    try {
-      Files.writeString(Path.of(outputPathName, callsign, senderTimestamp, fileName), fileContent);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
     }
 
-    try {
-      Files.writeString(Path.of(outputPathName, callsign, senderTimestamp, "response.txt"), responseText);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    private void log_response(Context ctx, String fileContent, String fileName, HttpStatus responseStatus,
+        String responseText, String callsign) {
 
-    var commonLogDTFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
-    var clTimestamp = commonLogDTFormatter.format(ZonedDateTime.of(now, ZoneId.systemDefault()));
+      try {
+        Files.writeString(Path.of(senderPath.get().toString(), "response.txt"), responseText);
+      } catch (IOException e) {
+        logger.error("Error writing response from " + callsign + ", " + e.getLocalizedMessage());
+      }
 
-    var clString = ctx.req().getRemoteHost() + " " + callsign + " - [" + clTimestamp + "] \"POST /upload/" + fileName
-        + "\" " + responseStatus.getCode() + " " + responseText.length() + "\n";
+      var commonLogDTFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss xxxx");
+      var clTimestamp = commonLogDTFormatter.format(ZonedDateTime.of(LocalDateTime.now(), ZoneId.systemDefault()));
 
-    logger.info("Common log: " + clString);
+      var clString = ctx.req().getRemoteHost() + " " + callsign + " - [" + clTimestamp + "] \"POST /upload/" + fileName
+          + "\" " + responseStatus.getCode() + " " + responseText.length() + "\n";
 
-    var clName = Path.of(outputPathName, "commonLog.txt").toString();
-    try (var writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(clName, true), "UTF-8"))) {
-      writer.write(clString);
-    } catch (IOException e) {
-      e.printStackTrace();
+      logger.info("Common log: " + clString);
+
+      var clName = Path.of(outputPathName, "commonLog.txt").toString();
+      try (var writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(clName, true), "UTF-8"))) {
+        writer.write(clString);
+      } catch (IOException e) {
+        logger.error("Error writing common log from " + callsign + ", " + e.getLocalizedMessage());
+      }
     }
   }
+
 }
