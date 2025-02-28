@@ -879,4 +879,8 @@ public class SimpleTestService implements IService {
     this.explanationPrefix = explanationPrefix;
   }
 
+  public String getPrefix() {
+    return explanationPrefix;
+  }
+
 } // end class SimpleTestService

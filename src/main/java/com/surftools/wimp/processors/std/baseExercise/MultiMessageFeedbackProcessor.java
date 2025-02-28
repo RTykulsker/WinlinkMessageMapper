@@ -132,6 +132,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
   protected String outboundMessageExtraContent = FeedbackProcessor.OB_DISCLAIMER;
 
+  protected boolean allowPerfectMessageReporting = true;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
@@ -328,6 +330,17 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     // all messageTypes in one chart page
     var chartService = AbstractBaseChartService.getChartService(cm, counterMap, null);
     chartService.makeCharts();
+  }
+
+  protected void isPerfectMessage(String mId) {
+    if (!allowPerfectMessageReporting) {
+      return;
+    }
+
+    var prefix = sts.getPrefix();
+    if (!sts.getExplanations().stream().anyMatch(s -> s.startsWith(prefix))) {
+      sts.getExplanations().add(prefix + "Perfect Message! MessageId: " + mId);
+    }
   }
 
 }

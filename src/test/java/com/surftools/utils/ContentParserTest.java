@@ -35,14 +35,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.Set;
 
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.surftools.utils.ContentParser;
 
 public class ContentParserTest {
-  private static final Logger logger = LoggerFactory.getLogger(ContentParserTest.class);
-
   @Test
   public void test_isExerciseFirstWord_empty_comments() {
 

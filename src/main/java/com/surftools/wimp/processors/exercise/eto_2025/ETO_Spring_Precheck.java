@@ -472,9 +472,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     dbMatch("Comments", db.additionalComments, m.additionalComments);
 
-    if (!sts.getExplanations().stream().anyMatch(s -> s.startsWith("(hb)"))) {
-      sts.getExplanations().add("(hb) Perfect Message! MessageId: " + m.messageId);
-    }
+    isPerfectMessage(m.messageId);
   }
 
   private void dbMatch(String label, String dbValue, String mValue) {
@@ -542,9 +540,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatchIgnoreCase("Warning Field", db.warningField, m.warningField);
     dbMatch("Comments", db.comments, m.comments);
 
-    if (!sts.getExplanations().stream().anyMatch(s -> s.startsWith("(wx)"))) {
-      sts.getExplanations().add("(wx) Perfect Message! MessageId: " + m.messageId);
-    }
+    isPerfectMessage(m.messageId);
   }
 
   private void handle_FsrMessage(Summary summary, FieldSituationMessage m) {
@@ -622,9 +618,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatch("Comments", db.additionalComments, m.additionalComments);
     dbMatch("POC", db.poc, m.poc);
 
-    if (!sts.getExplanations().stream().anyMatch(s -> s.startsWith("(fsr)"))) {
-      sts.getExplanations().add("(fsr) Perfect Message! MessageId: " + m.messageId);
-    }
+    isPerfectMessage(m.messageId);
   }
 
   @Override

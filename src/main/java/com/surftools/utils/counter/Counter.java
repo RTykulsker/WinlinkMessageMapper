@@ -31,9 +31,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import com.surftools.wimp.core.IWritableTable;
 
 @SuppressWarnings("rawtypes")
 public class Counter implements ICounter {
@@ -102,7 +105,7 @@ public class Counter implements ICounter {
 
   @SuppressWarnings("unchecked")
   @Override
-  public Iterator getDescendingKeyIterator() {
+  public Iterator<Entry<Comparable, Integer>> getDescendingKeyIterator() {
     var list = new ArrayList<>(map.entrySet());
     list.sort(java.util.Map.Entry.comparingByKey());
     Collections.reverse(list);
@@ -111,7 +114,7 @@ public class Counter implements ICounter {
 
   @SuppressWarnings("unchecked")
   @Override
-  public Iterator getAscendingKeyIterator() {
+  public Iterator<Entry<Comparable, Integer>> getAscendingKeyIterator() {
     var list = new ArrayList<>(map.entrySet());
     list.sort(java.util.Map.Entry.comparingByKey());
     return list.iterator();
@@ -140,4 +143,39 @@ public class Counter implements ICounter {
     }
 
   }
+
+  @Override
+  public Iterator<Entry<Comparable, Integer>> getIterator(CounterType type) {
+    switch (type) {
+    case ASCENDING_COUNT:
+      return getAscendingCountIterator();
+
+    case ASCENDING_KEY:
+      return getAscendingKeyIterator();
+
+    case DESCENDING_COUNT:
+      return getDescendingCountIterator();
+
+    case DESCENDING_KEY:
+      return getDescendingKeyIterator();
+
+    default:
+      return null;
+    }
+  }
+
+  public List<IWritableTable> getWritableTable() {
+    return getWritableTable(CounterType.DESCENDING_COUNT);
+  }
+
+  public List<IWritableTable> getWritableTable(CounterType counterType) {
+    var it = getIterator(counterType);
+    var list = new ArrayList<IWritableTable>();
+
+    while (it.hasNext()) {
+      list.add(CounterRecord.fromEntry(it.next()));
+    }
+    return list;
+  }
+
 }

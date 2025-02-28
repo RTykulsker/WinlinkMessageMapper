@@ -30,19 +30,14 @@ package com.surftools.utils;
 import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * parse "fields" out of a String like Comments or Message
  *
  *
  */
 public class ContentParser {
-  private static final Logger logger = LoggerFactory.getLogger(ContentParser.class);
-
   private final String content;
-  private final String[] lines;
+  private String[] lines;
 
   /**
    * how we return all results
@@ -52,7 +47,13 @@ public class ContentParser {
 
   public ContentParser(String content) {
     this.content = (content != null) ? content : "";
-    this.lines = this.content.split("\n");
+
+    lines = this.content.split("\n");
+    lines = (lines == null) ? new String[] {} : lines;
+  }
+
+  public String[] getLines() {
+    return lines;
   }
 
   /**

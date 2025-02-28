@@ -51,9 +51,25 @@ public class Ics214Message extends ExportedMessage {
   public final boolean isIndividual;
 
   public static record Resource(String name, String icsPosition, String homeAgency) {
+
+    public boolean isEmpty() {
+      if (name.isEmpty() && icsPosition.isEmpty() && homeAgency.isEmpty()) {
+        return true;
+      }
+
+      return false;
+    }
   }
 
   public static record Activity(String dateTimeString, String activities) {
+
+    public boolean isEmpty() {
+      if (dateTimeString.isEmpty() && activities.isEmpty()) {
+        return true;
+      }
+
+      return false;
+    }
   };
 
   public Ics214Message(ExportedMessage exportedMessage, String organization, String incidentName, String page,

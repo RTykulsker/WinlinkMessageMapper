@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -229,6 +230,37 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
   protected void writeTable(String fileName, List<IWritableTable> entries) {
     writeTable(pathName, fileName, entries);
+  }
+
+  static record EntryRecord(String key, String value) implements IWritableTable {
+
+    @Override
+    public int compareTo(IWritableTable o) {
+      return 0;
+    }
+
+    @Override
+    public String[] getHeaders() {
+      return new String[] { "Name", "Value" };
+    }
+
+    @Override
+    public String[] getValues() {
+      return new String[] { key, value };
+    }
+
+    public static List<IWritableTable> mapToList(Map<String, String> map) {
+      var list = new ArrayList<IWritableTable>();
+      for (var entry : map.entrySet()) {
+        list.add(new EntryRecord(entry.getKey(), entry.getValue()));
+      }
+      return list;
+    }
+
+  }
+
+  protected void writeTable(String fileName, Map<String, String> map) {
+    writeTable(pathName, fileName, EntryRecord.mapToList(map));
   }
 
   /**
