@@ -74,8 +74,11 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     public HospitalBedMessage hospitalBedMessage;
     public WxLocalMessage wxLocalMessage;
     public FieldSituationMessage fsrMessage;
+    @SuppressWarnings("unused")
     public HospitalBedMessage db_hospitalBedMessage;
+    @SuppressWarnings("unused")
     public WxLocalMessage db_wxLocalMessage;
+    @SuppressWarnings("unused")
     public FieldSituationMessage db_fsrMessage;
 
     public Summary(String from) {
@@ -113,6 +116,10 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
           MessageType.HOSPITAL_BED, MessageType.WX_LOCAL, MessageType.FIELD_SITUATION);
 
   String editedSender = null;
+
+  private Map<String, FieldSituationMessage> cityFsrMap = new HashMap<>();
+  private Map<String, HospitalBedMessage> cityHbMap = new HashMap<>();
+  private Map<String, WxLocalMessage> cityWxMap = new HashMap<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -186,11 +193,13 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
           formDateTime, locationString, city, state, county, //
           temperature, windspeed, range, maxGusts, warningType, warningField, comments);
 
-      iSummary = summaryMap.getOrDefault(from, new Summary(from));
-      var summary = (Summary) iSummary;
-      summary.to = "ETO-DRILL";
-      summary.db_wxLocalMessage = wxMessage;
-      summaryMap.put(from, iSummary);
+      cityWxMap.put(city.toUpperCase(), wxMessage);
+    }
+
+    writeTable("dbWx.cvs", cityWxMap.values());
+    if (cityWxMap.size() == 0) {
+      logger.error("### nothing read from WX spreadsheet. Check configuration. Exiting!!!");
+      System.exit(1);
     }
   }
 
@@ -259,11 +268,13 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
           notes, allOtherBedCounts, notes, //
           totalBedCount, comments, "ETO-001");
 
-      iSummary = summaryMap.getOrDefault(from, new Summary(from));
-      var summary = (Summary) iSummary;
-      summary.to = "ETO-DRILL";
-      summary.db_hospitalBedMessage = hbMessage;
-      summaryMap.put(from, iSummary);
+      cityHbMap.put(city.toUpperCase(), hbMessage);
+    }
+
+    writeTable("dbHb.cvs", cityHbMap.values());
+    if (cityHbMap.size() == 0) {
+      logger.error("### nothing read from HB spreadsheet. Check configuration. Exiting!!!");
+      System.exit(1);
     }
   }
 
@@ -375,11 +386,13 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
           noaaAudioDegraded, noaaAudioDegradedComments, //
           additionalComments, poc, "ETO-001");
 
-      iSummary = summaryMap.getOrDefault(from, new Summary(from));
-      var summary = (Summary) iSummary;
-      summary.to = "ETO-DRILL";
-      summary.db_fsrMessage = fsrMessage;
-      summaryMap.put(from, iSummary);
+      cityFsrMap.put(city.toUpperCase(), fsrMessage);
+    }
+
+    writeTable("dbFsr.cvs", cityFsrMap.values());
+    if (cityFsrMap.size() == 0) {
+      logger.error("### nothing read from FSR spreadsheet. Check configuration. Exiting!!!");
+      System.exit(1);
     }
   }
 
@@ -401,8 +414,9 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
   protected void specificProcessing(ExportedMessage message) {
     var summary = (Summary) iSummary;
 
-    var type = message.getMessageType();
+    summary.to = "ETO-DRILL";
 
+    var type = message.getMessageType();
     if (type == MessageType.HOSPITAL_BED) {
       handle_HospitalBedMessage(summary, (HospitalBedMessage) message);
     } else if (type == MessageType.WX_LOCAL) {
@@ -418,14 +432,14 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(hb) ");
     summary.hospitalBedMessage = m;
 
-    var db = summary.db_hospitalBedMessage;
+    var db = cityHbMap.get(m.city.toUpperCase());
     if (db == null) {
-      logger.warn("### HB message from non-DB call: " + m.from);
-      count(sts.test(sms("Sender"), false, m.from));
+      logger.warn("### NO HB in db for city: " + m.city + " from call: " + m.from);
+      sts.getExplanations().add("no HB spreadsheet entry for city: " + m.city);
       return;
-    } else {
-      dbMatch("Sender", db.from, m.from);
     }
+    summary.db_hospitalBedMessage = db;
+    dbMatch(sms("Message Sender"), db.from, m.from);
 
     dbMatch("From", db.from, m.from);
     dbMatch("Organization", db.organization, m.organization);
@@ -529,14 +543,14 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(wx) ");
     summary.wxLocalMessage = m;
 
-    var db = summary.db_wxLocalMessage;
+    var db = cityWxMap.get(m.city.toUpperCase());
     if (db == null) {
-      logger.warn("### WX message from non-DB call: " + m.from);
-      count(sts.test(sms("Sender"), false, m.from));
+      logger.warn("### NO WX in db for city: " + m.city + " from call: " + m.from);
+      sts.getExplanations().add("no WX spreadsheet entry for city: " + m.city);
       return;
-    } else {
-      dbMatch("Sender", db.from, m.from);
     }
+    summary.db_wxLocalMessage = db;
+    dbMatch(sms("Message Sender"), db.from, m.from);
 
     dbMatch("From", db.from, m.from);
     count(sts.test("Organization should be #EV", db.organization, m.organization));
@@ -562,14 +576,14 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(fsr) ");
     summary.fsrMessage = m;
 
-    var db = summary.db_fsrMessage;
+    var db = cityFsrMap.get(m.city.toUpperCase());
     if (db == null) {
-      logger.warn("### FSR message from non-DB call: " + m.from);
-      count(sts.test(sms("Sender"), false, m.from));
+      logger.warn("### NO FSR in db for city: " + m.city + " from call: " + m.from);
+      sts.getExplanations().add("no FSR spreadsheet entry for city: " + m.city);
       return;
-    } else {
-      dbMatch("Sender", db.from, m.from);
     }
+    summary.db_fsrMessage = db;
+    dbMatch(sms("Message Sender"), db.from, m.from);
 
     count(sts.test("Organization should be #EV", db.organization, m.organization));
     dbMatch("Precedence", db.precedence, m.precedence);

@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -80,14 +81,19 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected String outboundMessageSubject;
   protected boolean doOutboundMessaging;
 
+  protected boolean isInitialized = false;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     initialize(cm, mm, LoggerFactory.getLogger(AbstractBaseProcessor.class));
   }
 
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
-    logger = _logger;
-    doInitialization(cm, mm);
+    if (!isInitialized) {
+      logger = _logger;
+      doInitialization(cm, mm);
+      isInitialized = true;
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -230,6 +236,12 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
   protected void writeTable(String fileName, List<IWritableTable> entries) {
     writeTable(pathName, fileName, entries);
+  }
+
+  protected void writeTable(String fileName, Collection<? extends IWritableTable> entries) {
+    var list = new ArrayList<IWritableTable>();
+    list.addAll(entries);
+    writeTable(pathName, fileName, list);
   }
 
   static record EntryRecord(String key, String value) implements IWritableTable {
