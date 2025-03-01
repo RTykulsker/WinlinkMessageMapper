@@ -27,16 +27,17 @@ SOFTWARE.
 
 package com.surftools.utils.counter;
 
+import java.io.FileWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import com.surftools.wimp.core.IWritableTable;
+import com.opencsv.CSVWriter;
 
 @SuppressWarnings("rawtypes")
 public class Counter implements ICounter {
@@ -164,18 +165,25 @@ public class Counter implements ICounter {
     }
   }
 
-  public List<IWritableTable> getWritableTable() {
-    return getWritableTable(CounterType.DESCENDING_COUNT);
+  @Override
+  public void write(Path path, CounterType counterType) {
+    try (var csvWriter = new CSVWriter(new FileWriter(path.toFile()))) {
+      csvWriter.writeNext(new String[] { "Name", "Count" });
+
+      var it = getIterator(counterType);
+      while (it.hasNext()) {
+        var next = it.next();
+        csvWriter.writeNext(new String[] { next.getKey().toString(), String.valueOf(next.getValue()) });
+      }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
-  public List<IWritableTable> getWritableTable(CounterType counterType) {
-    var it = getIterator(counterType);
-    var list = new ArrayList<IWritableTable>();
-
-    while (it.hasNext()) {
-      list.add(CounterRecord.fromEntry(it.next()));
-    }
-    return list;
+  @Override
+  public void write(Path path) {
+    write(path, CounterType.DESCENDING_COUNT);
   }
 
 }

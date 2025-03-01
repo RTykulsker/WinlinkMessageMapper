@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.utils.counter;
 
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -118,4 +119,19 @@ public interface ICounter<K extends Comparable<K>> {
    * @param subCounter
    */
   public void merge(Counter subCounter);
+
+  /**
+   * write the Counter keys and values with a default ordering
+   *
+   * @param path
+   */
+  public void write(Path path);
+
+  /**
+   * write the Counter keys and values with a specified ordering
+   *
+   * @param path
+   * @param counterType
+   */
+  public void write(Path path, CounterType counterType);
 }

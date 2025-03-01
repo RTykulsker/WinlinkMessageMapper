@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.other;
 
+import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -552,11 +553,11 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   public void postProcess() {
     super.postProcess();// #MM
 
-    writeTable("groupCounts.csv", getCounter("Summary Group Affiliation").getWritableTable());
-    writeTable("emailAddresses.csv", getCounter("All addresses").getWritableTable());
-    writeTable("ics213Resources.csv", getCounter("ICS-213 Resources").getWritableTable());
+    getCounter("Summary Group Affiliation").write(Path.of(outputPathName, "groupCounts.csv"));
+    getCounter("All addresses").write(Path.of(outputPathName, "emailAddresses.csv"));
+    getCounter("ICS-213 Resources").write(Path.of(outputPathName, "ics213Resources.csv"));
     writeTable("mostImportantThingLearned.csv", senderMostImportantThingMap);
-    writeTable("ics214Positions.csv", getCounter("ICS-214 Position").getWritableTable());
+    getCounter("ICS-214 Position").write(Path.of(outputPathName, "ics213Resources.csv"));
   }
 
   private void accumulateAddresses(String counterName, ExportedMessage message) {
