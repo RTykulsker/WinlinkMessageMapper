@@ -146,7 +146,6 @@ public class LAX_2022_06_18_Shifting_SoCal extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   /**
    * include all DYFI, Check In, FSR and FSR_23 and Check Out

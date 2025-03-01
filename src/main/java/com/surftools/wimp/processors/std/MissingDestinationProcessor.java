@@ -67,7 +67,6 @@ public class MissingDestinationProcessor extends AbstractBaseProcessor {
 
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     var missingExpectedDestinations = new TreeSet<String>(expectedDestinations);
