@@ -48,8 +48,8 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
   public final String messageId;
-  public final String from;
-  public final String source;
+  public final String from; // aka sender, which can be a tactical address
+  public final String source; // "owner" of the Winlink Express instance, license holder, with password
   public final String to;
   public final String toList;
   public final String ccList;
