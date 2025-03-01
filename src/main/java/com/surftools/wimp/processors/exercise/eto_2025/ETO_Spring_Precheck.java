@@ -43,6 +43,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
@@ -133,14 +134,18 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     // Call Sign,Observer,Setup,Exercise,Date Time,Location,City,State,County,Latitude,Longitude,Sky Cover,Current
     // Conditions,Temperature,Humidity,Dew Point,Baro Press,Rise,Wind Speed,Direction,Gusts,Max Gust,Precipitation,NWS
     // Levels,Notes
-    final var dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
     for (var line : lines) {
       var mId = makeMessageId("WX");
       var from = line[0];
       var to = "ETO-DRILL";
       var subject = "WX Report";
-      var localTime = LocalTime.parse(line[4].split(" ")[1], dtf).truncatedTo(ChronoUnit.MINUTES);
+
+      var dtString = line[4];
+      var dtFields = dtString.split(" ");
+      var timeFields = dtFields[1].split(":");
+      var localTime = LocalTime.of(12 + Integer.valueOf(timeFields[0]), Integer.valueOf(timeFields[1]));
       var dateTime = LocalDateTime.of(LocalDate.of(2025, 5, 5), localTime);
+
       var msgLocation = new LatLongPair(line[9], line[10]);
       var locationSource = "eto";
       var mime = "";
@@ -160,12 +165,12 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var city = line[6];
       var state = line[7];
       var county = line[8];
-      var temperature = line[13] + " F";
-      var windspeed = line[18] + " MPH";
+      var temperature = line[14] + " F";
+      var windspeed = line[19] + " MPH";
       var range = "";
-      var maxGusts = line[21] + " MPH";
-      var nwsLevels = line[23];
-      var comments = line[24];
+      var maxGusts = line[22] + " MPH";
+      var nwsLevels = line[24];
+      var comments = line[25];
 
       var warningType = "";
       var warningField = "";
@@ -198,15 +203,15 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     // Latitude, Longitude, Contact Person, Contact Phone, Contact Email, Emergency Beds, Critical Care Beds, ALL Other
     // Beds, Additional Comments
 
-    final var dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+    var mdtp = new MultiDateTimeParser(List.of("MM/dd/yy HH:mm a"));
+
     for (var line : lines) {
       var mId = makeMessageId("HB");
       var from = line[0].split(",")[1].strip();
       var to = "ETO-DRILL";
 
       var subject = "TBD";
-      var localTime = LocalTime.parse(line[4].split(" ")[1], dtf).truncatedTo(ChronoUnit.MINUTES);
-      var dateTime = LocalDateTime.of(LocalDate.of(2025, 5, 5), localTime);
+      var dateTime = mdtp.parse(line[4]);
       var msgLocation = new LatLongPair(line[10], line[11]);
       var locationSource = "eto";
       var mime = "";
@@ -415,7 +420,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     var db = summary.db_hospitalBedMessage;
     if (db == null) {
-      logger.warn("HB message from non-DB call: " + m.from);
+      logger.warn("### HB message from non-DB call: " + m.from);
       count(sts.test(sms("Sender"), false, m.from));
       return;
     } else {
@@ -507,6 +512,15 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     count(sts.test(sms(label), predicate, reason));
   }
 
+  private void dbMatchDateTime(String label, LocalDateTime dbValue, LocalDateTime mValue) {
+    var predicate = dbValue
+        .truncatedTo(ChronoUnit.MINUTES)
+          .toString()
+          .equals(mValue.truncatedTo(ChronoUnit.MINUTES).toString());
+    var reason = mValue + ", but spreadsheet value of: " + dbValue;
+    count(sts.test(sms(label), predicate, reason));
+  }
+
   private String sms(String label) {
     return label + " should match spreadsheet";
   }
@@ -517,7 +531,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     var db = summary.db_wxLocalMessage;
     if (db == null) {
-      logger.warn("WX message from non-DB call: " + m.from);
+      logger.warn("### WX message from non-DB call: " + m.from);
       count(sts.test(sms("Sender"), false, m.from));
       return;
     } else {
@@ -526,7 +540,8 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     dbMatch("From", db.from, m.from);
     count(sts.test("Organization should be #EV", db.organization, m.organization));
-    dbMatch("Form Date/Time", db.formDateTime.toString(), m.formDateTime.truncatedTo(ChronoUnit.MINUTES).toString());
+    dbMatchDateTime("Form Date/Time", db.formDateTime, m.formDateTime);
+
     dbMatch("Location", db.locationString, m.locationString);
     dbMatch("City", db.city, m.city);
     dbMatch("State", db.state, m.state);
@@ -549,14 +564,13 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     var db = summary.db_fsrMessage;
     if (db == null) {
-      logger.warn("FSR message from non-DB call: " + m.from);
+      logger.warn("### FSR message from non-DB call: " + m.from);
       count(sts.test(sms("Sender"), false, m.from));
       return;
     } else {
       dbMatch("Sender", db.from, m.from);
     }
 
-    dbMatch("From", db.from, m.from);
     count(sts.test("Organization should be #EV", db.organization, m.organization));
     dbMatch("Precedence", db.precedence, m.precedence);
     dbMatch("Form Date/Time", db.formDateTime, m.formDateTime);
