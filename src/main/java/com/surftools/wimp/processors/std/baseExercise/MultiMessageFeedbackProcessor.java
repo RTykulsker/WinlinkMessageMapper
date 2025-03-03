@@ -93,7 +93,9 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       var feedback = perfectMessageText;
 
       if (explanations.size() > 0) {
-        feedbackCount = String.valueOf(explanations.size());
+			// TODO must subtract off perfect message count
+			var perfectCount = explanations.stream().filter(s -> s.contains("Perfect")).count();
+			feedbackCount = String.valueOf(explanations.size() - perfectCount);
         feedback = String.join("\n", explanations);
       }
 
@@ -133,6 +135,28 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
   protected String outboundMessageExtraContent = FeedbackProcessor.OB_DISCLAIMER;
 
   protected boolean allowPerfectMessageReporting = true;
+
+	protected record PerfectMessage(ExportedMessage m) implements IWritableTable {
+
+		@Override
+		public int compareTo(IWritableTable o) {
+			var other = (ExportedMessage) o;
+			return this.compareTo(other);
+		}
+
+		@Override
+		public String[] getHeaders() {
+			return new String[] { "From", "Type", "MessageId" };
+		}
+
+		@Override
+		public String[] getValues() {
+			return new String[] { m.from, m.getMessageType().toString(), m.messageId };
+		}
+
+	}
+
+	protected List<IWritableTable> perfectMessages = new ArrayList<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -332,14 +356,21 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     chartService.makeCharts();
   }
 
-  protected void isPerfectMessage(String mId) {
+
+
+	protected boolean isPerfectMessage(ExportedMessage m) {
     if (!allowPerfectMessageReporting) {
-      return;
+			return false;
     }
 
+	var mId = m.messageId;
     var prefix = sts.getPrefix();
     if (!sts.getExplanations().stream().anyMatch(s -> s.startsWith(prefix))) {
       sts.getExplanations().add(prefix + "Perfect Message! MessageId: " + mId);
+		perfectMessages.add(new PerfectMessage(m));
+		return true;
+	} else {
+		return false;
     }
   }
 

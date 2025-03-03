@@ -307,7 +307,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.dyfiMessage = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
@@ -349,7 +349,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.checkInMessage = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handle_WelfareMessage(Summary summary, WelfareBulletinBoardMessage m) {
@@ -359,22 +359,6 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     var comments = m.getDataAsString(DataType.FORM_MESSAGE);
     if (!isNull(comments)) {
       var cp = new ContentParser(comments);
-      // var lines = cp.getLines();
-      // summary.welfareIsExercise = (lines.length >= 1 && lines[0].equalsIgnoreCase("EXERCISE")) ? "YES" : "NO";
-      // summary.welfareGroups = lines.length >= 2 ? lines[1] : "";
-      // var groupSet = stringToSet(summary.welfareGroups, ",");
-      // groupSet.stream().forEach(gn -> accumulateGroupName("Welfare", gn));
-      //
-      // summary.welfareMessageText = "";
-      // if (lines.length >= 3) {
-      // var sb = new StringBuilder();
-      // for (int i = 2; i < lines.length; ++i) {
-      // var line = lines[i];
-      // sb.append(line + "\n");
-      // }
-      // summary.welfareMessageText = sb.toString().strip();
-      // }
-
       var pr = cp.isExerciseFirstWord("Comments", "EXERCISE");
       if (pr.error() == null) {
         count(sts.test("Comments first word is #EV", "EXERCISE", (String) pr.context()));
@@ -406,7 +390,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.welfareMessage = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handle_Ics213Message(Summary summary, Ics213Message m) {
@@ -448,7 +432,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.ics213Message = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handle_CheckOutMessage(Summary summary, CheckOutMessage m) {
@@ -498,7 +482,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.checkOutMessage = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
@@ -518,7 +502,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.ics214Message = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handlePegelstandMessage(Summary summary, PegelstandMessage m) {
@@ -528,7 +512,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.pegelstandMessage = m;
     ++summary.messageCount;
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   @Override
@@ -558,6 +542,8 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("ICS-213 Resources").write(Path.of(outputPathName, "ics213Resources.csv"));
     writeTable("mostImportantThingLearned.csv", senderMostImportantThingMap);
     getCounter("ICS-214 Position").write(Path.of(outputPathName, "ics213Resources.csv"));
+
+	writeTable("perfectMessages.csv", perfectMessages);
   }
 
   private void accumulateAddresses(String counterName, ExportedMessage message) {

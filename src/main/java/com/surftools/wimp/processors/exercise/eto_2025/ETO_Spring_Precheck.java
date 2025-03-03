@@ -491,7 +491,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     dbMatch("Comments", db.additionalComments, m.additionalComments);
 
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void dbMatch(String label, String dbValue, String mValue) {
@@ -569,7 +569,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatchIgnoreCase("Warning Field", db.warningField, m.warningField);
     dbMatch("Comments", db.comments, m.comments);
 
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   private void handle_FsrMessage(Summary summary, FieldSituationMessage m) {
@@ -646,7 +646,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatch("Comments", db.additionalComments, m.additionalComments);
     dbMatch("POC", db.poc, m.poc);
 
-    isPerfectMessage(m.messageId);
+	isPerfectMessage(m);
   }
 
   @Override
@@ -676,6 +676,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       summaryMap.remove(sender);
     }
 
+	writeTable("perfectMessages.csv", perfectMessages);
     super.postProcess();// #MM
   }
 }
