@@ -49,6 +49,7 @@ import org.w3c.dom.NodeList;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RejectionMessage;
@@ -64,6 +65,49 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
 
   static record LocationResult(LatLongPair location, String source) {
   };
+
+  static record ReadRecord(ExportedMessage m, String fileName) implements IWritableTable {
+
+    @Override
+    public String[] getHeaders() {
+      return new String[] { "From", "Type", "Date", "Id", "FileName" };
+    }
+
+    @Override
+    public String[] getValues() {
+      return new String[] { m.from, m.getMessageType().toString(), m.msgDateTime.toString(), m.messageId, fileName };
+    }
+
+    @Override
+    public int compareTo(IWritableTable other) {
+      var otherReadRecord = (ReadRecord) other;
+      var o = otherReadRecord.m;
+
+      int cmp = m.from.compareTo(o.from);
+      if (cmp != 0) {
+        return cmp;
+      }
+
+      cmp = m.getMessageType().toString().compareTo(o.getMessageType().toString());
+      if (cmp != 0) {
+        return cmp;
+      }
+
+      cmp = m.msgDateTime.toString().compareTo(o.msgDateTime.toString());
+      if (cmp != 0) {
+        return cmp;
+      }
+
+      cmp = m.messageId.compareTo(o.messageId);
+      if (cmp != 0) {
+        return cmp;
+      }
+
+      return fileName.compareTo(otherReadRecord.fileName);
+    }
+  }
+
+  protected List<IWritableTable> readRecords = new ArrayList<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -396,5 +440,10 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     // last ditch
     return addresses.get(0);
 
+  }
+
+  @Override
+  public void postProcess() {
+    writeTable("fileRecords.csv", readRecords);
   }
 }

@@ -185,6 +185,7 @@ public class WimpWebServer {
 
       mm = new MessageManager();
       mm.putContextObject("webReqestMessages", fileContent);
+      mm.putContextObject("webFileName", fileName);
       pipeline = new PipelineProcessor();
       pipeline.initialize(cm, mm);
       pipeline.process();

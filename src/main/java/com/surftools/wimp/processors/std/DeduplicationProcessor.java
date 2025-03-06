@@ -136,6 +136,9 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
 
         for (var message : inputList) {
           if (messageIdSet.contains(message.messageId)) {
+            logger
+                .info("Duplicate message from sender: " + message.from + ", mId: " + message.messageId + ", type: "
+                    + message.getMessageType().toString());
             continue;
           }
 

@@ -39,6 +39,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,13 +115,28 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
   final static List<MessageType> acceptableMessageTypesList = List
       .of( // order matters, last location wins,
-          MessageType.HOSPITAL_BED, MessageType.WX_LOCAL, MessageType.FIELD_SITUATION);
+          MessageType.HOSPITAL_BED, //
+          MessageType.WX_LOCAL, //
+          MessageType.FIELD_SITUATION //
+      );
 
   String editedSender = null;
 
   private Map<String, FieldSituationMessage> cityFsrMap = new HashMap<>();
   private Map<String, HospitalBedMessage> cityHbMap = new HashMap<>();
   private Map<String, WxLocalMessage> cityWxMap = new HashMap<>();
+
+  record MissingRecord(String city, MessageType messageType) implements Comparable<MissingRecord> {
+
+    @Override
+    public int compareTo(MissingRecord o) {
+      return city.compareTo(o.city);
+    }
+
+  };
+
+  Set<MissingRecord> missingHBSet = new TreeSet<>();
+  Set<MissingRecord> missingPerfectHBSet = new TreeSet<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -269,6 +286,10 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
           totalBedCount, comments, "ETO-001");
 
       cityHbMap.put(city.toUpperCase(), hbMessage);
+
+      var missingRecord = new MissingRecord(city, MessageType.HOSPITAL_BED);
+      missingHBSet.add(missingRecord);
+      missingPerfectHBSet.add(missingRecord);
     }
 
     writeTable("dbHb.cvs", cityHbMap.values());
@@ -439,9 +460,8 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       return;
     }
     summary.db_hospitalBedMessage = db;
-    dbMatch(sms("Message Sender"), db.from, m.from);
+    dbMatch("Message Sender", db.from, m.from);
 
-    dbMatch("From", db.from, m.from);
     dbMatch("Organization", db.organization, m.organization);
     count(sts.test("THIS IS AN EXERCISE should be checked", m.isExercise));
     dbMatch("Form Date/Time", db.formDateTime.toString(), m.formDateTime.truncatedTo(ChronoUnit.MINUTES).toString());
@@ -491,7 +511,12 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
 
     dbMatch("Comments", db.additionalComments, m.additionalComments);
 
-	isPerfectMessage(m);
+    var isPerfect = isPerfectMessage(m);
+    var notMissing = new MissingRecord(m.city, MessageType.HOSPITAL_BED);
+    missingHBSet.remove(notMissing);
+    if (isPerfect) {
+      missingPerfectHBSet.remove(notMissing);
+    }
   }
 
   private void dbMatch(String label, String dbValue, String mValue) {
@@ -550,9 +575,8 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       return;
     }
     summary.db_wxLocalMessage = db;
-    dbMatch(sms("Message Sender"), db.from, m.from);
+    dbMatch("Message Sender", db.from, m.from);
 
-    dbMatch("From", db.from, m.from);
     count(sts.test("Organization should be #EV", db.organization, m.organization));
     dbMatchDateTime("Form Date/Time", db.formDateTime, m.formDateTime);
 
@@ -569,7 +593,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatchIgnoreCase("Warning Field", db.warningField, m.warningField);
     dbMatch("Comments", db.comments, m.comments);
 
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handle_FsrMessage(Summary summary, FieldSituationMessage m) {
@@ -583,7 +607,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       return;
     }
     summary.db_fsrMessage = db;
-    dbMatch(sms("Message Sender"), db.from, m.from);
+    dbMatch("Message Sender", db.from, m.from);
 
     count(sts.test("Organization should be #EV", db.organization, m.organization));
     dbMatch("Precedence", db.precedence, m.precedence);
@@ -646,7 +670,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatch("Comments", db.additionalComments, m.additionalComments);
     dbMatch("POC", db.poc, m.poc);
 
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   @Override
@@ -676,7 +700,14 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       summaryMap.remove(sender);
     }
 
-	writeTable("perfectMessages.csv", perfectMessages);
+    writeTable("perfectMessages.csv", perfectMessages);
     super.postProcess();// #MM
+
+    logger.info("Missing Hospital Beds from: " + String.join(",", missingHBSet.stream().map(m -> m.city).toList()));
+    logger
+        .info("Missing perfect Hospital Beds from: "
+            + String.join(",", missingPerfectHBSet.stream().map(m -> m.city).toList()));
+
   }
+
 }

@@ -42,66 +42,66 @@ import com.surftools.wimp.parser.CharacterAssassinator;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Reads an "exported message" file, produced by Winlink,
- * creates @{ExportedMessage} records
+ * Reads an "exported message" file, produced by Winlink, creates @{ExportedMessage} records
  *
  * @author bobt
  *
  */
 public class WebReadProcessor extends BaseReadProcessor {
-	private static final Logger logger = LoggerFactory.getLogger(WebReadProcessor.class);
+  private static final Logger logger = LoggerFactory.getLogger(WebReadProcessor.class);
 
-	private static final List<String> DEFAULT_DELETE_LIST = Arrays.asList(new String[] { "&#21" });
-	private final List<String> deleteList;
+  private static final List<String> DEFAULT_DELETE_LIST = Arrays.asList(new String[] { "&#21" });
+  private final List<String> deleteList;
 
-	public WebReadProcessor() {
-		this(DEFAULT_DELETE_LIST);
-	}
+  public WebReadProcessor() {
+    this(DEFAULT_DELETE_LIST);
+  }
 
-	public WebReadProcessor(List<String> deleteList) {
-		this.deleteList = deleteList;
-	}
+  public WebReadProcessor(List<String> deleteList) {
+    this.deleteList = deleteList;
+  }
 
-	@Override
-	public void initialize(IConfigurationManager cm, IMessageManager mm) {
-		super.initialize(cm, mm, logger);
-	}
+  @Override
+  public void initialize(IConfigurationManager cm, IMessageManager mm) {
+    super.initialize(cm, mm, logger);
+  }
 
-	@Override
-	public void process() {
+  @Override
+  public void process() {
 
-		var exportedMessages = readAll();
+    var exportedMessages = readAll();
 
-		logger.info("read " + exportedMessages.size() + " exported messages from all files");
+    logger.info("read " + exportedMessages.size() + " exported messages from all files");
 
-		mm.load(exportedMessages);
-	}
+    mm.load(exportedMessages);
+  }
 
-	/**
-	 * reads a single exported message file (uploaded from web), returns a list of
-	 * ExportedMessage records
-	 * 
-	 * @return
-	 */
-	public List<ExportedMessage> readAll() {
+  /**
+   * reads a single exported message file (uploaded from web), returns a list of ExportedMessage records
+   *
+   * @return
+   */
+  public List<ExportedMessage> readAll() {
 
-		try {
-			var webExportedMessages = (String) mm.getContextObject("webReqestMessages");
-			var messages = parseExportedMessages(getInputStream(webExportedMessages));
-			logger.info("extracted " + messages.size() + " exported messages from web: ");
-			return messages;
-		} catch (Exception e) {
-			logger.error("Exception processing web content: " + e.getLocalizedMessage());
-			return new ArrayList<ExportedMessage>();
-		}
+    try {
+      var webExportedMessages = (String) mm.getContextObject("webReqestMessages");
+      var fileName = (String) mm.getContextObject("webFileName");
+      var messages = parseExportedMessages(getInputStream(webExportedMessages));
+      messages.stream().forEach(m -> readRecords.add(new ReadRecord(m, fileName)));
+      logger.info("extracted " + messages.size() + " exported messages from web: ");
+      return messages;
+    } catch (Exception e) {
+      logger.error("Exception processing web content: " + e.getLocalizedMessage());
+      return new ArrayList<ExportedMessage>();
+    }
 
-	}
+  }
 
-	private InputStream getInputStream(String content) throws Exception {
-		CharacterAssassinator assassinator = new CharacterAssassinator(deleteList, null);
-		content = assassinator.assassinate(content);
+  private InputStream getInputStream(String content) throws Exception {
+    CharacterAssassinator assassinator = new CharacterAssassinator(deleteList, null);
+    content = assassinator.assassinate(content);
 
-		return new ByteArrayInputStream(content.getBytes());
-	}
+    return new ByteArrayInputStream(content.getBytes());
+  }
 
 }

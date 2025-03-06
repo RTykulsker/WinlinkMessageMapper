@@ -90,6 +90,7 @@ public class ReadProcessor extends BaseReadProcessor {
         }
         var fileExportedMessages = readAll(file.toPath());
         exportedMessages.addAll(fileExportedMessages);
+        fileExportedMessages.stream().forEach(m -> readRecords.add(new ReadRecord(m, file.toString())));
       }
     }
     logger.info("read " + exportedMessages.size() + " exported messages from all files");
