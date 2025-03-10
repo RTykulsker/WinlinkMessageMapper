@@ -39,9 +39,9 @@ import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
-import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -54,7 +54,6 @@ public class ETO_2022_04_14 extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
 

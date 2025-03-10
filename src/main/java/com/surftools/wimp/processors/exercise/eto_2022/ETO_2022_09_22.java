@@ -119,9 +119,7 @@ public class ETO_2022_09_22 extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-
   public void process() {
 
     var entries = new ArrayList<Entry>();

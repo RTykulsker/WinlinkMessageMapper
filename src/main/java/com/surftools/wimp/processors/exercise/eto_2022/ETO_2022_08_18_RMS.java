@@ -111,7 +111,6 @@ public class ETO_2022_08_18_RMS extends AbstractBaseProcessor {
     logger.info("read " + targetMap.size() + " target entries from " + targetFilePathName);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     int ppCount = 0;

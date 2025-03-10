@@ -87,7 +87,6 @@ public class ETO_2022_07_14 extends AbstractBaseProcessor {
     logger.info("Max Attachment Size: " + MAX_ATTACHMENT_SIZE);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     int ppCount = 0;

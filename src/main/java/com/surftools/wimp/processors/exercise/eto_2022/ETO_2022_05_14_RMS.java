@@ -55,7 +55,6 @@ public class ETO_2022_05_14_RMS extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
 

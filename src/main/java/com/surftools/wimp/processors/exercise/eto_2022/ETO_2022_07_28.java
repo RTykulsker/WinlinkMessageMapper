@@ -58,7 +58,6 @@ public class ETO_2022_07_28 extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     int ppCount = 0;

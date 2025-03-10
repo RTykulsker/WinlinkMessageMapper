@@ -79,7 +79,6 @@ public class ETO_2022_02_24_RMS extends AbstractBaseProcessor {
     FileUtils.createDirectory(imageBadPath);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     var ppCount = 0;

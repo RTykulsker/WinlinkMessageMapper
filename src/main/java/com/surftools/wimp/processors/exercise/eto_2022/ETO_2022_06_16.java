@@ -82,7 +82,6 @@ public class ETO_2022_06_16 extends AbstractBaseProcessor {
 
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     int ppCount = 0;

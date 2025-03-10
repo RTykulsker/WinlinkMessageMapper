@@ -99,7 +99,7 @@ public class ETO_2022_11_03 extends AbstractBaseProcessor {
    *
    *
    */
-  @SuppressWarnings("unchecked")
+
   @Override
   public void process() {
 

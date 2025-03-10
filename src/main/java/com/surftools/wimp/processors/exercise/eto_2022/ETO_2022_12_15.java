@@ -106,7 +106,6 @@ public class ETO_2022_12_15 extends AbstractBaseProcessor {
 
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   /**
    * Alternate Scoring – proposed by Bob, not yet approved by Brian

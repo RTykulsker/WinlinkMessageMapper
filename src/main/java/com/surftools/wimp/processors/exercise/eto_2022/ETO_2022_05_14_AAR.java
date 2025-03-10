@@ -44,9 +44,9 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.Ics213ReplyMessage;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.SummaryProcessor.ParticipantHistory;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
-import com.surftools.wimp.processors.std.WriteProcessor;
 
 /**
  * After Action Report on Operation Ashfall; we sent them an ICS-213; then replied
@@ -78,7 +78,6 @@ public class ETO_2022_05_14_AAR extends AbstractBaseProcessor {
     logger.info("read " + callLocationMap.size() + " summary records from: " + summaryPath);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     int ppCount = 0;

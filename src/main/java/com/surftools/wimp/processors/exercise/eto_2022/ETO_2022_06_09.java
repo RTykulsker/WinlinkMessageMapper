@@ -165,7 +165,6 @@ public class ETO_2022_06_09 extends AbstractBaseProcessor {
     logger.info("overrides to fail: " + imgSimOverrideToFailSet.size());
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
     // for post processing

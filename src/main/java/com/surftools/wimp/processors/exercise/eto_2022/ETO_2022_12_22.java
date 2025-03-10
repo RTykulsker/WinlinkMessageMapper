@@ -211,7 +211,6 @@ public class ETO_2022_12_22 extends AbstractBaseProcessor {
     nsfMgr.setIsEnabled(ENABLE_NON_ACTIONABLE_FIELDS);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process() {
 

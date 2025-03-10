@@ -40,9 +40,9 @@ import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
-import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -63,7 +63,6 @@ public class ETO_2022_10_20 extends AbstractBaseProcessor {
     super.initialize(cm, mm, logger);
   }
 
-  @SuppressWarnings("unchecked")
   /**
    * This Earthquake report is an: check Exercise. In case of a “real world event”, do not send messages to your ETO
    * clearinghouse. We are a training organization, not a response organization. Your message may sit, unread, for days.
@@ -84,9 +83,7 @@ public class ETO_2022_10_20 extends AbstractBaseProcessor {
     var ppAutoFailCount = 0;
 
     var ffm = new FormFieldManager();
-    ffm
-        .add("exerciseId",
-            new FormField(FFType.SPECIFIED, "Exercise Id", "ETO WINLINK THURSDAY SHAKEOUT 2022", 50));
+    ffm.add("exerciseId", new FormField(FFType.SPECIFIED, "Exercise Id", "ETO WINLINK THURSDAY SHAKEOUT 2022", 50));
     ffm.add("response", new FormField(FFType.SPECIFIED, "Response", "duck", 50));
 
     var scoreCounter = new Counter();
