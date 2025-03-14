@@ -50,10 +50,10 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.GradedResult;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.core.ImageHistogram;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
+import com.surftools.wimp.service.image.ImageHistogram;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**

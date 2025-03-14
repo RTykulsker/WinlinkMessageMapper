@@ -57,7 +57,7 @@ import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProces
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * Processor for 2025-03-xx: Tsunami-based drill, organized by LAX Northeast
+ * Processor for 2025-03-29: Tsunami-based drill, organized by LAX Northeast
  *
  * @author bobt
  *
@@ -199,7 +199,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
 
     super.initialize(cm, mm, logger);
 
-    allowPerfectMessageReporting = false;
+    allowPerfectMessageReporting = true;
   }
 
   @Override
@@ -307,7 +307,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.dyfiMessage = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
@@ -349,7 +349,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.checkInMessage = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handle_WelfareMessage(Summary summary, WelfareBulletinBoardMessage m) {
@@ -390,7 +390,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.welfareMessage = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handle_Ics213Message(Summary summary, Ics213Message m) {
@@ -432,7 +432,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.ics213Message = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handle_CheckOutMessage(Summary summary, CheckOutMessage m) {
@@ -482,7 +482,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.checkOutMessage = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
@@ -502,7 +502,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.ics214Message = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   private void handlePegelstandMessage(Summary summary, PegelstandMessage m) {
@@ -512,7 +512,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.pegelstandMessage = m;
     ++summary.messageCount;
-	isPerfectMessage(m);
+    isPerfectMessage(m);
   }
 
   @Override
@@ -543,7 +543,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     writeTable("mostImportantThingLearned.csv", senderMostImportantThingMap);
     getCounter("ICS-214 Position").write(Path.of(outputPathName, "ics213Resources.csv"));
 
-	writeTable("perfectMessages.csv", perfectMessages);
+    writeTable("perfectMessages.csv", perfectMessages);
   }
 
   private void accumulateAddresses(String counterName, ExportedMessage message) {

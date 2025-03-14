@@ -26,7 +26,7 @@ SOFTWARE.
 */
 // https://github.com/nivance/image-similarity/blob/master/src/main/java/image/similarity/ImageHistogram.java
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.service.image;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;

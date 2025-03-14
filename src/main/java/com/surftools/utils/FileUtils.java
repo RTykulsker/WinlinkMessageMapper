@@ -38,28 +38,26 @@ import java.nio.file.Path;
  *
  */
 public class FileUtils {
-  public static void makeDirIfNeeded(String fileName) {
-    File outputFile = new File(fileName);
-    if (outputFile.isAbsolute()) {
-      File outputFilePath = new File(outputFile.getParent());
-      if (!outputFilePath.exists()) {
-        boolean ok = outputFilePath.mkdirs();
+  public static Path makeDirIfNeeded(String dirString) {
+    File dirFile = new File(dirString);
+    if (dirFile.isAbsolute()) {
+      if (!dirFile.exists()) {
+        boolean ok = dirFile.mkdirs();
         if (!ok) {
-          throw new RuntimeException("file path for: " + fileName + " not found and can't be created");
+          throw new RuntimeException("dir path for: " + dirString + " not found and can't be created");
         }
       }
+      return Path.of(dirString);
     }
+    return null;
   }
 
   public static Path makeDirIfNeeded(Path pathName) {
-    File dirName = new File(pathName.toString());
-    if (!dirName.exists()) {
-      boolean ok = dirName.mkdirs();
-      if (!ok) {
-        throw new RuntimeException("file path for: " + dirName + " not found and can't be created");
-      }
-    }
-    return Path.of(dirName.toString());
+    return makeDirIfNeeded(pathName.toString());
+  }
+
+  public static Path makeDirIfNeeded(Path pathName, String dirName) {
+    return makeDirIfNeeded(Path.of(pathName.toString(), dirName));
   }
 
   /**
@@ -68,6 +66,20 @@ public class FileUtils {
    * @param path
    */
   public static Path createDirectory(Path path) {
+    try {
+      return Files.createDirectories(path);
+    } catch (Exception e) {
+      throw new RuntimeException("exception creating directory: " + path.toString() + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  /**
+   * (recursively) create directory
+   *
+   * @param path
+   */
+  public static Path createDirectory(Path parentPath, String fileName) {
+    var path = Path.of(parentPath.toString(), fileName);
     try {
       return Files.createDirectories(path);
     } catch (Exception e) {

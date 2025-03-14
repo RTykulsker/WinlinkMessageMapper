@@ -28,7 +28,6 @@ SOFTWARE.
 package com.surftools.wimp.processors.std.baseExercise;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,20 +67,20 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   protected static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-  protected IConfigurationManager cm;
-  protected IMessageManager mm;
+  protected static IConfigurationManager cm;
+  protected static IMessageManager mm;
 
-  protected Set<String> dumpIds;
-  protected String pathName;
-  protected String outputPathName;
-  protected Path outputPath;
+  protected static Set<String> dumpIds;
+  protected static String pathName;
+  protected static String outputPathName;
+  protected static Path outputPath;
 
-  protected List<OutboundMessage> outboundMessageList;
-  protected String outboundMessageSender;
-  protected String outboundMessageSubject;
-  protected boolean doOutboundMessaging;
+  protected static List<OutboundMessage> outboundMessageList;
+  protected static String outboundMessageSender;
+  protected static String outboundMessageSubject;
+  protected static boolean doOutboundMessaging;
 
-  protected boolean isInitialized = false;
+  protected static boolean isInitialized = false;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -89,17 +88,17 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   }
 
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
+    logger = _logger;
     if (!isInitialized) {
-      logger = _logger;
       doInitialization(cm, mm);
       isInitialized = true;
     }
   }
 
   @SuppressWarnings("unchecked")
-  protected void doInitialization(IConfigurationManager cm, IMessageManager mm) {
-    this.cm = cm;
-    this.mm = mm;
+  protected void doInitialization(IConfigurationManager _cm, IMessageManager _mm) {
+    cm = _cm;
+    mm = _mm;
 
     pathName = cm.getAsString(Key.PATH);
 
@@ -198,18 +197,11 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   }
 
   public void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
-    Path outputPath = Path.of(pathName, "output", fileName);
-    FileUtils.makeDirIfNeeded(outputPath.toString());
-
+    var myDirPath = FileUtils.makeDirIfNeeded(pathName);
+    var myFilePath = Path.of(myDirPath.toString(), fileName);
     var messageCount = 0;
     try {
-      File outputDirectory = new File(outputPath.toFile().getParent());
-      if (!outputDirectory.exists()) {
-        outputDirectory.mkdir();
-      }
-
-      CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toString()));
-
+      CSVWriter writer = new CSVWriter(new FileWriter(myFilePath.toString()));
       if (entries.size() > 0) {
         writer.writeNext(entries.get(0).getHeaders());
         for (IWritableTable e : entries) {
@@ -228,14 +220,14 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       }
 
       writer.close();
-      logger.info("wrote " + messageCount + " results to file: " + outputPath);
+      logger.info("wrote " + messageCount + " results to file: " + myFilePath.toString());
     } catch (Exception e) {
-      logger.error("Exception writing file: " + outputPath + ", " + e.getLocalizedMessage());
+      logger.error("Exception writing file: " + myFilePath.toString() + ", " + e.getLocalizedMessage());
     }
   }
 
   protected void writeTable(String fileName, List<IWritableTable> entries) {
-    writeTable(pathName, fileName, entries);
+    writeTable(outputPathName, fileName, entries);
   }
 
   protected void writeTable(String fileName, Collection<? extends IWritableTable> entries) {

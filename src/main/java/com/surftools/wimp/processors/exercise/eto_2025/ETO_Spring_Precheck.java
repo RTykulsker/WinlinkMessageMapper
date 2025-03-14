@@ -484,9 +484,6 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
     dbMatchBed("Pediatrics Bed Count", db.pediatricsBedCount, m.pediatricsBedCount);
     dbMatch("Pediatrics Bed Notes", db.pediatricsBedNotes, m.pediatricsBedNotes);
 
-    dbMatchBed("Pediatrics Bed Count", db.pediatricsBedCount, m.pediatricsBedCount);
-    dbMatch("Pediatrics Bed Notes", db.pediatricsBedNotes, m.pediatricsBedNotes);
-
     dbMatchBed("Medical/Surgical Bed Count", db.medicalBedCount, m.medicalBedCount);
     dbMatch("Medical/Surgical Bed Notes", db.medicalBedNotes, m.medicalBedNotes);
 

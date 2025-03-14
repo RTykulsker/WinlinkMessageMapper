@@ -125,8 +125,9 @@ public class FilterProcessor extends AbstractBaseProcessor {
       mm.removeMessagesForSender(sender);
     }
 
-    logger.info("included: " + includedSenderCount + " senders");
-    logger.info("excluded: " + excludedSenderCount + " senders");
+    logger
+        .warn("\n### included: " + includedSenderCount + " senders\n\n### excluded: " + excludedSenderCount
+            + " senders\n");
   } // end process()
 
 }
