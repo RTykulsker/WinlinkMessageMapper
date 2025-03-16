@@ -59,7 +59,7 @@ import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class AbstractBaseProcessor implements IProcessor {
-  protected Logger logger;
+  protected static Logger logger;
 
   protected static final String DT_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern(DT_FORMAT_STRING);
@@ -196,7 +196,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
   }
 
-  public void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
+  public static void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
     var myDirPath = FileUtils.makeDirIfNeeded(pathName);
     var myFilePath = Path.of(myDirPath.toString(), fileName);
     var messageCount = 0;
@@ -226,14 +226,14 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
   }
 
-  protected void writeTable(String fileName, List<IWritableTable> entries) {
+  public static void writeTable(String fileName, List<IWritableTable> entries) {
     writeTable(outputPathName, fileName, entries);
   }
 
-  protected void writeTable(String fileName, Collection<? extends IWritableTable> entries) {
+  public static void writeTable(String fileName, Collection<? extends IWritableTable> entries) {
     var list = new ArrayList<IWritableTable>();
     list.addAll(entries);
-    writeTable(pathName, fileName, list);
+    writeTable(outputPathName, fileName, list);
   }
 
   static record EntryRecord(String key, String value) implements IWritableTable {

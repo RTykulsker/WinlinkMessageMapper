@@ -335,9 +335,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     parserMap.put(MessageType.EYEWARN, new EyewarnParser());
     parserMap.put(MessageType.PEGELSTAND, new PegelstandParser());
 
-    for (IParser parser : parserMap.values()) {
-      parser.initialize(cm, mm);
-    }
+    parserMap.values().stream().forEach(p -> p.initialize(cm, mm));
 
     return parserMap;
   }

@@ -81,11 +81,11 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       var list = new ArrayList<String>();
       list.addAll(Arrays.asList(super.getHeaders()));
       list
-          .addAll(Arrays
-              .asList(new String[] { "Ics213RR mId", "Ics214 mId", //
+          .addAll(List
+              .of("Ics213RR mId", "Ics214 mId", //
                   "Requests", "Resources", "Activities", //
-                  "Activity Count", "Is Nice", //
-              }));
+                  "Activity Count", "Is Nice") //
+          );
       return list.toArray(new String[0]);
     }
 
@@ -94,11 +94,11 @@ public class ETO_2024_12_12 extends MultiMessageFeedbackProcessor {
       var list = new ArrayList<>();
       list.addAll(Arrays.asList(super.getValues()));
       list
-          .addAll(Arrays
-              .asList(new String[] { mId(ics213RRMessage), mId(ics214Message), //
+          .addAll(List
+              .of(mId(ics213RRMessage), mId(ics214Message), //
                   allRequests, allResources, allActivities, //
-                  s(activityCount), Boolean.toString(isNice), //
-              }));
+                  s(activityCount), Boolean.toString(isNice) //
+              ));
 
       return list.toArray(new String[0]);
     };

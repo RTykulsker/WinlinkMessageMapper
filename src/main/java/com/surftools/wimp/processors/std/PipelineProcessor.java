@@ -30,7 +30,7 @@ package com.surftools.wimp.processors.std;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,35 +44,48 @@ import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.MessageManager;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
+import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 
 public class PipelineProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(PipelineProcessor.class);
 
-  private static final String[] PREFIXES = new String[] { //
-      "com.surftools.wimp.processors.std.", //
-      "com.surftools.wimp.processors.exercise.eto_2025.", //
-      "com.surftools.wimp.processors.exercise.eto_2024.", //
-      "com.surftools.wimp.processors.exercise.miro.", //
-      "com.surftools.wimp.processors.exercise.other.", //
-      "com.surftools.wimp.processors.dev.", //
-      "com.surftools.wimp.processors.exercise.eto_2023.", //
-      "com.surftools.wimp.processors.exercise.eto_2022.", //
-      "" };
-
-  private static final String[] SUFFIXES = new String[] { "Processor", "" };
-
-  protected IConfigurationManager cm;
-  protected IMessageManager mm;
-
+  // the processors that make up the pipeline
   private List<IProcessor> processors;
 
+  public PipelineProcessor() {
+
+  }
+
+  public PipelineProcessor(String configurationFileName) throws Exception {
+    initialize(new PropertyFileConfigurationManager(configurationFileName, Key.values()), null);
+    process();
+    postProcess();
+  }
+
   @Override
-  public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    if (mm == null) {
-      mm = new MessageManager();
-    }
+  public void initialize(IConfigurationManager cm, IMessageManager _mm) {
+    // IGNORE argument mm, create a final mm, because needed for variable capture
+    final IMessageManager mm = new MessageManager();
     super.initialize(cm, mm, logger);
 
+    pipelineInitialize();
+    processors.stream().forEach(p -> p.initialize(cm, mm));
+  }
+
+  @Override
+  public void process() {
+    processors.stream().forEach(p -> p.process());
+  }
+
+  @Override
+  public void postProcess() {
+    processors.stream().forEach(p -> p.postProcess());
+  }
+
+  /**
+   * do the initialization of the pipeline
+   */
+  private void pipelineInitialize() {
     // fail fast: our working directory, where our input files are
     Path path = Paths.get(pathName);
     if (!Files.exists(path)) {
@@ -85,52 +98,39 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     dumpIds = makeIds(cm, Key.DUMP_IDS);
     mm.putContextObject("dumpIds", dumpIds);
 
-    var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication,Filter");
-    var main = cm.getAsString(Key.PIPELINE_MAIN, "");
-    var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary");
-
-    var processorNames = new ArrayList<String>();
-    for (var configName : new String[] { stdin, main, stdout }) {
-      if (configName == null) {
-        continue;
-      }
-
-      var fields = configName.split(",");
-      for (var field : fields) {
-        if (field != null && !field.isEmpty() && !field.equals("(null)")) {
-          processorNames.add(field);
-        }
-      }
-    }
-
-    processors = new ArrayList<IProcessor>(processorNames.size());
-    for (var processorName : processorNames) {
-      var processor = findProcessor(processorName);
-      if (processor == null) {
-        throw new RuntimeException("Could not find processor for " + processorName);
-      } else {
-        processor.initialize(cm, mm);
-        processors.add(processor);
-      }
-    }
-
-    logger.info("Processors: " + String.join(",", processors.stream().map(p -> p.getName()).toList()));
+    // this seems a good balance between streams and code-golfing
+    var stdin = Arrays.asList(cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication,Filter").split(","));
+    var main = Arrays.asList(cm.getAsString(Key.PIPELINE_MAIN, "").split(","));
+    var stdout = Arrays.asList(cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary").split(","));
+    var processorNames = List
+        .of(stdin, main, stdout)
+          .stream()
+          .flatMap(list -> list.stream())
+          .filter(processorName -> isValidProcessorName(processorName))
+          .toList();
+    processors = processorNames.stream().map(pn -> findProcessor(pn)).toList();
+    logger.info("Processors: " + String.join(",", processorNames));
   }
 
-  public Set<String> makeIds(IConfigurationManager cm, Key key) {
-    Set<String> set = new HashSet<>();
-    var ids = cm.getAsString(key);
-    if (ids != null) {
-      String[] fields = ids.split(",");
-      for (var field : fields) {
-        set.add(field.toUpperCase());
-      }
-      logger.info(key.toString() + ": " + String.join(",", set));
-    }
-    return set;
+  private boolean isValidProcessorName(String s) {
+    return s != null && !s.isEmpty() && !s.equals("(null");
   }
 
   private IProcessor findProcessor(String processorName) {
+    // this seems a good balance between streams and code-golfing
+    final var PREFIXES = List
+        .of( //
+            "com.surftools.wimp.processors.std.", //
+            "com.surftools.wimp.processors.exercise.eto_2025.", //
+            "com.surftools.wimp.processors.exercise.eto_2024.", //
+            "com.surftools.wimp.processors.exercise.miro.", //
+            "com.surftools.wimp.processors.exercise.other.", //
+            "com.surftools.wimp.processors.dev.", //
+            "com.surftools.wimp.processors.exercise.eto_2023.", //
+            "com.surftools.wimp.processors.exercise.eto_2022.", //
+            "");
+    final var SUFFIXES = List.of("Processor", "");
+
     IProcessor processor = null;
     for (var prefix : PREFIXES) {
       for (var suffix : SUFFIXES) {
@@ -151,18 +151,14 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     throw new RuntimeException("Could not find a processor for: " + processorName);
   }
 
-  @Override
-  public void process() {
-    for (var processor : processors) {
-      processor.process();
+  private Set<String> makeIds(IConfigurationManager cm, Key key) {
+    var set = new HashSet<String>();
+    var ids = cm.getAsString(key);
+    if (ids != null) {
+      set.addAll(Arrays.stream(ids.split(",")).map(s -> s.toUpperCase()).toList());
+      logger.info(key.toString() + ": " + String.join(",", set));
     }
-  }
-
-  @Override
-  public void postProcess() {
-    for (var processor : processors) {
-      processor.postProcess();
-    }
+    return set;
   }
 
 }

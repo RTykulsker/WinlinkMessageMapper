@@ -103,20 +103,6 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       var list = new ArrayList<String>(List.of(from, nsTo, latitude, longitude, feedbackCount, feedback));
       return list.toArray(new String[list.size()]);
     }
-
-    /**
-     * convenience itoa method
-     *
-     * @param i
-     * @return
-     */
-    public String s(int i) {
-      return String.valueOf(i);
-    }
-
-    public String s(boolean b) {
-      return String.valueOf(b);
-    }
   }
 
   protected Map<String, BaseSummary> summaryMap = new LinkedHashMap<>();

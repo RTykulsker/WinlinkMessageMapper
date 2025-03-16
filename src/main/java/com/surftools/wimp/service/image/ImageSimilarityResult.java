@@ -27,9 +27,55 @@ SOFTWARE.
 
 package com.surftools.wimp.service.image;
 
+import java.text.DecimalFormat;
+
+import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.message.ExportedMessage;
 
 public record ImageSimilarityResult(String imageName, byte[] imageBytes, ReferenceImage referenceImage, Double score,
-    ExportedMessage m) {
+    ExportedMessage m) implements IWritableTable {
 
+  final static DecimalFormat formatter = new DecimalFormat("#0.0000");
+
+  public boolean isSimilar() {
+    return score >= referenceImage.getThreshold();
+  }
+
+  @Override
+  public String[] getHeaders() {
+    return new String[] { "From", "MessageId", "Image Name", "Image Size", "Score", "Is Similar" };
+  }
+
+  @Override
+  public String[] getValues() {
+    var scoreString = formatter.format(100d * score);
+    return new String[] { m().from, m().messageId, imageName(), String.valueOf(imageBytes().length), //
+        scoreString, String.valueOf(isSimilar()) };
+  }
+
+  @Override
+  public int compareTo(IWritableTable other) {
+    var o = (ImageSimilarityResult) other;
+    int cmp = m.from.compareTo(o.m.from);
+    if (cmp != 0) {
+      return cmp;
+    }
+
+    cmp = m.messageId.compareTo(o.m.messageId);
+    if (cmp != 0) {
+      return cmp;
+    }
+
+    cmp = imageName.compareTo(o.imageName);
+    if (cmp != 0) {
+      return cmp;
+    }
+
+    cmp = imageBytes.length - o.imageBytes.length;
+    if (cmp != 0) {
+      return cmp;
+    }
+
+    return (int) Math.signum(score - o.score);
+  }
 }

@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.configuration.Key;
-import com.surftools.wimp.core.MessageManager;
 import com.surftools.wimp.processors.std.PipelineProcessor;
 import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 
@@ -78,8 +77,7 @@ public class WinlinkMessageMapper {
       logger.info("begin");
 
       var pipeline = new PipelineProcessor();
-      pipeline
-          .initialize(new PropertyFileConfigurationManager(configurationFileName, Key.values()), new MessageManager());
+      pipeline.initialize(new PropertyFileConfigurationManager(configurationFileName, Key.values()), null);
       pipeline.process();
       pipeline.postProcess();
 

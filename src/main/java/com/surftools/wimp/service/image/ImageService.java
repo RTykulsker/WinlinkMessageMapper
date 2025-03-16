@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.FileUtils;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.IService;
 
 public class ImageService implements IService {
@@ -54,6 +55,7 @@ public class ImageService implements IService {
 
   protected String outputPathName;
   protected Path outputPath;
+  protected List<ImageSimilarityResult> similarityResults = new ArrayList<>();
 
   public ImageService(String outputPathName) {
     this.outputPathName = outputPathName;
@@ -97,9 +99,12 @@ public class ImageService implements IService {
    *
    * @param m
    * @param references
+   * @param similarityThreshold
+   *
    * @return
    */
-  public List<ImageSimilarityResult> findSimilarityScores(ExportedMessage m, ReferenceImage reference) {
+  public List<ImageSimilarityResult> findSimilarityScores(ExportedMessage m, ReferenceImage reference,
+      Double similarityThreshold) {
     var images = getImageAttachments(m);
     var list = new ArrayList<ImageSimilarityResult>();
     for (Entry<String, byte[]> image : images.entrySet()) {
@@ -107,6 +112,7 @@ public class ImageService implements IService {
       if (simScore != null) {
         var result = new ImageSimilarityResult(image.getKey(), image.getValue(), reference, simScore, m);
         list.add(result);
+        similarityResults.add(result);
       }
     }
 
@@ -123,19 +129,9 @@ public class ImageService implements IService {
    * @param references
    * @return
    */
-  public List<ImageSimilarityResult> findSimilarImages(ExportedMessage m, ReferenceImage reference) {
-    var images = getImageAttachments(m);
-    var list = new ArrayList<ImageSimilarityResult>();
-    for (Entry<String, byte[]> image : images.entrySet()) {
-      Double simScore = reference.computeSimilarity(image.getValue(), image.getKey(), m.from);
-      if (simScore != null && simScore > reference.getThreshold()) {
-        var result = new ImageSimilarityResult(image.getKey(), image.getValue(), reference, simScore, m);
-        list.add(result);
-      }
-    }
-
-    list.sort((s1, s2) -> s2.score().compareTo(s1.score()));
-    return list;
+  public List<ImageSimilarityResult> findSimilarImages(ExportedMessage m, ReferenceImage reference,
+      Double similarityThreshold) {
+    return findSimilarityScores(m, reference, similarityThreshold).stream().filter(r -> r.isSimilar()).toList();
   }
 
   /**
@@ -178,13 +174,10 @@ public class ImageService implements IService {
     var allPath = FileUtils.makeDirIfNeeded(imagePath, "all");
     var byTypePath = FileUtils.makeDirIfNeeded(imagePath, "by-type");
 
-    var from = m.from;
-    var mId = m.messageId;
-    var messageType = m.getMessageType();
-    var messageTypeName = messageType.toString();
+    var messageTypeName = m.getMessageType().toString();
     var index = getAttachmentIndex(m.attachments, imageFileName, bytes);
 
-    var filename = from + "-" + mId + "-" + messageTypeName + "-" + imageFileName + "-" + index;
+    var filename = String.format("%s-%s-%s-%s-%s", m.from, m.messageId, messageTypeName, imageFileName, index);
     var allImagePath = Path.of(allPath.toString(), filename);
     try (FileOutputStream fos = new FileOutputStream(allImagePath.toString())) {
       fos.write(bytes);
@@ -245,8 +238,6 @@ public class ImageService implements IService {
     var messageType = m.getMessageType();
     var messageTypeName = messageType.toString();
     var index = getAttachmentIndex(m.attachments, result.imageName(), result.imageBytes());
-
-    // var filename = from + "-" + mId + "-" + messageTypeName + "-" + result.imageName() + "-" + index + "-" + score;
     var filename = String.join("-", List.of(from, mId, messageTypeName, result.imageName(), index, score));
 
     var allImagePath = Path.of(allPath.toString(), filename);
@@ -256,7 +247,7 @@ public class ImageService implements IService {
       logger.error("Exception writing image file: " + filename + ", " + e.getMessage());
     }
 
-    var isPass = result.score() >= result.referenceImage().getThreshold();
+    var isPass = result.isSimilar();
     var passFailPath = isPass ? passPath : failPath;
     for (var linkPath : List.of(passFailPath, binnedPath)) {
       var linkImagePath = Path.of(linkPath.toString(), filename);
@@ -277,5 +268,9 @@ public class ImageService implements IService {
     for (var result : results) {
       writeSimilarityResult(result);
     }
+  }
+
+  public void writeSimilarityResults(String fileName) {
+    WriteProcessor.writeTable(fileName, similarityResults);
   }
 }

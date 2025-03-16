@@ -250,4 +250,12 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   protected boolean isFull(String s) {
     return s != null && !s.isEmpty();
   }
+
+  protected static String s(int i) {
+    return String.valueOf(i);
+  }
+
+  protected static String s(boolean b) {
+    return String.valueOf(b);
+  }
 }

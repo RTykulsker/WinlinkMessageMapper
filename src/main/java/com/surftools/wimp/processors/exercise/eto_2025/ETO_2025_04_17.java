@@ -90,7 +90,7 @@ public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
                 String.valueOf(entry.getValue().length) + " for image " + entry.getKey()));
       }
 
-      var results = imageService.findSimilarityScores(message, referenceImage);
+      var results = imageService.findSimilarityScores(message, referenceImage, SIMILARITY_THRESHOLD);
       imageService.writeSimiliarityResults(results);
 
       for (var result : results) {
@@ -101,4 +101,11 @@ public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
       }
     } // end if images.size() > 0
   }
+
+  @Override
+  public void postProcess() {
+    super.postProcess();
+    imageService.writeSimilarityResults("similarityResults.csv");
+  }
+
 }
