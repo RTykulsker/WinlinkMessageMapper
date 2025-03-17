@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.EtoCheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
@@ -148,6 +149,11 @@ public class EtoCheckInParser extends AbstractBaseParser {
       }
     }
     return sb.toString();
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ETO_CHECK_IN;
   }
 
 }

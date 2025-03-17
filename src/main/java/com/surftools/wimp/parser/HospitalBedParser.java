@@ -160,4 +160,8 @@ public class HospitalBedParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.HOSPITAL_BED;
+  }
 }

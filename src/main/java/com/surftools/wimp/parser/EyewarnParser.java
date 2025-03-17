@@ -86,6 +86,11 @@ public class EyewarnParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.EYEWARN;
+  }
+
   private List<EyeWarnDetail> makeDetails(String blob, String color) {
     var list = new ArrayList<EyeWarnDetail>();
     if (blob == null) {

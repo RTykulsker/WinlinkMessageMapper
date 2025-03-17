@@ -85,6 +85,11 @@ public class Ics309Parser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ICS_309;
+  }
+
   private List<Ics309Message.Activity> makeActivities(String versionString) {
 
     // v13.9.2

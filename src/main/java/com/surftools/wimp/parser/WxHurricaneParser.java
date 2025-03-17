@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.WxHurricaneMessage;
@@ -86,6 +87,11 @@ public class WxHurricaneParser extends AbstractBaseParser {
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WX_HURRICANE;
   }
 
 }

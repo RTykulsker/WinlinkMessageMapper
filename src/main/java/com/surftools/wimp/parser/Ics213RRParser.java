@@ -99,13 +99,17 @@ public class Ics213RRParser extends AbstractBaseParser {
           logisticsOrderNumber, supplierInfo, supplierName, //
           supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
           logisticsDateTime, orderedBy, //
-          financeComments, financeName, financeDateTime
-      );
+          financeComments, financeName, financeDateTime);
 
       return m;
 
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ICS_213_RR;
   }
 }

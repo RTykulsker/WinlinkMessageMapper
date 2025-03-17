@@ -41,18 +41,20 @@ import com.surftools.wimp.message.Ics214Message;
 /**
  * parser for ICS 214 Activity Log
  *
+ * also handles ICS-214A Individual Activity Log, by extension
+ *
  * @author bobt
  *
  */
 public class Ics214Parser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(Ics214Parser.class);
+  protected Logger logger;
+  protected MessageType messageType;
 
   private static boolean strictParsing = false; // should a parse error fail here, or downstream during grading
 
-  private final boolean isIndividual; // are we parsing ICS-214 or ICS-214A?
-
-  public Ics214Parser(boolean isIndividual) {
-    this.isIndividual = isIndividual;
+  public Ics214Parser() {
+    logger = LoggerFactory.getLogger(Ics214Parser.class);
+    messageType = MessageType.ICS_214;
   }
 
   @Override
@@ -63,9 +65,7 @@ public class Ics214Parser extends AbstractBaseParser {
     }
 
     try {
-
-      var mt = isIndividual ? MessageType.ICS_214A : MessageType.ICS_214;
-      String xmlString = new String(message.attachments.get(mt.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.ICS_214.attachmentName()));
 
       makeDocument(message.messageId, xmlString);
 
@@ -105,13 +105,14 @@ public class Ics214Parser extends AbstractBaseParser {
         }
       }
 
-      if (isIndividual) {
+      // this is for 214A -- individual
+      if (messageType == MessageType.ICS_214A) {
         resource = assignedResources.get(0);
         assignedResources.clear();
       }
 
       var m = new Ics214Message(message, organization, incidentName, page, opFrom, opTo, resource, assignedResources,
-          activities, preparedBy, version, isIndividual);
+          activities, preparedBy, version, messageType == MessageType.ICS_214A);
 
       return m;
     } catch (Exception e) {
@@ -119,7 +120,12 @@ public class Ics214Parser extends AbstractBaseParser {
     }
   }
 
-  private List<Ics214Message.Resource> makeResources() {
+  @Override
+  public MessageType getMessageType() {
+    return messageType;
+  }
+
+  protected List<Ics214Message.Resource> makeResources() {
     var list = new ArrayList<Ics214Message.Resource>();
     for (int i = 1; i <= 8; ++i) {
       var name = getStringFromXml("name" + i);
@@ -131,7 +137,7 @@ public class Ics214Parser extends AbstractBaseParser {
     return list;
   }
 
-  private List<Ics214Message.Activity> makeActivities() {
+  protected List<Ics214Message.Activity> makeActivities() {
     var list = new ArrayList<Ics214Message.Activity>();
     for (int i = 1; i <= 8; ++i) {
       var dateTime = getStringFromXml("activitydatetime" + i);

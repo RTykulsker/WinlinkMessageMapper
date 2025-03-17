@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,25 +44,28 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.CheckInMessage;
 import com.surftools.wimp.message.CheckOutMessage;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.message.ExportedMessage.ExportedKey;
 
 /**
- * parser for everytone's favorite message type
+ * parser for everyone's favorite message type
+ *
+ * also handles Winlink Check Out, by extension
  *
  * @author bobt
  *
  */
 public class CheckInParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(CheckInParser.class);
-  protected static final DateTimeFormatter ALT_DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+  protected Logger logger;
+  protected MessageType messageType;
 
-  private MultiDateTimeParser parser = new MultiDateTimeParser(List
+  protected MultiDateTimeParser mtdp = new MultiDateTimeParser(List
       .of("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm 'UTC'", //
           "MM/dd/yyyy HHmm'hrs.'", "MM/dd/yyyy HHmm'hrs'", "yyyy-MM-dd HH:mm:ss'L'"));
 
-  private final DateTimeFormatter UTC_PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'"); // 2024-05-23T23:55:11.000Z
+  protected final DateTimeFormatter UTC_PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'"); // 2024-05-23T23:55:11.000Z
 
-  private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
-  private static final String MERGED_LAT_LON_TAG_NAMES;
+  protected static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
+  protected static final String MERGED_LAT_LON_TAG_NAMES;
 
   static {
     var set = new LinkedHashSet<String>();
@@ -70,10 +74,9 @@ public class CheckInParser extends AbstractBaseParser {
     MERGED_LAT_LON_TAG_NAMES = "couldn't find lat/long within tags: " + set.toString();
   }
 
-  private final MessageType messageType;
-
-  public CheckInParser(boolean isCheckIn) {
-    messageType = (isCheckIn) ? MessageType.CHECK_IN : MessageType.CHECK_OUT;
+  public CheckInParser() {
+    logger = LoggerFactory.getLogger(CheckInParser.class);
+    messageType = MessageType.CHECK_IN;
   }
 
   @Override
@@ -110,65 +113,70 @@ public class CheckInParser extends AbstractBaseParser {
         var comments = getStringFromXml("comments");
         var version = parseVersion();
 
-        CheckInMessage m = null;
+        var m = (ExportedMessage) null;
         if (messageType == MessageType.CHECK_IN) {
           m = new CheckInMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
               comments, version);
-        } else if (messageType == MessageType.CHECK_OUT) {
+        } else {
           m = new CheckOutMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
               comments, version);
-        } else {
-          return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
         }
 
         return m;
+
       } catch (Exception e) {
         return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
       }
     } else {
       try {
-        final var formDataKey = "FormData.txt";
-        var formDataString = new String(message.attachments.get(formDataKey));
-        var lines = formDataString.split("\n");
+        @SuppressWarnings("unchecked")
+        var formDataMap = (Map<ExportedKey, Map<String, String>>) mm.getContextObject("formDataMap");
+        if (formDataMap == null) {
+          return reject(message, RejectType.CANT_FIND_FORMDATA, "no FormData map");
+        }
 
-        var organization = get(lines, 8);
-        var formDateTime = parser.parse(get(lines, 11));
-        var contactName = get(lines, 14);
-        var initialOperators = get(lines, 15);
+        var messageKey = new ExportedKey(message.from, message.messageId);
+        var valueMap = formDataMap.get(messageKey);
+        if (valueMap == null) {
+          return reject(message, RejectType.CANT_FIND_FORMDATA, "no FormData entry for message: " + messageKey);
+        }
 
-        var status = get(lines, 16);
-        var service = get(lines, 17);
-        var band = get(lines, 18);
-        var mode = get(lines, 19);
+        var organization = valueMap.get("0a. Organization");
+        var formDateTime = mtdp.parse(valueMap.get("1a. Date-Time"));
+        var contactName = valueMap.get("1d. Station Contact Name");
+        var initialOperators = valueMap.get("1e. Initial Operators");
 
-        var locationString = get(lines, 20);
-        var mgrs = get(lines, 23);
-        var gridSquare = get(lines, 24);
-        var formLocation = new LatLongPair(get(lines, 21), get(lines, 22));
-        var comments = get(lines, 25);
-        var version = get(lines, 1).split(" ")[2];
+        var status = valueMap.get("2a. Type");
+        var service = valueMap.get("2b. Service");
+        var band = valueMap.get("2c. Band");
+        var mode = valueMap.get("2d. Session");
 
-        CheckInMessage m = null;
+        var locationString = valueMap.get("3a. Location");
+        var mgrs = valueMap.get("3d. MGRS");
+        var gridSquare = valueMap.get("3e. Grid Square");
+        var formLocation = new LatLongPair(valueMap.get("3b. Latitude"), valueMap.get("3c. Longitude"));
+        var comments = valueMap.get("4a. Comments");
+        var version = valueMap.get("MapFileName").split(" ")[2];
+
+        var m = (ExportedMessage) null;
         if (messageType == MessageType.CHECK_IN) {
           m = new CheckInMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
               comments, version);
-        } else if (messageType == MessageType.CHECK_OUT) {
+        } else {
           m = new CheckOutMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
               comments, version);
-        } else {
-          return reject(message, RejectType.UNSUPPORTED_TYPE, messageType.name());
         }
 
         return m;
@@ -176,10 +184,9 @@ public class CheckInParser extends AbstractBaseParser {
         return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
       }
     }
-
   }
 
-  private LocalDateTime parseFormDateTime() {
+  protected LocalDateTime parseFormDateTime() {
     LocalDateTime formDateTime = null;
 
     var utcString = getStringFromXml("timestamp2");
@@ -188,19 +195,19 @@ public class CheckInParser extends AbstractBaseParser {
       try {
         formDateTime = LocalDateTime.from(UTC_PARSER.parse(utcString));
       } catch (Exception e) {
-        formDateTime = parser.parse(localString);
+        formDateTime = mtdp.parse(localString);
       }
     } else {
       var s = getStringFromXml("datetime");
       if (s != null) {
-        formDateTime = parser.parse(localString);
+        formDateTime = mtdp.parse(localString);
       }
     }
 
     return formDateTime;
   }
 
-  private String parseVersion() {
+  protected String parseVersion() {
     var version = "";
     var templateVersion = getStringFromXml("templateversion");
     if (templateVersion != null) {
@@ -210,8 +217,9 @@ public class CheckInParser extends AbstractBaseParser {
     return version;
   }
 
-  private String get(String[] lines, int lineNumber) {
-    return lines[lineNumber - 1].split("=")[1];
+  @Override
+  public MessageType getMessageType() {
+    return messageType;
   }
 
 }

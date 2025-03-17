@@ -102,6 +102,11 @@ public class HumanitarianNeedsParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.HUMANITARIAN_NEEDS;
+  }
+
   private boolean valid(String s) {
     return s != null && s.length() > 0;
   }

@@ -97,4 +97,8 @@ public class WxSevereParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WX_SEVERE;
+  }
 }

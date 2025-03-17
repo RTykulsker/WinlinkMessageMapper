@@ -45,6 +45,9 @@ import com.surftools.wimp.core.MessageType;
  *
  */
 public class ExportedMessage implements IMessage, IWritableTable {
+  public record ExportedKey(String from, String messageId) {
+  };
+
   public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
   public final String messageId;

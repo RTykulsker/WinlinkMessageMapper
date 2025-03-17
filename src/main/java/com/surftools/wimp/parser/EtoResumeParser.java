@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.EtoResumeMessage;
 import com.surftools.wimp.message.ExportedMessage;
@@ -108,4 +109,8 @@ public class EtoResumeParser extends AbstractBaseParser {
     return agencies;
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ETO_RESUME;
+  }
 }

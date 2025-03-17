@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.pdf.PdfUtils;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics309Message;
@@ -161,6 +162,11 @@ public class PdfIcs309Parser extends AbstractBaseParser {
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.PDF_ICS_309;
   }
 
   private ArrayList<Activity> consolidateActivities(String from, String messageId, ArrayList<Activity> input) {

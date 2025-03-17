@@ -62,4 +62,9 @@ public class WelfareBulletinBoardParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WELFARE_BULLETIN_BOARD;
+  }
+
 }

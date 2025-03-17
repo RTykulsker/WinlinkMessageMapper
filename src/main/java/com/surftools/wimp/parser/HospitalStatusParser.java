@@ -176,4 +176,8 @@ public class HospitalStatusParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.HOSPITAL_STATUS;
+  }
 }

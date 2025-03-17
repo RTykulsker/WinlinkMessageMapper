@@ -106,4 +106,9 @@ public class WA_ISNAP_Parser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WA_ISNAP;
+  }
+
 }

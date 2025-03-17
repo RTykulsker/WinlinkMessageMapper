@@ -100,4 +100,8 @@ public class QuickParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.QUICK;
+  }
 }

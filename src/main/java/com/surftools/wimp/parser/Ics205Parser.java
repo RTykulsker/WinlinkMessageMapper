@@ -129,6 +129,11 @@ public class Ics205Parser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ICS_205_RADIO_PLAN;
+  }
+
   private List<RadioEntry> makeRadioEntries() {
 
     var list = new ArrayList<RadioEntry>();

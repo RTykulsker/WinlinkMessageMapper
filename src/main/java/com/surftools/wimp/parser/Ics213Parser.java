@@ -90,4 +90,9 @@ public class Ics213Parser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.ICS_213;
+  }
+
 }

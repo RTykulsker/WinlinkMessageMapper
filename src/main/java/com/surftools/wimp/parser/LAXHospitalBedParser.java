@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 
@@ -36,6 +37,11 @@ public class LAXHospitalBedParser extends AbstractBaseParser {
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     return reject(message, RejectType.UNSUPPORTED_TYPE, "not implemented yet");
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return null;
   }
 
 }

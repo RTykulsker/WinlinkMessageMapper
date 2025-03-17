@@ -110,6 +110,11 @@ public class WA_WSDOT_RoadwayDamageParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WA_WSDOT_ROADWAY_DAMAGE;
+  }
+
   private boolean getBooleanFromXmlButton(String key) {
     if (key == null) {
       return false;

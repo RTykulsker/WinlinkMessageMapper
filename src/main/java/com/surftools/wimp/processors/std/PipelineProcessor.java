@@ -31,9 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,10 +51,12 @@ public class PipelineProcessor extends AbstractBaseProcessor {
   // the processors that make up the pipeline
   private List<IProcessor> processors;
 
+  // default no-args constructor
   public PipelineProcessor() {
 
   }
 
+  // code-golfing constructor
   public PipelineProcessor(String configurationFileName) throws Exception {
     initialize(new PropertyFileConfigurationManager(configurationFileName, Key.values()), null);
     process();
@@ -83,7 +84,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
   }
 
   /**
-   * do the initialization of the pipeline
+   * build the pipeline
    */
   private void pipelineInitialize() {
     // fail fast: our working directory, where our input files are
@@ -95,7 +96,9 @@ public class PipelineProcessor extends AbstractBaseProcessor {
       logger.info("WinlinkMessageMapper, starting with input path: " + path);
     }
 
-    dumpIds = makeIds(cm, Key.DUMP_IDS);
+    var ids = cm.getAsString(Key.DUMP_IDS, "");
+    var dumpIds = new LinkedHashSet<String>(Arrays.stream(ids.split(",")).map(s -> s.toUpperCase()).toList());
+    logger.info("dumpIds: " + ": " + String.join(",", dumpIds));
     mm.putContextObject("dumpIds", dumpIds);
 
     // this seems a good balance between streams and code-golfing
@@ -150,15 +153,4 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     } // end loop over prefixes
     throw new RuntimeException("Could not find a processor for: " + processorName);
   }
-
-  private Set<String> makeIds(IConfigurationManager cm, Key key) {
-    var set = new HashSet<String>();
-    var ids = cm.getAsString(key);
-    if (ids != null) {
-      set.addAll(Arrays.stream(ids.split(",")).map(s -> s.toUpperCase()).toList());
-      logger.info(key.toString() + ": " + String.join(",", set));
-    }
-    return set;
-  }
-
 }

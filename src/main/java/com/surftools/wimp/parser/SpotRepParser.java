@@ -95,4 +95,9 @@ public class SpotRepParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.SPOTREP;
+  }
+
 }

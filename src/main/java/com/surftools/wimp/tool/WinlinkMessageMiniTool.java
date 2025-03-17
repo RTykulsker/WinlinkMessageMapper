@@ -6,7 +6,7 @@ import com.surftools.wimp.processors.std.PipelineProcessor;
  * This is the *main* class read multiple Winlink "Exported Message" files of messages, output parsed CSV message file
  * optionally de-duplicate, grade, aggregate, summarize
  *
- * Copyright (c) 2024, Robert Tykulsker
+ * Copyright (c) 2025, Robert Tykulsker
  */
 
 public class WinlinkMessageMiniTool {

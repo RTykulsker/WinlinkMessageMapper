@@ -34,6 +34,7 @@ import javax.mail.internet.MimeUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIReplyWelfareRadiogramMessage;
@@ -113,6 +114,11 @@ public class RRiReplyWelfareRadiogramParser extends AbstractBaseParser {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
 
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.RRI_REPLY_WELFARE_RADIOGRRAM;
   }
 
 }

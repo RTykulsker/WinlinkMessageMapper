@@ -25,34 +25,22 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.parser;
 
-import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.utils.config.IConfigurationManager;
+import org.slf4j.LoggerFactory;
+
+import com.surftools.wimp.core.MessageType;
 
 /**
- * interface that all message Parsers must conform to
+ * parser for ICS 214A Individual Activity Log
  *
  * @author bobt
  *
  */
-public interface IParser {
-
-  /**
-   * parse an ExportedMessage into a more specific ExportedMessage
-   *
-   * @param message
-   * @return either a typed message or a rejections
-   */
-  public ExportedMessage parse(ExportedMessage message);
-
-  /**
-   * return the MessageType that this parser supports
-   *
-   * @return
-   */
-  public MessageType getMessageType();
-
-  public void initialize(IConfigurationManager cm, IMessageManager mm);
+public class Ics214AParser extends Ics214Parser {
+  public Ics214AParser() {
+    logger = LoggerFactory.getLogger(Ics214AParser.class);
+    messageType = MessageType.ICS_214A;
+  }
 
 }

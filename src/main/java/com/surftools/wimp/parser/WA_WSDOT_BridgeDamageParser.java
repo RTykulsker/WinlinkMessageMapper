@@ -104,6 +104,11 @@ public class WA_WSDOT_BridgeDamageParser extends AbstractBaseParser {
     }
   }
 
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.WA_WSDOT_BRIDGE_DAMAGE;
+  }
+
   private boolean getBooleanFromXmlButton(String key) {
     if (key == null) {
       return false;

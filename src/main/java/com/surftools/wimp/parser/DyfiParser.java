@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.DyfiMessage.DetailLevel;
@@ -160,4 +161,10 @@ public class DyfiParser extends AbstractBaseParser {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
+
+  @Override
+  public MessageType getMessageType() {
+    return MessageType.DYFI;
+  }
+
 }
