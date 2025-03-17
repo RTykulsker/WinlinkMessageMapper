@@ -226,8 +226,6 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
               return messageType;
             }
           }
-          // var key = new ExportedKey(m.from, m.messageId);
-          // formDataMap.put(key, valueMap);
         } // end if parsed map.size() > 0
       } // end if attachments contains FormData.txt
     } // end if attachments != null
