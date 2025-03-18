@@ -80,11 +80,9 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     }
 
     showSourcesForMessageTypes();
-
   }
 
   private void showSourcesForMessageTypes() {
-
     // sort by MessageType name
     var sortedMessageTypes = Arrays
         .stream(MessageType.values())
@@ -95,16 +93,16 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     record Entry(String label, Predicate<MessageType> predicate, boolean warnOnAny) {
     }
     var entries = new Entry[] {
-        new Entry("Only XML blob",
-            (t -> t.attachmentName() != null && t.formDataName() == null && t.getSubjectPredicate() == null), false), //
+        new Entry("Only RMS Viewer",
+            (t -> t.rmsViewerName() != null && t.formDataName() == null && t.getSubjectPredicate() == null), false), //
         new Entry("Only FormData.txt",
-            (t -> t.attachmentName() == null && t.formDataName() != null && t.getSubjectPredicate() == null), false), //
+            (t -> t.rmsViewerName() == null && t.formDataName() != null && t.getSubjectPredicate() == null), false), //
         new Entry("Only Subject",
-            (t -> t.attachmentName() == null && t.formDataName() == null && t.getSubjectPredicate() != null), false), //
-        new Entry("Both XML AND Form",
-            (t -> (t.attachmentName() != null && t.formDataName() != null) && t.getSubjectPredicate() == null), false), //
-        new Entry("Subject and Either XML OR Form",
-            (t -> (t.attachmentName() != null || t.formDataName() != null) && t.getSubjectPredicate() != null), true) //
+            (t -> t.rmsViewerName() == null && t.formDataName() == null && t.getSubjectPredicate() != null), false), //
+        new Entry("Both RMS Viwer AND FormData",
+            (t -> (t.rmsViewerName() != null && t.formDataName() != null) && t.getSubjectPredicate() == null), false), //
+        new Entry("Subject and Either RMS Viewer OR FormData",
+            (t -> (t.rmsViewerName() != null || t.formDataName() != null) && t.getSubjectPredicate() != null), true) //
     };
 
     // do the actual work of showing
@@ -160,6 +158,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
   /**
    * determine the messageType of the ExportedMessage
    *
+   * this is the "heart and soul" of classification
+   *
    * @param message
    * @return
    */
@@ -168,13 +168,13 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       logger.debug("dump: " + message.toString());
     }
 
-    // First choice: for source-of-truth is the XML blob
-    var messageType = getMessageTypeFromXml(message);
+    // First choice: for source-of-truth is the RMS viewer (aka XML blob) attachment
+    var messageType = getMessageTypeFromRmsViewerData(message);
     if (messageType != null) {
       return messageType;
     }
 
-    // Second choice: FormData.txt
+    // Second choice: FormData.txt attachment
     messageType = getMessageTypeFromFormData(message);
     if (messageType != null) {
       return messageType;
@@ -195,7 +195,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     return MessageType.PLAIN;
   }
 
-  private MessageType getMessageTypeFromXml(ExportedMessage message) {
+  private MessageType getMessageTypeFromRmsViewerData(ExportedMessage message) {
     var attachments = message.attachments;
     if (attachments == null || attachments.size() == 0) {
       return null;
@@ -207,11 +207,11 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       }
 
       for (var messageType : MessageType.values()) {
-        if (messageType.attachmentName() == null) {
+        if (messageType.rmsViewerName() == null) {
           continue;
         }
 
-        if (attachmentName.startsWith(messageType.attachmentName())) {
+        if (attachmentName.startsWith(messageType.rmsViewerName())) {
           return messageType;
         }
 

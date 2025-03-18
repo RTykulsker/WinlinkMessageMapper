@@ -57,7 +57,7 @@ public class EyewarnParser extends AbstractBaseParser {
     }
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.EYEWARN.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.EYEWARN.rmsViewerName()));
 
       // we REALLY want the parsme!
       makeDocument(message.messageId, xmlString, false);

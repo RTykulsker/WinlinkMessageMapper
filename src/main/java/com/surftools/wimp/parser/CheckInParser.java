@@ -86,10 +86,10 @@ public class CheckInParser extends AbstractBaseParser {
       logger.info("exportedMessage: " + message);
     }
 
-    var isTemplate = message.attachments.get(messageType.attachmentName()) != null;
+    var isTemplate = message.attachments.get(messageType.rmsViewerName()) != null;
     if (isTemplate) {
       try {
-        String xmlString = new String(message.attachments.get(messageType.attachmentName()));
+        String xmlString = new String(message.attachments.get(messageType.rmsViewerName()));
         makeDocument(message.messageId, xmlString);
 
         var organization = getStringFromXml("organization");

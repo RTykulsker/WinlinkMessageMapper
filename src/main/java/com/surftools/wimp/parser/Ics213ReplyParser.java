@@ -48,7 +48,7 @@ public class Ics213ReplyParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-      String xmlString = new String(message.attachments.get(messageType.attachmentName()));
+      String xmlString = new String(message.attachments.get(messageType.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       String organization = getStringFromXml("formtitle");

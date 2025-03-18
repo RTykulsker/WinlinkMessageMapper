@@ -52,7 +52,7 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-      var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR_WEB_EOC.attachmentName()));
+      var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR_WEB_EOC.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var input = new ArrayList<String>();

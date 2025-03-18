@@ -57,7 +57,7 @@ public class WindshieldDamageParser extends AbstractBaseParser {
 
     try {
 
-      String xmlString = new String(message.attachments.get(MessageType.DAMAGE_ASSESSMENT.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.DAMAGE_ASSESSMENT.rmsViewerName()));
 
       makeDocument(message.messageId, xmlString);
 

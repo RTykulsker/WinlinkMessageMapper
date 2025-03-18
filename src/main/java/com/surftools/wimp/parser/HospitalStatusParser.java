@@ -63,7 +63,7 @@ public class HospitalStatusParser extends AbstractBaseParser {
     }
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_STATUS.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_STATUS.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var organization = getStringFromXml("title");

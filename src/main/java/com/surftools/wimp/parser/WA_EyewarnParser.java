@@ -38,7 +38,7 @@ public class WA_EyewarnParser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.WA_EYEWARN.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.WA_EYEWARN.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var precedence = gx("prec");

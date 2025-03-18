@@ -52,7 +52,7 @@ public class WA_Ics213RRParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-      var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR.attachmentName()));
+      var xmlString = new String(message.attachments.get(MessageType.WA_ICS_213_RR.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var isExercise = getStringFromXml("isexercise");

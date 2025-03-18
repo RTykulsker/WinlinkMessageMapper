@@ -59,7 +59,7 @@ public class QuickParser extends AbstractBaseParser {
 
     try {
 
-      String xmlString = new String(message.attachments.get(MessageType.QUICK.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.QUICK.rmsViewerName()));
 
       makeDocument(message.messageId, xmlString);
 

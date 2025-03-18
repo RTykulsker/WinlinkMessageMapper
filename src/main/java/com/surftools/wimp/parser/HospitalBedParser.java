@@ -74,7 +74,7 @@ public class HospitalBedParser extends AbstractBaseParser {
     }
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_BED.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_BED.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var formLocation = getLatLongFromXml(null);

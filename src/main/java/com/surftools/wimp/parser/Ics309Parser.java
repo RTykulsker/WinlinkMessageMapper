@@ -55,7 +55,7 @@ public class Ics309Parser extends AbstractBaseParser {
     }
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.ICS_309.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.ICS_309.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
       var organization = getStringFromXml("title");
       var taskNumber = getStringFromXml("task");

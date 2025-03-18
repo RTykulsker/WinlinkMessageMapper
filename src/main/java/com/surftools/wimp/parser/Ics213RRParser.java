@@ -52,7 +52,7 @@ public class Ics213RRParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-      var xmlString = new String(message.attachments.get(MessageType.ICS_213_RR.attachmentName()));
+      var xmlString = new String(message.attachments.get(MessageType.ICS_213_RR.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var organization = getStringFromXml("formtitle");

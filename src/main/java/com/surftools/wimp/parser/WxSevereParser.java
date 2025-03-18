@@ -50,7 +50,7 @@ public class WxSevereParser extends AbstractBaseParser {
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
-      String xmlString = new String(message.attachments.get(MessageType.WX_SEVERE.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.WX_SEVERE.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var formLocation = getLatLongFromXml(null);

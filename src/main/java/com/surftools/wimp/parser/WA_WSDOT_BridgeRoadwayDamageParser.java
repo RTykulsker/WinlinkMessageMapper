@@ -42,7 +42,7 @@ public class WA_WSDOT_BridgeRoadwayDamageParser extends AbstractBaseParser {
 
     try {
       makeDocument(message.messageId,
-          new String(message.attachments.get(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE.attachmentName())));
+          new String(message.attachments.get(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE.rmsViewerName())));
 
       var dataMap = new LinkedHashMap<DataType, String>();
       for (var dt : DataType.values()) {

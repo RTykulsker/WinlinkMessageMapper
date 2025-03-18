@@ -38,7 +38,7 @@ public class WA_ISNAP_Parser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.WA_ISNAP.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.WA_ISNAP.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var formDate = getStringFromXml("date");

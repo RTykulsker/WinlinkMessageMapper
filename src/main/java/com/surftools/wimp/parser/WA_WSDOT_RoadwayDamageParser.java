@@ -38,7 +38,7 @@ public class WA_WSDOT_RoadwayDamageParser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.WA_WSDOT_ROADWAY_DAMAGE.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.WA_WSDOT_ROADWAY_DAMAGE.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var isExercise = getStringFromXml("isexercise") != null

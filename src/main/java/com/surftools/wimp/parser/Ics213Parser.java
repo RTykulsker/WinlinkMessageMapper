@@ -48,7 +48,7 @@ public class Ics213Parser extends AbstractBaseParser {
         logger.debug("messageId: " + message.messageId + ", from: " + message.from);
       }
 
-      String xmlString = new String(message.attachments.get(MessageType.ICS_213.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.ICS_213.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       String organization = getStringFromXml("formtitle");

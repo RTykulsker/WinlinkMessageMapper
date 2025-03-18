@@ -76,7 +76,7 @@ public class WxLocalParser extends AbstractBaseParser {
         logger.info("exportedMessage: " + message);
       }
 
-      String xmlString = new String(message.attachments.get(MessageType.WX_LOCAL.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.WX_LOCAL.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       String organization = getStringFromXml("title");

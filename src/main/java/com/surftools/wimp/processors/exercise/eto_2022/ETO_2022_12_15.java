@@ -468,7 +468,7 @@ public class ETO_2022_12_15 extends AbstractBaseProcessor {
         continue;
       }
 
-      if (key.equalsIgnoreCase(MessageType.CHECK_IN.attachmentName())) {
+      if (key.equalsIgnoreCase(MessageType.CHECK_IN.rmsViewerName())) {
         continue;
       }
 

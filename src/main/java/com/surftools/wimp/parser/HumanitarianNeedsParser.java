@@ -47,7 +47,7 @@ public class HumanitarianNeedsParser extends AbstractBaseParser {
         logger.debug("messageId: " + message.messageId + ", from: " + message.from);
       }
 
-      String xmlString = new String(message.attachments.get(MessageType.HUMANITARIAN_NEEDS.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.HUMANITARIAN_NEEDS.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       // box 1

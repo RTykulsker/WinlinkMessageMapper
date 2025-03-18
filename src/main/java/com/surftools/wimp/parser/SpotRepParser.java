@@ -50,7 +50,7 @@ public class SpotRepParser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.SPOTREP.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.SPOTREP.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 
       var formLocation = getLatLongFromXml(null);

@@ -104,13 +104,13 @@ public enum MessageType {
   ;
 
   private final String key;
-  private final String attachmentName;
+  private final String rmsViewerName;
   private final String formDataName;
   private final Predicate<String> subjectPredicate;
 
-  private MessageType(String key, String attachmentName, String formDataName, Predicate<String> subjectPredicate) {
+  private MessageType(String key, String rmsViewerName, String formDataName, Predicate<String> subjectPredicate) {
     this.key = key;
-    this.attachmentName = attachmentName;
+    this.rmsViewerName = rmsViewerName;
     this.formDataName = formDataName;
     this.subjectPredicate = subjectPredicate;
   }
@@ -153,8 +153,8 @@ public enum MessageType {
     return key;
   }
 
-  public String attachmentName() {
-    return attachmentName;
+  public String rmsViewerName() {
+    return rmsViewerName;
   }
 
   public String formDataName() {

@@ -191,7 +191,7 @@ public class FieldSituationParser extends AbstractBaseParser {
       var attachmentNames = attachments.keySet();
 
       for (var name : attachmentNames) {
-        if (name.startsWith(MessageType.FIELD_SITUATION.attachmentName())) {
+        if (name.startsWith(MessageType.FIELD_SITUATION.rmsViewerName())) {
           var umt = UnderlyingMessageType.fromString(name);
           return umt;
         }

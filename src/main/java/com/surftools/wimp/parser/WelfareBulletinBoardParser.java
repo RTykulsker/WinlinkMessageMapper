@@ -42,7 +42,7 @@ public class WelfareBulletinBoardParser extends AbstractBaseParser {
 
     try {
       makeDocument(message.messageId,
-          new String(message.attachments.get(MessageType.WELFARE_BULLETIN_BOARD.attachmentName())));
+          new String(message.attachments.get(MessageType.WELFARE_BULLETIN_BOARD.rmsViewerName())));
 
       var dataMap = new LinkedHashMap<DataType, String>();
       for (var dt : DataType.values()) {

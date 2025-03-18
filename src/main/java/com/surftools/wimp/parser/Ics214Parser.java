@@ -65,7 +65,7 @@ public class Ics214Parser extends AbstractBaseParser {
     }
 
     try {
-      String xmlString = new String(message.attachments.get(MessageType.ICS_214.attachmentName()));
+      String xmlString = new String(message.attachments.get(MessageType.ICS_214.rmsViewerName()));
 
       makeDocument(message.messageId, xmlString);
 
