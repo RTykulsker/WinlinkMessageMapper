@@ -28,9 +28,11 @@ SOFTWARE.
 package com.surftools.wimp.processors.std;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +77,41 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       } catch (Exception e) {
         logger.error("Couldn't create parser for: " + parserClass.getCanonicalName() + ", " + e.getLocalizedMessage());
       }
+    }
+
+    showSourcesForMessageTypes();
+
+  }
+
+  private void showSourcesForMessageTypes() {
+
+    // sort by MessageType name
+    var sortedMessageTypes = Arrays
+        .stream(MessageType.values())
+          .sorted((t1, t2) -> t1.toString().compareTo(t2.toString()))
+          .toList();
+
+    // data table of what we'll report on. I didn't know you could create a record within a method. Cool!
+    record Entry(String label, Predicate<MessageType> predicate, boolean warnOnAny) {
+    }
+    var entries = new Entry[] {
+        new Entry("Only XML blob",
+            (t -> t.attachmentName() != null && t.formDataName() == null && t.getSubjectPredicate() == null), false), //
+        new Entry("Only FormData.txt",
+            (t -> t.attachmentName() == null && t.formDataName() != null && t.getSubjectPredicate() == null), false), //
+        new Entry("Only Subject",
+            (t -> t.attachmentName() == null && t.formDataName() == null && t.getSubjectPredicate() != null), false), //
+        new Entry("Both XML AND Form",
+            (t -> (t.attachmentName() != null && t.formDataName() != null) && t.getSubjectPredicate() == null), false), //
+        new Entry("Subject and Either XML OR Form",
+            (t -> (t.attachmentName() != null || t.formDataName() != null) && t.getSubjectPredicate() != null), true) //
+    };
+
+    // do the actual work of showing
+    for (var e : entries) {
+      var filteredTypeNames = sortedMessageTypes.stream().filter(e.predicate).map(t -> t.toString()).toList();
+      var warningPrefix = e.warnOnAny && filteredTypeNames.size() > 0 ? "### " : "";
+      logger.info(warningPrefix + "MessageType source: " + e.label + ": " + String.join(",", filteredTypeNames));
     }
   }
 
