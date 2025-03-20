@@ -345,6 +345,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Check In Service").increment(m.service);
     getCounter("Check In Band").increment(m.band);
     getCounter("Check In Mode").increment(m.mode);
+    getCounter("Check In Data Source").increment(m.dataSource);
 
     // #MM update summary
     summary.checkInMessage = m;
@@ -429,6 +430,8 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       count(sts.test("ICS-213 Comments parsed", false));
     }
 
+    getCounter("ICS-213 Data Source").increment(m.dataSource);
+
     // #MM update summary
     summary.ics213Message = m;
     ++summary.messageCount;
@@ -478,6 +481,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Check Out Service").increment(m.service);
     getCounter("Check Out Band").increment(m.band);
     getCounter("Check Out Mode").increment(m.mode);
+    getCounter("Check Out Data Source").increment(m.dataSource);
 
     // #MM update summary
     summary.checkOutMessage = m;

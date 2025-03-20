@@ -125,7 +125,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
           logger.debug("messageId: " + message.messageId + ", from: " + message.from);
         }
 
-        var messageType = getMessageType(message);
+        var messageType = findMessageType(message);
         var parser = parserMap.get(messageType);
         ExportedMessage parsedMessage = message;
         if (parser != null) {
@@ -149,9 +149,6 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       } // end loop over messages
 
       mm.load(tmpMessageMap);
-      if (formDataMap.size() > 0) {
-        mm.putContextObject("formDataMap", formDataMap);
-      }
     }
   }
 
@@ -163,7 +160,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
    * @param message
    * @return
    */
-  public MessageType getMessageType(ExportedMessage message) {
+  public MessageType findMessageType(ExportedMessage message) {
     if (dumpIds.contains(message.from) || dumpIds.contains(message.messageId)) {
       logger.debug("dump: " + message.toString());
     }
@@ -175,7 +172,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     }
 
     // Second choice: FormData.txt attachment
-    messageType = getMessageTypeFromFormData(message);
+    messageType = getMessageTypeFromFormData(message, null);
     if (messageType != null) {
       return messageType;
     }
@@ -221,7 +218,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     return null;
   }
 
-  private MessageType getMessageTypeFromFormData(ExportedMessage m) {
+  private MessageType getMessageTypeFromFormData(ExportedMessage m, MessageType subjectMessageType) {
     var attachments = m.attachments;
     if (attachments != null && attachments.size() > 0) {
       var attachmentNames = attachments.keySet();
@@ -248,21 +245,30 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         } // end loop over lines
 
         if (valueMap.size() > 0) {
-          var mapFileName = valueMap.get("MapFileName");
-          if (mapFileName == null) {
-            logger
-                .warn(String
-                    .format("###  couldn't find MapFileName in FormData: for sender: %s, mId: %s", //
-                        m.from, m.messageId));
-            return null;
-          }
-          for (var messageType : MessageType.values()) {
-            if (messageType.formDataName() != null && messageType.formDataName().equals(mapFileName)) {
-              var messageKey = new ExportedKey(m.from, m.messageId);
-              formDataMap.put(messageKey, valueMap);
-              return messageType;
+          if (subjectMessageType == null) {
+            var mapFileName = valueMap.get("MapFileName");
+            if (mapFileName == null) {
+              logger
+                  .warn(String
+                      .format("###  couldn't find MapFileName in FormData: for sender: %s, mId: %s", //
+                          m.from, m.messageId));
+              return null;
             }
-          }
+            for (var messageType : MessageType.values()) {
+              if (messageType.formDataName() != null && messageType.formDataName().equals(mapFileName)) {
+                var messageKey = new ExportedKey(m.from, m.messageId);
+                formDataMap.put(messageKey, valueMap);
+                mm.putContextObject("formDataMap", formDataMap);
+                return messageType;
+              }
+            }
+          } else {
+            // FormData won't be containing a map file name, we must rely on messageType set by subject
+            var messageKey = new ExportedKey(m.from, m.messageId);
+            formDataMap.put(messageKey, valueMap);
+            mm.putContextObject("formDataMap", formDataMap);
+            return subjectMessageType;
+          } // end if subjectMessageType != null
         } // end if parsed map.size() > 0
       } // end if attachments contains FormData.txt
     } // end if attachments != null

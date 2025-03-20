@@ -56,12 +56,13 @@ public class CheckInMessage extends ExportedMessage {
 
   public final String comments;
   public final String version;
+  public final String dataSource;
 
   public CheckInMessage(ExportedMessage exportedMessage, String organization, //
       LocalDateTime formDateTime, String contactName, String initialOperators, //
       String status, String service, String band, String mode, //
       String locationString, LatLongPair formLocation, String mgrs, String gridSquare, //
-      String comments, String version) {
+      String comments, String version, String dataSource) {
     super(exportedMessage);
     this.organization = organization;
 
@@ -81,6 +82,7 @@ public class CheckInMessage extends ExportedMessage {
 
     this.comments = comments;
     this.version = version;
+    this.dataSource = dataSource;
 
     if (formDateTime != null) {
       setSortDateTime(formDateTime);
@@ -92,7 +94,8 @@ public class CheckInMessage extends ExportedMessage {
   }
 
   public CheckInMessage(ExportedMessage exportedMessage, String organization, LatLongPair formLocation,
-      LocalDateTime formDateTime, String status, String band, String mode, String comments, String version) {
+      LocalDateTime formDateTime, String status, String band, String mode, String comments, String version,
+      String dataSource) {
 
     super(exportedMessage);
     this.organization = organization;
@@ -113,6 +116,7 @@ public class CheckInMessage extends ExportedMessage {
 
     this.comments = comments;
     this.version = version;
+    this.dataSource = dataSource;
 
     if (formDateTime != null) {
       setSortDateTime(formDateTime);
@@ -142,7 +146,7 @@ public class CheckInMessage extends ExportedMessage {
         toList, from, contactName, initialOperators, //
         status, service, band, mode, //
         locationString, formLocation == null ? "" : formLocation.toString(), mgrs, gridSquare, //
-        comments, version };
+        comments, version, dataSource };
   }
 
   @Override
@@ -161,7 +165,7 @@ public class CheckInMessage extends ExportedMessage {
         "Organization", "Form Date/Time", "To List", "Form From", "Station Contact", "Initial Operators", //
         "Status", "Service", "Band", "Mode", //
         "Location", "Form Lat/Long", "MGRS", "Grid Square", //
-        "Comments", "Version" };
+        "Comments", "Version", "Data Source" };
   }
 
 }

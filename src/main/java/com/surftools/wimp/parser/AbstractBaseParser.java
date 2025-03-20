@@ -65,6 +65,9 @@ public abstract class AbstractBaseParser implements IParser {
   private static final Logger logger = LoggerFactory.getLogger(AbstractBaseParser.class);
   public static final String[] DEFAULT_LATLON_TAGS = new String[] { "maplat", "gps2", "GPS2", "gpslat" };
 
+  public static final String DATA_SOURCE_RMS_VIEWER = "RmsViewer.xml";
+  public static final String DATA_SOURCE_FORM_DATA = "FormData.txt";
+
   protected Set<String> dumpIds = new HashSet<>();
   protected Set<String> filterIds = new HashSet<>();
   protected IConfigurationManager cm;

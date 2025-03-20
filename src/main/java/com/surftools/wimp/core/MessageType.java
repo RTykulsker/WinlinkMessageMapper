@@ -57,7 +57,7 @@ public enum MessageType {
 
   HOSPITAL_BED("hospital_bed", "RMS_Express_Form_Hospital_Bed_Report_Viewer.xml"), //
 
-  ICS_213("ics_213", "RMS_Express_Form_ICS213_Initial_Viewer.xml"), //
+  ICS_213("ics_213", "RMS_Express_Form_ICS213_Initial_Viewer.xml", "ICS-213"), //
   ICS_213_REPLY("ics_213_reply", "RMS_Express_Form_ICS213_SendReply_Viewer.xml"), //
   ICS_213_RR("ics_213_rr", "RMS_Express_Form_ICS213RR_Viewer.xml"), //
   ICS_214("ics_214", "RMS_Express_Form_ICS214_Viewer.xml"), //

@@ -280,7 +280,7 @@ public class ETO_2022_08_18_P2P extends AbstractBaseP2PProcessor {
           var messageTypeName = "";
           boolean fireWrongType = false;
           if (expectedMessageType != null) {
-            var messageType = classifierProcessor.getMessageType(message);
+            var messageType = classifierProcessor.findMessageType(message);
             if (messageType != expectedMessageType) {
               fireWrongType = true;
               messageTypeName = messageType.toString();

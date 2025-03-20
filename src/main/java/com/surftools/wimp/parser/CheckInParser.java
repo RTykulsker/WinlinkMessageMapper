@@ -86,8 +86,7 @@ public class CheckInParser extends AbstractBaseParser {
       logger.info("exportedMessage: " + message);
     }
 
-    var isTemplate = message.attachments.get(messageType.rmsViewerName()) != null;
-    if (isTemplate) {
+    if (message.attachments.get(messageType.rmsViewerName()) != null) {
       try {
         String xmlString = new String(message.attachments.get(messageType.rmsViewerName()));
         makeDocument(message.messageId, xmlString);
@@ -119,13 +118,13 @@ public class CheckInParser extends AbstractBaseParser {
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
-              comments, version);
+              comments, version, DATA_SOURCE_RMS_VIEWER);
         } else {
           m = new CheckOutMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
-              comments, version);
+              comments, version, DATA_SOURCE_RMS_VIEWER);
         }
 
         return m;
@@ -170,13 +169,13 @@ public class CheckInParser extends AbstractBaseParser {
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
-              comments, version);
+              comments, version, DATA_SOURCE_FORM_DATA);
         } else {
           m = new CheckOutMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
-              comments, version);
+              comments, version, DATA_SOURCE_FORM_DATA);
         }
 
         return m;

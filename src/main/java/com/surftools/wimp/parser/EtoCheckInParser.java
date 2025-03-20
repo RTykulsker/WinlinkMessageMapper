@@ -74,7 +74,7 @@ public class EtoCheckInParser extends AbstractBaseParser {
     }
 
     var m = new EtoCheckInMessage(message, null, //
-        formLocation, null, status, band, mode, comments, version);
+        formLocation, null, status, band, mode, comments, version, "mime text");
     return m;
   }
 

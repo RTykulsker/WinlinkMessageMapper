@@ -38,12 +38,12 @@ public class CheckOutMessage extends CheckInMessage {
       LocalDateTime formDateTime, String contactName, String initialOperators, //
       String status, String service, String band, String mode, //
       String locationString, LatLongPair formLocation, String mgrs, String gridSquare, //
-      String comments, String version) {
+      String comments, String version, String dataSource) {
     super(exportedMessage, organization, //
         formDateTime, contactName, initialOperators, //
         status, service, band, mode, //
         locationString, formLocation, mgrs, gridSquare, //
-        comments, version);
+        comments, version, dataSource);
   }
 
   @Override

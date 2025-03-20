@@ -264,7 +264,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   }
 
   protected void writeTable(String fileName, Map<String, String> map) {
-    writeTable(pathName, fileName, EntryRecord.mapToList(map));
+    writeTable(outputPathName, fileName, EntryRecord.mapToList(map));
   }
 
   /**
