@@ -79,7 +79,6 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
       Subject: #SUBJECT#
       To: #TO#
       Message-ID: #MESSAGE_ID#
-      X-Source: #SOURCE#
       MIME-Version: 1.0
       Content-Transfer-Encoding: quoted-printable
 
