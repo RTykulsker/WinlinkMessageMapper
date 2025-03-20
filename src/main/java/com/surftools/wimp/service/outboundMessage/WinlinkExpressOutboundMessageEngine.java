@@ -41,9 +41,7 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
   private static final Logger logger = LoggerFactory.getLogger(WinlinkExpressOutboundMessageEngine.class);
 
   private StringBuilder allMessages = new StringBuilder();
-  private StringBuilder selfMessage = new StringBuilder();
   private LocalDateTime now;
-  private LocalDateTime utcNow;
 
   private static String messagesTemplate = """
       <?xml version="1.0"?>
@@ -59,7 +57,6 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
         </message_list>
       </Winlink_Express_message_export>
             """;
-
   private static String messageTemplate = """
       <message>
             <id>#MESSAGE_ID#</id>
@@ -68,16 +65,6 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
             <subject>#SUBJECT#</subject>
             <time>#MESSAGE_TIME#</time>
             <sender>#SENDER#</sender>
-            <acknowledged></acknowledged>
-            <attachmentsopened></attachmentsopened>
-            <replied></replied>
-            <rmsoriginator></rmsoriginator>
-            <rmsdestination></rmsdestination>
-            <rmspath></rmspath>
-            <csize></csize>
-            <downloadserver></downloadserver>
-            <forwarded></forwarded>
-            <messageserver></messageserver>
             <precedence>2</precedence>
             <peertopeer>False</peertopeer>
             <routingflag>C</routingflag>
@@ -94,23 +81,16 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
       Message-ID: #MESSAGE_ID#
       X-Source: #SOURCE#
       MIME-Version: 1.0
-      Content-Type: multipart/mixed; boundary="#BOUNDARY_ID#=="
-
-      --#BOUNDARY_ID#==
-      Content-Type: text/plain; charset="iso-8859-1"
       Content-Transfer-Encoding: quoted-printable
 
       #BODY#
-      --#BOUNDARY_ID#==--</mime>
+      </mime>
       </message>
       """;
 
   public WinlinkExpressOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
     super(cm, extraContent);
     now = LocalDateTime.now();
-    utcNow = UtcDateTime.ofNow();
-
-    isReady = true;
   }
 
   @Override
@@ -121,26 +101,19 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
     allOutput.append(m.to() + "\n" + m.body() + "\n\n");
 
     var messageId = generateMid(m.toString());
-    var boundaryId = generateBoundaryId(messageId);
-
     var text = new String(messageTemplate);
     text = text.replaceAll("#MESSAGE_ID#", messageId);
-    text = text.replaceAll("#BOUNDARY_ID#", boundaryId);
-    text = text.replaceAll("#SOURCE#", sender);
+    text = text.replaceAll("#SOURCE#", sender);// or source to allow editing in WE
     text = text.replaceAll("#SENDER#", sender);
     text = text.replaceAll("#SUBJECT#", m.subject());
     text = text.replaceAll("#BODY#", m.body());
     text = text.replaceAll("#TO#", m.to());
-
     text = text.replaceAll("#MESSAGE_TIME#", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm").format(now));
     text = text
-        .replaceAll("#MIME_TIME#", DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss +0000").format(utcNow));
+        .replaceAll("#MIME_TIME#",
+            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss +0000").format(UtcDateTime.ofNow()));
 
     allMessages.append(text);
-    if (m.to().equals(source)) {
-      selfMessage.append(text);
-    }
-
     return messageId;
   }
 
@@ -148,26 +121,13 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
   public void finalizeSend() {
     super.finalizeSend();
 
-    if (selfMessage.length() > 0) {
-      finalizeForMessages(selfMessage.toString(), source + "-winlinkExpressOutboundMessages.xml");
-      logger.info("Oubound message for " + source + " generated; use Winlink Express to send!");
-    } else {
-      logger.info("No Oubound messages for " + source + " generated");
-    }
-
-    finalizeForMessages(allMessages.toString(), "all-winlinkExpressOutboundMessages.xml");
-    logger.info("Oubound messages for all generated; use Winlink Express to send!");
-
-  }
-
-  private void finalizeForMessages(String content, String fileName) {
-    final var timestampFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     var text = new String(messagesTemplate);
     text = text.replaceAll("#SOURCE#", source);
-    text = text.replaceAll("#EXPORT_DATETIME#", timestampFormatter.format(now));
-    text = text.replaceAll("#MESSAGES#", content);
+    text = text.replaceAll("#EXPORT_DATETIME#", DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(now));
+    text = text.replaceAll("#MESSAGES#", allMessages.toString());
     text = text.replaceAll("\n", "\r\n");
-    WriteProcessor.writeString(text, fileName);
+    WriteProcessor.writeString(text, "all-winlinkExpressOutboundMessages.xml");
+    logger.info("Oubound messages for all generated; use Winlink Express to send!");
   }
 
   @Override
