@@ -28,5 +28,5 @@ SOFTWARE.
 package com.surftools.wimp.service.outboundMessage;
 
 public enum EngineType {
-  PAT, WINLINK_CMS, WEB, REGISTRY
+  PAT, WINLINK_CMS, WEB, WINLINK_EXPRESS
 }

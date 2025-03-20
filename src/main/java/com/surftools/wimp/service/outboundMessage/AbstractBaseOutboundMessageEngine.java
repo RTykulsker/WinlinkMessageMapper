@@ -189,6 +189,21 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
     }
   }
 
+  public static String generateBoundaryId(String string) {
+    try {
+      MessageDigest md = MessageDigest.getInstance("MD5");
+      String stringToHash = string + System.nanoTime();
+      md.update(stringToHash.getBytes());
+      byte[] digest = md.digest();
+      Base32 base32 = new Base32();
+      String encodedString = base32.encodeToString(digest);
+      String subString = encodedString.substring(0, 6);
+      return "boundary" + subString;
+    } catch (Exception e) {
+      throw new RuntimeException("could not generate boundaryId: " + e.getMessage());
+    }
+  }
+
   @Override
   public boolean isReady() {
     return isReady;

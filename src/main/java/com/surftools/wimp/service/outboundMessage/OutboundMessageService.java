@@ -65,8 +65,8 @@ public class OutboundMessageService implements IService {
       engine = new PatOutboundMessageEngine(cm, extraContent);
       break;
 
-    case REGISTRY:
-      engine = new RegistryOutboundMessageEngine(cm, extraContent);
+    case WINLINK_EXPRESS:
+      engine = new WinlinkExpressOutboundMessageEngine(cm, extraContent);
       break;
 
     case WEB:

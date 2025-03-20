@@ -29,6 +29,8 @@ package com.surftools.wimp.processors.std;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -210,6 +212,19 @@ public class WriteProcessor extends AbstractBaseProcessor {
     } catch (Exception e) {
       logger.error("Exception writing file: " + path + ", " + e.getLocalizedMessage());
     }
+  }
+
+  public static void writeString(String content, Path path) {
+    try {
+      Files.writeString(path, content, StandardCharsets.UTF_8);
+      logger.info("wrote " + path.toString());
+    } catch (Exception e) {
+      logger.error("Exception writing file: " + path + ", " + e.getLocalizedMessage());
+    }
+  }
+
+  public static void writeString(String content, String fileName) {
+    writeString(content, Path.of(outputPathName, fileName));
   }
 
   @Override
