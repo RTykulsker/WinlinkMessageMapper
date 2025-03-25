@@ -59,7 +59,7 @@ public class ETO_2025_03_20 extends SingleMessageFeedbackProcessor {
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test_2line("Reply should be #EV", "Coordinates are 38.673144,-90.719145. Yes", m.reply));
     count(sts.test("Reply by should be #EV", "John", m.replyBy));
-    count(sts.test("Reply Position should be ##EV", "On-Site Operator", m.replyPosition));
+    count(sts.test("Reply Position should be #EV", "On-Site Operator", m.replyPosition));
   }
 
 }

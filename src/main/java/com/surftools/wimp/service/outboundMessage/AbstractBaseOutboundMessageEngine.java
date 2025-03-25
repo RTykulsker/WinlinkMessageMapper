@@ -69,7 +69,7 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
     }
 
     source = cm.getAsString(Key.OUTBOUND_MESSAGE_SOURCE);
-    if (sender == null) {
+    if (source == null) {
       logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SOURCE.name() + " not defined");
       return;
     }

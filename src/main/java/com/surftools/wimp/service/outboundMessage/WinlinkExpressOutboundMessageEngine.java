@@ -102,7 +102,7 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
     var messageId = generateMid(m.toString());
     var text = new String(messageTemplate);
     text = text.replaceAll("#MESSAGE_ID#", messageId);
-    text = text.replaceAll("#SOURCE#", sender);// or source to allow editing in WE
+    text = text.replaceAll("#SOURCE#", source);// or source to allow editing in WE
     text = text.replaceAll("#SENDER#", sender);
     text = text.replaceAll("#SUBJECT#", m.subject());
     text = text.replaceAll("#BODY#", m.body());
