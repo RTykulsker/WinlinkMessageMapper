@@ -32,9 +32,6 @@ import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -46,15 +43,10 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.MiroCheckInMessage;
 
 public class MiroCheckInParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(MiroCheckInParser.class);
   private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     String contentLine = message.plainContent.trim();
     if (contentLine != null) {
       var fields = splitLine(contentLine);

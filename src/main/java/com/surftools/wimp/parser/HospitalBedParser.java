@@ -69,10 +69,6 @@ public class HospitalBedParser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     try {
       String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_BED.rmsViewerName()));
       makeDocument(message.messageId, xmlString);

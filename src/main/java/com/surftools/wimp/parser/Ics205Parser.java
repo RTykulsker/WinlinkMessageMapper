@@ -32,9 +32,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -48,19 +45,12 @@ import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
  *
  */
 public class Ics205Parser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(Ics205Parser.class);
-
   private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private static boolean strictParsing = false; // should a parse error fail here, or downstream during grading
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     try {
 
       String xmlString = new String(message.attachments.get(MessageType.ICS_205_RADIO_PLAN.rmsViewerName()));

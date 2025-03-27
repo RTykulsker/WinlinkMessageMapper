@@ -30,9 +30,6 @@ package com.surftools.wimp.parser;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.MessageType;
@@ -47,15 +44,10 @@ import com.surftools.wimp.message.QuickMessage;
  *
  */
 public class QuickParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(QuickParser.class);
   private final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
 
     try {
 

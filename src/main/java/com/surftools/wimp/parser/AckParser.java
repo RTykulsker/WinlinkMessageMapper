@@ -27,25 +27,16 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.AckMessage;
 import com.surftools.wimp.message.ExportedMessage;
 
 public class AckParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(AckParser.class);
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
-
-      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-        logger.info("exportedMessage: " + message);
-      }
-
       var plainContent = message.getPlainContent();
       var lines = plainContent.split("\n");
 

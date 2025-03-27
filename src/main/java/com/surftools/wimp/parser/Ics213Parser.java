@@ -29,9 +29,6 @@ package com.surftools.wimp.parser;
 
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
@@ -40,16 +37,11 @@ import com.surftools.wimp.message.ExportedMessage.ExportedKey;
 import com.surftools.wimp.message.Ics213Message;
 
 public class Ics213Parser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(Ics213Parser.class);
   private static final String IS_EXERCISE = "** THIS IS AN EXERCISE **";
   private static final String[] mapLocationTags = new String[] { "maplat", "maplon" };
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-    }
-
     try {
       if (message.attachments.get(MessageType.ICS_213.rmsViewerName()) != null) {
         String xmlString = new String(message.attachments.get(MessageType.ICS_213.rmsViewerName()));

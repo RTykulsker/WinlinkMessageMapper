@@ -72,10 +72,6 @@ public class WxLocalParser extends AbstractBaseParser {
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
-      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-        logger.info("exportedMessage: " + message);
-      }
-
       String xmlString = new String(message.attachments.get(MessageType.WX_LOCAL.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 

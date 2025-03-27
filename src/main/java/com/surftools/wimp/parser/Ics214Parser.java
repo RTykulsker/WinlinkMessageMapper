@@ -59,11 +59,6 @@ public class Ics214Parser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     try {
       String xmlString = new String(message.attachments.get(MessageType.ICS_214.rmsViewerName()));
 

@@ -29,9 +29,6 @@ package com.surftools.wimp.parser;
 
 import java.util.ArrayList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -39,19 +36,12 @@ import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
 
 public class Ics213RRParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(Ics213RRParser.class);
-
   public Ics213RRParser() {
   }
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
-
-      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-        logger.info("exportedMessage: " + message);
-      }
-
       var xmlString = new String(message.attachments.get(MessageType.ICS_213_RR.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 

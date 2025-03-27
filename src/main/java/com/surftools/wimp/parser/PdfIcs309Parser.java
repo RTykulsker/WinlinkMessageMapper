@@ -54,11 +54,6 @@ public class PdfIcs309Parser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
     var from = message.from;
     var mId = message.messageId;
-
-    if (dumpIds.contains(from) || dumpIds.contains(mId)) {
-      logger.info("### call: " + mId);
-    }
-
     try {
       // get the first (and hopefully only) PDF ICS-309, extract text, split into lines
       String pdfAttachmentIndices = makePdfAttachmentIndices(message.attachments);

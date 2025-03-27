@@ -27,26 +27,17 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.HumanitarianNeedsMessage;
 
 public class HumanitarianNeedsParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(HumanitarianNeedsParser.class);
   private static final String[] mapLocationTags = new String[] { "maplat", "maplon" };
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
-
-      if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-        logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-      }
-
       String xmlString = new String(message.attachments.get(MessageType.HUMANITARIAN_NEEDS.rmsViewerName()));
       makeDocument(message.messageId, xmlString);
 

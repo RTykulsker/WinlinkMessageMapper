@@ -32,16 +32,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.HospitalStatusMessage;
 
 public class HospitalStatusParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(CheckInParser.class);
   public static final DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
@@ -58,10 +54,6 @@ public class HospitalStatusParser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     try {
       String xmlString = new String(message.attachments.get(MessageType.HOSPITAL_STATUS.rmsViewerName()));
       makeDocument(message.messageId, xmlString);

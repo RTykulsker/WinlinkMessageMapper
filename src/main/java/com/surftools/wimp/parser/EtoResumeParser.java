@@ -31,9 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
@@ -41,17 +38,9 @@ import com.surftools.wimp.message.EtoResumeMessage;
 import com.surftools.wimp.message.ExportedMessage;
 
 public class EtoResumeParser extends AbstractBaseParser {
-
-  private static final Logger logger = LoggerFactory.getLogger(EtoResumeParser.class);
-
   @SuppressWarnings("unchecked")
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-    }
-
     try {
       var mime = message.plainContent;
 

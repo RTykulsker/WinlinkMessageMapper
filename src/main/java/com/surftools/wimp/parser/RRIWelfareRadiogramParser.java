@@ -31,25 +31,14 @@ import java.io.ByteArrayInputStream;
 
 import javax.mail.internet.MimeUtility;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIWelfareRadiogramMessage;
 
 public class RRIWelfareRadiogramParser extends AbstractBaseParser {
-
-  private static final Logger logger = LoggerFactory.getLogger(RRIWelfareRadiogramParser.class);
-
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-    }
-
     try {
       var mime = message.plainContent;
 

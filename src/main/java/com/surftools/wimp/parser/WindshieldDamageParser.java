@@ -30,9 +30,6 @@ package com.surftools.wimp.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -46,15 +43,8 @@ import com.surftools.wimp.message.WindshieldDamageAssessmentMessage.DamageEntry;
  *
  */
 public class WindshieldDamageParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(WindshieldDamageParser.class);
-
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     try {
 
       String xmlString = new String(message.attachments.get(MessageType.DAMAGE_ASSESSMENT.rmsViewerName()));

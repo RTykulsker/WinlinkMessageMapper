@@ -27,9 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
@@ -37,16 +34,11 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PositionMessage;
 
 public class PositionParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(PositionParser.class);
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     var mime = message.plainContent;
     String[] mimeLines = mime.split("\\n");
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
 
     var latitude = LocationUtils.convertToDecimalDegrees(getStringFromMime("Latitude: ", mimeLines));
     var longitude = LocationUtils.convertToDecimalDegrees(getStringFromMime("Longitude: ", mimeLines));

@@ -29,9 +29,6 @@ package com.surftools.wimp.parser;
 
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
@@ -40,15 +37,9 @@ import com.surftools.wimp.message.EtoCheckInV2Message;
 import com.surftools.wimp.message.ExportedMessage;
 
 public class EtoCheckInV2Parser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(EtoCheckInV2Parser.class);
-
   @SuppressWarnings("unchecked")
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     ObjectMapper mapper = new ObjectMapper();
     Map<String, String> map = null;
     try {

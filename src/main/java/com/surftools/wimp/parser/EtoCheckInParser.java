@@ -27,9 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
@@ -37,14 +34,8 @@ import com.surftools.wimp.message.EtoCheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
 
 public class EtoCheckInParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(EtoCheckInParser.class);
-
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     String[] mimeLines = message.plainContent.split("\\n");
     var latLongString = getStringFromFormLines(mimeLines, ":", "GPS Coordinates");
     LatLongPair formLocation = null;

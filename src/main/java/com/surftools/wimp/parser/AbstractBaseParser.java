@@ -68,7 +68,6 @@ public abstract class AbstractBaseParser implements IParser {
   public static final String DATA_SOURCE_RMS_VIEWER = "RmsViewer.xml";
   public static final String DATA_SOURCE_FORM_DATA = "FormData.txt";
 
-  protected Set<String> dumpIds = new HashSet<>();
   protected Set<String> filterIds = new HashSet<>();
   protected IConfigurationManager cm;
   protected IMessageManager mm;
@@ -82,15 +81,7 @@ public abstract class AbstractBaseParser implements IParser {
     this.cm = cm;
     this.mm = mm;
 
-    dumpIds = (Set<String>) mm.getContextObject("dumpIds");
-    if (dumpIds == null) {
-      dumpIds = new HashSet<>();
-    }
-
     filterIds = (Set<String>) mm.getContextObject("filterIds");
-    if (dumpIds == null) {
-      dumpIds = new HashSet<>();
-    }
   }
 
   /**

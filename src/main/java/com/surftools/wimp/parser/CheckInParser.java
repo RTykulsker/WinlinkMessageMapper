@@ -81,11 +81,6 @@ public class CheckInParser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.info("exportedMessage: " + message);
-    }
-
     if (message.attachments.get(messageType.rmsViewerName()) != null) {
       try {
         String xmlString = new String(message.attachments.get(messageType.rmsViewerName()));

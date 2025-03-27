@@ -29,24 +29,14 @@ package com.surftools.wimp.parser;
 
 import java.util.ArrayList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PegelstandMessage;
 
 public class PegelstandParser extends AbstractBaseParser {
-
-  private static final Logger logger = LoggerFactory.getLogger(PegelstandParser.class);
-
   @Override
   public ExportedMessage parse(ExportedMessage message) {
-
-    if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-      logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-    }
 
     try {
       var mime = message.plainContent;

@@ -31,9 +31,6 @@ package com.surftools.wimp.parser;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -46,8 +43,6 @@ import com.surftools.wimp.message.FieldSituationMessage;
  *
  */
 public class FieldSituationParser extends AbstractBaseParser {
-  private static final Logger logger = LoggerFactory.getLogger(FieldSituationParser.class);
-
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 
@@ -67,10 +62,6 @@ public class FieldSituationParser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
     var messageId = message.messageId;
     var from = message.from;
-
-    if (dumpIds.contains(messageId) || dumpIds.contains(from)) {
-      logger.info("dump: " + message);
-    }
 
     UnderlyingMessageType underlyingMessageType = getUnderlyingMessageType(message);
     if (underlyingMessageType == UnderlyingMessageType.UNSUPPORTED) {

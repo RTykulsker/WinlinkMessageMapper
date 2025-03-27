@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -95,11 +94,6 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     } else {
       logger.info("WinlinkMessageMapper, starting with input path: " + path);
     }
-
-    var ids = cm.getAsString(Key.DUMP_IDS, "");
-    var dumpIds = new LinkedHashSet<String>(Arrays.stream(ids.split(",")).map(s -> s.toUpperCase()).toList());
-    logger.info("dumpIds: " + ": " + String.join(",", dumpIds));
-    mm.putContextObject("dumpIds", dumpIds);
 
     // this seems a good balance between streams and code-golfing
     var stdin = Arrays
