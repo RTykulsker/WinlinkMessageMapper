@@ -46,8 +46,8 @@ public class PatOutboundMessageEngine extends AbstractBaseOutboundMessageEngine 
   private String execPath;
   private Path mailboxPath;
 
-  public PatOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
-    super(cm, extraContent);
+  public PatOutboundMessageEngine(IConfigurationManager cm, String extraContent, String fileName) {
+    super(cm, extraContent, fileName);
 
     execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_PATH, "/usr/bin/pat");
     if (execPath == null || execPath.isEmpty()) {

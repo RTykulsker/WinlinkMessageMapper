@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -53,6 +54,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
@@ -346,6 +348,28 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
 
     return false;
+  }
+
+  protected Set<MessageType> getExpectedMessageTypes() {
+    var set = new LinkedHashSet<MessageType>();
+    var string = cm.getAsString(Key.EXPECTED_MESSAGE_TYPES);
+    if (string != null) {
+      var fields = string.split(",");
+      for (var field : fields) {
+        var messageType = MessageType.fromString(field);
+        if (messageType == null) {
+          throw new RuntimeException("Unknown MessageType: " + field + ", in expectedMessageTypes: " + string);
+        }
+        set.add(messageType);
+      }
+    }
+
+    if (set.size() == 0) {
+      throw new RuntimeException("no values in expectedMessageTypes: " + string);
+    }
+
+    logger.info("Expected MessageType(s): " + String.join(",", set.stream().map(t -> t.toString()).toList()));
+    return set;
   }
 
   public static final String OB_DISCLAIMER = """

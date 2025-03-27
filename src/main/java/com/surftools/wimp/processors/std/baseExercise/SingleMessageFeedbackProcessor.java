@@ -81,6 +81,13 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     super.initialize(cm, mm, _logger);
     logger = _logger;
 
+    var expectedMessageTypes = getExpectedMessageTypes();
+    if (expectedMessageTypes.size() != 1) {
+      throw new RuntimeException("Only expecting one messageType, not: "
+          + String.join(",", expectedMessageTypes.stream().map(s -> s.toString()).toList()));
+    }
+    messageType = expectedMessageTypes.iterator().next();
+
     var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
     if (windowOpenString != null) {
       windowOpenDT = LocalDateTime.from(DTF.parse(windowOpenString));

@@ -102,7 +102,8 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     mm.putContextObject("dumpIds", dumpIds);
 
     // this seems a good balance between streams and code-golfing
-    var stdin = Arrays.asList(cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication,Filter").split(","));
+    var stdin = Arrays
+        .asList(cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication,Filter").split(","));
     var main = Arrays.asList(cm.getAsString(Key.PIPELINE_MAIN, "").split(","));
     var stdout = Arrays.asList(cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary").split(","));
     var processorNames = List

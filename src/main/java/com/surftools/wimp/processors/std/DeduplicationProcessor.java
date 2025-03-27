@@ -118,10 +118,9 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
 
         // do we have any work to do?
         if (rule == 0 || inputList.size() == 1) {
+          // the list of messages of this type for this sender remains unchanged
           continue;
         }
-
-        // ExportedMessage implements Comparable, by sortTime
 
         Collections.sort(inputList);
 

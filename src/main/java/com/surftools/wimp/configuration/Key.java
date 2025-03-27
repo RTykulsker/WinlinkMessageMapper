@@ -40,6 +40,7 @@ public enum Key implements IConfigurationKey {
   PATH("path"), // path to message files
   DATABASE_PATH("databasePath"), // path to input database summary files
   DUMP_IDS("dumpIds"), // comma-delimited list of messageIds or call signs to dump message contents for
+  EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle
 
   FILTER_INCLUDE_SENDERS("filterIncludeSenders"), // comma-delimited list of call signs to filter include
   FILTER_EXCLUDE_SENDERS("filterExcludeSenders"), // comma-delimited list of call signs to filter exclude

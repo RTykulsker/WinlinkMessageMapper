@@ -57,28 +57,29 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
         </message_list>
       </Winlink_Express_message_export>
             """;
+
   private static String messageTemplate = """
       <message>
-            <id>#MESSAGE_ID#</id>
-            <foldertype>Fixed</foldertype>
-            <folder>Outbox</folder>
-            <subject>#SUBJECT#</subject>
-            <time>#MESSAGE_TIME#</time>
-            <sender>#SENDER#</sender>
-            <precedence>2</precedence>
-            <peertopeer>False</peertopeer>
-            <routingflag>C</routingflag>
-            <replied></replied>
-            <source>#SOURCE#</source>
-            <unread>False</unread>
-            <flags>0</flags>
-            <messageoptions>False|False||||True|</messageoptions>
-            <mime>Date: #MIME_TIME#
+      <id>#MESSAGE_ID#</id>
+      <foldertype>Fixed</foldertype>
+      <folder>Outbox</folder>
+      <subject>#SUBJECT#</subject>
+      <time>#MESSAGE_TIME#</time>
+      <sender>#SENDER#</sender>
+      <precedence>2</precedence>
+      <peertopeer>False</peertopeer>
+      <routingflag>C</routingflag>
+      <source>#SOURCE#</source>
+      <unread>False</unread>
+      <flags>0</flags>
+      <messageoptions>False|False||||True|</messageoptions>
+      <mime>Date: #MIME_TIME#
       From: #SENDER#@winlink.org
       Reply-To: #SENDER#@winlink.org
       Subject: #SUBJECT#
       To: #TO#
       Message-ID: #MESSAGE_ID#
+      X-Source: #SOURCE#
       MIME-Version: 1.0
       Content-Transfer-Encoding: quoted-printable
 
@@ -87,8 +88,8 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
       </message>
       """;
 
-  public WinlinkExpressOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
-    super(cm, extraContent);
+  public WinlinkExpressOutboundMessageEngine(IConfigurationManager cm, String extraContent, String fileName) {
+    super(cm, extraContent, fileName);
     now = LocalDateTime.now();
   }
 
@@ -122,11 +123,14 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
 
     var text = new String(messagesTemplate);
     text = text.replaceAll("#SOURCE#", source);
-    text = text.replaceAll("#EXPORT_DATETIME#", DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(now));
+    text = text
+        .replaceAll("#EXPORT_DATETIME#", DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(UtcDateTime.ofNow()));
     text = text.replaceAll("#MESSAGES#", allMessages.toString());
     text = text.replaceAll("\n", "\r\n");
-    WriteProcessor.writeString(text, "all-winlinkExpressOutboundMessages.xml");
-    logger.info("Oubound messages for all generated; use Winlink Express to send!");
+
+    var aFileName = fileName == null ? "all-winlinkExpressOutboundMessages.xml" : fileName;
+    WriteProcessor.writeString(text, aFileName);
+    logger.info("Oubound message file " + aFileName + " written; use Winlink Express to send!");
   }
 
   @Override

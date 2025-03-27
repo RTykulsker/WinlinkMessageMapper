@@ -46,7 +46,11 @@ public class OutboundMessageService implements IService {
   private IOutboundMessageEngine engine;
 
   public OutboundMessageService(IConfigurationManager cm) {
-    this(cm, null);
+    this(cm, null, null, null);
+  }
+
+  public OutboundMessageService(IConfigurationManager cm, String fileName) {
+    this(cm, null, null, fileName);
   }
 
   public OutboundMessageService(IConfigurationManager cm, IMessageManager mm) {
@@ -54,6 +58,10 @@ public class OutboundMessageService implements IService {
   }
 
   public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent) {
+    this(cm, mm, null, null);
+  }
+
+  public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent, String fileName) {
     var engineTypeName = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, EngineType.PAT.name());
     var engineType = EngineType.valueOf(engineTypeName);
     if (engineType == null) {
@@ -62,11 +70,11 @@ public class OutboundMessageService implements IService {
 
     switch (engineType) {
     case PAT:
-      engine = new PatOutboundMessageEngine(cm, extraContent);
+      engine = new PatOutboundMessageEngine(cm, extraContent, fileName);
       break;
 
     case WINLINK_EXPRESS:
-      engine = new WinlinkExpressOutboundMessageEngine(cm, extraContent);
+      engine = new WinlinkExpressOutboundMessageEngine(cm, extraContent, fileName);
       break;
 
     case WEB:

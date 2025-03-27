@@ -183,19 +183,13 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     };
   }
 
-  final static List<MessageType> acceptableMessageTypesList = List
-      .of( // order matters, last location wins,
-          MessageType.DYFI, MessageType.CHECK_IN, MessageType.WELFARE_BULLETIN_BOARD, MessageType.ICS_213,
-          MessageType.CHECK_OUT, MessageType.ICS_214, MessageType.PEGELSTAND);
-
   final static LinkedHashSet<String> senderGroupSet = new LinkedHashSet<>();
-
   final static Map<String, String> senderMostImportantThingMap = new HashMap<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     // #MM must define acceptableMessages
-    acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
+    acceptableMessageTypesSet.addAll(getExpectedMessageTypes());
 
     super.initialize(cm, mm, logger);
 

@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213ReplyMessage;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
@@ -49,7 +48,6 @@ public class ETO_2025_03_20 extends SingleMessageFeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
-    messageType = MessageType.ICS_213_REPLY;
   }
 
   @Override

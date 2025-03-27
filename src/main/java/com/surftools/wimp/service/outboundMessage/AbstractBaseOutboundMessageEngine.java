@@ -56,8 +56,9 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
 
   protected String sender;
   protected String source;
+  protected String fileName;
 
-  public AbstractBaseOutboundMessageEngine(IConfigurationManager cm, String extraContent) {
+  public AbstractBaseOutboundMessageEngine(IConfigurationManager cm, String extraContent, String fileName) {
     this.cm = cm;
 
     this.extraContent = extraContent;
@@ -73,6 +74,8 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
       logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SOURCE.name() + " not defined");
       return;
     }
+
+    this.fileName = fileName;
 
     isReady = true;
   }
