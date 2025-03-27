@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,12 +63,19 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
   private static final boolean LAST_LOCATION_WINS = true;
 
   private Set<MessageType> expectedMessageTypes;
-  private Map<String, AcknowledgementEntry> ackMap;
+  private Map<String, AckEntry> ackMap;
   private List<String> badLocationSenders;
+  private AckSpecification requiredSpecification;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
+
+    var ackSpecString = cm.getAsString(Key.ACKNOWLEDGEMENT_SPECIFICATION, "all");
+    requiredSpecification = AckSpecification.fromString(ackSpecString);
+    if (requiredSpecification == null) {
+      throw new RuntimeException("No AcknowledgementSpecification found for: " + ackSpecString);
+    }
 
     ackMap = new HashMap<>();
     badLocationSenders = new ArrayList<>();
@@ -79,7 +87,7 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
     var senderIterator = mm.getSenderIterator();
     while (senderIterator.hasNext()) { // loop over senders
       var sender = senderIterator.next();
-      var ackEntry = new AcknowledgementEntry(sender);
+      var ackEntry = new AckEntry(sender);
       for (var m : mm.getAllMessagesForSender(sender)) {
         ackEntry.update(m);
       } // end loop over messages for sender
@@ -109,8 +117,11 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
 
     mm.putContextObject("ackMap", ackMap);
 
-    var acknowledgments = new ArrayList<AcknowledgementEntry>(ackMap.values());
-    Collections.sort(acknowledgments, ((a1, a2) -> a1.from.compareTo(a2.from)));
+    var acknowledgments = new ArrayList<AckEntry>(ackMap.values().stream().filter(s -> isSelected(s)).toList());
+    var selectedAckMap = acknowledgments.stream().collect(Collectors.toMap(AckEntry::getId, item -> item));
+    mm.putContextObject("selectedAckMap", selectedAckMap);
+
+    Collections.sort(acknowledgments);
     writeTable("acknowledgments.csv", acknowledgments);
 
     // must defer until post-processing to fix bad locations, etc.
@@ -148,20 +159,72 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
     }
   }
 
+  private boolean isSelected(AckEntry e) {
+    switch (requiredSpecification) {
+    case ALL:
+      return true;
+    case BOTH:
+      return e.expectedMessageMap.size() > 0 && e.unexpectedMessageMap.size() > 0;
+    case ONLY_EXPECTED:
+      return e.expectedMessageMap.size() > 0 && e.unexpectedMessageMap.size() == 0;
+    case ONLY_UNEXPECTED:
+      return e.expectedMessageMap.size() == 0 && e.unexpectedMessageMap.size() > 0;
+    case NOT_ONLY_EXPECTED:
+      return e.unexpectedMessageMap.size() > 0;
+    case NOT_ONLY_UNEXPECTED:
+      return e.expectedMessageMap.size() > 0;
+    }
+    return false;
+  }
+
+  enum AckSpecification {
+    ALL("all"), //
+    ONLY_EXPECTED("onlyExpected"), //
+    ONLY_UNEXPECTED("onlyUnexpected"), //
+    BOTH("both"), // must contain both
+    NOT_ONLY_EXPECTED("notOnlyExpected"), // must contain some unexpected
+    NOT_ONLY_UNEXPECTED("notOnlyUnexpected"), // must contain some expected
+    ;
+
+    private final String key;
+
+    private AckSpecification(String key) {
+      this.key = key;
+    }
+
+    public static AckSpecification fromString(String string) {
+      for (AckSpecification key : AckSpecification.values()) {
+        if (key.toString().equals(string)) {
+          return key;
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public String toString() {
+      return key;
+    }
+  };
+
   record AckKey(String from, String messageId, MessageType messageType) {
   };
 
-  class AcknowledgementEntry implements IWritableTable {
+  class AckEntry implements IWritableTable {
     public final String from;
     public LatLongPair location;
     public Map<AckKey, ExportedMessage> expectedMessageMap;
     public Map<AckKey, ExportedMessage> unexpectedMessageMap;
 
-    public AcknowledgementEntry(String sender) {
+    public AckEntry(String sender) {
       this.from = sender;
 
       expectedMessageMap = new HashMap<>();
       unexpectedMessageMap = new HashMap<>();
+    }
+
+    public String getId() {
+      return from;
     }
 
     public void update(ExportedMessage m) {
@@ -189,7 +252,7 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
 
     @Override
     public int compareTo(IWritableTable other) {
-      var o = (AcknowledgementEntry) other;
+      var o = (AckEntry) other;
       return from.compareTo(o.from);
     }
 

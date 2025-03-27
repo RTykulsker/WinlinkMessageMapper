@@ -131,7 +131,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
     super.initialize(cm, mm, _logger);
     logger = _logger;
 
-    var acceptableMessageTypesString = cm.getAsString(Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES);
+    var acceptableMessageTypesString = cm.getAsString(Key.EXPECTED_MESSAGE_TYPES);
     if (acceptableMessageTypesString != null) {
       var typeNames = acceptableMessageTypesString.split(",");
       for (var typeName : typeNames) {
@@ -141,7 +141,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
           logger.info("will accept " + messageType.toString() + " messageTypes");
         } else {
           throw new RuntimeException("No MessageType for: " + messageType + ", in "
-              + Key.FEEDBACK_ACCEPTABLE_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
+              + Key.EXPECTED_MESSAGE_TYPES.toString() + ": " + acceptableMessageTypesString);
         }
       }
     } else {

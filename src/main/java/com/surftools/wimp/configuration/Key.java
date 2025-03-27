@@ -39,13 +39,14 @@ public enum Key implements IConfigurationKey {
 
   PATH("path"), // path to message files
   DATABASE_PATH("databasePath"), // path to input database summary files
+  OUTPUT_PATH("output.path"), // to override as subdir of path
+  OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
+
   EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle
+  ACKNOWLEDGEMENT_SPECIFICATION("acknowledgementSpecification"), // what to acknowledge, expected vs unexpectd
 
   FILTER_INCLUDE_SENDERS("filterIncludeSenders"), // comma-delimited list of call signs to filter include
   FILTER_EXCLUDE_SENDERS("filterExcludeSenders"), // comma-delimited list of call signs to filter exclude
-
-  OUTPUT_PATH("output.path"), // to override as subdir of path
-  OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
 
   DEDUPLICATION_RULES("deduplication.rules"), // json string: {messageTypeName:rule,...}
 
@@ -73,8 +74,6 @@ public enum Key implements IConfigurationKey {
   EXERCISE_DESCRIPTION("exerciseDescription"), // for Summarizer
   EXERCISE_WINDOW_OPEN("exerciseWindowOpen"), //
   EXERCISE_WINDOW_CLOSE("exerciseWindowClose"), //
-
-  FEEDBACK_ACCEPTABLE_MESSAGE_TYPES("feedback.acceptableMessageTypes"), // for FeedbackProcessor
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
   SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, list ETO-BK
