@@ -163,6 +163,14 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return messageType;
     }
 
+    // sneak this in
+    if (message.subject.startsWith("DYFI Automatic Entry")) {
+      messageType = getMessageTypeFromSubject(message);
+      if (messageType != null) {
+        return messageType;
+      }
+    }
+
     // Second choice: FormData.txt attachment
     messageType = getMessageTypeFromFormData(message, null);
     if (messageType != null) {
@@ -220,13 +228,17 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
         var formDataString = new String(attachments.get(formDataKey));
         var lines = formDataString.split("\n");
         for (var line : lines) {
-          if (line.startsWith("*")) {
+          if (line == null || line.strip().isEmpty() || line.startsWith("*")) {
             continue;
           }
           var fields = line.split("=");
           if (fields.length == 2) {
             var mapKey = fields[0].split(":")[0].strip();
             var mapValue = fields[1].strip();
+            valueMap.put(mapKey, mapValue);
+          } else if (fields.length == 1) {
+            var mapKey = fields[0].split(":")[0].strip();
+            var mapValue = "";
             valueMap.put(mapKey, mapValue);
           } else {
             logger
