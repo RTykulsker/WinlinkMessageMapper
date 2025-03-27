@@ -230,11 +230,6 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
 
       var explanations = new ArrayList<String>();
       ffm.reset(explanations);
-
-      if (dumpIds.contains(sender)) {
-        logger.info("dump: " + sender);
-      }
-
       ++ppCount;
 
       // exercise window

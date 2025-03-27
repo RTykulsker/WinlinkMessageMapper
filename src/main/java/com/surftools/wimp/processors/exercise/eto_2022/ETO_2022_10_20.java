@@ -98,11 +98,6 @@ public class ETO_2022_10_20 extends AbstractBaseProcessor {
     for (var message : mm.getMessagesForType(MessageType.DYFI)) {
       DyfiMessage m = (DyfiMessage) message;
       var call = m.from;
-
-      if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-        logger.debug("messageId: " + m.messageId + ", from: " + m.from);
-      }
-
       ++ppCount;
       var points = 0;
       var explanations = new ArrayList<String>();

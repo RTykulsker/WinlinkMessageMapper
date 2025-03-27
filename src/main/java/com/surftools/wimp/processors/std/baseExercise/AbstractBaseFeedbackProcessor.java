@@ -120,12 +120,6 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
 
   protected void beginCommonProcessing(ExportedMessage message) {
 
-    var sender = message.from;
-
-    if (dumpIds.contains(sender)) {
-      logger.info("dump: " + sender);
-    }
-
     if (secondaryDestinations.size() > 0) {
       if (messageTypesRequiringSecondaryAddress.size() == 0
           || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {

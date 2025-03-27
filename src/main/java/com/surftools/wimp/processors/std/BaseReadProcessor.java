@@ -184,12 +184,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
       isP2p = Boolean.parseBoolean(v.item(0).getTextContent());
     }
 
-    if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
-      logger.debug("messageId: " + messageId + ", sender: " + sender);
-    }
-
     var locationResult = parseLocation(element, mime, sender, messageId);
-
     var localDateTime = LocalDateTime.parse(dtString, DT_FORMATTER);
 
     String[] mimeLines = mime.split("\\n");
@@ -233,10 +228,6 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   private LocationResult parseLocation(Element element, String mime, String sender, String messageId) {
     LatLongPair location = null;
     String source = null;
-
-    if (dumpIds.contains(messageId) || dumpIds.contains(sender)) {
-      logger.debug("messageId: " + messageId + ", sender: " + sender);
-    }
 
     try {
       var locationString = element.getElementsByTagName("location").item(0).getTextContent();

@@ -104,11 +104,6 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
     var dedupeCount = 0;
     while (it.hasNext()) {
       var sender = it.next();
-
-      if (dumpIds != null && dumpIds.contains(sender)) {
-        logger.debug("sender: " + sender);
-      }
-
       var map = mm.getMessagesForSender(sender);
       for (var messageType : map.keySet()) {
 

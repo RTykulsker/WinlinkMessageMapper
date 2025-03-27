@@ -34,7 +34,6 @@ import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -72,7 +71,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected static IConfigurationManager cm;
   protected static IMessageManager mm;
 
-  protected static Set<String> dumpIds;
   protected static String pathName;
   protected static String outputPathName;
   protected static Path outputPath;
@@ -97,7 +95,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
   }
 
-  @SuppressWarnings("unchecked")
   protected void doInitialization(IConfigurationManager _cm, IMessageManager _mm) {
     cm = _cm;
     mm = _mm;
@@ -117,11 +114,6 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       FileUtils.deleteDirectory(outputPath);
     }
     FileUtils.makeDirIfNeeded(outputPath.toString());
-
-    dumpIds = (Set<String>) mm.getContextObject("dumpIds");
-    if (dumpIds == null) {
-      dumpIds = new HashSet<>();
-    }
 
     outboundMessageSender = cm.getAsString(Key.OUTBOUND_MESSAGE_SENDER);
     outboundMessageSubject = cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);

@@ -64,10 +64,6 @@ public class ETO_2024_03_21 extends FeedbackProcessor {
     var m = (Ics309Message) message;
     getCounter("versions").increment(m.version);
 
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
-
     sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
     sts.test("Task # should be #EV", "240321", m.taskNumber);
 

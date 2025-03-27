@@ -227,10 +227,6 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
     outboundMessageSubject = "Feedback on your Field Day ICS-213 message, mId: ";
     sts.setExplanationPrefix("");
 
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
-
     // box 0: meta
     getCounter("ICS_213 versions").increment(m.version);
     sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization);
@@ -322,10 +318,6 @@ public class ETO_2024_06_24 extends FeedbackProcessor {
   protected void handleIcs214(Ics214Message m) {
     outboundMessageSubject = "Feedback on your Field Day ICS-214 message, mId: ";
     sts.setExplanationPrefix("");
-
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
 
     getCounter("ICS-214 versions").increment(m.version);
 

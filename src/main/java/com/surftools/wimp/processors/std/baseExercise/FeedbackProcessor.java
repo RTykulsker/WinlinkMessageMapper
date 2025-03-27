@@ -223,10 +223,6 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
   protected void beginCommonProcessing(ExportedMessage message) {
     var sender = message.from;
 
-    if (dumpIds.contains(sender)) {
-      logger.info("dump: " + sender);
-    }
-
     te = typeEntryMap.getOrDefault(message.getMessageType(), new TypeEntry(message.getMessageType()));
 
     sts = te.sts;
@@ -380,7 +376,7 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
       WriteProcessor.writeTable(results, Path.of(outputPathName, "feedback-" + messageType.toString() + ".csv"));
 
       if (doOutboundMessaging) {
-		var service = new OutboundMessageService(cm, mm);
+        var service = new OutboundMessageService(cm, mm);
         outboundMessageList = service.sendAll(outboundMessageList);
         writeTable("outBoundMessages.csv", new ArrayList<IWritableTable>(outboundMessageList));
       }

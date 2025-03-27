@@ -231,11 +231,6 @@ public class ETO_2023_11_07 extends AbstractBaseProcessor {
       var sender = message.from;
 
       fts.reset();
-
-      if (dumpIds.contains(sender)) {
-        logger.info("dump: " + sender);
-      }
-
       ++ppCount;
 
       var pair = message.msgLocation;

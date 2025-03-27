@@ -73,21 +73,11 @@ public class MIRO_2024_06_13 extends FeedbackProcessor {
 
   private void handleHospitalStatusMessage(HospitalStatusMessage m) {
     getCounter("versions").increment(m.version);
-
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
-
     sts.test("Should not send Hospital Status Message", false);
   }
 
   protected void handleHospitalBedMessage(HospitalBedMessage m) {
-
     getCounter("versions").increment(m.version);
-
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
 
     var addresses = (m.toList + " " + m.ccList).toUpperCase();
     var primaryAddress = "NCS862@winlink.org".toUpperCase();

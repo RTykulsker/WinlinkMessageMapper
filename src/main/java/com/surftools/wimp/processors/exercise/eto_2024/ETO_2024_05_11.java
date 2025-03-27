@@ -555,11 +555,6 @@ public class ETO_2024_05_11 extends FeedbackProcessor {
     sts.setExplanationPrefix("mId: " + m.messageId + ": ");
 
     getCounter("ICS-309 versions").increment(m.version);
-
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
-
     sts.test("Agency/Group name should be #EV", "EmComm Training Organization", m.organization);
     sts.test("Task # should be #EV", "240511", m.taskNumber);
 

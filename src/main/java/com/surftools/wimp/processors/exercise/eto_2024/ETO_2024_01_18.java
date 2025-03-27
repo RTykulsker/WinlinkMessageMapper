@@ -129,10 +129,6 @@ public class ETO_2024_01_18 extends AbstractBaseProcessor {
 
       sts.reset(sender);
 
-      if (dumpIds.contains(sender)) {
-        logger.info("dump: " + sender);
-      }
-
       ++ppCount;
       ppVersionCounter.increment(m.version);
 

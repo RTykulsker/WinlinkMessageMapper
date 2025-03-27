@@ -141,13 +141,8 @@ public class ETO_2022_09_22 extends AbstractBaseProcessor {
 
     var it = mm.getSenderIterator();
     while (it.hasNext()) {
-
       var from = it.next();
       var messageMap = mm.getMessagesForSender(from);
-      if (dumpIds.contains(from)) {
-        logger.info("dump: from: " + from + ", messages: " + messageMap.size());
-      }
-
       EtoCheckInV2Message checkInMessage = null;
       Ics213Message icsMessage = null;
 

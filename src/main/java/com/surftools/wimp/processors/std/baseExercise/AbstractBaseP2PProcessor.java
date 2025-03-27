@@ -192,11 +192,6 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
 
           var from = m.from;
           var to = m.to;
-
-          if (dumpIds.contains(from) || dumpIds.contains(to) || dumpIds.contains(m.messageId)) {
-            logger.info("dump: from " + from + ", to: " + to + ", mId: " + m.messageId);
-          }
-
           var field = fieldMap.get(from);
           if (field == null) {
             logger.debug("### unexpected message from: " + from + ", not in field map");

@@ -75,11 +75,6 @@ public class ETO_2022_09_08 extends AbstractBaseProcessor {
     var results = new ArrayList<IWritableTable>();
     for (var mm : mm.getMessagesForType(MessageType.ETO_CHECK_IN_V2)) {
       var m = (EtoCheckInV2Message) mm;
-
-      if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-        // logger.info("ETO_2022_09_08 grader: " + m);
-      }
-
       ++ppCount;
       var points = 75;
       var explanations = new ArrayList<String>();

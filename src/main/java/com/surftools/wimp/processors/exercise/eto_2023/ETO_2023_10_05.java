@@ -121,11 +121,6 @@ public class ETO_2023_10_05 extends AbstractBaseProcessor {
 
     for (var message : mm.getMessagesForType(MessageType.CHECK_IN)) {
       CheckInMessage m = (CheckInMessage) message;
-
-      if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-        logger.debug("messageId: " + m.messageId + ", from: " + m.from);
-      }
-
       ++ppCount;
       var explanations = new ArrayList<String>();
       ffm.reset(explanations);

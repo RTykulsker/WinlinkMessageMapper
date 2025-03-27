@@ -132,13 +132,7 @@ public class ETO_2022_11_03 extends AbstractBaseProcessor {
     var pointsCounter = new Counter();
     var results = new ArrayList<IWritableTable>();
     for (var message : mm.getMessagesForType(MessageType.WX_SEVERE)) {
-
       WxSevereMessage m = (WxSevereMessage) message;
-
-      if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-        logger.info("ETO_2022_11_03: " + m);
-      }
-
       ++ppCount;
 
       // instance variables

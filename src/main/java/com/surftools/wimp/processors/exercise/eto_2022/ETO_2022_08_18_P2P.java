@@ -468,9 +468,6 @@ public class ETO_2022_08_18_P2P extends AbstractBaseP2PProcessor {
     for (var fields : fieldsArray) {
       var target = new Target(fields);
       list.add(target);
-      if (dumpIds.contains(target.call)) {
-        logger.debug("field: " + target);
-      }
     }
 
     logger.info("read " + list.size() + " target entries from " + targetFilePathName);
@@ -500,9 +497,6 @@ public class ETO_2022_08_18_P2P extends AbstractBaseP2PProcessor {
     for (var fields : fieldsArray) {
       var field = new Field(fields);
       list.add(field);
-      if (dumpIds.contains(field.call)) {
-        logger.debug("field: " + field);
-      }
     }
 
     logger.info("read " + list.size() + " field entries from " + fieldFilePathName);

@@ -85,10 +85,6 @@ public class ETO_2022_07_28 extends AbstractBaseProcessor {
       var m = (CheckInMessage) gm;
       ++ppCount;
 
-      if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-        logger.info("ETO_2022_07_28 grader: " + m);
-      }
-
       var points = 0;
       var explanations = new ArrayList<String>();
       ffm.reset(explanations);

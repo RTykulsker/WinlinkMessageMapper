@@ -235,11 +235,6 @@ public class ETO_2022_12_22 extends AbstractBaseProcessor {
       var explanations = new ArrayList<String>();
 
       ++ppAllParticipantCount;
-
-      if (dumpIds.contains(sender)) {
-        logger.info("dump: " + sender);
-      }
-
       ++ppCount;
 
       var imageFileName = getImageFile(message);

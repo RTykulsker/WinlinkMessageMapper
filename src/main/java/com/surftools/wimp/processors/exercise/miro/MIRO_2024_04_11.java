@@ -67,10 +67,6 @@ public class MIRO_2024_04_11 extends FeedbackProcessor {
     var m = (Ics309Message) message;
     getCounter("versions").increment(m.version);
 
-    if (dumpIds.contains(m.messageId) || dumpIds.contains(m.from)) {
-      logger.info("### call: " + m.from + "\n" + sts.toString());
-    }
-
     sts.test("Agency/Group name should be #EV", "MIRO Exercise", m.organization);
     sts.test("Task # should be #EV", "240411", m.taskNumber);
 

@@ -121,10 +121,6 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       var tmpMessageMap = new HashMap<MessageType, List<ExportedMessage>>();
 
       for (var message : messages) {
-        if (dumpIds.contains(message.messageId) || dumpIds.contains(message.from)) {
-          logger.debug("messageId: " + message.messageId + ", from: " + message.from);
-        }
-
         var messageType = findMessageType(message);
         var parser = parserMap.get(messageType);
         ExportedMessage parsedMessage = message;
@@ -161,10 +157,6 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
    * @return
    */
   public MessageType findMessageType(ExportedMessage message) {
-    if (dumpIds.contains(message.from) || dumpIds.contains(message.messageId)) {
-      logger.debug("dump: " + message.toString());
-    }
-
     // First choice: for source-of-truth is the RMS viewer (aka XML blob) attachment
     var messageType = getMessageTypeFromRmsViewerData(message);
     if (messageType != null) {

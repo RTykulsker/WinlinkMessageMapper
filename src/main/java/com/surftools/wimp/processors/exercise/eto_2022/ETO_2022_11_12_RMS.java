@@ -181,10 +181,6 @@ public class ETO_2022_11_12_RMS extends AbstractBaseProcessor {
     var it = mm.getSenderIterator();
     while (it.hasNext()) {
       var from = it.next();
-      if (dumpIds.contains(from)) {
-        logger.info("dump: " + from);
-      }
-
       var map = mm.getMessagesForSender(from);
       var fsrMessage = getFsrMessage(map);
       var icsMessage = getIcsMessage(map);

@@ -138,13 +138,7 @@ public class ETO_2022_08_18_RMS extends AbstractBaseProcessor {
       }
       Collections.reverse(messageList);
       var m = (CheckInMessage) messageList.iterator().next();
-
       ++ppCount;
-
-      if (dumpIds != null && (dumpIds.contains(m.messageId) || dumpIds.contains(m.from))) {
-        logger.info("dumpIds: " + m.from);
-      }
-
       var points = 0;
       var explanations = new ArrayList<String>();
 

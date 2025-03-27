@@ -103,12 +103,7 @@ public class ETO_2022_12_01 extends AbstractBaseProcessor {
 
     List<IWritableTable> entries = new ArrayList<>();
     for (var m : mm.getMessagesForType(MessageType.WX_LOCAL)) {
-      var from = m.from;
       var wxMessage = (WxLocalMessage) m;
-      if (dumpIds.contains(from)) {
-        logger.info("dump: " + from);
-      }
-
       ++ppCount;
       var points = 0;
       var explanations = new ArrayList<String>();
