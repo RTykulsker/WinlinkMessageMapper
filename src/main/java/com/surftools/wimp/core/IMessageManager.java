@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.core;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +103,13 @@ public interface IMessageManager {
    * @param sender
    */
   public void removeMessagesForSender(String sender);
+
+  /**
+   * remove all messages for listed senders, typically because of filtering
+   *
+   * @param removeList
+   */
+  public void removeMesseagesForSenders(ArrayList<String> removeList);
 
   /**
    * get list of messages for given type, typically for writing to file

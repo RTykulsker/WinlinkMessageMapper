@@ -60,7 +60,7 @@ public class Ics214Parser extends AbstractBaseParser {
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
-      String xmlString = new String(message.attachments.get(MessageType.ICS_214.rmsViewerName()));
+      String xmlString = new String(message.attachments.get(messageType.rmsViewerName()));
 
       makeDocument(message.messageId, xmlString);
 

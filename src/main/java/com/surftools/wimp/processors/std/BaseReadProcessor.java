@@ -63,6 +63,12 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   private Set<String> expectedDestinations = new LinkedHashSet<>();
   private Set<String> secondaryDestinations = new LinkedHashSet<>();
 
+  private boolean isReadFilteringEnabled = false;
+  private int readFilterIncludeCount = 0;
+  private int readFilterExcludeCount = 0;
+  private Set<String> includeSenderSet;
+  private Set<String> excludeSenderSet;
+
   static record LocationResult(LatLongPair location, String source) {
   };
 
@@ -111,7 +117,11 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    super.initialize(cm, mm);
+    baseInitialize(cm, mm);
+  }
+
+  public void baseInitialize(IConfigurationManager cm, IMessageManager mm) {
+    isReadFilteringEnabled = cm.getAsBoolean(Key.READ_FILTER_ENABLED, false);
 
     var expectedDestinationsString = cm.getAsString(Key.EXPECTED_DESTINATIONS);
     if (expectedDestinationsString != null) {
@@ -137,6 +147,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     super.initialize(cm, mm, _logger);
+    baseInitialize(cm, mm);
   }
 
   protected List<ExportedMessage> parseExportedMessages(InputStream inputStream) {
@@ -157,7 +168,10 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
           Element element = (Element) node;
           ExportedMessage message = readMessage(element);
-          messages.add(message);
+          var isSelected = readFilter(message);
+          if (isSelected) {
+            messages.add(message);
+          }
         } // end if XML Message Node
       } // end for over messages
     } catch (Exception e) {
@@ -167,6 +181,33 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     }
 
     return messages;
+  }
+
+  private boolean readFilter(ExportedMessage message) {
+    if (!isReadFilteringEnabled) {
+      return true;
+    }
+
+    var sender = message.from;
+
+    if (includeSenderSet.size() > 0) {
+      if (includeSenderSet.contains(sender)) {
+        ++readFilterIncludeCount;
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    if (excludeSenderSet.size() > 0) {
+      if (excludeSenderSet.contains(sender)) {
+        ++readFilterExcludeCount;
+        return false;
+      } else {
+        return true;
+      }
+    }
+    return true;
   }
 
   private ExportedMessage readMessage(Element element) {
@@ -434,7 +475,19 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   }
 
   @Override
+  public void process() {
+    // must wait until FilterProcessor.initialize() has executed
+    this.includeSenderSet = FilterProcessor.includeSenderSet;
+    this.excludeSenderSet = FilterProcessor.excludeSenderSet;
+  }
+
+  @Override
   public void postProcess() {
     writeTable("fileRecords.csv", readRecords);
+
+    if (isReadFilteringEnabled) {
+      logger.warn("### Read Filter: " + readFilterIncludeCount + " messages included");
+      logger.warn("### Read Filter: " + readFilterExcludeCount + " messages excluded");
+    }
   }
 }

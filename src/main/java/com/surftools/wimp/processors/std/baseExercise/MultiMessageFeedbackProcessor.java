@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.processors.std.baseExercise;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -70,6 +71,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     public String from;
     public String to;
     public LatLongPair location;
+    public LocalDateTime dateTime;
     public List<String> explanations; // doesn't get published, but interpreted
     public int perfectMessageCount;
     public static String perfectMessageText = "Perfect messages!";
@@ -82,7 +84,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     @Override
     public String[] getHeaders() {
-      var list = new ArrayList<String>(List.of("From", "To", "Latitude", "Longitude", "Feedback Count", "Feedback"));
+      var list = new ArrayList<String>(
+          List.of("From", "To", "Latitude", "Longitude", "Date", "Time", "Feedback Count", "Feedback"));
       return list.toArray(new String[list.size()]);
     }
 
@@ -90,6 +93,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     public String[] getValues() {
       var latitude = location == null ? "0.0" : location.getLatitude();
       var longitude = location == null ? "0.0" : location.getLongitude();
+      var date = dateTime == null ? "" : dateTime.toLocalDate().toString();
+      var time = dateTime == null ? "" : dateTime.toLocalTime().toString();
       var feedbackCount = "0";
       var feedback = perfectMessageText;
 
@@ -100,7 +105,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
       var nsTo = to == null ? "(null)" : to;
 
-      var list = new ArrayList<String>(List.of(from, nsTo, latitude, longitude, feedbackCount, feedback));
+      var list = new ArrayList<String>(List.of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback));
       return list.toArray(new String[list.size()]);
     }
   }
@@ -227,7 +232,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     iSummary = summaryMap.get(sender);
 
-    var explanationPrefix = message.getMessageType().toString() + " (" + message.messageId + "): ";
+    var explanationPrefix = "(" + message.getMessageType().toString() + ") (" + message.messageId + "): ";
     sts.setExplanationPrefix(explanationPrefix);
 
     // first-in or last-in for to and location
@@ -239,6 +244,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       if (iSummary.location == null) {
         iSummary.location = message.mapLocation;
       }
+
+      if (iSummary.dateTime == null) {
+        iSummary.dateTime = message.msgDateTime;
+      }
     } else {
       if (message.to != null) {
         iSummary.to = message.to;
@@ -247,6 +256,11 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       if (message.mapLocation != null && message.mapLocation.isValid()) {
         iSummary.location = message.mapLocation;
       }
+
+      if (message.msgDateTime != null) {
+        iSummary.dateTime = message.msgDateTime;
+      }
+
     }
 
     var msgLocation = message.msgLocation;

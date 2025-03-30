@@ -79,6 +79,8 @@ public class ReadProcessor extends BaseReadProcessor {
 
   @Override
   public void process() {
+    super.process();
+
     Path path = Paths.get(pathName);
 
     // read all Exported Messages from files

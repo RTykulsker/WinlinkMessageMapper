@@ -65,7 +65,7 @@ public class ContentParser {
     var words = content.split(",");
     if (words != null && words.length >= 1) {
       var word = words[0];
-      if (word.strip().toUpperCase().startsWith(phrase.strip().toUpperCase())) {
+      if (word.strip().toUpperCase().replaceAll("[^A-Za-z0-9]", "").startsWith(phrase.strip().toUpperCase())) {
         return new ParseResult("YES", null, word);
       } else {
         return new ParseResult("NO", null, word);

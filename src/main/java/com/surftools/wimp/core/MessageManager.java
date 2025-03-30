@@ -113,6 +113,14 @@ public class MessageManager implements IMessageManager {
     isSenderMapDirty = true;
   }
 
+  @Override
+  public void removeMesseagesForSenders(ArrayList<String> removeList) {
+    for (var sender : removeList) {
+      removeMessagesForSender(sender);
+    }
+    rebuildMessageMap();
+  }
+
   /**
    * if senderMap is dirty, then we must rebuild the messageMap before using it
    */

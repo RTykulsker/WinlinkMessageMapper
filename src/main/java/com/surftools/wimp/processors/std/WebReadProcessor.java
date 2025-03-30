@@ -68,6 +68,7 @@ public class WebReadProcessor extends BaseReadProcessor {
 
   @Override
   public void process() {
+    super.process();
 
     var exportedMessages = readAll();
 

@@ -59,6 +59,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 /**
  * Processor for 2025-03-29: Tsunami-based drill, organized by LAX Northeast
  *
+ * Mega_Tsunami is focused on feedback; Mini-Tsunami is focused on aggregating responses
+ *
  * @author bobt
  *
  */
@@ -69,9 +71,6 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
 
   protected static final DateTimeFormatter DYFI_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   protected static final DateTimeFormatter DYFI_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
-  protected static final String EXPECTED_DATE = "03/29/2025";
-  protected static final String EXPECTED_TIME = "08:29";
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
@@ -239,15 +238,16 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     accumulateAddresses("DYFI addresses", m);
 
     var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS.toUpperCase());
-    count(sts.test("To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
-    count(sts.test("Event Type must be: EXERCISE", !m.isRealEvent));
-    count(sts.test("Form Latitude and Longitude must be valid", m.formLocation.isValid(), m.formLocation.toString()));
+    count(sts.test("DYFI To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
+    count(sts.test("DYFI Event Type must be: EXERCISE", !m.isRealEvent));
+    count(sts
+        .test("DYFI Form Latitude and Longitude must be valid", m.formLocation.isValid(), m.formLocation.toString()));
 
     try {
       var intensity = Integer.parseInt(m.intensity);
-      count(sts.test("Intensity must be >= 7", intensity >= 7, m.intensity));
+      count(sts.test("DYFI Intensity must be >= 7", intensity >= 7, m.intensity));
     } catch (Exception e) {
-      count(sts.test("Intensity must be >= 7", false, m.intensity));
+      count(sts.test("DYFI Intensity must be >= 7", false, m.intensity));
     }
 
     var comments = m.comments;
@@ -257,7 +257,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
 
       pr = cp.isExerciseFirstWord("Comments", "EXERCISE");
       if (pr.error() == null) {
-        count(sts.test("Comments first word is #EV", "EXERCISE", (String) pr.context()));
+        count(sts.test("Comments first word is EXERCISE", true, (String) pr.context()));
       } else {
         count(sts.test("Comments first word is EXERCISE", false, (String) pr.context()));
       }
@@ -266,37 +266,17 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       // comma-delimited, starting on 2nd word, stopping on first word that starts with digit
       pr = cp.getDYFIGroupAffiliation(",", 2, "\\d+.");
       if (pr.error() == null) {
-
         @SuppressWarnings("unchecked")
         var groupSet = (Set<String>) pr.context();
         groupSet.stream().forEach(gn -> accumulateGroupName("DYFI", gn));
         summary.dyfiGroups = pr.value();
-        count(sts.test("DYFI Comments Group Affiliation parsed ok", true));
       } else {
         summary.dyfiGroups = "";
-        count(sts.test("DYFI Comments Group Affiliation parsed ok", false, (String) pr.context()));
       }
-
-      count(sts.test("DYFI Comments parsed", true));
-    } else {
-      count(sts.test("Comments first word is EXERCISE", false, "null comments"));
-      summary.dyfiIsExercise = "(null)";
-
-      count(sts.test("DYFI Comments parsed", false, "null comments"));
-      summary.dyfiGroups = "(null)";
     }
 
-    var dateTime = m.formDateTime;
-    if (dateTime != null) {
-      count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
-      count(sts.test("Time of Earthquake should be #EV", EXPECTED_TIME, m.formDateTime.format(DYFI_TIME_FORMATTER)));
-    } else {
-      count(sts.test("Date of Earthquake should be " + EXPECTED_DATE, false));
-      count(sts.test("Time of Earthquake should be " + EXPECTED_TIME, false));
-    }
-
-    getCounter("Intensity").increment(m.intensity);
-    getCounter("Form Version").increment(m.formVersion);
+    getCounter("DYFI Intensity").increment(m.intensity);
+    getCounter("DYFI Form Version").increment(m.formVersion);
 
     // #MM update summary
     summary.dyfiMessage = m;
@@ -305,7 +285,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
-    sts.setExplanationPrefix("(checkin) ");
+    sts.setExplanationPrefix("(check_in) ");
     accumulateAddresses("Check In addresses", m);
 
     var comments = m.comments;
@@ -320,8 +300,14 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       groupSet.stream().forEach(gn -> accumulateGroupName("Check In", gn));
       summary.ciOperationalCapabilities = getCommentLineValues(cp, "Operational Capabilities: ");
       summary.ciDeploymentPosture = getCommentLineValues(cp, "Deployment POSTURE: ");
-      summary.ciInTsunamiZone = getCommentLineValues(cp, "Station in Tsunami Zone: ");
-      summary.ciInFloodZone = getCommentLineValues(cp, "Station in area prone to flooding: ");
+
+      var inZoneString = getCommentLineValues(cp, "Station in Tsunami Zone: ").toUpperCase();
+      summary.ciInTsunamiZone = inZoneString.startsWith("YES") ? "YES"
+          : inZoneString.startsWith("NO") ? "NO" : inZoneString.strip().length() == 0 ? "(empty)" : "(other)";
+
+      var inFloodString = getCommentLineValues(cp, "Station in area prone to flooding: ").toUpperCase();
+      summary.ciInFloodZone = inFloodString.startsWith("YES") ? "YES"
+          : inFloodString.startsWith("NO") ? "NO" : inFloodString.strip().length() == 0 ? "(empty)" : "(other)";
       count(sts.test("Check In Comments parsed", true));
     } else {
       summary.ciIsExercise = "(null)";
@@ -340,6 +326,8 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Check In Band").increment(m.band);
     getCounter("Check In Mode").increment(m.mode);
     getCounter("Check In Data Source").increment(m.dataSource);
+    getCounter("Check In -- In Tsunami Zone").increment(summary.ciInTsunamiZone);
+    getCounter("Check In -- In Area Prone to Flooding").increment(summary.ciInFloodZone);
 
     // #MM update summary
     summary.checkInMessage = m;
@@ -356,25 +344,25 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
       var cp = new ContentParser(comments);
       var pr = cp.isExerciseFirstWord("Comments", "EXERCISE");
       if (pr.error() == null) {
-        count(sts.test("Comments first word is #EV", "EXERCISE", (String) pr.context()));
+        count(sts.test("Comments first word is EXERCISE", true, (String) pr.context()));
       } else {
         count(sts.test("Comments first word is EXERCISE", false, (String) pr.context()));
       }
       summary.welfareIsExercise = pr.value();
 
-      count(sts.test("Welfare Comments parsed", true));
+      count(sts.test("Welfare Comments provided", true));
     } else {
       summary.welfareIsExercise = "(null)";
       summary.welfareGroups = "";
       summary.welfareMessageText = "";
-      count(sts.test("Welfare Comments parsed", false));
+      count(sts.test("Welfare Comments provided", false));
     }
 
     summary.welfareType = m.getDataAsString(DataType.MESSAGE_TYPE);
     summary.welfareStatus = m.getDataAsString(DataType.MESSAGE_STATUS);
     summary.welfareMyStatus = m.getDataAsString(DataType.MY_STATUS);
 
-    count(sts.test("Welfare Message line 1 should be EXERCISE", summary.welfareIsExercise.equals("YES")));
+    count(sts.test("Welfare Message line 1 should be EXERCISE", summary.welfareIsExercise.equals("YES"), comments));
     count(sts.test("Welfare Type should be EXERCISE", "EXERCISE", summary.welfareType));
     count(sts.test("Welfare Message Status should be #EV", "INITIAL", summary.welfareStatus));
 
@@ -389,10 +377,10 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics213Message(Summary summary, Ics213Message m) {
-    sts.setExplanationPrefix("(ics213) ");
+    sts.setExplanationPrefix("(ics_213) ");
     accumulateAddresses("ICS-213 addresses", m);
 
-    count(sts.test("Subject should be #EV", "TSUNAMI DISASTER RESOURCES", m.formSubject));
+    count(sts.test("ICS-213 Subject should be #EV", "TSUNAMI DISASTER RESOURCES", m.formSubject));
 
     var comments = m.formMessage;
     if (!isNull(comments)) {
@@ -433,7 +421,7 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_CheckOutMessage(Summary summary, CheckOutMessage m) {
-    sts.setExplanationPrefix("(checkout) ");
+    sts.setExplanationPrefix("(check_out) ");
     accumulateAddresses("Check Out addresses", m);
 
     var comments = m.comments;
@@ -484,14 +472,14 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
-    sts.setExplanationPrefix("(ics214) ");
+    sts.setExplanationPrefix("(ics_214) ");
     accumulateAddresses("ICS-214 addresses", m);
 
     summary.ics214Position = m.selfResource.icsPosition();
     summary.ics214ResourceCount = String.valueOf(m.assignedResources.stream().filter(r -> !r.isEmpty()).count());
     summary.ics214ActivityCount = String.valueOf(m.activities.stream().filter(r -> !r.isEmpty()).count());
 
-    count(sts.test("Incident Name should be #EV", "TSUNAMI", m.incidentName));
+    count(sts.test("ICS-214 Incident Name should be #EV", "TSUNAMI", m.incidentName));
 
     getCounter("ICS-214 Position").increment(m.selfResource.icsPosition());
     getCounter("ICS-214 Resources").increment(summary.ics214ResourceCount);
@@ -520,13 +508,14 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     var summary = (Summary) summaryMap.get(sender); // #MM
 
     summary.allGroups = String.join(",", senderGroupSet);
+    senderGroupSet.stream().forEach(gn -> getCounter("Summary Group Affiliation").increment(gn.toUpperCase()));
 
     sts.testNotNull("DYFI message not received", summary.dyfiMessage);
-    sts.testNotNull("CheckIn message not received", summary.checkInMessage);
+    sts.testNotNull("Check In message not received", summary.checkInMessage);
     sts.testNotNull("Welfare message not received", summary.welfareMessage);
-    sts.testNotNull("Ics213 message not received", summary.ics213Message);
-    sts.testNotNull("Checkout message not received", summary.checkOutMessage);
-    sts.testNotNull("Ics214 message not received", summary.ics214Message);
+    sts.testNotNull("Ics-213 message not received", summary.ics213Message);
+    sts.testNotNull("Check Out message not received", summary.checkOutMessage);
+    sts.testNotNull("Ics-214 message not received", summary.ics214Message);
 
     summaryMap.put(sender, summary); // #MM
   }
@@ -565,7 +554,6 @@ public class LAX_2025_03_29_Tsunami extends MultiMessageFeedbackProcessor {
     if (groupName.length() > 0) {
       if (groupName.length() > 0) {
         getCounter(label + " Group Affiliation").increment(groupName.toUpperCase());
-        getCounter("Summary Group Affiliation").increment(groupName.toUpperCase());
         senderGroupSet.add(groupName.toUpperCase());
       }
     }

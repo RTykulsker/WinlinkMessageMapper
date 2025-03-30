@@ -107,6 +107,8 @@ public enum Key implements IConfigurationKey {
   DYFI_DETAIL_LEVEL("dyfi.detailLevel"), // to control number of fields, etc.
 
   WEB_SERVER_PORT("web.serverPort"), // that we listen on
+
+  READ_FILTER_ENABLED("read.filterEnabled"), // to filter in/out messages by sender/from in BaseReadProcessor
   ;
 
   private final String key;

@@ -188,7 +188,7 @@ public abstract class AbstractBaseChartService implements IChartService {
     if (object == null) {
       return;
     }
-    doSingleItemCharts = Boolean.valueOf((String) object);
+    doSingleItemCharts = (Boolean) object;
   }
 
   protected static void parseChartType(Object object) {

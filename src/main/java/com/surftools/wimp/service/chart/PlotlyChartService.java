@@ -37,6 +37,9 @@ import com.surftools.wimp.configuration.Key;
 public class PlotlyChartService extends AbstractBaseChartService {
   private static final Logger logger = LoggerFactory.getLogger(PlotlyChartService.class);
 
+  // TODO fixme
+  private int MAX_COUNT = 20;
+
   @Override
   public void makeCharts() {
 
@@ -93,7 +96,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
       sb.append("<div><h3>(excluding single-item pie charts)</h3></div>\n");
     }
 
-    for (var counterLabel : counterMap.keySet()) {
+    for (var counterLabel : counterMap.keySet().stream().sorted().toList()) {
       if (isExcluded(counterLabel)) {
         logger.info("skipping excluded counter: " + counterLabel);
         continue;
@@ -104,6 +107,12 @@ public class PlotlyChartService extends AbstractBaseChartService {
       var keyCount = counter.getKeyCount();
       if (!doSingleItemCharts && keyCount == 1) {
         logger.debug("skipping counter: " + counterLabel + ", only one value");
+        continue;
+      }
+
+      // TODO fixme
+      if (keyCount >= MAX_COUNT) {
+        logger.warn("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
         continue;
       }
       ++counterId;
@@ -136,7 +145,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
     var counterId = 0;
     var sb = new StringBuilder();
     sb.append(extraLayout);
-    for (var counterLabel : counterMap.keySet()) {
+    for (var counterLabel : counterMap.keySet().stream().sorted().toList()) {
       if (isExcluded(counterLabel)) {
         logger.info("skipping excluded counter: " + counterLabel);
         continue;
@@ -147,6 +156,12 @@ public class PlotlyChartService extends AbstractBaseChartService {
       var keyCount = counter.getKeyCount();
       if (!doSingleItemCharts && keyCount == 1) {
         logger.debug("skipping counter: " + counterLabel + ", only one value");
+        continue;
+      }
+
+      // TODO fixme
+      if (keyCount >= MAX_COUNT) {
+        logger.warn("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
         continue;
       }
       ++counterId;

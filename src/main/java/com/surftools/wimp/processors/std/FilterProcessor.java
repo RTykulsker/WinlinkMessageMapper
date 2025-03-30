@@ -48,8 +48,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class FilterProcessor extends AbstractBaseProcessor {
   private final Logger logger = LoggerFactory.getLogger(FilterProcessor.class);
 
-  Set<String> includeSenderSet = new HashSet<>();
-  Set<String> excludeSenderSet = new HashSet<>();
+  public static Set<String> includeSenderSet = new HashSet<>();
+  public static Set<String> excludeSenderSet = new HashSet<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -124,6 +124,7 @@ public class FilterProcessor extends AbstractBaseProcessor {
     for (var sender : removeList) {
       mm.removeMessagesForSender(sender);
     }
+    mm.removeMesseagesForSenders(removeList);
 
     logger
         .warn("\n### included: " + includedSenderCount + " senders\n\n### excluded: " + excludedSenderCount
