@@ -49,7 +49,7 @@ public enum MessageType {
   CHECK_OUT("check_out", "RMS_Express_Form_Winlink_Check_out_Viewer.xml", "Winlink Check-out"), //
   SPOTREP("spotrep", "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
   FIELD_SITUATION("fsr", "RMS_Express_Form_Field Situation Report"), //
-  DYFI("dyfi", (s -> s.startsWith("DYFI Automatic Entry"))), //
+  DYFI("dyfi", (s -> s.startsWith("DYFI Automatic Entry") || s.startsWith("FW: DYFI Automatic Entry"))), //
 
   WX_LOCAL("wx_local", "RMS_Express_Form_Local Weather Report Viewer.xml"), //
   WX_SEVERE("wx_severe", "RMS_Express_Form_Severe WX Report viewer.xml"), //

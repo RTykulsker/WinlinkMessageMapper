@@ -163,14 +163,6 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
       return messageType;
     }
 
-    // sneak this in
-    if (message.subject.startsWith("DYFI Automatic Entry")) {
-      messageType = getMessageTypeFromSubject(message);
-      if (messageType != null) {
-        return messageType;
-      }
-    }
-
     // Second choice: FormData.txt attachment
     messageType = getMessageTypeFromFormData(message, null);
     if (messageType != null) {
