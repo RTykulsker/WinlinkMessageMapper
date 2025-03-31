@@ -54,7 +54,7 @@ import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.WriteProcessor;
-import com.surftools.wimp.service.chart.AbstractBaseChartService;
+import com.surftools.wimp.service.chart.ChartServiceFactory;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
@@ -387,12 +387,14 @@ public abstract class FeedbackProcessor extends AbstractBaseProcessor {
         summaryCounterMap.put(summaryKey, value);
       }
 
-      var chartService = AbstractBaseChartService.getChartService(cm, te.counterMap, messageType);
+      var chartService = ChartServiceFactory.getChartService(cm);
+      chartService.initialize(cm, te.counterMap, messageType);
       chartService.makeCharts();
     } // end loop over message types
 
     // all messageTypes in one chart page
-    var chartService = AbstractBaseChartService.getChartService(cm, summaryCounterMap, null);
+    var chartService = ChartServiceFactory.getChartService(cm);
+    chartService.initialize(cm, summaryCounterMap, null);
     chartService.makeCharts();
 
     endPostProcessingForAllMessageTypes();

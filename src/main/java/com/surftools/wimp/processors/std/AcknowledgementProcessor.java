@@ -259,13 +259,16 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
     @Override
     public String[] getHeaders() {
       return new String[] { "From", "Latitude", "Longitude", //
-          "Status", "Expected Messages", "Unexpected Messages" };
+          "Status", "Expected Messages", "Unexpected Messages", //
+          "Expected Message Count", "Unexpected Message Count", "Total Message Count" };
     }
 
     @Override
     public String[] getValues() {
       return new String[] { from, location.getLatitude(), location.getLongitude(), //
-          getStatusString(), format(true, 3), format(false, 3) };
+          getStatusString(), format(true, 3), format(false, 3), //
+          s(expectedMessageMap.size()), s(unexpectedMessageMap.size()),
+          s(expectedMessageMap.size() + unexpectedMessageMap.size()) };
     }
 
     private String format(boolean useExpected, int formatStyle) {
@@ -300,4 +303,7 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
     }
   }
 
+  private String s(int i) {
+    return String.valueOf(i);
+  }
 }

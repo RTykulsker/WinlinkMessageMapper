@@ -46,7 +46,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.WriteProcessor;
-import com.surftools.wimp.service.chart.AbstractBaseChartService;
+import com.surftools.wimp.service.chart.ChartServiceFactory;
 import com.surftools.wimp.service.outboundMessage.AbstractBaseOutboundMessageEngine;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
@@ -351,7 +351,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     }
 
     // all messageTypes in one chart page
-    var chartService = AbstractBaseChartService.getChartService(cm, counterMap, null);
+    var chartService = ChartServiceFactory.getChartService(cm);
+    chartService.initialize(cm, counterMap, null);
     chartService.makeCharts();
   }
 

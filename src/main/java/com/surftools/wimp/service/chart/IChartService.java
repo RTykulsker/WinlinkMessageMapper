@@ -27,10 +27,17 @@ SOFTWARE.
 
 package com.surftools.wimp.service.chart;
 
+import java.util.Map;
+
+import com.surftools.utils.counter.Counter;
+import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.service.IService;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public interface IChartService extends IService {
 
   public void makeCharts();
+
+  public void initialize(IConfigurationManager cm, Map<String, Counter> counterMap, MessageType messageType);
 
 }

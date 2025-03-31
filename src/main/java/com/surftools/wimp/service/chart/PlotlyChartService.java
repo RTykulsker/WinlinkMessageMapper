@@ -28,14 +28,30 @@ SOFTWARE.
 package com.surftools.wimp.service.chart;
 
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PlotlyChartService extends AbstractBaseChartService {
   private static final Logger logger = LoggerFactory.getLogger(PlotlyChartService.class);
+
+  private List<String> skipFilteredList = new ArrayList<>();
+  private List<String> skipMinCountList = new ArrayList<>();
+  private List<String> skipMaxCountList = new ArrayList<>();
+  private List<String> skipSingleItemList = new ArrayList<>();
+
+  @Override
+  public void initialize(IConfigurationManager cm, Map<String, Counter> counterMap, MessageType messageType) {
+    super.initialize(cm, counterMap, messageType);
+  }
 
   @Override
   public void makeCharts() {
@@ -76,6 +92,13 @@ public class PlotlyChartService extends AbstractBaseChartService {
     } catch (Exception e) {
       logger.error("Exception writing plotly output to: " + fileOutputPath + ", " + e.getLocalizedMessage());
     }
+
+    final var f = "skipped %d charts for Counter: %s %s %s";
+    var map = Map.of("filtered", skipFilteredList, "maxCount", skipMaxCountList, "single item", skipSingleItemList);
+    map.keySet().stream().forEach(label -> {
+      var list = map.get(label);
+      logger.info(String.format(f, list.size(), label, (list.size() == 0 ? "" : ": "), String.join(",", list)));
+    });
   }
 
   private String makeHTMLContent() {
@@ -98,17 +121,20 @@ public class PlotlyChartService extends AbstractBaseChartService {
       var counter = counterMap.get(counterLabel);
       var config = configMap.get(counterLabel);
       if (config == null) {
+        skipFilteredList.add(counterLabel);
         continue; // the counter has been filtered
       }
 
       var keyCount = counter.getKeyCount();
       if (!config.doSingleItemCharts() && keyCount == 1) {
         logger.debug("skipping counter: " + counterLabel + ", only one value");
+        skipSingleItemList.add(counterLabel);
         continue;
       }
 
       if (keyCount >= config.maxValueCount()) {
-        logger.warn("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
+        logger.debug("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
+        skipMaxCountList.add(counterLabel);
         continue;
       }
       ++counterId;
@@ -156,7 +182,9 @@ public class PlotlyChartService extends AbstractBaseChartService {
       }
 
       if (keyCount >= config.maxValueCount()) {
-        logger.warn("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
+        logger
+            .debug("### skipping counter: " + counterLabel + ", too many values (" + keyCount + " >= "
+                + config.maxValueCount() + ")");
         continue;
       }
       ++counterId;
@@ -175,8 +203,9 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
         if (value < minValue) {
           logger
-              .info("skipping counter values for: " + counterLabel + "/" + label + ", because value: " + value
+              .debug("skipping counter values for: " + counterLabel + "/" + label + ", because value: " + value
                   + "< min value: " + minValue);
+          skipMinCountList.add(counterLabel);
           continue;
         }
 
@@ -200,7 +229,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
   @Override
   public String getName() {
-    return "PlotlChartService";
+    return "PlotlyChartService";
   }
 
 }

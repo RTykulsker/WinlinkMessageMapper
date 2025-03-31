@@ -48,38 +48,22 @@ public abstract class AbstractBaseChartService implements IChartService {
   private static final Logger logger = LoggerFactory.getLogger(AbstractBaseChartService.class);
 
   // input
-  protected static IConfigurationManager cm;
-  protected static Map<String, Counter> counterMap;
-  private static List<Counter> counterList;
-  protected static MessageType messageType; // will be null for MultiMessageFeedbackProcessor; needed to set file name
+  protected IConfigurationManager cm;
+  protected Map<String, Counter> counterMap;
+  private List<Counter> counterList;
+  protected MessageType messageType; // will be null for MultiMessageFeedbackProcessor; needed to set file name
 
   // global config
-  protected static Path fileOutputPath;
-  private static IChartService service;
-  static protected Map<String, ChartConfig> configMap = new HashMap<>();
+  protected Path fileOutputPath;
+  protected Map<String, ChartConfig> configMap = new HashMap<>();
 
-  /**
-   * factory method to get configuration-specified IChartService for given messageType
-   *
-   * @param _cm
-   * @param _counterMap
-   * @param _messageType
-   * @return
-   */
-  public static IChartService getChartService(IConfigurationManager _cm, Map<String, Counter> _counterMap,
-      MessageType _messageType) {
-    cm = _cm;
-    counterMap = _counterMap;
-    messageType = _messageType;
-
-    if (counterMap.size() == 0) {
-      logger.warn("### initializing with " + counterMap.size() + " potential charts");
-    } else {
-      logger.info("initializing with " + counterMap.size() + " potential charts");
-    }
+  @Override
+  public void initialize(IConfigurationManager cm, Map<String, Counter> counterMap, MessageType messageType) {
+    this.cm = cm;
+    this.counterMap = counterMap;
+    this.messageType = messageType;
 
     parseConfig();
-    return service;
   }
 
   // https://jsonformatter.curiousconcept.com to format down to a single line
@@ -103,13 +87,12 @@ public abstract class AbstractBaseChartService implements IChartService {
       """;
 
   /**
-   * set up static members with JSON-based configuration; or default values if none provided
+   * set up with JSON-based configuration; or default values if none provided
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  private static void parseConfig() {
+  private void parseConfig() {
     var fileName = messageType == null ? "summary" : messageType.name().toLowerCase();
     fileOutputPath = Path.of(cm.getAsString(Key.PATH), "output", fileName + "_" + "plottly_chart.html");
-    service = new PlotlyChartService();
 
     var defaultConfig = new ChartConfig(List.of(ChartType.PIE), false, 0, 10);
     var jsonString = cm.getAsString(Key.CHART_CONFIG, "").trim();
@@ -124,9 +107,6 @@ public abstract class AbstractBaseChartService implements IChartService {
     try {
       ObjectMapper mapper = new ObjectMapper();
       var jsonMap = mapper.readValue(jsonString, Map.class);
-
-      var serviceName = (String) jsonMap.getOrDefault("serviceName", "Plotly");
-      service = parseServiceName(serviceName);
 
       var excludedCountersString = (List<String>) jsonMap.get("excludedCounters");
       var includedCountersString = (List<String>) jsonMap.get("includedCounters");
@@ -169,7 +149,7 @@ public abstract class AbstractBaseChartService implements IChartService {
   }
 
   @SuppressWarnings("rawtypes")
-  private static void validateJson(String label, Map jsonMap, Set<String> safeKeys) {
+  private void validateJson(String label, Map jsonMap, Set<String> safeKeys) {
     var badKeys = new ArrayList<String>();
     for (var jsonKey : jsonMap.keySet()) {
       var jsonKeyName = (String) jsonKey;
@@ -182,8 +162,8 @@ public abstract class AbstractBaseChartService implements IChartService {
     }
   }
 
-  protected static List<Counter> filterCounters(List<String> includedCountersString,
-      List<String> excludedCountersString, Map<String, Counter> counterMap) {
+  protected List<Counter> filterCounters(List<String> includedCountersString, List<String> excludedCountersString,
+      Map<String, Counter> counterMap) {
     if (includedCountersString == null && excludedCountersString == null) {
       return counterMap.values().stream().sorted().toList();
     }
@@ -228,25 +208,6 @@ public abstract class AbstractBaseChartService implements IChartService {
     var ret = tmpList.stream().sorted().toList();
     logger.info("filtering returning " + ret.size() + " counters");
     return ret;
-  }
-
-  private static IChartService parseServiceName(String serviceName) {
-    for (var prefix : List.of("com.surftools.wimp.service.chart.", "")) {
-      for (var suffix : List.of("Service", "ChartService", "")) {
-        var className = prefix + serviceName + suffix;
-        logger.debug("searching for className: " + className);
-        try {
-          var clazz = Class.forName(className);
-          if (clazz != null) {
-            service = (IChartService) clazz.getDeclaredConstructor().newInstance();
-            return service;
-          }
-        } catch (Exception e) {
-          ;
-        }
-      } // end loop over suffixes
-    } // end loop over prefixes
-    throw new RuntimeException("Could not find a processor for: " + serviceName);
   }
 
 }

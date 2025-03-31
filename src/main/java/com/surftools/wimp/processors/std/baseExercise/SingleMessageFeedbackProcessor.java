@@ -48,7 +48,7 @@ import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.WriteProcessor;
-import com.surftools.wimp.service.chart.AbstractBaseChartService;
+import com.surftools.wimp.service.chart.ChartServiceFactory;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -258,7 +258,8 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
       summaryCounterMap.put(summaryKey, value);
     }
 
-    var chartService = AbstractBaseChartService.getChartService(cm, counterMap, messageType);
+    var chartService = ChartServiceFactory.getChartService(cm);
+    chartService.initialize(cm, counterMap, messageType);
     chartService.makeCharts();
   }
 

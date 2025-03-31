@@ -485,8 +485,10 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   public void postProcess() {
     writeTable("fileRecords.csv", readRecords);
 
-    if (isReadFilteringEnabled) {
+    if (isReadFilteringEnabled && readFilterIncludeCount > 0) {
       logger.warn("### Read Filter: " + readFilterIncludeCount + " messages included");
+    }
+    if (isReadFilteringEnabled && readFilterExcludeCount > 0) {
       logger.warn("### Read Filter: " + readFilterExcludeCount + " messages excluded");
     }
   }
