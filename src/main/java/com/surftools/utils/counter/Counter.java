@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 import com.opencsv.CSVWriter;
 
 @SuppressWarnings("rawtypes")
-public class Counter implements ICounter {
+public class Counter implements ICounter, Comparable {
   protected Map<Comparable, Integer> map = new HashMap<>();
   protected String name;
 
@@ -184,6 +184,12 @@ public class Counter implements ICounter {
   @Override
   public void write(Path path) {
     write(path, CounterType.DESCENDING_COUNT);
+  }
+
+  @Override
+  public int compareTo(Object other) {
+    var o = (Counter) other;
+    return name.compareTo(o.name);
   }
 
 }

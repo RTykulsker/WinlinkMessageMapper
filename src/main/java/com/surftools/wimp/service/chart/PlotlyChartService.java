@@ -37,9 +37,6 @@ import com.surftools.wimp.configuration.Key;
 public class PlotlyChartService extends AbstractBaseChartService {
   private static final Logger logger = LoggerFactory.getLogger(PlotlyChartService.class);
 
-  // TODO fixme
-  private int MAX_COUNT = 20;
-
   @Override
   public void makeCharts() {
 
@@ -92,26 +89,25 @@ public class PlotlyChartService extends AbstractBaseChartService {
     var counterId = 0;
     var sb = new StringBuilder();
 
-    if (!doSingleItemCharts) {
+    var anyDoSingleItemCharts = configMap.values().stream().anyMatch(c -> c.doSingleItemCharts());
+    if (!anyDoSingleItemCharts) {
       sb.append("<div><h3>(excluding single-item pie charts)</h3></div>\n");
     }
 
     for (var counterLabel : counterMap.keySet().stream().sorted().toList()) {
-      if (isExcluded(counterLabel)) {
-        logger.info("skipping excluded counter: " + counterLabel);
-        continue;
+      var counter = counterMap.get(counterLabel);
+      var config = configMap.get(counterLabel);
+      if (config == null) {
+        continue; // the counter has been filtered
       }
 
-      var counter = counterMap.get(counterLabel);
-
       var keyCount = counter.getKeyCount();
-      if (!doSingleItemCharts && keyCount == 1) {
+      if (!config.doSingleItemCharts() && keyCount == 1) {
         logger.debug("skipping counter: " + counterLabel + ", only one value");
         continue;
       }
 
-      // TODO fixme
-      if (keyCount >= MAX_COUNT) {
+      if (keyCount >= config.maxValueCount()) {
         logger.warn("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
         continue;
       }
@@ -130,6 +126,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
   private String makeScriptContent() {
     final String SCRIPT = """
+        var layout={};
         // COUNTER_LABEL
         var data_COUNTER_ID = [{
           type: "CHART_TYPE",
@@ -144,23 +141,21 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
     var counterId = 0;
     var sb = new StringBuilder();
-    sb.append(extraLayout);
     for (var counterLabel : counterMap.keySet().stream().sorted().toList()) {
-      if (isExcluded(counterLabel)) {
-        logger.info("skipping excluded counter: " + counterLabel);
-        continue;
-      }
 
       var counter = counterMap.get(counterLabel);
+      var config = configMap.get(counterLabel);
+      if (config == null) {
+        continue; // the counter has been filtered
+      }
 
       var keyCount = counter.getKeyCount();
-      if (!doSingleItemCharts && keyCount == 1) {
+      if (!config.doSingleItemCharts() && keyCount == 1) {
         logger.debug("skipping counter: " + counterLabel + ", only one value");
         continue;
       }
 
-      // TODO fixme
-      if (keyCount >= MAX_COUNT) {
+      if (keyCount >= config.maxValueCount()) {
         logger.warn("### skipping counter: " + counterLabel + ", too many values (" + keyCount + ")");
         continue;
       }
@@ -168,7 +163,8 @@ public class PlotlyChartService extends AbstractBaseChartService {
 
       var labelStringBuilder = new StringBuilder();
       var valueStringBuilder = new StringBuilder();
-      var minValue = minValuesMap.get(counter);
+
+      var minValue = config.minValueCount();
       var iterator = counter.getDescendingCountIterator();
       while (iterator.hasNext()) {
         var entry = iterator.next();
@@ -177,7 +173,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
         label = label == null ? "" : label.toString();
         var value = entry.getValue() == null ? 0 : entry.getValue();
 
-        if (minValue != null && value < minValue) {
+        if (value < minValue) {
           logger
               .info("skipping counter values for: " + counterLabel + "/" + label + ", because value: " + value
                   + "< min value: " + minValue);
@@ -195,7 +191,7 @@ public class PlotlyChartService extends AbstractBaseChartService {
       var data = SCRIPT.replaceAll("COUNTER_LABEL", counterLabel);
       data = data.replace("LABELS", labelString.substring(0, labelString.length() - 1));
       data = data.replace("VALUES", valueString.substring(0, valueString.length() - 1));
-      data = data.replace("CHART_TYPE", chartType);
+      data = data.replace("CHART_TYPE", config.chartTypes().get(0).toString());
       data = data.replaceAll("COUNTER_ID", String.valueOf(counterId));
       sb.append(data + "\n");
     }
