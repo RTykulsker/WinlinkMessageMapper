@@ -126,6 +126,7 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
 
     // must defer until post-processing to fix bad locations, etc.
     if (doOutboundMessaging) {
+      var extraContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXTRA_CONTENT, "");
       var outboundAcknowledgementList = new ArrayList<OutboundMessage>();
       for (var ackEntry : acknowledgments) {
         var subject = "Message acknowledement";
@@ -154,7 +155,14 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
         var outboundMessage = new OutboundMessage(outboundMessageSender, ackEntry.from, subject, sb.toString(), null);
         outboundAcknowledgementList.add(outboundMessage);
       }
-      var service = new OutboundMessageService(cm, "acknowledgment-winlinkExpressOutboundMessages.xml");
+      
+      var fileName = "acknowledgment-winlinkExpressOutboundMessages.xml";
+		var service = (OutboundMessageService) null;
+      if (extraContent.length() == 0) {
+			service = new OutboundMessageService(cm, fileName);
+      } else {
+			service = new OutboundMessageService(cm, mm, extraContent, fileName);
+      }
       service.sendAll(outboundAcknowledgementList);
     }
   }
