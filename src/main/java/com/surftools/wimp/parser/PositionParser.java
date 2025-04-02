@@ -36,7 +36,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PositionMessage;
 
 public class PositionParser extends AbstractBaseParser {
-	private static final Logger logger = LoggerFactory.getLogger(PositionParser.class);
+  private static final Logger logger = LoggerFactory.getLogger(PositionParser.class);
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {
@@ -48,8 +48,9 @@ public class PositionParser extends AbstractBaseParser {
     var comments = getComments(mimeLines);
 
     if (latitude.length() == 0 || longitude.length() == 0) {
-		logger.warn("### From: " + message.from + ", mId: " + message.messageId //
-				+ ", can't parse lat/lon, lat: " + latitude + ", lon: " + longitude);
+      logger
+          .warn("### From: " + message.from + ", mId: " + message.messageId //
+              + ", can't parse lat/lon, lat: " + latitude + ", lon: " + longitude);
     }
 
     PositionMessage m = new PositionMessage(message, latitude, longitude, comments);

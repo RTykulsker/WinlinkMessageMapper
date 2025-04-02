@@ -126,22 +126,25 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
 
     // must defer until post-processing to fix bad locations, etc.
     if (doOutboundMessaging) {
+      final var EXPECTED_CONTENT = "Feedback messages and maps for expected message types will be generated and published shortly.\n";
+      final var UNEXPECTED_CONTENT = "No feedback can or will be produced for unexpected message types.\n";
+      var expectedContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXPECTED, EXPECTED_CONTENT);
+      var unexpectedContent = cm.getAsString(Key.ACKNOWLEDGEMENT_UNEXPECTED, UNEXPECTED_CONTENT);
       var extraContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXTRA_CONTENT, "");
       var outboundAcknowledgementList = new ArrayList<OutboundMessage>();
+      var subject = "Message acknowledement";
+      var exerciseName = cm.getAsString(Key.EXERCISE_NAME);
+      var exerciseDescription = cm.getAsString(Key.EXERCISE_DESCRIPTION);
+      if (exerciseName != null && exerciseDescription != null) {
+        subject = subject + " for " + exerciseName + ", " + exerciseDescription;
+      }
       for (var ackEntry : acknowledgments) {
-        var subject = "Message acknowledement";
-        var exerciseName = cm.getAsString(Key.EXERCISE_NAME);
-        var exerciseDescription = cm.getAsString(Key.EXERCISE_DESCRIPTION);
-        if (exerciseName != null && exerciseDescription != null) {
-          subject = subject + " for " + exerciseName + ", " + exerciseDescription;
-        }
-
         var sb = new StringBuilder();
         if (ackEntry.expectedMessageMap.size() > 0) {
           sb.append("The following expected message types are acknowledged:\n");
           sb.append(ackEntry.format(true, 4));
           sb.append("\n");
-          sb.append("Feedback messages and maps for expected message types will be generated and published shortly.\n");
+          sb.append(expectedContent);
           sb.append("\n");
           sb.append("----------------------------------------------------------------------------------------------");
           sb.append("\n\n");
@@ -150,19 +153,16 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
           sb.append("The following unexpected message types are acknowledged:\n");
           sb.append(ackEntry.format(false, 4));
           sb.append("\n");
-          sb.append("No feedback can or will be produced for unexpected message types.\n");
+          sb.append(unexpectedContent);
         }
+        sb.append(extraContent);
         var outboundMessage = new OutboundMessage(outboundMessageSender, ackEntry.from, subject, sb.toString(), null);
         outboundAcknowledgementList.add(outboundMessage);
       }
-      
+
       var fileName = "acknowledgment-winlinkExpressOutboundMessages.xml";
-		var service = (OutboundMessageService) null;
-      if (extraContent.length() == 0) {
-			service = new OutboundMessageService(cm, fileName);
-      } else {
-			service = new OutboundMessageService(cm, mm, extraContent, fileName);
-      }
+      var service = (OutboundMessageService) null;
+      service = new OutboundMessageService(cm, fileName);
       service.sendAll(outboundAcknowledgementList);
     }
   }
