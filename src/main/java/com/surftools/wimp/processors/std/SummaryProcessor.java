@@ -320,7 +320,7 @@ public class SummaryProcessor extends AbstractBaseProcessor {
     var totalMessageCount = uniqueMessageCount + (Integer) mm.getContextObject("dedupeCount");
     sb
         .append("\nSummary: unique participants: " + participantCounter.getValueTotal() //
-            + ", unique messages: " + uniqueMessageCount //
+            + ", unique (not duplicated or superceded) messages: " + uniqueMessageCount //
             + ", total messages: " + totalMessageCount + "\n");
     sb.append("\nMessageTypes: \n" + formatCounter(messageTypeCounter.getDescendingCountIterator(), "type", "count"));
     sb.append("\nReject Reasons: \n" + formatCounter(rejectCounter.getDescendingCountIterator(), "reason", "count"));

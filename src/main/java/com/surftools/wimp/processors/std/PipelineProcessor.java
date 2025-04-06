@@ -27,9 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -52,7 +49,6 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
   // default no-args constructor
   public PipelineProcessor() {
-
   }
 
   // code-golfing constructor
@@ -68,7 +64,14 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     final IMessageManager mm = new MessageManager();
     super.initialize(cm, mm, logger);
 
-    pipelineInitialize();
+    var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication,Filter");
+    var main = cm.getAsString(Key.PIPELINE_MAIN, "");
+    var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary");
+    var processorString = String.join(",", List.of(stdin, main, stdout));
+    var processorNames = Arrays.stream(processorString.split(",")).filter(s -> isValidProcessorName(s)).toList();
+    processors = processorNames.stream().map(pn -> findProcessor(pn)).toList();
+    logger.info("Processors: " + String.join(",", processorNames));
+
     processors.stream().forEach(p -> p.initialize(cm, mm));
   }
 
@@ -80,34 +83,6 @@ public class PipelineProcessor extends AbstractBaseProcessor {
   @Override
   public void postProcess() {
     processors.stream().forEach(p -> p.postProcess());
-  }
-
-  /**
-   * build the pipeline
-   */
-  private void pipelineInitialize() {
-    // fail fast: our working directory, where our input files are
-    Path path = Paths.get(pathName);
-    if (!Files.exists(path)) {
-      logger.error("specified path: " + pathName + " does not exist");
-      System.exit(1);
-    } else {
-      logger.info("WinlinkMessageMapper, starting with input path: " + path);
-    }
-
-    // this seems a good balance between streams and code-golfing
-    var stdin = Arrays
-        .asList(cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication,Filter").split(","));
-    var main = Arrays.asList(cm.getAsString(Key.PIPELINE_MAIN, "").split(","));
-    var stdout = Arrays.asList(cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary").split(","));
-    var processorNames = List
-        .of(stdin, main, stdout)
-          .stream()
-          .flatMap(list -> list.stream())
-          .filter(processorName -> isValidProcessorName(processorName))
-          .toList();
-    processors = processorNames.stream().map(pn -> findProcessor(pn)).toList();
-    logger.info("Processors: " + String.join(",", processorNames));
   }
 
   private boolean isValidProcessorName(String s) {

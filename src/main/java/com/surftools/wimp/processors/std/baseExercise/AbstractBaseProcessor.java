@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -100,6 +101,14 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     mm = _mm;
 
     pathName = cm.getAsString(Key.PATH);
+    // fail fast: our working directory, where our input files are
+    Path path = Paths.get(pathName);
+    if (!Files.exists(path)) {
+      logger.error("specified path: " + pathName + " does not exist");
+      System.exit(1);
+    } else {
+      logger.info("Starting with input path: " + path);
+    }
 
     // allow overriding of outputPathName!
     outputPathName = cm.getAsString(Key.OUTPUT_PATH);
