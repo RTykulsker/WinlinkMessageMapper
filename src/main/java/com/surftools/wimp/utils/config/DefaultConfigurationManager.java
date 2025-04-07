@@ -38,7 +38,7 @@ import java.util.Map;
  * @author bobt
  *
  */
-public class DefaultConfigurationManager implements IConfigurationManager {
+public class DefaultConfigurationManager implements IWritableConfigurationManager {
   protected Map<IConfigurationKey, String> map;
   protected IConfigurationKey[] values = null;
 
@@ -115,5 +115,20 @@ public class DefaultConfigurationManager implements IConfigurationManager {
     }
 
     return Boolean.valueOf(stringValue);
+  }
+
+  @Override
+  public void putString(IConfigurationKey key, String value) {
+    map.put(key, value);
+  }
+
+  @Override
+  public void putInt(IConfigurationKey key, Integer value) {
+    map.put(key, String.valueOf(value));
+  }
+
+  @Override
+  public void putBoolean(IConfigurationKey key, Boolean value) {
+    map.put(key, String.valueOf(value));
   }
 }

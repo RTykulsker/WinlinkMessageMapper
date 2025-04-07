@@ -49,7 +49,7 @@ public class PatOutboundMessageEngine extends AbstractBaseOutboundMessageEngine 
   public PatOutboundMessageEngine(IConfigurationManager cm, String extraContent, String fileName) {
     super(cm, extraContent, fileName);
 
-    execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_ENGINE_PATH, "/usr/bin/pat");
+    execPath = cm.getAsString(Key.OUTBOUND_MESSAGE_EXTRA_CONTEXT, "/usr/bin/pat");
     if (execPath == null || execPath.isEmpty()) {
       logger.warn("Configuration key: " + Key.OUTBOUND_MESSAGE_SENDER.name() + " not defined");
       return;
