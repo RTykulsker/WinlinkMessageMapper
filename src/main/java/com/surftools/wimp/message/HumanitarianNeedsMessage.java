@@ -91,7 +91,7 @@ public class HumanitarianNeedsMessage extends ExportedMessage {
         "Needs Health", "Needs Shelter", "Needs Food", "Needs Water", //
         "Needs Logistics", "Needs Other", //
         "Description", "Other", //
-        "Approved By", "Position/Title", "Version" };
+        "Approved By", "Position/Title", "Version", "File Name" };
   }
 
   @Override
@@ -113,7 +113,7 @@ public class HumanitarianNeedsMessage extends ExportedMessage {
         teamId, formDate, formTime, address, //
         String.valueOf(needsHealth), String.valueOf(needsShelter), String.valueOf(needsFood), //
         String.valueOf(needsWater), String.valueOf(needsLogistics), String.valueOf(needsOther), //
-        description, other, approvedBy, position, version };
+        description, other, approvedBy, position, version, fileName };
   }
 
   @Override

@@ -100,7 +100,7 @@ public class Ics309Message extends ExportedMessage {
     final var fixedHeaders = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", //
         "Organization", "Task Number", "Date/Time Prepared", "Operational Period", //
-        "Task Name", "Operator Id", "Station Id", "Incident Name", "Page", "Version", "# of Activities" };
+        "Task Name", "Operator Id", "Station Id", "Incident Name", "Page", "Version", "# of Activities", "File Name" };
 
     final var activityHeaders = new String[] { "DateTime", "From", "To", "Subject" };
 
@@ -131,7 +131,7 @@ public class Ics309Message extends ExportedMessage {
 
     var fixedValues = new String[] { messageId, from, to, subject, date, time, //
         lat, lon, organization, taskNumber, dateTimePrepared, operationalPeriod, taskName, operatorName, stationId,
-        incidentName, page, version, String.valueOf(activities.size()) };
+        incidentName, page, version, String.valueOf(activities.size()), fileName };
 
     var resultList = new ArrayList<String>(fixedValues.length + (nDisplayActivities * 4));
 

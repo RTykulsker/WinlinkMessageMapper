@@ -62,7 +62,7 @@ public class EyeWarnDetailMessage extends ExportedMessage {
         "Form Date", "Form Time", "NCS", //
         "Incident Name", "Total Check-ins", //
         "Color", "Form Date", "Form Time", "Text", //
-        "Version" };
+        "Version", "File Name" };
   }
 
   @Override
@@ -79,7 +79,7 @@ public class EyeWarnDetailMessage extends ExportedMessage {
         m.formDate, m.formTime, m.ncs, //
         m.incidentName, m.totalCheckIns, //
         detail.color(), detail.date(), detail.time(), detail.text(), //
-        m.version };
+        m.version, fileName };
   }
 
   @Override

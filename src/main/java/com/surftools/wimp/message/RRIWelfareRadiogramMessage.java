@@ -55,7 +55,7 @@ public class RRIWelfareRadiogramMessage extends ExportedMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "Header", "Address", "Body", "From", "Version" };
+        "Header", "Address", "Body", "From", "Version", "File Name" };
   }
 
   @Override
@@ -65,7 +65,7 @@ public class RRIWelfareRadiogramMessage extends ExportedMessage {
     var latitude = msgLocation != null && msgLocation.isValid() ? msgLocation.getLatitude() : "0.0";
     var longitude = msgLocation != null && msgLocation.isValid() ? msgLocation.getLongitude() : "0.0";
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        header, address, body, formFrom, version };
+        header, address, body, formFrom, version, fileName };
   }
 
   @Override

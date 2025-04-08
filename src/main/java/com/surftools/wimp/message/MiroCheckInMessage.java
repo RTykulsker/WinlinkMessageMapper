@@ -86,7 +86,7 @@ public class MiroCheckInMessage extends ExportedMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "Date", "Time", "Latitude", "Longitude", //
         "Power", "Band", "Mode", "Radio", "Antenna", "Portable", //
-        "Comments", "Version", "RF Power", "RMS Gateway", "Distance(miles)" };
+        "Comments", "Version", "RF Power", "RMS Gateway", "Distance(miles)", "File Name" };
   }
 
   @Override
@@ -98,7 +98,7 @@ public class MiroCheckInMessage extends ExportedMessage {
 
     return new String[] { messageId, from, date, time, latitude, longitude, //
         power, band, mode, radio, antenna, portable, comments, //
-        version, rfPower, rmsGateway, distanceMiles };
+        version, rfPower, rmsGateway, distanceMiles, fileName };
   }
 
   @Override

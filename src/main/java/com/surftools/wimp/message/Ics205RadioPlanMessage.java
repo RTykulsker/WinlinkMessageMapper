@@ -99,7 +99,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
         "OP Date From", "OP Date To", "OP Time From", "OP Time To", //
         "Special Instructions", "Approved By", //
         "Approved Date/Time", "IAP Page", //
-        "Version" };
+        "Version", "File Name" };
 
     var radioHeaders = new ArrayList<String>();
     for (int i = 1; i <= 10; i++) {
@@ -140,7 +140,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
         organization, incidentName, dateTimePrepared, //
         dateFrom, dateTo, timeFrom, timeTo, //
         specialInstructions, approvedBy, approvedDateTime, //
-        iapPage, version };
+        iapPage, version, fileName };
 
     var radioValues = new ArrayList<String>();
     for (int i = 0; i < 10; i++) {

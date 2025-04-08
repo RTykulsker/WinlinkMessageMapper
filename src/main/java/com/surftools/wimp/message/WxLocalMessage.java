@@ -89,7 +89,7 @@ public class WxLocalMessage extends ExportedMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Organization", //
         "Location", "City", "State", "County", //
-        "Temperature", "Windspeed", "Range", "Max Gusts", "Warning Type", "Warning Field", "Comments", };
+        "Temperature", "Windspeed", "Range", "Max Gusts", "Warning Type", "Warning Field", "Comments", "File Name" };
   }
 
   @Override
@@ -101,7 +101,7 @@ public class WxLocalMessage extends ExportedMessage {
 
     return new String[] { messageId, from, to, subject, date, time, lat, lon, organization, //
         locationString, city, state, county, //
-        temperature, windspeed, range, maxGusts, warningType, warningField, comments };
+        temperature, windspeed, range, maxGusts, warningType, warningField, comments, fileName };
   }
 
   @Override

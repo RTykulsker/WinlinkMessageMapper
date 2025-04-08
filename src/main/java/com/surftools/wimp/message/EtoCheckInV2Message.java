@@ -56,7 +56,7 @@ public class EtoCheckInV2Message extends ExportedMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "FormName", "Comments", "Version", };
+        "FormName", "Comments", "Version", "File Name" };
   }
 
   @Override
@@ -65,7 +65,7 @@ public class EtoCheckInV2Message extends ExportedMessage {
     var longitude = mapLocation == null ? "" : mapLocation.getLongitude();
 
     return new String[] { messageId, from, to, subject, dateString, timeString, latitude, longitude, //
-        formName, comments, version };
+        formName, comments, version, fileName };
   }
 
   public String getComments() {

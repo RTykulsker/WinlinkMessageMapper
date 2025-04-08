@@ -56,7 +56,8 @@ public class AckMessage extends ExportedMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
-        "OrigSubject", "Sender", "OrigTo", "Received", "Acknowledged", "OrigMessageId", "NAttachments", "Size" };
+        "OrigSubject", "Sender", "OrigTo", "Received", "Acknowledged", "OrigMessageId", "NAttachments", "Size",
+        "File Name" };
 
   }
 
@@ -65,7 +66,7 @@ public class AckMessage extends ExportedMessage {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
     return new String[] { messageId, from, to, subject, date, time, //
-        originalSubject, sender, originalTo, received, acknowledged, originalId, nAttachments, size };
+        originalSubject, sender, originalTo, received, acknowledged, originalId, nAttachments, size, fileName };
   }
 
   @Override

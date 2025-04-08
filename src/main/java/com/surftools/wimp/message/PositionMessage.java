@@ -49,14 +49,15 @@ public class PositionMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Comments" };
+    return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", "Comments",
+        "File Name" };
   }
 
   @Override
   public String[] getValues() {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
-    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, comments };
+    return new String[] { messageId, from, to, subject, date, time, latitude, longitude, comments, fileName };
   }
 
   @Override

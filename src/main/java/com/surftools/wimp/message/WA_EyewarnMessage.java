@@ -158,7 +158,7 @@ public class WA_EyewarnMessage extends ExportedMessage {
         "Questions", //
         "Bridges", "Cell Towers", "Hospitals", "Power Lines/Towers", "Roads", "Schools", "Other Local Damage", //
         "Relay Operator", "Relay Received", "Relay Sent", //
-        "Radio Operator", "Radio Received", //
+        "Radio Operator", "Radio Received", "File Name" //
     };
   }
 
@@ -176,7 +176,7 @@ public class WA_EyewarnMessage extends ExportedMessage {
         questions, //
         bridges, cellTowers, hospitals, powerLinesTowers, roads, schools, otherLocalDamage, //
         relayOperator, relayReceived, relaySent, //
-        radioOperator, radioReceived };
+        radioOperator, radioReceived, fileName };
   }
 
   @Override

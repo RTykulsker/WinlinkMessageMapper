@@ -140,7 +140,7 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
         "Seismic Restraint Devices", //
 
         "Sending Station", "Receiving Station", "Radio Frequency", "Sent/Received", //
-        "Version" };
+        "Version", "File Name" };
   }
 
   private String b(boolean b) {
@@ -173,7 +173,7 @@ public class WA_WSDOT_BridgeDamageMessage extends ExportedMessage {
         b(damageSeismicRestraintDevices), //
 
         commLogSendingStation, commLogReceivingStation, commLogFrequencyMHz, commLogReceivedLocal, //
-        version };
+        version, fileName };
   }
 
   @Override

@@ -128,7 +128,7 @@ public class WA_ISNAP_Message extends ExportedMessage {
         "Medical Status", "Medical Comments", //
         "Communications Status", "communications Comments", //
         "Public Safety Status", "Public Safety Comments", //
-        "Environment Status", "Environment Comments" //
+        "Environment Status", "Environment Comments", "File Name" //
     };
   }
 
@@ -148,7 +148,7 @@ public class WA_ISNAP_Message extends ExportedMessage {
         medicalStatus, medicalComments, //
         communicationsStatus, communicationsComments, //
         publicSafetyStatus, publicSafetyComments, //
-        environmentStatus, environmentComments, //
+        environmentStatus, environmentComments, fileName //
     };
   }
 

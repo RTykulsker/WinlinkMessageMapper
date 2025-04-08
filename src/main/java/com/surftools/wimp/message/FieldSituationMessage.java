@@ -233,7 +233,7 @@ public class FieldSituationMessage extends ExportedMessage {
         "Natural Gas Status", "Natural Gas Comments", //
         "Internet Status", "Internet Comments", //
         "NOAA Status", "NOAA Comments", "NOAA audio degraded", "NOAA audio degraded Comments", //
-        "Additional Comments", "POC", "FormVersion" };
+        "Additional Comments", "POC", "FormVersion", "File Name" };
   }
 
   @Override
@@ -251,7 +251,7 @@ public class FieldSituationMessage extends ExportedMessage {
         naturalGasStatus, naturalGasComments, //
         internetStatus, internetComments, //
         noaaStatus, noaaComments, noaaAudioDegraded, noaaAudioDegradedComments, //
-        additionalComments, poc, formVersion };
+        additionalComments, poc, formVersion, fileName };
   }
 
   @Override

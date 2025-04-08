@@ -146,7 +146,7 @@ public class CheckInMessage extends ExportedMessage {
         toList, from, contactName, initialOperators, //
         status, service, band, mode, //
         locationString, formLocation == null ? "" : formLocation.toString(), mgrs, gridSquare, //
-        comments, version, dataSource };
+        comments, version, dataSource, fileName };
   }
 
   @Override
@@ -165,7 +165,7 @@ public class CheckInMessage extends ExportedMessage {
         "Organization", "Form Date/Time", "To List", "Form From", "Station Contact", "Initial Operators", //
         "Status", "Service", "Band", "Mode", //
         "Location", "Form Lat/Long", "MGRS", "Grid Square", //
-        "Comments", "Version", "Data Source" };
+        "Comments", "Version", "Data Source", "File Name" };
   }
 
 }

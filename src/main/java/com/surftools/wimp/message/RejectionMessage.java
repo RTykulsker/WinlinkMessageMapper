@@ -51,14 +51,14 @@ public class RejectionMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "MessageId", "From", "To", "Date", "Time", "Reason", "Context" };
+    return new String[] { "MessageId", "From", "To", "Date", "Time", "Reason", "Context", "File Name" };
   }
 
   @Override
   public String[] getValues() {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
-    return new String[] { messageId, from, to, date, time, reason.toString(), context };
+    return new String[] { messageId, from, to, date, time, reason.toString(), context, fileName };
   }
 
   @Override

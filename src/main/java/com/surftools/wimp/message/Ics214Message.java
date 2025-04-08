@@ -114,7 +114,7 @@ public class Ics214Message extends ExportedMessage {
     final var fixedHeaders = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", //
         "Organization", "IncidentName", "Page", "OP From", "OP To", //
-        "Name", "ICS Position", "Home Agency", "Prepared By", "Version" };
+        "Name", "ICS Position", "Home Agency", "Prepared By", "Version", "File Name" };
     final var resourceHeaders = new String[] { "Name", "Position", "Agency" };
     final var activityHeaders = new String[] { "DateTime", "Activities" };
 
@@ -148,7 +148,7 @@ public class Ics214Message extends ExportedMessage {
 
     var fixedValues = new String[] { messageId, from, to, subject, date, time, //
         lat, lon, organization, incidentName, page, opFrom, opTo, //
-        selfResource.name, selfResource.icsPosition, selfResource.homeAgency, preparedBy, version };
+        selfResource.name, selfResource.icsPosition, selfResource.homeAgency, preparedBy, version, fileName };
 
     var resultList = new ArrayList<String>(
         fixedValues.length + (nDisplayAdditionalResouces * 3) + (nDisplayActivities * 2));

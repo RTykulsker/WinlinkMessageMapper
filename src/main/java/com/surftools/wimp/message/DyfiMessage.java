@@ -244,7 +244,8 @@ public class DyfiMessage extends ExportedMessage {
     if (detailLevel == DetailLevel.LOW) {
       return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
           "Latitude", "Longitude", //
-          "ExerciseId", "Location", "IsRealEvent", "IsFelt", "Response", "Comments", "Intensity", "FormVersion" };
+          "ExerciseId", "Location", "IsRealEvent", "IsFelt", "Response", "Comments", "Intensity", "FormVersion",
+          "File Name" };
     } else if (detailLevel == DetailLevel.MEDIUM) {
       return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
           "Latitude", "Longitude", //
@@ -274,7 +275,7 @@ public class DyfiMessage extends ExportedMessage {
       return new String[] { messageId, from, to, subject, date, time, //
           lat, lon, //
           exerciseId, location, Boolean.toString(isRealEvent), Boolean.toString(isFelt), response, comments, intensity,
-          formVersion };
+          formVersion, fileName };
     } else if (detailLevel == DetailLevel.MEDIUM) {
       return new String[] { messageId, from, to, subject, date, time, //
           lat, lon, //

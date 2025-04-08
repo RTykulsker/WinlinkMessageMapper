@@ -90,7 +90,7 @@ public class SpotRepMessage extends ExportedMessage {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
         "Location", "LandlineStatus", "LandlineComments", "CellPhoneStatus", "CellPhoneComments", "RadioStatus",
         "RadioComments", "TvStatus", "TvComments", "WaterStatus", "WaterComments", "PowerStatus", "PowerComments",
-        "InternetStatus", "InternetComments", "AdditionalComments", "POC" };
+        "InternetStatus", "InternetComments", "AdditionalComments", "POC", "File Name" };
   }
 
   @Override
@@ -103,7 +103,7 @@ public class SpotRepMessage extends ExportedMessage {
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
         locationString, landlineStatus, landlineComments, cellPhoneStatus, cellPhoneComments, radioStatus,
         radioComments, tvStatus, tvComments, waterStatus, waterComments, powerStatus, powerComments, internetStatus,
-        internetComments, additionalComments, poc };
+        internetComments, additionalComments, poc, fileName };
   }
 
   @Override

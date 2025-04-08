@@ -50,7 +50,7 @@ public class Ics213RRMessage extends ExportedMessage {
       "Requested By", "Priority", "Approved By", //
       "Log Order Number", "SupplierInfo", "SupplierName", //
       "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
-      "Finance Comments", "Finance Chief", "Finance Date/Time", };
+      "Finance Comments", "Finance Chief", "Finance Date/Time", "File Name" };
 
   public static int lineItemsToDisplay = 8;
 
@@ -155,7 +155,7 @@ public class Ics213RRMessage extends ExportedMessage {
         logisticsOrderNumber, supplierInfo, supplierName, //
         supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
         logisticsDateTime, orderedBy, //
-        financeComments, financeName, financeDateTime };
+        financeComments, financeName, financeDateTime, fileName };
 
     Collections.addAll(resultList, preValues);
     for (int i = 1; i <= lineItemsToDisplay; ++i) {

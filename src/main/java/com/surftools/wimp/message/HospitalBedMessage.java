@@ -162,7 +162,7 @@ public class HospitalBedMessage extends ExportedMessage {
         "ContactPerson", "ContactPhone", "ContactEmail", //
         "MedicalBedCount", "MedicalBedNotes", //
         "CriticalBedCount", "CriticalBedNotes", //
-        "TotalBedCount", "AdditionalComments", "Version"//
+        "TotalBedCount", "AdditionalComments", "Version", "File Name"//
     };
   }
 
@@ -179,7 +179,7 @@ public class HospitalBedMessage extends ExportedMessage {
         contactPerson, contactPhone, contactEmail, //
         medicalBedCount, medicalBedNotes, //
         criticalBedCount, criticalBedNotes, //
-        totalBedCount, additionalComments, version//
+        totalBedCount, additionalComments, version, fileName//
     };
   }
 

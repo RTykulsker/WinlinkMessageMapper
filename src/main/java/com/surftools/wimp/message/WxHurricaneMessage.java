@@ -87,7 +87,7 @@ public class WxHurricaneMessage extends ExportedMessage {
         "Status", "IsObserver", "ObserverPhone", "ObserverEmail", //
         "City", "County", "State", "Country", //
         "InstrumentsUsed", "WindSpeed", "GustSpeed", "WindDirection", "BarometricPressure", //
-        "Comments" };
+        "Comments", "File Name" };
   }
 
   @Override
@@ -101,7 +101,7 @@ public class WxHurricaneMessage extends ExportedMessage {
         status, isObserver, observerPhone, observerEmail, //
         city, county, state, country, //
         instrumentsUsed, windSpeed, gustSpeed, windDirection, barometricPressure, //
-        comments };
+        comments, fileName };
   }
 
   @Override

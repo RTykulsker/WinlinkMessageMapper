@@ -52,7 +52,7 @@ public class Ics213ReplyMessage extends ExportedMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", "Organization", "Message", //
-        "Reply", "ReplyBy", "ReplyPosition", "ReplyDateTime" };
+        "Reply", "ReplyBy", "ReplyPosition", "ReplyDateTime", "File Name" };
   }
 
   @Override
@@ -64,7 +64,7 @@ public class Ics213ReplyMessage extends ExportedMessage {
 
     return new String[] { messageId, from, to, subject, date, time, //
         latitude, longitude, organization, message, //
-        reply, replyBy, replyPosition, replyDateTime };
+        reply, replyBy, replyPosition, replyDateTime, fileName };
   }
 
   @Override

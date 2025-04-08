@@ -55,7 +55,7 @@ public class RRIQuickWelfareMessage extends ExportedMessage {
   @Override
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
-        "(Form) From", "(Form) Date/Time", "Incident Name", "Message Text", "Version" };
+        "(Form) From", "(Form) Date/Time", "Incident Name", "Message Text", "Version", "File Name" };
   }
 
   @Override
@@ -65,7 +65,7 @@ public class RRIQuickWelfareMessage extends ExportedMessage {
     var latitude = msgLocation != null && msgLocation.isValid() ? msgLocation.getLatitude() : "0.0";
     var longitude = msgLocation != null && msgLocation.isValid() ? msgLocation.getLongitude() : "0.0";
     return new String[] { messageId, from, to, subject, date, time, latitude, longitude, //
-        formFrom, formDateTime, incidentName, text, version };
+        formFrom, formDateTime, incidentName, text, version, fileName };
   }
 
   @Override

@@ -152,7 +152,7 @@ public class WA_WSDOT_RoadwayDamageMessage extends ExportedMessage {
         "Sloughing slopes", //
 
         "Sending Station", "Receiving Station", "Radio Frequency", "Sent/Received", //
-        "Version" };
+        "Version", "File Name" };
   }
 
   private String b(boolean b) {
@@ -188,7 +188,7 @@ public class WA_WSDOT_RoadwayDamageMessage extends ExportedMessage {
         b(geoSloughingSlopes), //
 
         commLogSendingStation, commLogReceivingStation, commLogFrequencyMHz, commLogReceivedLocal, //
-        version };
+        version, fileName };
   }
 
   @Override

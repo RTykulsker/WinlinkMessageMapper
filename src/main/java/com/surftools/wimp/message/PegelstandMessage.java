@@ -164,7 +164,7 @@ public class PegelstandMessage extends ExportedMessage {
 
         "Water Level", "Water Level Units", //
 
-        "Comments", "Form Version"//
+        "Comments", "Form Version", "File Name"//
     };
 
   }
@@ -186,7 +186,7 @@ public class PegelstandMessage extends ExportedMessage {
         measuredValues, measurementLocationNumber, //
         speed, speedUnits, volume, volumeUnits, trend, //
         water, waterUnits, //
-        comments, formVersion };
+        comments, formVersion, fileName };
 
   }
 

@@ -133,7 +133,7 @@ public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
         "LocalResources Exhausted", "Mutual Aid Resources Exhausted", "Commercial Resources Exhausted", //
         "Willing to Fund", //
         "Version", //
-    };
+        "File Name" };
   }
 
   @Override
@@ -169,7 +169,7 @@ public class WA_WebEoc_Ics213RRMessage extends Ics213RRMessage {
         localResourcesExhausted, mutualAidResourcesExhausted, commericalResourcesExhausted, //
         willingToFund, //
         version, //
-    };
+        fileName };
   }
 
   @Override

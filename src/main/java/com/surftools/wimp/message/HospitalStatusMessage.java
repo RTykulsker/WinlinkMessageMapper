@@ -224,7 +224,7 @@ public class HospitalStatusMessage extends ExportedMessage {
         "Disaster Plan Activated", "Command Center Activated", "Generator Power", "Will Send RR in 4 hours",
         "Additional Comments", //
 
-        "Version" };
+        "Version", "File Name" };
   }
 
   @Override
@@ -266,7 +266,7 @@ public class HospitalStatusMessage extends ExportedMessage {
         String.valueOf(planActivated), String.valueOf(commandCenterActivated), String.valueOf(generatorInUse),
         String.valueOf(rrIn4Hours), additionalComments, //
 
-        version //
+        version, fileName//
     };
   }
 

@@ -80,7 +80,7 @@ public class QuickMessage extends ExportedMessage {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", //
         "Latitude", "Longitude", //
-        "Attention", "SendTo", "From (Name/Group)", "Date/Time", "Subject", "Message", "Version" };
+        "Attention", "SendTo", "From (Name/Group)", "Date/Time", "Subject", "Message", "Version", "File Name" };
   }
 
   @Override
@@ -92,7 +92,7 @@ public class QuickMessage extends ExportedMessage {
 
     return new String[] { messageId, from, to, subject, //
         date, time, latitude, longitude, //
-        attention, sendToAddress, fromNameGroup, dateTimeString, subject, messageText, version };
+        attention, sendToAddress, fromNameGroup, dateTimeString, subject, messageText, version, fileName };
   }
 
   @Override

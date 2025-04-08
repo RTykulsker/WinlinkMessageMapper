@@ -90,7 +90,7 @@ public class WindshieldDamageAssessmentMessage extends ExportedMessage {
         "Survey Area", "Survey Team", //
         "Start Event", "Survey Date", //
         "Total Loss", //
-        "Comments", "Version" };
+        "Comments", "Version", "File Name" };
 
     var categoryHeaders = new ArrayList<String>();
     for (int i = 0; i < damageEntries.size(); i++) {
@@ -119,7 +119,7 @@ public class WindshieldDamageAssessmentMessage extends ExportedMessage {
         formType, eventType, description, //
         surveyArea, surveyTeam, //
         eventStartDate, surveyDate, //
-        totalLossString, comments, version };
+        totalLossString, comments, version, fileName };
 
     var categoryValues = new ArrayList<String>();
     for (var entry : damageEntries) {
@@ -151,7 +151,7 @@ public class WindshieldDamageAssessmentMessage extends ExportedMessage {
     private static String[] names = { "n/a", "Houses", "Apt Complexes", "Mobile Homes", //
         "Residential High Rise", "Commercial High Rise", "Public Blgs", "Small Businesses", //
         "Factories/Industrial Complexes", "Roads", "Bridges", "Electrical Distribution", //
-        "Schools"//
+        "Schools", //
     };
 
     public static String getName(int index) {

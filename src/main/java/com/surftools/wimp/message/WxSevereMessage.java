@@ -94,7 +94,7 @@ public class WxSevereMessage extends ExportedMessage {
         "Flood", "HailSize", "WindSpeed", "Tornado", //
         "WindDamage", "Precipitation", "Snow", "FreezingRain", //
         "Rain", "RainPeriod", //
-        "Comments" };
+        "Comments", "File Name" };
 
   }
 
@@ -111,7 +111,7 @@ public class WxSevereMessage extends ExportedMessage {
         flood, hailSize, windSpeed, tornado, //
         windDamage, precipitation, snow, freezingRain, //
         rain, rainPeriod, //
-        comments };
+        comments, fileName };
   }
 
   @Override

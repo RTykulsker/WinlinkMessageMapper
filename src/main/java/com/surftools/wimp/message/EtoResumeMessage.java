@@ -101,7 +101,7 @@ public class EtoResumeMessage extends ExportedMessage {
         "IS-100", "IS-200", "IS-700", "IS-800", "IS-2200", //
         "ACES", "EC-001", "EC-016", "Skywarn", //
         "AuxComm", "ComT", "ComL", "Agencies", //
-        "Comments", "Version" };
+        "Comments", "Version", "File Name" };
   }
 
   @Override
@@ -135,7 +135,7 @@ public class EtoResumeMessage extends ExportedMessage {
         hasComL, //
 
         String.join(",", agencies), //
-        comments, version };
+        comments, version, fileName };
   }
 
   private String trainingCount() {

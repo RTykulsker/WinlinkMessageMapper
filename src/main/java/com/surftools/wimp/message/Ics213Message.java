@@ -84,7 +84,7 @@ public class Ics213Message extends ExportedMessage {
         "Latitude", "Longitude", "Msg Location", "Form Location", //
         "Organization", "IncidentName", //
         "Form From", "Form To", "Form Subject", "Form Date", "Form Time", //
-        "Form Message", "Approved By", "Position/Title", "Is Exercise", "Version", "Data Source" };
+        "Form Message", "Approved By", "Position/Title", "Is Exercise", "Version", "Data Source", "File Name" };
   }
 
   @Override
@@ -105,7 +105,7 @@ public class Ics213Message extends ExportedMessage {
         formLocation == null ? "" : formLocation.toString(), //
         organization, incidentName, //
         formFrom, formTo, formSubject, formDate, formTime, //
-        formMessage, approvedBy, position, String.valueOf(isExercise), version, dataSource };
+        formMessage, approvedBy, position, String.valueOf(isExercise), version, dataSource, fileName };
   }
 
   @Override

@@ -120,7 +120,8 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
 
   @Override
   public String[] getHeaders() {
-    var prefix = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude" };
+    var prefix = new String[] { "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude",
+        "File Name" };
 
     var dataHeaders = Arrays
         .stream(DataType.values())
@@ -138,7 +139,7 @@ public class WA_WSDOT_BridgeRoadwayDamageMessage extends ExportedMessage {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
 
-    var prefix = new String[] { messageId, from, to, subject, date, time, latitude, longitude };
+    var prefix = new String[] { messageId, from, to, subject, date, time, latitude, longitude, fileName };
 
     var dataValues = dataMap.values().toArray(new String[0]);
 

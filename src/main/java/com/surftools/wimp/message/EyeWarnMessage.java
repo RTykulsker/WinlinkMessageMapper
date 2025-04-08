@@ -104,7 +104,7 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
         "# Red", "Red Reports", //
         "# Yellow", "Yellow Reports", //
         "# Green", "Green Reports", //
-        "Version" };
+        "Version", "File Name" };
   }
 
   @Override
@@ -130,7 +130,7 @@ public class EyeWarnMessage extends ExportedMessage implements IDetailableMessag
         String.valueOf(greenDetails.size()),
         String.join("\n", greenDetails.stream().map(s -> s.toShortString()).toList()), //
 
-        version };
+        version, fileName };
   }
 
   @Override

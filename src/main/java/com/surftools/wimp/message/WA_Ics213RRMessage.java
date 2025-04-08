@@ -130,7 +130,7 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
           "Substitutes", "Priority", //
           "Commercial Resources Exhausted", "LocalResources Exhausted", "Mutual Aid Resources Exhausted", //
           "Willing to Fund", "Explanation", //
-          "Requested By", "Authorized By" };
+          "Requested By", "Authorized By", "File Name" };
     } else if (detailLevel == DetailLevel.MEDIUM) {
       return new String[] { //
           "MessageId", "From", "To", "Subject", "Date", "Time", "Latitude", "Longitude", //
@@ -152,7 +152,7 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
           "Elevate to State", "State Tracking Number", "Mutual Aid Tracking Number", //
 
           "Finance Comments", //
-          "Finance Signature", "Finance Date/Time" //
+          "Finance Signature", "Finance Date/Time", "File Name"//
       };
     }
     throw new RuntimeException("Unsupported detailLevel: " + detailLevel);
@@ -178,7 +178,7 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
           substitutes, priority, //
           commericalResourcesExhausted, localResourcesExhausted, mutualAidResourcesExhausted, //
           willingToFund, fundingExplanation, //
-          requestedBy, approvedBy, //
+          requestedBy, approvedBy, fileName//
       };
     } else if (detailLevel == DetailLevel.MEDIUM) {
       return new String[] { //
@@ -200,7 +200,7 @@ public class WA_Ics213RRMessage extends Ics213RRMessage {
           orderedBy, extraOrderedBy, //
           elevateToState, stateTrackingNumber, mutualAidTrackingNumber, //
 
-          financeComments, financeName, financeDateTime //
+          financeComments, financeName, financeDateTime, fileName //
       };
     }
     throw new RuntimeException("Unsupported detailLevel: " + detailLevel);
