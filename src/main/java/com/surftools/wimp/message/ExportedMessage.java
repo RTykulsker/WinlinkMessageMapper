@@ -70,6 +70,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public LatLongPair mapLocation; // location used for mapping
 
   public final boolean isP2p;
+  public final String fileName;
 
   @Override
   public int hashCode() {
@@ -104,7 +105,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public ExportedMessage(String messageId, String from, String source, String to, String toList, String ccList, //
       String subject, LocalDateTime dateTime, //
       LatLongPair location, String locationSource, //
-      String mime, String plainContent, Map<String, byte[]> attachments, boolean isP2p) {
+      String mime, String plainContent, Map<String, byte[]> attachments, boolean isP2p, String fileName) {
     this.messageId = messageId;
     this.from = from;
     this.source = source;
@@ -125,6 +126,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     this.mapLocation = location;
 
     this.isP2p = isP2p;
+    this.fileName = fileName;
   }
 
   public void setSortDateTime(LocalDateTime dateTime) {
@@ -155,6 +157,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     this.sortDateTime = exportedMessage.sortDateTime;
     this.mapLocation = exportedMessage.mapLocation;
     this.isP2p = exportedMessage.isP2p;
+    this.fileName = exportedMessage.fileName;
   }
 
   @Override
@@ -179,7 +182,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public String[] getHeaders() {
     return new String[] { "MessageId", "From", "To", "ToList", "CcList", "Subject", //
         "Date", "Time", "Latitude", "Longitude", "LocSource", //
-        "Plain Content", "#Attachments"//
+        "Plain Content", "#Attachments", "FileName"//
     };
   }
 
@@ -192,7 +195,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     var nAttachments = attachments == null ? "" : String.valueOf(attachments.size());
     return new String[] { messageId, from, to, toList, ccList, subject, //
         date, time, lat, lon, msgLocationSource, //
-        plainContent, nAttachments };
+        plainContent, nAttachments, fileName };
   }
 
   public MessageType getMessageType() {

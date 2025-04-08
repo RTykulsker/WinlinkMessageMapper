@@ -29,7 +29,7 @@ package com.surftools.wimp.service.outboundMessage;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -47,7 +47,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ChunkedWinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMessageEngine {
   private static final Logger logger = LoggerFactory.getLogger(ChunkedWinlinkExpressOutboundMessageEngine.class);
 
-  private Map<Integer, StringBuilder> chunkMap = new LinkedHashMap<>();
+  private Map<Integer, StringBuilder> chunkMap = new HashMap<>();
   private int chunkIndex = 1;
   private StringBuilder currentChunk = new StringBuilder();
   private final int MAX_MESSAGES_PER_CHUNK = Integer.MAX_VALUE;
@@ -164,7 +164,7 @@ public class ChunkedWinlinkExpressOutboundMessageEngine extends AbstractBaseOutb
   }
 
   private String makeChunkedFileName(String aFileName, int iChunk, int nChunks) {
-    if (iChunk == 1 && nChunks == 1) {
+    if (nChunks == 1) {
       return aFileName;
     }
 

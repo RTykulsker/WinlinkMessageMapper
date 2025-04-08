@@ -87,7 +87,7 @@ public class WebReadProcessor extends BaseReadProcessor {
     try {
       var webExportedMessages = (String) mm.getContextObject("webReqestMessages");
       var fileName = (String) mm.getContextObject("webFileName");
-      var messages = parseExportedMessages(getInputStream(webExportedMessages));
+      var messages = parseExportedMessages(getInputStream(webExportedMessages), "(web)");
       messages.stream().forEach(m -> readRecords.add(new ReadRecord(m, fileName)));
       logger.info("extracted " + messages.size() + " exported messages from web: ");
       return messages;

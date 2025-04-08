@@ -110,7 +110,7 @@ public class ReadProcessor extends BaseReadProcessor {
     logger.debug("Processing file: " + filePath.getFileName());
 
     try {
-      var messages = parseExportedMessages(getInputStream(filePath));
+      var messages = parseExportedMessages(getInputStream(filePath), filePath.getFileName().toString());
       logger.info("extracted " + messages.size() + " exported messages from file: " + filePath.getFileName());
       return messages;
     } catch (Exception e) {

@@ -46,7 +46,7 @@ public class WinlinkExpressOutboundMessageEngineTest {
     cm.putString(Key.OUTPUT_PATH, "/tmp");
     cm.putString(Key.PATH, "/tmp");
     cm.putBoolean(Key.OUTPUT_PATH_CLEAR_ON_START, false);
-    cm.putInt(Key.OUTBOUND_MESSAGE_EXTRA_CONTEXT, 33);
+    cm.putInt(Key.OUTBOUND_MESSAGE_EXTRA_CONTEXT, 1000);
     var writeProcessor = new WriteProcessor();
     writeProcessor.initialize(cm, null);
     String extraContent = null;

@@ -150,7 +150,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     baseInitialize(cm, mm);
   }
 
-  protected List<ExportedMessage> parseExportedMessages(InputStream inputStream) {
+  protected List<ExportedMessage> parseExportedMessages(InputStream inputStream, String fileName) {
     List<ExportedMessage> messages = new ArrayList<>();
 
     var iNode = 0;
@@ -167,7 +167,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
         Node node = nodeList.item(iNode);
         if (node.getNodeType() == Node.ELEMENT_NODE) {
           Element element = (Element) node;
-          ExportedMessage message = readMessage(element);
+          ExportedMessage message = readMessage(element, fileName);
           var isSelected = readFilter(message);
           if (isSelected) {
             messages.add(message);
@@ -210,7 +210,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     return true;
   }
 
-  private ExportedMessage readMessage(Element element) {
+  private ExportedMessage readMessage(Element element, String fileName) {
 
     var messageId = element.getElementsByTagName("id").item(0).getTextContent();
     var subject = element.getElementsByTagName("subject").item(0).getTextContent();
@@ -246,7 +246,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     if (parser == null) {
       message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
           localDateTime, locationResult.location, locationResult.source, //
-          mime, plainContent, attachments, isP2p);
+          mime, plainContent, attachments, isP2p, fileName);
       return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
     }
 
@@ -255,7 +255,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
 
     message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
         localDateTime, locationResult.location, locationResult.source, //
-        mime, plainContent, attachments, isP2p);
+        mime, plainContent, attachments, isP2p, fileName);
 
     return message;
   }

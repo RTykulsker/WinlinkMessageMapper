@@ -180,7 +180,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var exportedMessage = new ExportedMessage(mId, from, from, to, to, "", //
           subject, dateTime, //
           msgLocation, locationSource, //
-          mime, plainContent, attachments, isP2p);
+          mime, plainContent, attachments, isP2p, "lwx.csv");
 
       var organization = line[2];
       var formLocation = msgLocation;
@@ -248,7 +248,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var exportedMessage = new ExportedMessage(mId, from, from, to, to, "", //
           subject, dateTime, //
           msgLocation, locationSource, //
-          mime, plainContent, attachments, isP2p);
+          mime, plainContent, attachments, isP2p, "hbr.csv");
 
       var organization = line[2];
       var formLocation = msgLocation;
@@ -328,7 +328,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
       var exportedMessage = new ExportedMessage(mId, from, from, to, to, "", //
           subject, dateTime, //
           msgLocation, locationSource, //
-          mime, plainContent, attachments, isP2p);
+          mime, plainContent, attachments, isP2p, "fsr.csv");
 
       var organization = line[1];
       var formLocation = msgLocation;
