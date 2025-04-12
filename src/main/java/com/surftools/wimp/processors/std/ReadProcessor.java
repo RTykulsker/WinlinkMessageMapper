@@ -85,14 +85,13 @@ public class ReadProcessor extends BaseReadProcessor {
 
     // read all Exported Messages from files
     List<ExportedMessage> exportedMessages = new ArrayList<>();
-    for (File file : path.toFile().listFiles()) {
+    for (File file : Arrays.asList(path.toFile().listFiles()).stream().sorted().toList()) {
       if (file.isFile()) {
         if (!file.getName().toLowerCase().endsWith(".xml")) {
           continue;
         }
         var fileExportedMessages = readAll(file.toPath());
         exportedMessages.addAll(fileExportedMessages);
-        fileExportedMessages.stream().forEach(m -> readRecords.add(new ReadRecord(m, file.toString())));
       }
     }
     logger.info("read " + exportedMessages.size() + " exported messages from all files");

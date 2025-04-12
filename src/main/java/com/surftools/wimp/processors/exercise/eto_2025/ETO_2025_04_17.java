@@ -65,7 +65,7 @@ public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
     messageType = MessageType.ICS_213_REPLY;
 
-    imageMaxSize = cm.getAsInt(Key.IMAGE_MAX_SIZE, 5000);
+    imageMaxSize = cm.getAsInt(Key.IMAGE_MAX_SIZE, 50_000);
     var referenceFileNameString = Path.of(pathName, "reference.jpg").toString();
     referenceImage = new ReferenceImage(referenceFileNameString, SIMILARITY_THRESHOLD);
     imageService = new ImageService(outputPathName);

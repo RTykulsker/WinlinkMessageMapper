@@ -136,12 +136,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "From", "Type", "MessageId" };
+      return new String[] { "From", "Type", "MessageId", "File Name" };
     }
 
     @Override
     public String[] getValues() {
-      return new String[] { m.from, m.getMessageType().toString(), m.messageId };
+      return new String[] { m.from, m.getMessageType().toString(), m.messageId, m.fileName };
     }
 
   }
