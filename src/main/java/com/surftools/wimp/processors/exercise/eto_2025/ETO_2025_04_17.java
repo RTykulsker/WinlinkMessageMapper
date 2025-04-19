@@ -28,7 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.processors.exercise.eto_2025;
 
 import java.nio.file.Path;
-import java.util.Map.Entry;
+import java.text.DecimalFormat;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +55,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2025_04_17.class);
 
-  private final Double SIMILARITY_THRESHOLD = 0.98;
+  private final Double SIMILARITY_THRESHOLD = 0.99;
   private int imageMaxSize;
   private ReferenceImage referenceImage;
   private ImageService imageService;
@@ -66,9 +66,9 @@ public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
     messageType = MessageType.ICS_213_REPLY;
 
     imageMaxSize = cm.getAsInt(Key.IMAGE_MAX_SIZE, 50_000);
-    var referenceFileNameString = Path.of(pathName, "reference.jpg").toString();
-    referenceImage = new ReferenceImage(referenceFileNameString, SIMILARITY_THRESHOLD);
     imageService = new ImageService(outputPathName);
+    referenceImage = new ReferenceImage(Path.of(pathName, "reference.jpg").toString(), SIMILARITY_THRESHOLD);
+
   }
 
   @Override
@@ -77,17 +77,20 @@ public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Reply should be #EV", "6", m.reply));
+    count(sts.test("Position should be #EV", "ETO participant", m.replyPosition));
 
     var images = imageService.getImageAttachments(m);
     count(sts.test("Number of attached images should be #EV", "1", String.valueOf(images.size())));
     if (images.size() > 0) {
-      for (Entry<String, byte[]> entry : images.entrySet()) {
+      for (var image : images.values()) {
         imageService.writeImages(m);
 
-        var isRightSize = entry.getValue().length <= imageMaxSize * 1.05d;
+        var isRightSize = image.bytes().length <= imageMaxSize * 1.05d;
         count(sts
             .test("Image file size should be <= " + imageMaxSize + " bytes", isRightSize,
-                String.valueOf(entry.getValue().length) + " for image " + entry.getKey()));
+                String.valueOf(image.bytes().length) + " for image " + image.fileName()));
+
+        count(sts.test("Image file name should be #EV", "eto-exercise.jpg", image.fileName()));
       }
 
       var results = imageService.findSimilarityScores(message, referenceImage, SIMILARITY_THRESHOLD);
@@ -97,9 +100,14 @@ public class ETO_2025_04_17 extends SingleMessageFeedbackProcessor {
         var isSimilar = result.score() != null && result.score() >= SIMILARITY_THRESHOLD;
         count(sts
             .test("Image should be similar to reference", isSimilar,
-                "similarity score of " + result.score() + " for attachment: " + result.imageName()));
+                "similarity score of " + formatScore(result.score()) + " for attachment: " + result.imageName()));
       }
     } // end if images.size() > 0
+  }
+
+  private String formatScore(Double score) {
+    final var formatter = new DecimalFormat("0.##");
+    return formatter.format(score * 100d) + "%";
   }
 
   @Override

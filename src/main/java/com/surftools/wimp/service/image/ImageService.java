@@ -73,19 +73,21 @@ public class ImageService implements IService {
    * @param m
    * @return
    */
-  public Map<String, byte[]> getImageAttachments(ExportedMessage m) {
-    var returnMap = new LinkedHashMap<String, byte[]>();
+  public Map<String, ImageRecord> getImageAttachments(ExportedMessage m) {
+    var returnMap = new LinkedHashMap<String, ImageRecord>();
 
+    var attachmentIndex = -1;
     for (Entry<String, byte[]> entry : m.attachments.entrySet()) {
       try {
+        ++attachmentIndex;
         var bytes = entry.getValue();
         var bufferedImage = ImageIO.read(new ByteArrayInputStream(bytes));
         if (bufferedImage == null) {
           continue;
         }
-        logger.debug("image found for attachment: " + entry.getKey() + ", size:" + bytes.length);
-        returnMap.put(entry.getKey(), bytes);
-        break;
+        var imageRecord = new ImageRecord(entry.getKey(), bytes, attachmentIndex);
+        logger.debug("image found: " + imageRecord.toString());
+        returnMap.put(entry.getKey(), imageRecord);
       } catch (Exception e) {
         ;
       }
@@ -105,12 +107,12 @@ public class ImageService implements IService {
    */
   public List<ImageSimilarityResult> findSimilarityScores(ExportedMessage m, ReferenceImage reference,
       Double similarityThreshold) {
-    var images = getImageAttachments(m);
+    var imageRecords = getImageAttachments(m);
     var list = new ArrayList<ImageSimilarityResult>();
-    for (Entry<String, byte[]> image : images.entrySet()) {
-      Double simScore = reference.computeSimilarity(image.getValue(), image.getKey(), m.from);
+    for (ImageRecord image : imageRecords.values()) {
+      Double simScore = reference.computeSimilarity(image.bytes(), image.fileName(), m.from);
       if (simScore != null) {
-        var result = new ImageSimilarityResult(image.getKey(), image.getValue(), reference, simScore, m);
+        var result = new ImageSimilarityResult(image.fileName(), image.bytes(), reference, simScore, m);
         list.add(result);
         similarityResults.add(result);
       }
@@ -134,6 +136,12 @@ public class ImageService implements IService {
     return findSimilarityScores(m, reference, similarityThreshold).stream().filter(r -> r.isSimilar()).toList();
   }
 
+  public ImageSimilarityResult findSimilarityScore(ExportedMessage m, ImageRecord image,
+      ReferenceImage referenceImage) {
+    Double simScore = referenceImage.computeSimilarity(image.bytes(), image.fileName(), m.from);
+    return new ImageSimilarityResult(image.fileName(), image.bytes(), referenceImage, simScore, m);
+  }
+
   /**
    * write all the images contained as attachments
    *
@@ -149,8 +157,8 @@ public class ImageService implements IService {
    */
   public void writeImages(ExportedMessage m) {
     var images = getImageAttachments(m);
-    for (Entry<String, byte[]> image : images.entrySet()) {
-      writeImage(m, image.getKey(), image.getValue());
+    for (var image : images.values()) {
+      writeImage(m, image.fileName(), image.bytes());
     }
   }
 
@@ -273,4 +281,5 @@ public class ImageService implements IService {
   public void writeSimilarityResults(String fileName) {
     WriteProcessor.writeTable(fileName, similarityResults);
   }
+
 }
