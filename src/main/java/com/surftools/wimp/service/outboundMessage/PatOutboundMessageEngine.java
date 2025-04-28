@@ -63,6 +63,7 @@ public class PatOutboundMessageEngine extends AbstractBaseOutboundMessageEngine 
     var path = cm.getAsString(Key.PATH);
     mailboxPath = Path.of(path, "output", "mailbox");
     // FileUtils.deleteDirectory(mailboxPath);
+    outboxPath = mailboxPath;
 
     for (var dir : List.of("archive", "in", "out", "sent")) {
       FileUtils.createDirectory(Path.of(mailboxPath.toString(), source, dir));

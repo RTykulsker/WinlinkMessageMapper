@@ -33,17 +33,19 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.surftools.utils.FileUtils;
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.HospitalBedMessage;
-import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.message.WxLocalMessage;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -52,10 +54,9 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * formDateTime is showing up in FormData.txt, which makes it hard to effectively map/filter on Date/Time in Winlink
  * Express
  */
-public class FormDataTimestampHacker extends AbstractBaseProcessor {
-
+public class FormDataDatetimeWhacker extends AbstractBaseProcessor {
   private Path rewrittenMessageFilePath; // where we write files to
-  private Set<MessageType> supportedMessageTypes = new HashSet<MessageType>();
+  private Set<MessageType> expectededMessageTypes = new LinkedHashSet<MessageType>();
 
   private record SenderKey(String sender, String messageId) {
   }
@@ -69,7 +70,18 @@ public class FormDataTimestampHacker extends AbstractBaseProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm);
-    supportedMessageTypes = Set.of(MessageType.HOSPITAL_BED);
+    var expectedMessageTypesStrings = cm.getAsString(Key.EXPECTED_MESSAGE_TYPES).split(",");
+    for (var typeString : expectedMessageTypesStrings) {
+      var messageType = MessageType.fromString(typeString);
+      if (messageType == null) {
+        logger
+            .error("unknown messageType: " + messageType + " from configuration: "
+                + Key.EXPECTED_MESSAGE_TYPES.toString() + ": " + expectedMessageTypesStrings);
+      } else {
+        expectededMessageTypes.add(messageType);
+      }
+    }
+    logger.info("Expected messageTypes: " + expectedMessageTypesStrings);
     rewrittenMessageFilePath = Path.of(outputPathName, "rewrittenMessages");
   }
 
@@ -80,7 +92,7 @@ public class FormDataTimestampHacker extends AbstractBaseProcessor {
       var sender = senderIterator.next();
       var map = mm.getMessagesForSender(sender);
       for (var messageType : map.keySet()) {
-        if (!supportedMessageTypes.contains(messageType)) {
+        if (!expectededMessageTypes.contains(messageType)) {
           logger.warn("### UNSUPPORTED messageType: " + messageType.toString());
           continue;
         }
@@ -88,15 +100,26 @@ public class FormDataTimestampHacker extends AbstractBaseProcessor {
         for (var m : messages) {
           var messageId = m.messageId;
           var senderKey = new SenderKey(sender, messageId);
+          var value = (SenderValue) null;
           switch (messageType) {
           case HOSPITAL_BED:
-            var value = new SenderValue(messageType, makeDateTime(((HospitalBedMessage) m).formDateTime));
+            value = new SenderValue(messageType, makeDateTime(((HospitalBedMessage) m).formDateTime));
             messageMap.put(senderKey, value);
+            break;
+          case FIELD_SITUATION:
+            final var fsrDtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'Z'");
+            value = new SenderValue(messageType,
+                makeDateTime(fsrDtFormatter, ((FieldSituationMessage) m).formDateTime));
+            break;
+          case WX_LOCAL:
+            value = new SenderValue(messageType, makeDateTime(((WxLocalMessage) m).formDateTime));
             break;
 
           default:
             continue;
           } // end switch over messages
+          fileMap.put(senderKey, m.fileName);
+          messageMap.put(senderKey, value);
         } // end for over messages of a given type
       } // end for over messageTypes
     } // end for over senders
@@ -114,22 +137,19 @@ public class FormDataTimestampHacker extends AbstractBaseProcessor {
     return prefix + dtf.format(formDateTime);
   }
 
+  private String makeDateTime(DateTimeFormatter formatter, String formDateTimeString) {
+    var formDateTime = LocalDateTime.parse(formDateTimeString, formatter);
+    return makeDateTime(formDateTime);
+  }
+
   @Override
   public void postProcess() {
-    // map the sender/messageId to filename;
-    var fileRecordsPath = Path.of(outputPath.toString(), "fileRecords.csv");
-    var fileRecordLines = ReadProcessor.readCsvFileIntoFieldsArray(fileRecordsPath, ',', false, 1);
-    for (var line : fileRecordLines) {
-      var key = new SenderKey(line[0], line[3]);
-      fileMap.put(key, line[4]);
-    }
-
     var rewriteCount = 0;
     FileUtils.makeDirIfNeeded(rewrittenMessageFilePath);
     for (var key : fileMap.keySet()) {
       var fileName = fileMap.get(key);
       try {
-        var fileLines = Files.readAllLines(Path.of(fileName));
+        var fileLines = Files.readAllLines(Path.of(pathName, fileName));
         var messageCount = fileLines.stream().filter(s -> s.strip().equals("<message>")).count();
         if (messageCount != 1) {
           logger.error("multiple messages in file: " + fileName + ", skipping");
@@ -141,7 +161,7 @@ public class FormDataTimestampHacker extends AbstractBaseProcessor {
           logger.error("did not find message value for key: " + key);
           System.exit(1);
         } else {
-          var messageLines = Files.readAllLines(Path.of(fileName));
+          var messageLines = Files.readAllLines(Path.of(pathName, fileName));
           var newMessage = stompTheStamp(messageLines, key, messageValue);
           var baseName = Path.of(fileName).getName(Path.of(fileName).getNameCount() - 1).toString();
 

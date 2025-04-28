@@ -69,7 +69,6 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
   /**
    * #MM just the necessary fields for a (multi-message) Summary
    */
-  // TODO figure out what I really want/need in summary (if anything) and implement
   private class Summary extends BaseSummary {
 
     public String fsrFilename;
@@ -108,7 +107,6 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
     };
 
     private String d(Double v) {
-      // TODO add formatting, multiply by 100, etc.
       return String.valueOf(v);
     }
   }
@@ -167,14 +165,9 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
       count(sts.test("ICS-213 reply should be present", false));
     }
 
-    // TODO: should only have 3 images
-    // TODO: each image should be correctly named
-    // TODO: each image should be similar to reference image of appropriate type
-
     Map<String, List<ImageSimilarityResult>> imSimResultMap = new HashMap<>();
 
     var images = imageService.getImageAttachments(m);
-    // TODO might want to drop this writeImages
     imageService.writeImages(m);
     count(sts.test("Number of attached images should be #EV", "3", String.valueOf(images.size())));
     if (images.size() > 0) {
@@ -187,7 +180,6 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
 
         var key = getKeyForFileName(image.fileName());
         if (key != null) {
-          // TODO test for expected image name
           var referenceImage = referenceImages.get(key);
           var imSimResult = imageService.findSimilarityScore(m, image, referenceImage);
 
@@ -201,10 +193,6 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
       }
       var allResults = imSimResultMap.values().stream().flatMap(List::stream).toList();
       imageService.writeSimiliarityResults(allResults);
-      // TODO write the imSimResults
-      // TODO test that three map entries
-      // TODO test each entry has size 1
-
     } // end if images.size() > 0
   }
 
