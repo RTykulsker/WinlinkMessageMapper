@@ -28,8 +28,10 @@ SOFTWARE.
 package com.surftools.wimp.processors.exercise.eto_2025;
 
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,14 +72,8 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
    * #MM just the necessary fields for a (multi-message) Summary
    */
   private class Summary extends BaseSummary {
-
-    public String fsrFilename;
-    public String hsbFileName;
-    public String lwxFileName;
-
-    public Double fsrSimilarity;
-    public Double hsbSimilarity;
-    public Double lwxSimilarity;
+    public Map<String, String> fileNames = new HashMap<>();
+    public Map<String, Double> scores = new HashMap<>();
 
     public Summary(String from) {
       this.from = from;
@@ -101,18 +97,20 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
       list.addAll(Arrays.asList(super.getValues()));
       list
           .addAll(Arrays
-              .asList(new String[] { fsrFilename, hsbFileName, lwxFileName, //
-                  d(fsrSimilarity), d(hsbSimilarity), d(lwxSimilarity) }));
+              .asList(new String[] { fileNames.get("fsr"), fileNames.get("hsb"), fileNames.get("lwx"), //
+                  d(scores.get("fsr")), d(scores.get("hsb")), d(scores.get("lwx")) }));
       return list.toArray(new String[0]);
     };
 
     private String d(Double v) {
-      return String.valueOf(v);
+      final var formatter = new DecimalFormat("0.##");
+      return formatter.format(v * 100d) + "%";
     }
   }
 
   private List<String> typeKeys = List.of("fsr", "hsb", "lwx");
   private Map<String, ReferenceImage> referenceImages = new HashMap<>();
+  private Summary summary;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -136,7 +134,7 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
     super.beforeProcessingForSender(sender);
 
     // #MM must instantiate a derived Summary object
-    iSummary = summaryMap.getOrDefault(sender, new Summary(sender));
+    iSummary = summary = (Summary) summaryMap.getOrDefault(sender, new Summary(sender));
     summaryMap.put(sender, iSummary);
   }
 
@@ -180,6 +178,7 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
 
         var key = getKeyForFileName(image.fileName());
         if (key != null) {
+          summary.fileNames.put(key, image.fileName());
           var referenceImage = referenceImages.get(key);
           var imSimResult = imageService.findSimilarityScore(m, image, referenceImage);
 
@@ -191,6 +190,17 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
         }
 
       }
+
+      for (var key : typeKeys) {
+        var imSimList = imSimResultMap.get(key);
+        if (imSimList == null || imSimList.size() == 0) {
+          continue;
+        }
+        Collections.sort(imSimList, (i1, i2) -> i2.score().compareTo(i1.score()));
+        var mostSimIm = imSimList.get(0);
+        summary.scores.put(key, mostSimIm.score());
+      }
+
       var allResults = imSimResultMap.values().stream().flatMap(List::stream).toList();
       imageService.writeSimiliarityResults(allResults);
     } // end if images.size() > 0

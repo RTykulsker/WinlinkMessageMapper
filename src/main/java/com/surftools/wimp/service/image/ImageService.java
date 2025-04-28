@@ -139,7 +139,9 @@ public class ImageService implements IService {
   public ImageSimilarityResult findSimilarityScore(ExportedMessage m, ImageRecord image,
       ReferenceImage referenceImage) {
     Double simScore = referenceImage.computeSimilarity(image.bytes(), image.fileName(), m.from);
-    return new ImageSimilarityResult(image.fileName(), image.bytes(), referenceImage, simScore, m);
+    var result = new ImageSimilarityResult(image.fileName(), image.bytes(), referenceImage, simScore, m);
+    similarityResults.add(result);
+    return result;
   }
 
   /**
