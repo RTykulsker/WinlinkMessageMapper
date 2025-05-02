@@ -27,8 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.parser.CharacterAssassinator;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -49,17 +46,6 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public class WebReadProcessor extends BaseReadProcessor {
   private static final Logger logger = LoggerFactory.getLogger(WebReadProcessor.class);
-
-  private static final List<String> DEFAULT_DELETE_LIST = Arrays.asList(new String[] { "&#21" });
-  private final List<String> deleteList;
-
-  public WebReadProcessor() {
-    this(DEFAULT_DELETE_LIST);
-  }
-
-  public WebReadProcessor(List<String> deleteList) {
-    this.deleteList = deleteList;
-  }
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -87,7 +73,8 @@ public class WebReadProcessor extends BaseReadProcessor {
     try {
       var webExportedMessages = (String) mm.getContextObject("webReqestMessages");
       var fileName = (String) mm.getContextObject("webFileName");
-      var messages = parseExportedMessages(getInputStream(webExportedMessages), fileName);
+      var messages = parseExportedMessages(new ArrayList<String>(Arrays.asList(webExportedMessages.split("\n"))),
+          fileName);
       logger.info("extracted " + messages.size() + " exported messages from web: ");
       return messages;
     } catch (Exception e) {
@@ -96,12 +83,4 @@ public class WebReadProcessor extends BaseReadProcessor {
     }
 
   }
-
-  private InputStream getInputStream(String content) throws Exception {
-    CharacterAssassinator assassinator = new CharacterAssassinator(deleteList, null);
-    content = assassinator.assassinate(content);
-
-    return new ByteArrayInputStream(content.getBytes());
-  }
-
 }

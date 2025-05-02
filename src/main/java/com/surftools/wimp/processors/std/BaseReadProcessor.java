@@ -27,7 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -106,34 +106,57 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     baseInitialize(cm, mm);
   }
 
-  protected List<ExportedMessage> parseExportedMessages(InputStream inputStream, String fileName) {
+  protected List<ExportedMessage> parseExportedMessages(List<String> fileLines, String fileName) {
     List<ExportedMessage> messages = new ArrayList<>();
 
-    var iNode = 0;
-    var nNodes = 0;
-    try {
-      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-      dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      DocumentBuilder db = dbf.newDocumentBuilder();
-      Document doc = db.parse(inputStream);
-      doc.getDocumentElement().normalize();
-      NodeList nodeList = doc.getElementsByTagName("message");
-      nNodes = nodeList.getLength();
-      for (iNode = 0; iNode < nNodes; ++iNode) {
-        Node node = nodeList.item(iNode);
-        if (node.getNodeType() == Node.ELEMENT_NODE) {
-          Element element = (Element) node;
-          ExportedMessage message = readMessage(element, fileName);
-          var isSelected = readFilter(message);
-          if (isSelected) {
-            messages.add(message);
-          }
-        } // end if XML Message Node
-      } // end for over messages
-    } catch (Exception e) {
-      logger
-          .error("Exception processing imput stream, message " + iNode + " of " + nNodes
-              + " (maybe not exported Winlink Messages XML file) : " + e.getLocalizedMessage());
+    /**
+     * I want to have the message lines in very rare circumstances. Here's the best place to get those lines
+     */
+    var singleMessageLines = new ArrayList<String>(); // lines for a single message
+    var messageLines = new ArrayList<List<String>>(); // one list entry per message in file
+    var inMessage = false;
+    for (var line : fileLines) {
+      if (line.trim().equals("<message>")) {
+        inMessage = true;
+        singleMessageLines = new ArrayList<>();
+      }
+      if (inMessage) {
+        singleMessageLines.add(line);
+      }
+      if (line.trim().equals("</message>")) {
+        inMessage = false;
+        messageLines.add(singleMessageLines);
+      }
+    }
+
+    for (var lines : messageLines) {
+      var inputStream = new ByteArrayInputStream(String.join("\n", lines).getBytes());
+      var iNode = 0;
+      var nNodes = 0;
+      try {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.parse(inputStream);
+        doc.getDocumentElement().normalize();
+        NodeList nodeList = doc.getElementsByTagName("message");
+        nNodes = nodeList.getLength();
+        for (iNode = 0; iNode < nNodes; ++iNode) {
+          Node node = nodeList.item(iNode);
+          if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element element = (Element) node;
+            ExportedMessage message = readMessage(element, fileName, lines);
+            var isSelected = readFilter(message);
+            if (isSelected) {
+              messages.add(message);
+            }
+          } // end if XML Message Node
+        } // end for over messages
+      } catch (Exception e) {
+        logger
+            .error("Exception processing imput stream, message " + iNode + " of " + nNodes
+                + " (maybe not exported Winlink Messages XML file) : " + e.getLocalizedMessage());
+      }
     }
 
     return messages;
@@ -166,7 +189,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     return true;
   }
 
-  private ExportedMessage readMessage(Element element, String fileName) {
+  private ExportedMessage readMessage(Element element, String fileName, List<String> lines) {
 
     var messageId = element.getElementsByTagName("id").item(0).getTextContent();
     var subject = element.getElementsByTagName("subject").item(0).getTextContent();
@@ -202,7 +225,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     if (parser == null) {
       message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
           localDateTime, locationResult.location, locationResult.source, //
-          mime, plainContent, attachments, isP2p, fileName);
+          mime, plainContent, attachments, isP2p, fileName, lines);
       return new RejectionMessage(message, RejectType.CANT_PARSE_MIME, message.mime);
     }
 
@@ -211,7 +234,7 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
 
     message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
         localDateTime, locationResult.location, locationResult.source, //
-        mime, plainContent, attachments, isP2p, fileName);
+        mime, plainContent, attachments, isP2p, fileName, lines);
 
     return message;
   }

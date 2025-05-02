@@ -27,10 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.std;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
@@ -49,7 +47,6 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.parser.CharacterAssassinator;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -60,17 +57,6 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public class ReadProcessor extends BaseReadProcessor {
   private static final Logger logger = LoggerFactory.getLogger(ReadProcessor.class);
-
-  private static final List<String> DEFAULT_DELETE_LIST = Arrays.asList(new String[] { "&#21" });
-  private final List<String> deleteList;
-
-  public ReadProcessor() {
-    this(DEFAULT_DELETE_LIST);
-  }
-
-  public ReadProcessor(List<String> deleteList) {
-    this.deleteList = deleteList;
-  }
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -109,7 +95,7 @@ public class ReadProcessor extends BaseReadProcessor {
     logger.debug("Processing file: " + filePath.getFileName());
 
     try {
-      var messages = parseExportedMessages(getInputStream(filePath), filePath.getFileName().toString());
+      var messages = parseExportedMessages(Files.readAllLines(filePath), filePath.getFileName().toString());
       logger.info("extracted " + messages.size() + " exported messages from file: " + filePath.getFileName());
       return messages;
     } catch (Exception e) {
@@ -117,15 +103,6 @@ public class ReadProcessor extends BaseReadProcessor {
       return new ArrayList<ExportedMessage>();
     }
 
-  }
-
-  private InputStream getInputStream(Path filePath) throws Exception {
-    String content = Files.readString(filePath);
-
-    CharacterAssassinator assassinator = new CharacterAssassinator(deleteList, null);
-    content = assassinator.assassinate(content);
-
-    return new ByteArrayInputStream(content.getBytes());
   }
 
   /**

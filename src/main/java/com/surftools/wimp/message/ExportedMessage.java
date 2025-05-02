@@ -29,6 +29,7 @@ package com.surftools.wimp.message;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 import com.surftools.utils.location.LatLongPair;
@@ -71,6 +72,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
 
   public final boolean isP2p;
   public final String fileName;
+  public final List<String> lines;
 
   @Override
   public int hashCode() {
@@ -105,7 +107,8 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public ExportedMessage(String messageId, String from, String source, String to, String toList, String ccList, //
       String subject, LocalDateTime dateTime, //
       LatLongPair location, String locationSource, //
-      String mime, String plainContent, Map<String, byte[]> attachments, boolean isP2p, String fileName) {
+      String mime, String plainContent, Map<String, byte[]> attachments, boolean isP2p, String fileName,
+      List<String> lines) {
     this.messageId = messageId;
     this.from = from;
     this.source = source;
@@ -127,6 +130,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
 
     this.isP2p = isP2p;
     this.fileName = fileName;
+    this.lines = lines;
   }
 
   public void setSortDateTime(LocalDateTime dateTime) {
@@ -158,6 +162,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     this.mapLocation = exportedMessage.mapLocation;
     this.isP2p = exportedMessage.isP2p;
     this.fileName = exportedMessage.fileName;
+    this.lines = exportedMessage.lines;
   }
 
   @Override

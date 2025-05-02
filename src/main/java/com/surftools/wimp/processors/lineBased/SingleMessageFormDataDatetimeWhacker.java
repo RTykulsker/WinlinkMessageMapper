@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.other;
+package com.surftools.wimp.processors.lineBased;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -54,7 +54,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * formDateTime is showing up in FormData.txt, which makes it hard to effectively map/filter on Date/Time in Winlink
  * Express
  */
-public class FormDataDatetimeWhacker extends AbstractBaseProcessor {
+public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor {
   private Path rewrittenMessageFilePath; // where we write files to
   private Set<MessageType> expectededMessageTypes = new LinkedHashSet<MessageType>();
 
