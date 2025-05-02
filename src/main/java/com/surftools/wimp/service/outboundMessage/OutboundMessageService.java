@@ -96,6 +96,9 @@ public class OutboundMessageService implements IService {
         continue;
       }
       var messageId = engine.send(inputMessage);
+      if (messageId == null) {
+        continue;
+      }
       var outputMessage = new OutboundMessage(inputMessage, messageId);
       outputMessageList.add(outputMessage);
 

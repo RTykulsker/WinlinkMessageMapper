@@ -119,7 +119,7 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
 
     super.initialize(cm, mm, logger);
 
-    imageMaxSize = cm.getAsInt(Key.IMAGE_MAX_SIZE, 38_000);
+    imageMaxSize = cm.getAsInt(Key.IMAGE_MAX_SIZE, 35_000);
 
     for (var key : typeKeys) {
       var fileName = Path.of(pathName, "reference-" + key + ".jpg").toString();

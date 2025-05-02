@@ -47,10 +47,6 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
       <?xml version="1.0"?>
       <Winlink_Express_message_export>
         <export_parameters>
-          <xml_file_version>1.0</xml_file_version>
-          <winlink_express_version>1.7.22.0</winlink_express_version>
-          <export_datetime_utc>#EXPORT_DATETIME#</export_datetime_utc>
-          <callsign>#SOURCE#</callsign>
         </export_parameters>
         <message_list>
           #MESSAGES#
@@ -65,20 +61,20 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
       <folder>Outbox</folder>
       <subject>#SUBJECT#</subject>
       <time>#MESSAGE_TIME#</time>
-      <sender>#SENDER#</sender>
-      <precedence>2</precedence>
+      <precedence></precedence>
       <peertopeer>False</peertopeer>
-      <routingflag>C</routingflag>
+      <routingflag></routingflag>
+      <sender>#SENDER#</sender>
       <source>#SOURCE#</source>
       <unread>False</unread>
       <flags>0</flags>
-      <messageoptions>False|False||||True|</messageoptions>
-      <mime>Date: #MIME_TIME#
+      <messageoptions></messageoptions>
+      <mime>Message-ID: #MESSAGE_ID#
+      Date: #MIME_TIME#
       From: #SENDER#@winlink.org
       Reply-To: #SENDER#@winlink.org
       Subject: #SUBJECT#
       To: #TO#
-      Message-ID: #MESSAGE_ID#
       X-Source: #SOURCE#
       MIME-Version: 1.0
       Content-Transfer-Encoding: quoted-printable
@@ -100,13 +96,23 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
   public String send(OutboundMessage m) {
     allOutput.append(m.to() + "\n" + m.body() + "\n\n");
 
+    /*
+     * body is user-generated content. It could contain characters that could interfere with the XML wrapping around
+     * messages
+     */
+    var body = m.body();
+    body = body.replaceAll("<", "&lt;");
+    body = body.replaceAll("<=", "&lt;=3D");
+    body = body.replaceAll(">", "&gt;");
+    body = body.replaceAll(">=", "&gt;=3D");
+
     var messageId = generateMid(m.toString());
     var text = new String(messageTemplate);
     text = text.replaceAll("#MESSAGE_ID#", messageId);
     text = text.replaceAll("#SOURCE#", sender);// or source to allow editing in WE
     text = text.replaceAll("#SENDER#", sender);
     text = text.replaceAll("#SUBJECT#", m.subject());
-    text = text.replaceAll("#BODY#", m.body());
+    text = text.replaceAll("#BODY#", body);
     text = text.replaceAll("#TO#", m.to());
     text = text.replaceAll("#MESSAGE_TIME#", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm").format(now));
     text = text
