@@ -63,17 +63,32 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2025_05_10.class);
-
   private final Double SIMILARITY_THRESHOLD = 0.98;
+
   private int imageMaxSize;
   private ImageService imageService;
+
+  record TypeEntry(String fileName, Double simScore, int count) {
+    public static List<String> getHeaders(String label) {
+      var up = label.toUpperCase() + " ";
+      return Arrays.asList(new String[] { up + "File", up + "Sim", up + "Count" });
+    }
+
+    public List<String> getValues() {
+      final DecimalFormat SDF = new DecimalFormat("0.##");
+      var name = fileName == null ? "" : fileName;
+      var score = simScore == null ? "" : SDF.format(simScore * 100d) + "%";
+      var countString = count == 0 ? "" : String.valueOf(count);
+      return Arrays.asList(new String[] { name, score, countString });
+    }
+  };
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
    */
   private class Summary extends BaseSummary {
-    public Map<String, String> fileNames = new HashMap<>();
-    public Map<String, Double> scores = new HashMap<>();
+    public Map<String, TypeEntry> typeMap = new HashMap<>();
+    public String messageId;
 
     public Summary(String from) {
       this.from = from;
@@ -84,10 +99,10 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
     public String[] getHeaders() {
       var list = new ArrayList<String>();
       list.addAll(Arrays.asList(super.getHeaders()));
-      list
-          .addAll(Arrays
-              .asList(new String[] { "FSR File", "HSB File", "LWX File", //
-                  "FSR Sim", "HSB Sim", "LWX Sim" }));
+      list.addAll(Arrays.asList(new String[] { "MessageId" }));
+      list.addAll(TypeEntry.getHeaders("fsr"));
+      list.addAll(TypeEntry.getHeaders("hsb"));
+      list.addAll(TypeEntry.getHeaders("lwx"));
       return list.toArray(new String[0]);
     }
 
@@ -95,17 +110,13 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
     public String[] getValues() {
       var list = new ArrayList<>();
       list.addAll(Arrays.asList(super.getValues()));
-      list
-          .addAll(Arrays
-              .asList(new String[] { fileNames.get("fsr"), fileNames.get("hsb"), fileNames.get("lwx"), //
-                  d(scores.get("fsr")), d(scores.get("hsb")), d(scores.get("lwx")) }));
+      list.addAll(Arrays.asList(new String[] { messageId }));
+      list.addAll(typeMap.getOrDefault("fsr", new TypeEntry(null, null, 0)).getValues());
+      list.addAll(typeMap.getOrDefault("hsb", new TypeEntry(null, null, 0)).getValues());
+      list.addAll(typeMap.getOrDefault("lwx", new TypeEntry(null, null, 0)).getValues());
       return list.toArray(new String[0]);
     };
 
-    private String d(Double v) {
-      final var formatter = new DecimalFormat("0.##");
-      return formatter.format(v * 100d) + "%";
-    }
   }
 
   private List<String> typeKeys = List.of("fsr", "hsb", "lwx");
@@ -133,6 +144,8 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
   protected void beforeProcessingForSender(String sender) {
     super.beforeProcessingForSender(sender);
 
+    sts.setExplanationPrefix(""); // only one messageType
+
     // #MM must instantiate a derived Summary object
     iSummary = summary = (Summary) summaryMap.getOrDefault(sender, new Summary(sender));
     summaryMap.put(sender, iSummary);
@@ -141,7 +154,8 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var m = (Ics213ReplyMessage) message;
-
+    sts.setExplanationPrefix(""); // only one messageType
+    summary.messageId = m.messageId;
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
 
     var reply = m.reply;
@@ -167,7 +181,6 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
 
     var images = imageService.getImageAttachments(m);
     imageService.writeImages(m);
-    count(sts.test("Number of attached images should be #EV", "3", String.valueOf(images.size())));
     if (images.size() > 0) {
       for (var image : images.values()) {
 
@@ -178,27 +191,30 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
 
         var key = getKeyForFileName(image.fileName());
         if (key != null) {
-          summary.fileNames.put(key, image.fileName());
+
           var referenceImage = referenceImages.get(key);
           var imSimResult = imageService.findSimilarityScore(m, image, referenceImage);
 
           var list = imSimResultMap.getOrDefault(key, new ArrayList<ImageSimilarityResult>());
           list.add(imSimResult);
           imSimResultMap.put(key, list);
+          count(sts.test("Image name recognized", true, image.fileName()));
         } else { // key == null; unknown image type
-          // TODO test for expected image name
+          count(sts.test("Image name recognized", false, image.fileName()));
         }
-
-      }
+      } // end loop over images
 
       for (var key : typeKeys) {
         var imSimList = imSimResultMap.get(key);
         if (imSimList == null || imSimList.size() == 0) {
+          count(sts.test("Should attach 1 " + key + " image", false));
           continue;
         }
         Collections.sort(imSimList, (i1, i2) -> i2.score().compareTo(i1.score()));
         var mostSimIm = imSimList.get(0);
-        summary.scores.put(key, mostSimIm.score());
+        var typeEntry = new TypeEntry(mostSimIm.imageName(), mostSimIm.score(), imSimList.size());
+        count(sts.test("Should attach #EV image", "1 " + key, String.valueOf(typeEntry.count) + " " + key));
+        summary.typeMap.put(key, typeEntry);
       }
 
       var allResults = imSimResultMap.values().stream().flatMap(List::stream).toList();
