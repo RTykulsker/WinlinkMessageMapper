@@ -97,7 +97,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
             "com.surftools.wimp.processors.exercise.eto_2025.", //
             "com.surftools.wimp.processors.exercise.miro.", //
             "com.surftools.wimp.processors.exercise.other.", //
-            "com.surftools.wimp.processors.other.", //
+            "com.surftools.wimp.processors.lineBased.", //
             "com.surftools.wimp.processors.dev.", //
             "com.surftools.wimp.processors.exercise.eto_2024.", //
             "com.surftools.wimp.processors.exercise.eto_2023.", //

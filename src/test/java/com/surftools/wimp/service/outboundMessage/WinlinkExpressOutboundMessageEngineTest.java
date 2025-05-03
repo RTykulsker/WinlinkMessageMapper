@@ -51,7 +51,7 @@ public class WinlinkExpressOutboundMessageEngineTest {
     writeProcessor.initialize(cm, null);
     String extraContent = null;
     String filenName = "test.xml";
-    var engine = new ChunkedWinlinkExpressOutboundMessageEngine(cm, extraContent, filenName);
+    var engine = new WinlinkExpressOutboundMessageEngine(cm, extraContent, filenName);
     var messages = generateMessages(100);
     for (var m : messages) {
       engine.send(m);

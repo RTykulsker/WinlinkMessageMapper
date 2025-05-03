@@ -27,16 +27,17 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.lineBased;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.surftools.utils.FileUtils;
@@ -54,18 +55,10 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * formDateTime is showing up in FormData.txt, which makes it hard to effectively map/filter on Date/Time in Winlink
  * Express
  */
-public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor {
-  private Path rewrittenMessageFilePath; // where we write files to
+public class FormDataDateTimeWhacker extends AbstractBaseProcessor {
   private Set<MessageType> expectededMessageTypes = new LinkedHashSet<MessageType>();
 
-  private record SenderKey(String sender, String messageId) {
-  }
-
-  private record SenderValue(MessageType messageType, String dateTime) {
-  };
-
-  private Map<SenderKey, SenderValue> messageMap = new LinkedHashMap<>();
-  private Map<SenderKey, String> fileMap = new LinkedHashMap<>();
+  private List<String> rewrittenMessageStrings = new ArrayList<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -76,13 +69,12 @@ public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor 
       if (messageType == null) {
         logger
             .error("unknown messageType: " + messageType + " from configuration: "
-                + Key.EXPECTED_MESSAGE_TYPES.toString() + ": " + expectedMessageTypesStrings);
+                + Key.EXPECTED_MESSAGE_TYPES.toString() + ": " + String.join(",", expectedMessageTypesStrings));
       } else {
         expectededMessageTypes.add(messageType);
       }
     }
-    logger.info("Expected messageTypes: " + expectedMessageTypesStrings);
-    rewrittenMessageFilePath = Path.of(outputPathName, "rewrittenMessages");
+    logger.info("Expected messageTypes: " + String.join(",", expectedMessageTypesStrings));
   }
 
   @Override
@@ -93,33 +85,29 @@ public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor 
       var map = mm.getMessagesForSender(sender);
       for (var messageType : map.keySet()) {
         if (!expectededMessageTypes.contains(messageType)) {
-          logger.warn("### UNSUPPORTED messageType: " + messageType.toString());
+          logger.warn("### UNSUPPORTED messageType: " + messageType.toString() + " from: " + sender);
           continue;
         }
         var messages = map.get(messageType);
+        final var fsrDtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'Z'");
         for (var m : messages) {
-          var messageId = m.messageId;
-          var senderKey = new SenderKey(sender, messageId);
-          var value = (SenderValue) null;
+          var trueFormDateTimeString = (String) null;
           switch (messageType) {
           case HOSPITAL_BED:
-            value = new SenderValue(messageType, makeDateTime(((HospitalBedMessage) m).formDateTime));
-            messageMap.put(senderKey, value);
+            trueFormDateTimeString = makeDateTime(((HospitalBedMessage) m).formDateTime);
             break;
           case FIELD_SITUATION:
-            final var fsrDtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss'Z'");
-            value = new SenderValue(messageType,
-                makeDateTime(fsrDtFormatter, ((FieldSituationMessage) m).formDateTime));
+            trueFormDateTimeString = makeDateTime(fsrDtFormatter, ((FieldSituationMessage) m).formDateTime);
             break;
           case WX_LOCAL:
-            value = new SenderValue(messageType, makeDateTime(((WxLocalMessage) m).formDateTime));
+            trueFormDateTimeString = makeDateTime(((WxLocalMessage) m).formDateTime);
             break;
 
           default:
             continue;
           } // end switch over messages
-          fileMap.put(senderKey, m.fileName);
-          messageMap.put(senderKey, value);
+          var newMessageString = stompTheStamp(m.lines, trueFormDateTimeString);
+          rewrittenMessageStrings.add(newMessageString);
         } // end for over messages of a given type
       } // end for over messageTypes
     } // end for over senders
@@ -142,48 +130,13 @@ public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor 
     return makeDateTime(formDateTime);
   }
 
-  @Override
-  public void postProcess() {
-    var rewriteCount = 0;
-    FileUtils.makeDirIfNeeded(rewrittenMessageFilePath);
-    for (var key : fileMap.keySet()) {
-      var fileName = fileMap.get(key);
-      try {
-        var fileLines = Files.readAllLines(Path.of(pathName, fileName));
-        var messageCount = fileLines.stream().filter(s -> s.strip().equals("<message>")).count();
-        if (messageCount != 1) {
-          logger.error("multiple messages in file: " + fileName + ", skipping");
-          System.exit(1);
-        }
-
-        var messageValue = messageMap.get(key);
-        if (messageValue == null) {
-          logger.error("did not find message value for key: " + key);
-          System.exit(1);
-        } else {
-          var messageLines = Files.readAllLines(Path.of(pathName, fileName));
-          var newMessage = stompTheStamp(messageLines, key, messageValue);
-          var baseName = Path.of(fileName).getName(Path.of(fileName).getNameCount() - 1).toString();
-
-          var fileOutputPath = Path.of(rewrittenMessageFilePath.toString(), baseName);
-          Files.writeString(fileOutputPath, newMessage);
-          logger.info("rewrote file to : " + fileOutputPath.toString());
-          ++rewriteCount;
-        }
-      } catch (Exception e) {
-        logger.error("Exception processing file: " + fileName + "; " + e.getMessage());
-      }
-    } // end for over keys in fileMap
-    logger.info("re-wrote:" + rewriteCount + " files");
-  }
-
-  private String stompTheStamp(List<String> inputMessageLines, SenderKey key, SenderValue messageValue) {
-    var sb = new StringBuilder();
+  private String stompTheStamp(List<String> oldLines, String newDateTimeString) {
+    var newLines = new ArrayList<String>();
     var base64Blob = new StringBuilder();
     var inFormData = false;
-    for (var line : inputMessageLines) {
+    for (var line : oldLines) {
       if (!inFormData) {
-        sb.append(line + "\n");
+        newLines.add(line);
       }
 
       if (line.equals("Content-Type: text/plain; name=\"FormData.txt\"")) {
@@ -193,15 +146,15 @@ public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor 
 
       if (inFormData) {
         if (line.strip().length() == 0 || line.equals("Content-Transfer-Encoding: base64")) {
-          sb.append(line + "\n");
+          newLines.add(line);
           continue;
         }
 
         if (line.startsWith("--boundary")) { // terminator
           inFormData = false;
-          var newBase64Lines = slam(base64Blob.toString(), messageValue.dateTime);
-          sb.append(newBase64Lines + "\n");
-          sb.append(line + "\n");
+          var newBase64Lines = slam(base64Blob.toString(), newDateTimeString);
+          newLines.addAll(newBase64Lines);
+          newLines.add(line);
           continue;
         }
 
@@ -209,23 +162,49 @@ public class SingleMessageFormDataDatetimeWhacker extends AbstractBaseProcessor 
       }
     }
 
-    return sb.toString();
+    return String.join("\n", newLines);
   }
 
-  private String slam(String base64Blob, String dateTime) {
+  private List<String> slam(String base64Blob, String dateTime) {
     var oldContent = new String(Base64.getMimeDecoder().decode(base64Blob), StandardCharsets.UTF_8).split("\n");
     var newContent = new StringBuilder();
     for (var line : oldContent) {
       if (line.startsWith("DateTime")) {
         newContent.append(dateTime + "\r\n");
+        logger.info("replacing " + line + ", with " + dateTime);
       } else {
         newContent.append(line + "\n");
       }
     }
 
     var encoded = Base64.getMimeEncoder().encodeToString(newContent.toString().getBytes());
+    var list = Arrays.asList(encoded.split("\n"));
+    return list;
+  }
 
-    return encoded;
+  @Override
+  public void postProcess() {
+    final String messagesTemplate = """
+        <?xml version="1.0"?>
+        <Winlink_Express_message_export>
+          <export_parameters>
+          </export_parameters>
+          <message_list>
+            #MESSAGES#
+          </message_list>
+        </Winlink_Express_message_export>
+              """;
+
+    FileUtils.makeDirIfNeeded(Path.of(outputPathName));
+    var content = messagesTemplate.replace("#MESSAGES", String.join("\n", rewrittenMessageStrings));
+    var fileOutputPath = Path.of(outputPath.toString(), "formDataRewrittenDateTimes.xml");
+    try {
+      Files.writeString(fileOutputPath, content);
+    } catch (IOException e) {
+      logger.error("Could not write " + fileOutputPath.toString() + ", " + e.getLocalizedMessage());
+    }
+    logger.info("wrote " + rewrittenMessageStrings.size() + " messages to file: " + fileOutputPath.toString());
+
   }
 
 }
