@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -132,6 +133,7 @@ public class MessageManager implements IMessageManager {
         var entryList = entry.getValue();
         var messageList = messageMap.getOrDefault(entryMessageType, new ArrayList<ExportedMessage>());
         messageList.addAll(entryList);
+        Collections.sort(messageList);
         messageMap.put(entryMessageType, messageList);
       }
     }

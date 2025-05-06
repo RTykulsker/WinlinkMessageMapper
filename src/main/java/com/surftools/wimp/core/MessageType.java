@@ -101,6 +101,8 @@ public enum MessageType {
   EYEWARN_DETAIL("eyewarn_details"), // generated details
 
   PEGELSTAND("pegelstand", (s -> s.startsWith("Pegelstand Report"))), // German water level message, for Tsunami 2025
+
+  HICS_259("hics_259", "RMS_Express_Form_HICS 259_viewer.xml"), //
   ;
 
   private final String key;
