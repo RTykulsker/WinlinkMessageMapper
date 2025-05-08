@@ -172,7 +172,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     String attachmentsString = "\n" + nAttachments + " attachments(" + attachmentNames + ")\n";
     return "ExportedMessage {messageId: " + messageId + ", from: " + from + ", to: " + to + ", subject: " + subject
         + ", date: " + msgDateTime.toLocalDate() + ", time: " + msgDateTime.toLocalTime() + ", plainContent: \n"
-        + plainContent + attachmentsString + "}";
+        + plainContent + attachmentsString + ", fileName: " + fileName + "}";
   }
 
   public String[] getMimeLines() {

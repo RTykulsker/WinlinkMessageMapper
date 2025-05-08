@@ -241,7 +241,11 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
 
   @Override
   protected void endProcessingForSender(String sender) {
-    // empty since everything done in specificProcessing()
+    if (summary.messageId == null) {
+      summary = null;
+      iSummary = null;
+      summaryMap.remove(sender);
+    }
   }
 
   @Override

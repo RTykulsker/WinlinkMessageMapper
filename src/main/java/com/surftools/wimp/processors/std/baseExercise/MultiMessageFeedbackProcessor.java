@@ -210,6 +210,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
    */
 
   protected void baseEndProcessingForSender(String sender) {
+    if (iSummary == null) {
+      return;
+    }
+
     if (iSummary.location == null || !iSummary.location.isValid()) {
       badLocationSenders.add(sender);
     }

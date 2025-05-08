@@ -41,6 +41,7 @@ public class MessageManager implements IMessageManager {
   private final Map<String, Object> contextMap = new HashMap<>();
 
   private List<ExportedMessage> messageList = new ArrayList<>();
+  private List<ExportedMessage> originalMessageList = new ArrayList<>();
 
   // source of truth
   private final Map<String, Map<MessageType, List<ExportedMessage>>> senderMap = new HashMap<>();
@@ -77,6 +78,10 @@ public class MessageManager implements IMessageManager {
     messageList.clear();
     messageList.addAll(messages);
 
+    if (originalMessageList.size() == 0) {
+      originalMessageList.addAll(messages);
+    }
+
     // convert to our source of truth!
     senderMap.clear();
     for (var message : messages) {
@@ -94,7 +99,7 @@ public class MessageManager implements IMessageManager {
 
   @Override
   public List<ExportedMessage> getOriginalMessages() {
-    return messageList;
+    return originalMessageList;
   }
 
   @Override
@@ -106,6 +111,7 @@ public class MessageManager implements IMessageManager {
   public void putMessagesForSender(String sender, Map<MessageType, List<ExportedMessage>> messages) {
     senderMap.put(sender, messages);
     isSenderMapDirty = true;
+    rebuildMessageMap();
   }
 
   @Override
@@ -189,8 +195,10 @@ public class MessageManager implements IMessageManager {
   public List<ExportedMessage> getAllMessagesForSender(String sender) {
     var list = new ArrayList<ExportedMessage>();
     var map = senderMap.get(sender);
-    for (var sublist : map.values()) {
-      list.addAll(sublist);
+    if (map != null) {
+      for (var sublist : map.values()) {
+        list.addAll(sublist);
+      }
     }
     return list;
   }
