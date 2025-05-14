@@ -159,6 +159,10 @@ public class WxLocalParser extends AbstractBaseParser {
       return MISSING + SPEED_SUFFFIX;
     }
 
+    if (windspeed.isBlank()) {
+      windspeed = "0.0";
+    }
+
     var isMetric = (unitsString.equals("Metric"));
 
     if (windspeed.startsWith(MISSING) && windspeed.length() > 2) {

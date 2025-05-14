@@ -374,7 +374,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   }
 
   public static final String OB_DISCLAIMER = """
-      =====================================================================================================
+      -----------------------------------------------------------------------------------------------------
 
       DISCLAIMER: This feedback is provided for your consideration. We use the results to improve future
       exercises. Differences in spelling, numbers or omitting whitespace  will trigger this automated message.
@@ -389,46 +389,46 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   public String getNagString(int year, int textId) {
     final String text_2023 = """
 
-        =====================================================================================================
+        -----------------------------------------------------------------------------------------------------
 
-        ETO needs sponsors to be able to renew our groups.io subscription for $YEAR.
-        By sponsoring this group, you are helping pay the Groups.io hosting fees.
-        Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
-        Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
-        The minimum sponsorship is $5.00.
+          ETO needs sponsors to be able to renew our groups.io subscription for $YEAR.
+          By sponsoring this group, you are helping pay the Groups.io hosting fees.
+          Here is the link to sponsor our group:  https://emcomm-training.groups.io/g/main/sponsor
+          Any amount you sponsor will be held by Groups.io and used to pay hosting fees as needed.
+          The minimum sponsorship is $5.00.
 
-        Thank you for your support!
+          Thank you for your support!
 
-        """;
+          """;
 
     final String text_2024 = """
 
-        =========================================================================================================
+        -----------------------------------------------------------------------------------------------------
 
-         Please consider supporting ETO operations by making a cash donation and/or sponsoring
-         our groups.io site. Our goal for cash donations is $500 which would be used to cover
-         the hosting fees for our website, annual governmental fees, bank fees and a post office box.
-         The goal for sponsorship of our groups.io site is $220 which covers the fees for 2025.
+           Please consider supporting ETO operations by making a cash donation and/or sponsoring
+           our groups.io site. Our goal for cash donations is $500 which would be used to cover
+           the hosting fees for our website, annual governmental fees, bank fees and a post office box.
+           The goal for sponsorship of our groups.io site is $220 which covers the fees for 2025.
 
-         You can make cash donations on our website by using this link:
-             https://emcomm-training.org/Donate.html
-         Note: Cash donations are tax-deductible as allowed by law.
+           You can make cash donations on our website by using this link:
+               https://emcomm-training.org/Donate.html
+           Note: Cash donations are tax-deductible as allowed by law.
 
-         You can use this link to sponsor our group:
-             https://emcomm-training.groups.io/g/main/sponsor
-         Note:  Sponsorships are not tax deductible since the money is paid to groups.io.
-         The minimum sponsorship is $5.00.
+           You can use this link to sponsor our group:
+               https://emcomm-training.groups.io/g/main/sponsor
+           Note:  Sponsorships are not tax deductible since the money is paid to groups.io.
+           The minimum sponsorship is $5.00.
 
-         If you want to donate using another payment method, please send an email to
-         emcommtrainingorg@gmail.com.
+           If you want to donate using another payment method, please send an email to
+           emcommtrainingorg@gmail.com.
 
-         Thank you for your support !!!!!!
+           Thank you for your support !!!!!!
 
-         EmComm Training Organization is a nonprofit, tax-exempt charitable organization
-         (tax ID number 92-2282844) under Section 501(c)(3) of the Internal Revenue Code.
-         Donations are tax-deductible as allowed by law.
+           EmComm Training Organization is a nonprofit, tax-exempt charitable organization
+           (tax ID number 92-2282844) under Section 501(c)(3) of the Internal Revenue Code.
+           Donations are tax-deductible as allowed by law.
 
-         """;
+           """;
 
     final var texts = new String[] { null, text_2023, text_2024 };
     var text = texts[textId];

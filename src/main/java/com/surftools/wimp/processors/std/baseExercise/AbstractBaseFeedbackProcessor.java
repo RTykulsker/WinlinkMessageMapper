@@ -183,6 +183,10 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
     return outboundMessageFeedback;
   }
 
+  protected String makeOutboundMessageSubject(Object object) {
+    return cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);
+  }
+
   @Override
   public void postProcess() {
 

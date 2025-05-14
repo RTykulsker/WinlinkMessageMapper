@@ -58,7 +58,7 @@ public class OutboundMessageService implements IService {
   }
 
   public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent) {
-    this(cm, mm, null, null);
+    this(cm, mm, extraContent, null);
   }
 
   public OutboundMessageService(IConfigurationManager cm, IMessageManager mm, String extraContent, String fileName) {

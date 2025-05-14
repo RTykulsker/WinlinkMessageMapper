@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +139,9 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
       referenceImages.put(key, referenceImage);
     }
     imageService = new ImageService(outputPathName);
+
+    var extraOutboundMessageText = "\nNEW: video on how to complete drill: https://youtu.be/yg59-FpY7s0\n";
+    outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
 
   @Override
@@ -223,19 +227,26 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
   }
 
   private String getKeyForFileName(String fileName) {
-    var s = fileName.toLowerCase();
+    final var fsrSet = Set.of("fsr");
+    final var hsbSet = Set.of("hsb", "hbr", "hbs");
+    final var lwxSet = Set.of("lwx", "lws");
 
-    if (s.contains("fsr") && !s.contains("hsb") && !s.contains("lwx")) {
+    var fields = fileName.toLowerCase().split("\\.");
+    var s = fields[0];
+
+    if (fsrSet.contains(s) && !hsbSet.contains(s) && !lwxSet.contains(s)) {
       return "fsr";
     }
 
-    if (s.contains("hsb") && !s.contains("fsr") && !s.contains("lwx")) {
+    if (hsbSet.contains(s) && !fsrSet.contains(s) && !lwxSet.contains(s)) {
       return "hsb";
     }
 
-    if (s.contains("lwx") && !s.contains("fsr") && !s.contains("hsb")) {
+    if (lwxSet.contains(s) && !fsrSet.contains(s) && !hsbSet.contains(s)) {
       return "lwx";
     }
+
+    logger.warn("no match for: " + fileName);
     return null;
   }
 
@@ -246,6 +257,12 @@ public class ETO_2025_05_10 extends MultiMessageFeedbackProcessor {
       iSummary = null;
       summaryMap.remove(sender);
     }
+  }
+
+  @Override
+  protected String makeOutboundMessageSubject(Object object) {
+    var summary = (Summary) object;
+    return outboundMessageSubject + " " + summary.messageId;
   }
 
   @Override

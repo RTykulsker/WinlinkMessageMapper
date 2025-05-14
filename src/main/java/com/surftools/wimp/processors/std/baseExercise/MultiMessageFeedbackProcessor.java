@@ -344,7 +344,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       for (var summary : summaryMap.values()) {
         var outboundMessageFeedback = makeOutboundMessageFeedback(summary);
         var outboundMessage = new OutboundMessage(outboundMessageSender, summary.from,
-            cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT), outboundMessageFeedback,
+            makeOutboundMessageSubject(summary), outboundMessageFeedback,
             AbstractBaseOutboundMessageEngine.generateMid(outboundMessageFeedback));
         outboundMessageList.add(outboundMessage);
       }

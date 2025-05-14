@@ -155,6 +155,12 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
   }
 
   @Override
+  protected String makeOutboundMessageSubject(Object object) {
+    var message = (ExportedMessage) object;
+    return outboundMessageSubject + " " + message.messageId;
+  }
+
+  @Override
   protected void endCommonProcessing(ExportedMessage message) {
     if (feedbackLocation == null || feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
       feedbackLocation = LatLongPair.ZERO_ZERO;
@@ -183,8 +189,8 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
 
     var outboundMessageFeedback = feedback;
-    var outboundMessage = new OutboundMessage(outboundMessageSender, sender,
-        outboundMessageSubject + " " + message.messageId, outboundMessageFeedback, null);
+    var outboundMessage = new OutboundMessage(outboundMessageSender, sender, //
+        makeOutboundMessageSubject(message), outboundMessageFeedback, null);
     outboundMessageList.add(outboundMessage);
   }
 

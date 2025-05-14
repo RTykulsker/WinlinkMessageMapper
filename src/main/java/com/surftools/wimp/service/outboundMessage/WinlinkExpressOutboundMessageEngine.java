@@ -101,6 +101,11 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
      * messages
      */
     var body = m.body();
+
+    if (extraContent != null) {
+      body = body + "\n" + extraContent;
+    }
+
     body = body.replaceAll("<", "&lt;");
     body = body.replaceAll("<=", "&lt;=3D");
     body = body.replaceAll(">", "&gt;");
