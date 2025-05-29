@@ -60,6 +60,8 @@ public class CheckInParser extends AbstractBaseParser {
 
   protected MultiDateTimeParser mtdp = new MultiDateTimeParser(List
       .of("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm 'UTC'", //
+          "MM/dd/yyyy HH:mm", //
+          "M-dd-yyyy", "yyyy-M-dd HH:mm", //
           "MM/dd/yyyy HHmm'hrs.'", "MM/dd/yyyy HHmm'hrs'", "yyyy-MM-dd HH:mm:ss'L'"));
 
   protected final DateTimeFormatter UTC_PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.000Z'"); // 2024-05-23T23:55:11.000Z
@@ -183,8 +185,8 @@ public class CheckInParser extends AbstractBaseParser {
   protected LocalDateTime parseFormDateTime() {
     LocalDateTime formDateTime = null;
 
-    var utcString = getStringFromXml("timestamp2");
-    var localString = getStringFromXml("datetime");
+    var utcString = getStringFromXml("timestamp2").replaceAll("  ", " ");
+    var localString = getStringFromXml("datetime").replaceAll("  ", " ");
     if (utcString != null) {
       try {
         formDateTime = LocalDateTime.from(UTC_PARSER.parse(utcString));

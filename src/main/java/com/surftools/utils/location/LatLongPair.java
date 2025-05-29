@@ -128,8 +128,22 @@ public class LatLongPair {
     return latitude;
   }
 
+  public String getLatitude(int decimalDigits) {
+    if (decimalDigits < 0) {
+      return getLatitude();
+    }
+    return round(normalizeLatitude(getLatitudeAsDouble()), decimalDigits);
+  }
+
   public String getLongitude() {
     return longitude;
+  }
+
+  public String getLongitude(int decimalDigits) {
+    if (decimalDigits < 0) {
+      return getLongitude();
+    }
+    return round(normalizeLongitude(getLongitudeAsDouble()), decimalDigits);
   }
 
   public double getLatitudeAsDouble() {

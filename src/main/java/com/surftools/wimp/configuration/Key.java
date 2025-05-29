@@ -38,9 +38,12 @@ import com.surftools.wimp.utils.config.IConfigurationKey;
 public enum Key implements IConfigurationKey {
 
   PATH("path"), // path to message files
-  DATABASE_PATH("databasePath"), // path to input database summary files
+  NEW_DATABASE_PATH("newDatabasePath"), // path to input database summary files
   OUTPUT_PATH("output.path"), // to override as subdir of path
   OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
+
+  DATABASE_PATH("databasePath"), // path to input database summary files
+  DATABASE_ENGINE_TYPE("databaseEngineType"), // what implements the database
 
   EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle
 
@@ -76,6 +79,7 @@ public enum Key implements IConfigurationKey {
   EXERCISE_DATE("exerciseDate"), // for Summarizer
   EXERCISE_NAME("exerciseName"), // for Summarizer
   EXERCISE_DESCRIPTION("exerciseDescription"), // for Summarizer
+  EXERCISE_ORGANIZATION("exerciseOrganization"), // for Database
   EXERCISE_WINDOW_OPEN("exerciseWindowOpen"), //
   EXERCISE_WINDOW_CLOSE("exerciseWindowClose"), //
 

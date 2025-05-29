@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,38 +25,20 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.database.entity;
 
-/**
- * interface that all Message must conform to
- *
- * @author bobt
- *
- */
-public interface IWritableTable extends Comparable<IWritableTable> {
+import java.time.LocalDate;
 
-  /**
-   * for writing the CSV header
-   *
-   * @return
-   */
-  public String[] getHeaders();
+public record ExerciseId(LocalDate date, String name) implements Comparable<Object> {
 
-  /**
-   * for writing the CSV values, one record per line
-   *
-   * @return
-   */
-  public String[] getValues();
-
-  /**
-   * convenience method for use in getValues()
-   *
-   * @param intValue
-   * @return
-   */
-  default public String s(int intValue) {
-    return String.valueOf(intValue);
+  @Override
+  public int compareTo(Object other) {
+    var o = (ExerciseId) other;
+    var cmp = date.compareTo(o.date);
+    if (cmp != 0) {
+      return cmp;
+    }
+    return name.compareTo(o.name());
   }
 
 }

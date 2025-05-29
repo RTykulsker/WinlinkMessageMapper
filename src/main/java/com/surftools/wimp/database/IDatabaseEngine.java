@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,38 +25,23 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.database;
+
+import java.util.List;
+
+import com.surftools.wimp.database.entity.ExerciseId;
+import com.surftools.wimp.database.entity.ParticipantDetail;
 
 /**
- * interface that all Message must conform to
- *
- * @author bobt
- *
+ * optimized for what I think will be the most common operation, updating list of ParticipantDetail entries
  */
-public interface IWritableTable extends Comparable<IWritableTable> {
+public interface IDatabaseEngine {
 
-  /**
-   * for writing the CSV header
-   *
-   * @return
-   */
-  public String[] getHeaders();
+  public void load();
 
-  /**
-   * for writing the CSV values, one record per line
-   *
-   * @return
-   */
-  public String[] getValues();
+  public void store();
 
-  /**
-   * convenience method for use in getValues()
-   *
-   * @param intValue
-   * @return
-   */
-  default public String s(int intValue) {
-    return String.valueOf(intValue);
-  }
+  public void update(ExerciseId transactionKey, List<ParticipantDetail> list);
 
+  public List<ParticipantDetail> getAllParticipantDetails();
 }

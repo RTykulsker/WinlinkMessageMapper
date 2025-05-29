@@ -96,6 +96,10 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     }
   }
 
+  protected static void uninitialize() {
+    isInitialized = false;
+  }
+
   protected void doInitialization(IConfigurationManager _cm, IMessageManager _mm) {
     cm = _cm;
     mm = _mm;
@@ -203,6 +207,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     var myDirPath = FileUtils.makeDirIfNeeded(pathName);
     var myFilePath = Path.of(myDirPath.toString(), fileName);
     var messageCount = 0;
+    // TODO Collections.sort(entries);
     try {
       CSVWriter writer = new CSVWriter(new FileWriter(myFilePath.toString()));
       if (entries.size() > 0) {

@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,38 +25,25 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.database;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
- * interface that all Message must conform to
- *
- * @author bobt
- *
+ * service that answers queries to "the database"
  */
-public interface IWritableTable extends Comparable<IWritableTable> {
+public interface IDatabaseService {
+
+  public static final DateTimeFormatter DB_DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   /**
-   * for writing the CSV header
    *
+   * @param minExercises
+   *          -- minimum number of exercises to qualify
+   * @param maxLookbackDays
+   *          -- maximum number of days from now() to look back to qualify
    * @return
    */
-  public String[] getHeaders();
-
-  /**
-   * for writing the CSV values, one record per line
-   *
-   * @return
-   */
-  public String[] getValues();
-
-  /**
-   * convenience method for use in getValues()
-   *
-   * @param intValue
-   * @return
-   */
-  default public String s(int intValue) {
-    return String.valueOf(intValue);
-  }
-
+  public List<String> getActiveParticipants(int minExercises, int maxLookbackDays);
 }

@@ -311,7 +311,4 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
     }
   }
 
-  private String s(int i) {
-    return String.valueOf(i);
-  }
 }

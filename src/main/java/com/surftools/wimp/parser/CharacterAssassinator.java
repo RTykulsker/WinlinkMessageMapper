@@ -25,38 +25,59 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.parser;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * interface that all Message must conform to
+ * delete or replace unwanted characters from a String
+ *
+ * useful before handing off to XML processor
  *
  * @author bobt
  *
  */
-public interface IWritableTable extends Comparable<IWritableTable> {
+public class CharacterAssassinator {
+  private List<String> deleteList;
+  private Map<String, String> replaceMap;
 
-  /**
-   * for writing the CSV header
-   *
-   * @return
-   */
-  public String[] getHeaders();
-
-  /**
-   * for writing the CSV values, one record per line
-   *
-   * @return
-   */
-  public String[] getValues();
-
-  /**
-   * convenience method for use in getValues()
-   *
-   * @param intValue
-   * @return
-   */
-  default public String s(int intValue) {
-    return String.valueOf(intValue);
+  public CharacterAssassinator() {
+    deleteList = new ArrayList<>();
+    replaceMap = new HashMap<>();
   }
 
+  public CharacterAssassinator(List<String> deleteList, Map<String, String> replaceMap) {
+    if (deleteList == null) {
+      this.deleteList = new ArrayList<>();
+    } else {
+      this.deleteList = deleteList;
+    }
+
+    if (replaceMap == null) {
+      this.replaceMap = new HashMap<>();
+    } else {
+      this.replaceMap = replaceMap;
+    }
+  }
+
+  /**
+   * delete or replace unwanted characters from a String
+   *
+   * @param string
+   * @return
+   */
+  public String assassinate(String string) {
+    for (String s : deleteList) {
+      string = string.replaceAll(s, "");
+    }
+
+    for (String key : replaceMap.keySet()) {
+      string = string.replaceAll(key, replaceMap.get(key));
+    }
+
+    return string;
+  }
 }

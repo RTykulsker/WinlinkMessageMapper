@@ -62,6 +62,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager _mm) {
     // IGNORE argument mm, create a final mm, because needed for variable capture
     final IMessageManager mm = new MessageManager();
+    super.uninitialize();
     super.initialize(cm, mm, logger);
 
     var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication,Filter");

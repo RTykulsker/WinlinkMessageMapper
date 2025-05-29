@@ -182,6 +182,15 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
       return Arrays.asList(getValues());
     }
 
+    public boolean isEmpty() {
+      for (var field : getValues()) {
+        if (field != null && !field.isEmpty()) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     private static String[] names = { "Row", //
         "Zone/Group", "Channel", "Function", "Channel Name", "Assignment", //
         "Rx Freq", "Rx N/W", "Rx Tone", //

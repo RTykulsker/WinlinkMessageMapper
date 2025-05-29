@@ -28,9 +28,11 @@ SOFTWARE.
 package com.surftools.wimp.processors.std;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RejectionMessage;
 import com.surftools.wimp.parser.AbstractBaseParser;
+import com.surftools.wimp.parser.CharacterAssassinator;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -67,6 +70,8 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   private int readFilterExcludeCount = 0;
   private Set<String> includeSenderSet;
   private Set<String> excludeSenderSet;
+
+  private static final List<String> DELETE_LIST = Arrays.asList(new String[] { "&#21" });
 
   static record LocationResult(LatLongPair location, String source) {
   };
@@ -106,6 +111,12 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     baseInitialize(cm, mm);
   }
 
+  private InputStream fixInputString(String content) {
+    CharacterAssassinator assassinator = new CharacterAssassinator(DELETE_LIST, null);
+    content = assassinator.assassinate(content);
+    return new ByteArrayInputStream(content.getBytes());
+  }
+
   protected List<ExportedMessage> parseExportedMessages(List<String> fileLines, String fileName) {
     List<ExportedMessage> messages = new ArrayList<>();
 
@@ -130,7 +141,8 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     }
 
     for (var lines : messageLines) {
-      var inputStream = new ByteArrayInputStream(String.join("\n", lines).getBytes());
+      // var inputStream = new ByteArrayInputStream(String.join("\n", lines).getBytes());
+      var inputStream = fixInputString(String.join("\n", lines));
       var iNode = 0;
       var nNodes = 0;
       try {

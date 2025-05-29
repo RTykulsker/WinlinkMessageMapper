@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,38 +25,34 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.core;
+package com.surftools.wimp.database.entity;
+
+import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.database.IDatabaseService;
 
 /**
- * interface that all Message must conform to
- *
- * @author bobt
- *
+ * one record per exercise
  */
-public interface IWritableTable extends Comparable<IWritableTable> {
+public record ExerciseSummary(//
+    ExerciseId exerciseId, //
+    int totalMessages, //
+    int uniqueParticipants) implements IWritableTable {
 
-  /**
-   * for writing the CSV header
-   *
-   * @return
-   */
-  public String[] getHeaders();
-
-  /**
-   * for writing the CSV values, one record per line
-   *
-   * @return
-   */
-  public String[] getValues();
-
-  /**
-   * convenience method for use in getValues()
-   *
-   * @param intValue
-   * @return
-   */
-  default public String s(int intValue) {
-    return String.valueOf(intValue);
+  @Override
+  public String[] getHeaders() {
+    return new String[] { "Exercise Date", "Exercise Name", "Total Messages", "Unique Participants" };
   }
 
+  @Override
+  public String[] getValues() {
+    final var DB_DTF = IDatabaseService.DB_DTF;
+    return new String[] { DB_DTF.format(exerciseId.date()), exerciseId.name(), s(totalMessages),
+        s(uniqueParticipants) };
+  }
+
+  @Override
+  public int compareTo(IWritableTable other) {
+    var o = (ExerciseSummary) other;
+    return exerciseId.compareTo(o.exerciseId);
+  }
 }

@@ -62,7 +62,9 @@ public class WxLocalParser extends AbstractBaseParser {
     mdtp = new MultiDateTimeParser(List
         .of(//
             "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", //
-            "yyyy-MM-dd HH:mm:ss'Z'", //
+            "yyyy/MM/dd HH:mm:ss", //
+            "yyyy-MM-dd HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss 'GMT'", "yyyy-MM-dd HH:mm:ss 'local time'", //
+            "yyyy-M-dd HH:mm", "M/d/yyyy HHmm", "M-d-yyyy", //
             "M/d/yyyy HH:mm:ss", "M/d/yyyy HH:mm:ss a", "M/d/yyyy h:mm:ss a", "M/d/yyyy  h:mm:ss a", //
             "MM/dd/yyyy HH:mm a", "MM/dd/yyyy HH:mm 'PM'", "MM/dd/yyyy HH:mm  'AM'", "yyyy-MM-dd HH:mm a"
         //
@@ -83,10 +85,11 @@ public class WxLocalParser extends AbstractBaseParser {
       }
 
       LocalDateTime formDateTime = null;
+      var formDateTimeString = getStringFromXml("datetime");
       try {
-        formDateTime = mdtp.parse(getStringFromXml("datetime").replaceAll("  ", " "));
+        formDateTime = mdtp.parse(formDateTimeString.replaceAll("  ", " "));
       } catch (Exception e) {
-        logger.warn("### could not parse " + getStringFromXml("datetime") + " for " + message.from);
+        logger.warn("### could not parse datetime: " + formDateTimeString + " for " + message.from);
       }
 
       var locationString = getStringFromXml("location");
