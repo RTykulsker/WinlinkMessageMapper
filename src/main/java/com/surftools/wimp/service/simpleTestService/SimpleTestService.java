@@ -160,6 +160,17 @@ public class SimpleTestService implements IService {
     return ret;
   }
 
+  public TestResult testAsDouble(String label, String expectedValueString, String valueString) {
+    var expectedValue = Double.parseDouble(expectedValueString);
+    try {
+      var value = Double.valueOf(Double.parseDouble(valueString));
+      var predicate = value.equals(expectedValue);
+      return test(label, predicate, valueString);
+    } catch (Exception e) {
+      return test(label, false, valueString);
+    }
+  }
+
   /**
    * another common use case, predicate evaluated by caller
    *

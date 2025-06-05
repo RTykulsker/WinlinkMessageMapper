@@ -46,7 +46,8 @@ public record ParticipantSummary(//
 
   public ParticipantSummary update(ParticipantDetail pd) {
     var _call = call == null ? pd.call() : call;
-    var _location = location == null ? pd.location() : location;
+    var _location = pd.location() != null && pd.location().isValidNotZero() ? pd.location()
+        : (location == null) ? LatLongPair.ZERO_ZERO : location;
     var pd_date = pd.exerciseId().date();
     var _firstDate = firstDate == null ? pd_date : pd_date.isBefore(firstDate) ? pd_date : firstDate;
     var _lastDate = lastDate == null ? pd_date : pd_date.isAfter(lastDate) ? pd_date : lastDate;

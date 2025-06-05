@@ -156,6 +156,10 @@ public class LatLongPair {
     return dLongitude;
   }
 
+  public boolean isValidNotZero() {
+    return isValid() && !getLatitude(0).equals("0") && !getLongitude(0).equals("0");
+  }
+
   public boolean isValid() {
     if (latitude == null || longitude == null) {
       return false;

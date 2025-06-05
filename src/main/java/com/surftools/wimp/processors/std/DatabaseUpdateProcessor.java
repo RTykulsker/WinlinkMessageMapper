@@ -122,6 +122,11 @@ public class DatabaseUpdateProcessor extends AbstractBaseProcessor {
       pdList.add(pd);
     }
 
+    // execute here and not in postProcess to be sure that all processors will
+    // have updates complete in postProcess()
+    db.getEngine().update(exerciseId, pdList);
+    db.getEngine().store();
+
     var sb = new StringBuilder();
     var uniqueMessageCount = messageTypeCounter.getValueTotal();
     var dedupeCount = 0;
@@ -142,9 +147,6 @@ public class DatabaseUpdateProcessor extends AbstractBaseProcessor {
   @Override
   public void postProcess() {
     super.postProcess();
-
-    db.getEngine().update(exerciseId, pdList);
-    db.getEngine().store();
   }
 
 }

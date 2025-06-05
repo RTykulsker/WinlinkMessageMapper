@@ -136,33 +136,33 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
 
     {
       var entry = entries.get(0);
-      sts.setExplanationPrefix("line 1: (VHF repeater): ");
+      sts.setExplanationPrefix("line 1: (VHF Repeater): ");
       count(sts.testIfEmpty("Zone/Group should be empty", entry.zoneGroup()));
       count(sts.test("Channel number should be #EV", "1", entry.channelNumber()));
       count(sts.test("Function should be #EV", "Coordination", entry.function()));
       count(sts.test("Channel name should be #EV", "VHF Repeater", entry.channelName()));
       count(sts.test("Assignment should be #EV", "amateur", entry.assignment()));
-      count(sts.test("RX Freq should be #EV", "147.1600", entry.rxFrequency()));
+      count(sts.testAsDouble("RX Freq should be #EV", "147.160", entry.rxFrequency()));
       count(sts.test("RX N/W should be #EV", "W", entry.rxNarrowWide()));
-      count(sts.test("RX Tone should be #EV", "103.5", entry.rxTone()));
-      count(sts.test("TX Freq should be #EV", "147.7600", entry.txFrequency()));
+      count(sts.testAsDouble("RX Tone should be #EV", "103.5", entry.rxTone()));
+      count(sts.testAsDouble("TX Freq should be #EV", "147.760", entry.txFrequency()));
       count(sts.test("TX N/W should be #EV", "W", entry.txNarrowWide()));
-      count(sts.test("TX Tone should be #EV", "103.5", entry.txTone()));
+      count(sts.testAsDouble("TX Tone should be #EV", "103.5", entry.txTone()));
       count(sts.test("Remarks should be #EV", "Primary repeater", entry.remarks()));
     }
 
     {
-      var entry = entries.get(0);
-      sts.setExplanationPrefix("line 2: (VHF repeater): ");
+      var entry = entries.get(1);
+      sts.setExplanationPrefix("line 2: (VHF Simplex): ");
       count(sts.testIfEmpty("Zone/Group should be empty", entry.zoneGroup()));
       count(sts.test("Channel number should be #EV", "2", entry.channelNumber()));
-      count(sts.test("Function should be #EV", "Tactoca;", entry.function()));
+      count(sts.test("Function should be #EV", "Tactical;", entry.function()));
       count(sts.test("Channel name should be #EV", "VHF Simplex", entry.channelName()));
       count(sts.test("Assignment should be #EV", "amateur", entry.assignment()));
-      count(sts.test("RX Freq should be #EV", "147.4400", entry.rxFrequency()));
+      count(sts.testAsDouble("RX Freq should be #EV", "147.440", entry.rxFrequency()));
       count(sts.test("RX N/W should be #EV", "W", entry.rxNarrowWide()));
       count(sts.test("RX Tone should be #EV", "CSQ", entry.rxTone()));
-      count(sts.test("TX Freq should be #EV", "147.4400", entry.txFrequency()));
+      count(sts.testAsDouble("TX Freq should be #EV", "147.440", entry.txFrequency()));
       count(sts.test("TX N/W should be #EV", "W", entry.txNarrowWide()));
       count(sts.test("TX Tone should be #EV", "CSQ", entry.txTone()));
       count(sts.test("Remarks should be #EV", "Primary simplex", entry.remarks()));

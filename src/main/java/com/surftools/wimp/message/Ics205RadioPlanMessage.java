@@ -183,7 +183,9 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
     }
 
     public boolean isEmpty() {
-      for (var field : getValues()) {
+      var values = getValues();
+      for (var i = 1; i < values.length; ++i) {
+        var field = values[i];
         if (field != null && !field.isEmpty()) {
           return false;
         }
