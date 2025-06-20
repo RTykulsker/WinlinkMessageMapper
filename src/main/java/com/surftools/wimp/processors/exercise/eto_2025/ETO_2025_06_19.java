@@ -54,6 +54,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2025_06_19.class);
 
+  private static final int UTC_HOURS_HACK = 8;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
@@ -72,6 +74,7 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
     count(sts.test("Incident Name should be #EV", "ETO ICS-205 Exercise", m.incidentName));
 
     var dateTimePrepared = parseDateTime(m.dateTimePrepared, List.of(DTF, ALT_DTF));
+    dateTimePrepared = dateTimePrepared.plusHours(UTC_HOURS_HACK);
     if (dateTimePrepared == null) {
       count(sts.test("Date/Time Prepared should be present and in exercise window", false));
     } else {
@@ -81,7 +84,8 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
     }
 
     var opDateFormatter = new MultiDateTimeParser(List
-        .of("M/dd/yyyy", "MM/dd/yy", "MM/dd/yyyy", "yyyy-MM-dd", "yyyy-M-dd", "M-dd-yyyy", "yyyy/MM/dd", "M/dd/yy"));
+        .of("M/dd/yyyy", "MM/dd/yy", "MM/dd/yyyy", "yyyy-MM-dd", "yyyy-M-dd", "M-dd-yyyy", "yyyy/MM/dd", "M/dd/yy",
+            "yyyyMMdd"));
 
     count(sts
         .test("Operational Period Date From should be 06/17/25",
@@ -91,9 +95,15 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
             opDateFormatter.parseDate(m.dateTo).equals(LocalDate.of(2025, 06, 20)), m.dateTo));
 
     var opTimeFormatter = new MultiDateTimeParser(List.of("HH:mm 'UTC'", "HHmm 'UTC'", "HHmm", "HH:mm", "HH:mm'UTC'"));
-    count(sts
-        .test("Operational Period Time From should be 00:00 UTC",
-            opTimeFormatter.parseTime(m.timeFrom).equals(LocalTime.of(0, 0)), m.timeFrom));
+
+    var timeFromAsDate = opDateFormatter.parseDate(m.timeFrom);
+    if (timeFromAsDate.getYear() > 0) {
+      count(sts.test("Operational Period Time From should be 00:00 UTC", false, m.timeFrom));
+    } else {
+      count(sts
+          .test("Operational Period Time From should be 00:00 UTC",
+              opTimeFormatter.parseTime(m.timeFrom).equals(LocalTime.of(0, 0)), m.timeFrom));
+    }
     count(sts
         .test("Operational Period Time To should be 15:00 UTC",
             opTimeFormatter.parseTime(m.timeTo).equals(LocalTime.of(15, 00)), m.timeTo));
@@ -105,7 +115,7 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
 
     var approvedBy = m.approvedBy == null ? "" : m.approvedBy;
     var approvedByFields = Arrays
-        .asList(approvedBy.split(",| ")) // comma OR space
+        .asList(approvedBy.split(",| |/")) // comma OR space
           .stream()
           .filter(Predicate.not(String::isEmpty))
           .toList();
@@ -120,6 +130,7 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
     }
 
     var dateTimeApproved = parseDateTime(m.dateTimePrepared, List.of(DTF, ALT_DTF));
+    dateTimeApproved = dateTimeApproved.plusHours(UTC_HOURS_HACK);
     if (dateTimeApproved == null) {
       count(sts.test("Date/Time Approved should be present and in exercise window", false));
     } else {

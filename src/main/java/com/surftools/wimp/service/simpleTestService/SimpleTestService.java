@@ -160,7 +160,11 @@ public class SimpleTestService implements IService {
     return ret;
   }
 
-  public TestResult testAsDouble(String label, String expectedValueString, String valueString) {
+  public TestResult testAsDouble(String rawLabel, String expectedValueString, String valueString) {
+    var label = rawLabel.contains("#EV") && expectedValueString != null //
+        ? rawLabel.replaceAll("#EV", expectedValueString)
+        : rawLabel;
+
     var expectedValue = Double.parseDouble(expectedValueString);
     try {
       var value = Double.valueOf(Double.parseDouble(valueString));
@@ -810,6 +814,7 @@ public class SimpleTestService implements IService {
     }
 
     var list = new ArrayList<String>();
+    s = toAlphaNumericString(s);
 
     // Some people, when confronted with a problem, think "I know, I'll use regular expressions."
     // Now they have two problems.

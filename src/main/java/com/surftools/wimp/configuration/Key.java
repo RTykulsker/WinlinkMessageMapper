@@ -76,6 +76,8 @@ public enum Key implements IConfigurationKey {
   PIPELINE_STDOUT("pipeline.stdout"), // list of output processors
   PIPELINE_MAIN("pipeline.main"), // list of main processors
 
+  PRACTICE_PATH("practice.path"), // path where practice files are written
+
   EXERCISE_DATE("exerciseDate"), // for Summarizer
   EXERCISE_NAME("exerciseName"), // for Summarizer
   EXERCISE_DESCRIPTION("exerciseDescription"), // for Summarizer
