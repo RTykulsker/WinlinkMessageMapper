@@ -134,4 +134,30 @@ public class ContentParserTest {
     assertTrue(groupSet.contains("LAXNORTHEAST"));
     assertTrue(groupSet.contains("TWO METER"));
   }
+
+  @Test
+  public void testFindFirstNumberInString() {
+    String result = "";
+    ContentParser cp;
+
+    cp = new ContentParser(null);
+    result = cp.findFirstNumber();
+    assertEquals(null, result);
+
+    cp = new ContentParser("");
+    result = cp.findFirstNumber();
+    assertEquals(null, result);
+
+    cp = new ContentParser("abc");
+    result = cp.findFirstNumber();
+    assertEquals(null, result);
+
+    cp = new ContentParser("abc123eex 987");
+    result = cp.findFirstNumber();
+    assertEquals("123", result);
+
+    cp = new ContentParser("abc123eex 987");
+    result = cp.findFirstNumber(Set.of("123"));
+    assertEquals("987", result);
+  }
 }

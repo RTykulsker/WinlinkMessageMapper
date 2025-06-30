@@ -27,7 +27,9 @@ SOFTWARE.
 
 package com.surftools.utils;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -112,59 +114,47 @@ public class ContentParser {
   }
 
   /**
-   * extract all group affiliations
+   * find first Number in a String
    *
-   * @param label
-   * @param comments
-   * @param lineNumber
+   * @param line
+   * @return
    */
-  // protected String processGroupAffiliation(String label, String comments, Integer lineNumber) {
-  // var groupSet = new LinkedHashSet<String>();
-  // if (comments != null) {
-  // if (lineNumber == null) {
-  // // DYFI has only a single line. Everything from 2nd word to first with starting with number is assumed to be a
-  // // group affiliation
-  // var fields = comments.split(",");
-  // if (fields.length >= 2) {
-  // for (var index = 1; index < fields.length; ++index) {
-  // var field = fields[index];
-  // if (isNull(field)) {
-  // continue;
-  // }
-  // var c = field.charAt(0);
-  // if (Character.isDigit(c)) {
-  // break;
-  // }
-  // groupSet.add(field.trim().toUpperCase());
-  // }
-  // }
-  // } else {
-  // var lines = comments.split("\n");
-  // if (lines.length >= lineNumber) {
-  // var line = lines[lineNumber - 1];
-  // if (line != null) {
-  // var fields = line.split(",");
-  // for (var field : fields) {
-  // if (!isNull(field)) {
-  // groupSet.add(field.trim().toUpperCase());
-  // } // endif non-null and not empty
-  // } // end for over fields in line
-  // } else { // end if line != null
-  // count(sts.test("Group Affiliation(s) parsed", false));
-  // } // end if line == null
-  // } else { // end if lineNumber in range
-  // count(sts.test("Group Affiliation(s) parsed", false));
-  // } // end if lineNumber not in range
-  // } // end if lineNumber specified
-  //
-  // for (var groupName : groupSet) {
-  // getCounter(label + " Group Affiliation").increment(groupName);
-  // }
-  // count(sts.test("Group Affiliation(s) parsed", true));
-  // } else { // comment are null
-  // count(sts.test("Group Affiliation(s) parsed", false));
-  // } // end if comments are null
-  //
-  // return String.join(",", groupSet);
-  // }
+  public String findFirstNumber() {
+    return findFirstNumber(new HashSet<String>());
+  }
+
+  /**
+   * find first Number in a String
+   *
+   * @param line
+   * @param ignoreSet
+   *          set of strings, representing numbers that shold be ignored
+   * @return
+   */
+  public String findFirstNumber(Set<String> ignoreSet) {
+    if (content == null) {
+      return null;
+    }
+
+    final var pattern = Pattern.compile("\\d+");
+    String ret = null;
+    var matcher = pattern.matcher(content);
+    while (true) {
+      var found = matcher.find();
+      if (found) {
+        var countString = matcher.group();
+        if (ignoreSet.contains(countString)) {
+          continue;
+        } else {
+          found = true;
+          ret = countString;
+          break;
+        }
+      } else {
+        return ret;
+      }
+    }
+
+    return ret;
+  }
 }

@@ -86,6 +86,7 @@ public class MergeMessageProcessor extends AbstractBaseProcessor {
         }
         var messages = map.get(messageType);
         for (var m : messages) {
+          // TODO rewrite lines, adding/replacing <folder> tag to something specified
           mergedMessageStrings.add(String.join("\n", m.lines));
         } // end for over messages of a given type
       } // end for over messageTypes

@@ -27,9 +27,12 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2025;
 
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.ContentParser;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -58,11 +61,8 @@ public class ETO_2025_06_28_Field_Day extends SingleMessageFeedbackProcessor {
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Incident Name should be #EV", "ARRL Field Day 2025", m.incidentName));
 
-    var partText = "Winlink Thursday Participant";
-    var etoPartText = " / ETO " + partText;
-    var expectedFrom = m.from + etoPartText;
-    var fromPredicate = sts.compareWords(expectedFrom, m.formFrom);
-    count(sts.test("Form From should match <YOURCALL>" + etoPartText, fromPredicate, m.formFrom));
+    var fromPredicate = m.formFrom.toLowerCase().endsWith("ETO Winlink Thursday Participant".toLowerCase());
+    count(sts.test("Form From should end with ETO Winlink Thursday Participant", fromPredicate, m.formFrom));
 
     count(sts.test("Form Subject should be #EV", "ARRL Field Day 2025 Participation", m.formSubject));
     count(sts.testIfPresent("Form Date should be present", m.formDate));
@@ -72,13 +72,23 @@ public class ETO_2025_06_28_Field_Day extends SingleMessageFeedbackProcessor {
     var msgOk = msg != null;
     if (msgOk) {
       var lines = msg.split("\n");
-      if (lines.length == 4) {
+      if (lines.length >= 4) {
+        final Set<String> ignoreSet = Set.of("9679");
         var participantLine = lines[1];
+        var cp = new ContentParser(participantLine);
+        var participantCount = cp.findFirstNumber(ignoreSet);
+        if (participantCount != null) {
+          getCounter("Participant Count").increment(participantCount);
+        } else {
+          msgOk = false;
+        }
+
         var aresLine = lines[3];
-        try {
-          Integer.parseInt(participantLine);
-          Integer.parseInt(aresLine);
-        } catch (Exception e) {
+        cp = new ContentParser(aresLine);
+        var aresCount = cp.findFirstNumber(ignoreSet);
+        if (aresCount != null) {
+          getCounter("ARES Count").increment(aresCount);
+        } else {
           msgOk = false;
         }
       } else {
@@ -88,7 +98,9 @@ public class ETO_2025_06_28_Field_Day extends SingleMessageFeedbackProcessor {
     count(sts.test("Message text should be correctly formatted", msgOk, m.formMessage));
 
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
-    count(sts.test("Position/Title should be #EV", partText, m.position));
+
+    var posTitlePredicate = m.position.toLowerCase().endsWith("Winlink Thursday Participant".toLowerCase());
+    count(sts.test("Position/Title should be Winlink Thursday Participant", posTitlePredicate, m.position));
   }
 
 }

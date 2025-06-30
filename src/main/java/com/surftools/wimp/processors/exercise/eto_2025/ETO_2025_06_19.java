@@ -74,10 +74,10 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
     count(sts.test("Incident Name should be #EV", "ETO ICS-205 Exercise", m.incidentName));
 
     var dateTimePrepared = parseDateTime(m.dateTimePrepared, List.of(DTF, ALT_DTF));
-    dateTimePrepared = dateTimePrepared.plusHours(UTC_HOURS_HACK);
     if (dateTimePrepared == null) {
       count(sts.test("Date/Time Prepared should be present and in exercise window", false));
     } else {
+      dateTimePrepared = dateTimePrepared.plusHours(UTC_HOURS_HACK);
       count(sts.test("Date/Time Prepared should be present and in exercise window", true));
       count(sts.testOnOrAfter("Date/Time Prepared should be on or after #EV", windowOpenDT, dateTimePrepared, DTF));
       count(sts.testOnOrBefore("Date/Time Prepared should be on or before #EV", windowCloseDT, dateTimePrepared, DTF));
@@ -130,10 +130,10 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
     }
 
     var dateTimeApproved = parseDateTime(m.dateTimePrepared, List.of(DTF, ALT_DTF));
-    dateTimeApproved = dateTimeApproved.plusHours(UTC_HOURS_HACK);
     if (dateTimeApproved == null) {
       count(sts.test("Date/Time Approved should be present and in exercise window", false));
     } else {
+      dateTimeApproved = dateTimeApproved.plusHours(UTC_HOURS_HACK);
       count(sts.testOnOrAfter("Date/Time Approved should be on or after #EV", windowOpenDT, dateTimeApproved, DTF));
       count(sts.testOnOrBefore("Date/Time Approved should be on or before #EV", windowCloseDT, dateTimeApproved, DTF));
     }
