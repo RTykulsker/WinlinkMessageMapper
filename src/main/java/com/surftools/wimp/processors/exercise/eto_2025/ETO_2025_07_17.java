@@ -38,7 +38,7 @@ import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProce
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * ICS-205
+ * ICS-213 Resource Request
  *
  * @author bobt
  *
@@ -65,7 +65,6 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
     count(sts.testIfPresent("Box 2: Request Date Time should be present", m.activityDateTime));
     count(sts.test("Box 3: Resource Request Number should be #EV", "B01009", m.requestNumber));
 
-    // TODO box 4 lines
     record Line(String qty, String kind, String item) {
     }
     var expectedItems = new Line[] { //
@@ -86,7 +85,7 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
       count(sts.test("Box 4 (line " + lineNumber + "): Quantity should be #EV", expectedItem.qty, lineItem.quantity()));
       count(sts.test("Box 4 (line " + lineNumber + "): Kind should be #EV", expectedItem.kind, lineItem.kind()));
       count(sts.testIfEmpty("Box 4 (line " + lineNumber + "): Type should be empty", lineItem.type()));
-      count(sts.test("Box 4 (line " + lineNumber + "): Item should be #EV", expectedItem.item, lineItem.item()));
+      count(sts.test_2line("Box 4 (line " + lineNumber + "): Item should be #EV", expectedItem.item, lineItem.item()));
       count(sts
           .test("Box 4 (line " + lineNumber + "): Requested Date should be #EV", "15 July 2025 1400",
               lineItem.requestedDateTime()));
@@ -97,11 +96,10 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
     }
 
     count(sts.test("Box 5: Delivery/Reporting Location should be #EV", "Mills Pt High School Shelter", m.delivery));
-    count(sts.test("Box 6: Substitutes should be #EV", "No Substitutes - Fill as ordered", m.substitutes));
-    count(sts.test("Box 7: Requested by should be #EV", "Sam Chasse MD Shelter Physician", m.requestedBy));
+    count(sts.test_2line("Box 6: Substitutes should be #EV", "No Substitutes - Fill as ordered", m.substitutes));
+    count(sts.test_2line("Box 7: Requested by should be #EV", "Sam Chasse MD Shelter Physician", m.requestedBy));
     count(sts.test("Box 8: Priority should be #EV", "URGENT", m.priority));
     count(sts.test("Box 9: Approved by should be #EV", "Jeff Barton", m.approvedBy));
-
     count(sts.testIfEmpty("Box 10 Logistics Order Number should be empty", m.logisticsOrderNumber));
     count(sts.testIfEmpty("Box 11 Supplier Phone Number should be empty", m.supplierInfo));
     count(sts.testIfEmpty("Box 12 Supplier Name should be empty", m.supplierName));
@@ -109,10 +107,9 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
     count(sts.testIfEmpty("Box 13 Supply Notes should be empty", m.supplyNotes));
     count(sts.testIfEmpty("Box 14 Logistics Authorizer should be empty", m.logisticsAuthorizer));
     count(sts.testIfEmpty("Box 15 Logistics Date/Time should be empty", m.logisticsDateTime));
-    count(sts.test("Box 16 Logistics Ordered by should be #EV", "Sam Chasse MD Shelter Physician", m.orderedBy));
+    count(sts.test_2line("Box 16 Logistics Ordered by should be #EV", "Sam Chasse MD Shelter Physician", m.orderedBy));
     count(sts.testIfEmpty("Box 17 Finance Comments should be empty", m.financeComments));
     count(sts.test("Box 18 Finance Section Chief Name should be #EV", "Kimberly Barton", m.financeName));
     count(sts.test("Box 19 Finance Date/Time should be #EV", "2025-07-03 1200", m.financeDateTime));
   }
-
 }

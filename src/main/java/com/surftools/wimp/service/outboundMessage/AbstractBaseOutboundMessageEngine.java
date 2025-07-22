@@ -140,8 +140,15 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
       logger.error("Exception writing b2f file: " + outputPath + ", " + e.getLocalizedMessage());
     }
 
-    allOutput.append(m.to() + "\n" + m.body() + "\n\n");
+    var text = editAllFeedbackText(m.body());
+
+    allOutput.append(m.to() + "\n" + text + "\n\n");
     return messageId;
+  }
+
+  @Override
+  public String editAllFeedbackText(String text) {
+    return text;
   }
 
   @Override

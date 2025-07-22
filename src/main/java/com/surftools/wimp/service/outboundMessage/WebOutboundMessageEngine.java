@@ -66,4 +66,9 @@ public class WebOutboundMessageEngine implements IOutboundMessageEngine {
     return EngineType.WEB;
   }
 
+  @Override
+  public String editAllFeedbackText(String text) {
+    return text;
+  }
+
 }

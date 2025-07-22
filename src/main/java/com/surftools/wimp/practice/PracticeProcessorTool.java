@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -46,6 +47,7 @@ import com.surftools.wimp.utils.config.impl.MemoryConfigurationManager;
 
 public class PracticeProcessorTool {
   public static final String REFERENCE_MESSAGE_KEY = "referenceMessage";
+  public static final String INSTRUCTIONS_KEY = "instructions";
 
   static {
     System.setProperty("logback.configurationFile", "src/main/resources/logback.xml");
@@ -56,11 +58,14 @@ public class PracticeProcessorTool {
   @Option(name = "--exerciseDate", usage = "date of practice exercise in yyyy-MM-dd format", required = true)
   private String exerciseDateString = null;
 
-  @Option(name = "--pathName", usage = "path name where input file is located", required = false)
-  private String pathName = null;
+  @Option(name = "--exportedMessagesPathName", usage = "path name where ExportedMessages.xml file is located", required = false)
+  private String exportedMessagesPathName = null;
 
-  @Option(name = "--referencePathName", usage = "path name where reference input file is located", required = false)
+  @Option(name = "--referencePathName", usage = "path name where reference files are located", required = true)
   private String referencePathName = null;
+
+  @Option(name = "--winlinkCallsign", usage = "Winlink Express callsign for sending feedback", required = true)
+  private String outboundMessageSource = null;
 
   public static void main(String[] args) {
     var tool = new PracticeProcessorTool();
@@ -96,37 +101,67 @@ public class PracticeProcessorTool {
           .info("Exercise Date: " + exerciseDate.toString() + ", " + PracticeUtils.getOrdinalLabel(ord)
               + " Thursday; exercise message type: " + messageType.toString());
 
-      if (pathName == null) {
-        pathName = System.getProperty("user.dir");
-      }
-      logger.info("pathName: " + pathName);
+      logger.info("exportedMessagesPathName" + exportedMessagesPathName);
 
       // fail fast on reading reference
-      if (referencePathName == null) {
-        referencePathName = Path.of(pathName, "../reference/" + exerciseDateString).toString();
-      }
       logger.info("referencePathName: " + referencePathName);
       var referencePath = Path.of(referencePathName, messageType.toString() + ".json");
       var jsonString = Files.readString(referencePath);
       var deserializer = new PracticeJsonMessageDeserializer();
       var referenceMessage = deserializer.deserialize(jsonString, messageType);
 
+      final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+      var nextExerciseDate = exerciseDate.plusDays(ord == 3 ? 14 : 7);
+      var nextOrd = PracticeUtils.getOrdinalDayOfWeek(nextExerciseDate);
+      var nextExerciseDateString = dtf.format(nextExerciseDate);
+      var nextMessageType = PracticeGeneratorTool.MESSAGE_TYPE_MAP.get(nextOrd);
+
+      var instructionPath = Path
+          .of(referencePathName + "/..", nextExerciseDateString,
+              nextExerciseDateString + "-" + nextMessageType.toString() + "_instructions.txt");
+      var instructionText = Files.readString(instructionPath);
+      var sb = new StringBuilder();
+      sb.append("\n\n");
+      if (ord == 2) {
+        sb.append("INSTRUCTIONS for next week:" + "\n");
+        sb.append("Next Thursday is a \"Third Thursday Training Exercise\"," + "\n");
+        sb
+            .append("so look for instructions on our web site at https://emcomm-training.org/Winlink_Thursdays.html"
+                + "\n");
+        sb.append("However, here are the " + instructionText + "\n");
+      } else {
+        sb.append("INSTRUCTIONS for " + instructionText + "\n");
+      }
+      instructionText = sb.toString();
+
       var cm = new MemoryConfigurationManager(Key.values());
 
       // create our configuration on the fly
       cm.putString(Key.EXERCISE_DATE, exerciseDateString);
-      cm.putString(Key.PATH, pathName);
+      cm.putString(Key.PATH, exportedMessagesPathName);
       cm.putBoolean(Key.OUTPUT_PATH_CLEAR_ON_START, true);
       cm.putString(Key.EXPECTED_MESSAGE_TYPES, messageType.toString());
-      // TODO EXERCISE_NAME, Windows, database
+
+      var windowOpenDate = exerciseDate.minusDays(5);
+      cm.putString(Key.EXERCISE_WINDOW_OPEN, dtf.format(windowOpenDate) + " 00:00");
+      var windowCloseDate = exerciseDate.plusDays(1);
+      cm.putString(Key.EXERCISE_WINDOW_CLOSE, dtf.format(windowCloseDate) + " 08:00");
+
+      // TODO EXERCISE_NAME, database
       // cm.putString(Key.NEW_DATABASE_PATH, newDatabasePath.toString());
 
-      cm.putString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication");
+      cm.putString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication");
       cm.putString(Key.PIPELINE_MAIN, "PracticeProcessor"); // exercise-specific processors go here!
       cm.putString(Key.PIPELINE_STDOUT, "Write");
 
+      cm.putString(Key.OUTBOUND_MESSAGE_SOURCE, outboundMessageSource);
+      cm.putString(Key.OUTBOUND_MESSAGE_SENDER, "ETO-PRACTICE");
+      cm.putString(Key.OUTBOUND_MESSAGE_SUBJECT, "ETO Practice Exercise Feedback");// TODO fixme
+      cm.putString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, "WINLINK_EXPRESS");
+
       var mm = new MessageManager();
       mm.putContextObject(REFERENCE_MESSAGE_KEY, referenceMessage);
+      mm.putContextObject(INSTRUCTIONS_KEY, instructionText);
 
       var pipeline = new PipelineProcessor();
       pipeline.initialize(cm, mm);

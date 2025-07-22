@@ -62,8 +62,12 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
 
   private static final boolean LAST_LOCATION_WINS = true;
 
+  public static final String ACK_MAP = "ackMap";
+  public static final String ACK_TEXT_MAP = "ackTextMap";
+
   private Set<MessageType> expectedMessageTypes;
   private Map<String, AckEntry> ackMap;
+  private Map<String, String> ackTextMap;
   private List<String> badLocationSenders;
   private AckSpecification requiredSpecification;
 
@@ -77,9 +81,11 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
       throw new RuntimeException("No AcknowledgementSpecification found for: " + ackSpecString);
     }
 
-    ackMap = new HashMap<>();
     badLocationSenders = new ArrayList<>();
     expectedMessageTypes = getExpectedMessageTypes();
+    ackMap = new HashMap<>();
+    ackTextMap = new HashMap<>();
+    mm.putContextObject(ACK_TEXT_MAP, ackTextMap);
   }
 
   @Override
@@ -96,11 +102,44 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
         badLocationSenders.add(ackEntry.from);
       }
     } // end loop over senders
+
+    makeText();
+  }
+
+  private void makeText() {
+    final var EXPECTED_CONTENT = "Feedback messages and maps for expected message types will be generated and published shortly.\n";
+    final var UNEXPECTED_CONTENT = "No feedback can or will be produced for unexpected message types.\n";
+    var expectedContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXPECTED, EXPECTED_CONTENT);
+    var unexpectedContent = cm.getAsString(Key.ACKNOWLEDGEMENT_UNEXPECTED, UNEXPECTED_CONTENT);
+    var extraContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXTRA_CONTENT, "");
+
+    var acknowledgments = new ArrayList<AckEntry>(ackMap.values().stream().filter(s -> isSelected(s)).toList());
+    for (var ackEntry : acknowledgments) {
+      var sb = new StringBuilder();
+      if (ackEntry.expectedMessageMap.size() > 0) {
+        sb.append("The following expected message types are acknowledged:\n");
+        sb.append(ackEntry.format(true, 4));
+        sb.append("\n");
+        sb.append(expectedContent);
+        sb.append("\n");
+        sb.append("----------------------------------------------------------------------------------------------");
+        sb.append("\n\n");
+      }
+      if (ackEntry.unexpectedMessageMap.size() > 0) {
+        sb.append("The following unexpected message types are acknowledged:\n");
+        sb.append(ackEntry.format(false, 4));
+        sb.append("\n");
+        sb.append(unexpectedContent);
+      }
+      sb.append(extraContent);
+      var text = sb.toString();
+      ackTextMap.put(ackEntry.from, text);
+    }
+    mm.putContextObject(ACK_TEXT_MAP, ackTextMap);
   }
 
   @Override
   public void postProcess() {
-
     if (badLocationSenders.size() > 0) {
       logger
           .info("adjusting lat/long for " + badLocationSenders.size() + " messages from: "
@@ -114,7 +153,6 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
         ackMap.put(from, ackEntry);
       }
     }
-
     mm.putContextObject("ackMap", ackMap);
 
     var acknowledgments = new ArrayList<AckEntry>(ackMap.values().stream().filter(s -> isSelected(s)).toList());
@@ -126,11 +164,6 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
 
     // must defer until post-processing to fix bad locations, etc.
     if (doOutboundMessaging) {
-      final var EXPECTED_CONTENT = "Feedback messages and maps for expected message types will be generated and published shortly.\n";
-      final var UNEXPECTED_CONTENT = "No feedback can or will be produced for unexpected message types.\n";
-      var expectedContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXPECTED, EXPECTED_CONTENT);
-      var unexpectedContent = cm.getAsString(Key.ACKNOWLEDGEMENT_UNEXPECTED, UNEXPECTED_CONTENT);
-      var extraContent = cm.getAsString(Key.ACKNOWLEDGEMENT_EXTRA_CONTENT, "");
       var outboundAcknowledgementList = new ArrayList<OutboundMessage>();
       var subject = "Message acknowledement";
       var exerciseName = cm.getAsString(Key.EXERCISE_NAME);
@@ -139,24 +172,8 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
         subject = subject + " for " + exerciseName + ", " + exerciseDescription;
       }
       for (var ackEntry : acknowledgments) {
-        var sb = new StringBuilder();
-        if (ackEntry.expectedMessageMap.size() > 0) {
-          sb.append("The following expected message types are acknowledged:\n");
-          sb.append(ackEntry.format(true, 4));
-          sb.append("\n");
-          sb.append(expectedContent);
-          sb.append("\n");
-          sb.append("----------------------------------------------------------------------------------------------");
-          sb.append("\n\n");
-        }
-        if (ackEntry.unexpectedMessageMap.size() > 0) {
-          sb.append("The following unexpected message types are acknowledged:\n");
-          sb.append(ackEntry.format(false, 4));
-          sb.append("\n");
-          sb.append(unexpectedContent);
-        }
-        sb.append(extraContent);
-        var outboundMessage = new OutboundMessage(outboundMessageSender, ackEntry.from, subject, sb.toString(), null);
+        var text = ackTextMap.get(ackEntry.from);
+        var outboundMessage = new OutboundMessage(outboundMessageSender, ackEntry.from, subject, text, null);
         outboundAcknowledgementList.add(outboundMessage);
       }
 

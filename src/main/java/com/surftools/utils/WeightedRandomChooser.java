@@ -72,6 +72,23 @@ public class WeightedRandomChooser {
   }
 
   /**
+   * equal-weighted constructor from list of objects
+   *
+   * @param objects
+   */
+  public WeightedRandomChooser(List<Object> objects, Random rng) {
+    this.rng = rng == null ? new Random() : rng;
+
+    Map<Object, Double> map = new HashMap<>(objects.size());
+    for (Object object : objects) {
+      Double count = map.getOrDefault(object, Double.valueOf(0));
+      map.put(object, count + 1);
+    }
+
+    init(map);
+  }
+
+  /**
    * equal-weighted constructor from array of objects
    *
    * @param objects
@@ -88,7 +105,7 @@ public class WeightedRandomChooser {
     this.rng = rng == null ? new Random() : rng;
     Map<Object, Double> map = new HashMap<>(objects.length);
     for (Object object : objects) {
-      Double count = map.getOrDefault(map, Double.valueOf(0));
+      Double count = map.getOrDefault(object, Double.valueOf(0));
       map.put(object, count + 1);
     }
 

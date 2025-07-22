@@ -65,6 +65,8 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
 
   public final List<RadioEntry> radioEntries;
 
+  public static int radioEntriesToDisplay = 10;
+
   // because Google MyMaps has a limit of 50 columns -- who knew!
   private static boolean outputRadioEntriesAsSingleValue = true;
 
@@ -102,7 +104,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
         "Version", "File Name" };
 
     var radioHeaders = new ArrayList<String>();
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 1; i <= radioEntriesToDisplay; i++) {
       if (outputRadioEntriesAsSingleValue) {
         radioHeaders.add("line " + i);
       } else {
@@ -143,7 +145,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
         iapPage, version, fileName };
 
     var radioValues = new ArrayList<String>();
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < radioEntriesToDisplay; i++) {
       if (outputRadioEntriesAsSingleValue) {
         radioValues.add(radioEntries.get(i).toString());
       } else {
@@ -163,6 +165,14 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
   public String getMultiMessageComment() {
     return specialInstructions;
   };
+
+  public static int getRadioEntriesToDisplay() {
+    return radioEntriesToDisplay;
+  }
+
+  public static void setRadioEntriesToDisplay(int radioEntriesToDisplay) {
+    Ics205RadioPlanMessage.radioEntriesToDisplay = radioEntriesToDisplay;
+  }
 
   public record RadioEntry(int rowNumber, //
       String zoneGroup, String channelNumber, String function, String channelName, String assignment, //

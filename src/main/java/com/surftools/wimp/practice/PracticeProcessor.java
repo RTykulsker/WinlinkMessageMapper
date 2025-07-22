@@ -30,9 +30,12 @@ package com.surftools.wimp.practice;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +47,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213Message;
+import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -56,6 +60,13 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
 
   private List<Summary> summaries = new ArrayList<>();
 
+  protected Map<String, String> ackTextMap;
+
+  protected String nextInstructions;
+
+  protected final List<String> clearinghouseList = new ArrayList<String>();
+
+  @SuppressWarnings("unchecked")
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
 
@@ -83,6 +94,29 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     referenceMessage = (ExportedMessage) mm.getContextObject(PracticeProcessorTool.REFERENCE_MESSAGE_KEY);
 
     super.initialize(cm, mm, logger);
+    ackTextMap = (Map<String, String>) mm.getContextObject(AcknowledgementProcessor.ACK_TEXT_MAP);
+
+    nextInstructions = (String) mm.getContextObject(PracticeProcessorTool.INSTRUCTIONS_KEY);
+
+    for (var i = 1; i <= 9; ++i) {
+      clearinghouseList.add("ETO-0" + i + "@winlink.org");
+    }
+    for (var extra : List.of("ETO-10", "ETO-BK", "ETO-CAN", "ETO-DX")) {
+      clearinghouseList.add(extra + "@winlink.org");
+    }
+  }
+
+  @Override
+  protected void beginCommonProcessing(ExportedMessage m) {
+    super.beginCommonProcessing(m);
+    var addressesString = m.toList + "," + m.ccList;
+    var addressesList = Arrays.asList(addressesString.split(","));
+
+    var result = addressesList.stream().distinct().filter(clearinghouseList::contains).toList();
+
+    var intersection = String.join(",", result);
+    var pred = intersection.length() == 0;
+    count(sts.test("To and Cc list should not contain \"monthly/training\" addresses", pred, intersection));
   }
 
   @Override
@@ -100,16 +134,42 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
   }
 
   private void handle_Ics213(ExportedMessage message) {
+    final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     var m = (Ics213Message) message;
     var ref = (Ics213Message) referenceMessage;
 
     count(sts.test("Organization Name should be #EV", ref.organization, m.organization));
+    count(sts.test("THIS IS AN EXERCISE should be checked", m.isExercise));
+    count(sts.test("Incident Name should be #EV", ref.incidentName, m.incidentName));
+    count(sts.test("Form To should be #EV", ref.formTo, m.formTo));
+    count(sts.test("Form From should be #EV", ref.formFrom, m.formFrom));
+    count(sts.test("Form Subject should be #EV", ref.formSubject, m.formSubject));
 
-    // TODO compare and contrast
+    var formDateTime = LocalDateTime.parse(m.formDate + " " + m.formTime, dtf);
+    count(sts.testOnOrAfter("Form Date and Time should be on or after #EV", windowOpenDT, formDateTime, dtf));
+    count(sts.testOnOrBefore("Form Date and Time should be on or before #EV", windowCloseDT, formDateTime, dtf));
+
+    count(sts.test("Message should be #EV", ref.formMessage, m.formMessage));
+    count(sts.test("Approved by should be #EV", ref.approvedBy, m.approvedBy));
+    count(sts.test("Position/Title should be #EV", ref.position, m.position));
   }
 
   @Override
-  protected void endProcessingForSender(String sender) {
+  protected String makeOutboundMessageSubject(Object object) {
+    return "ETO Practice Exercise Feedback for " + date;
+  }
+
+  @Override
+  protected void endCommonProcessing(ExportedMessage m) {
+    var ackText = ackTextMap.get(sender);
+    var sb = new StringBuilder();
+    sb.append("ACKNOWLEDGEMENTS" + "\n");
+    sb.append(ackText);
+    sb.append("FEEDBACK" + "\n");
+    outboundMessagePrefixContent = sb.toString();
+
+    outboundMessagePostfixContent = nextInstructions;
+    super.endCommonProcessing(m);
   }
 
   @Override
@@ -123,10 +183,12 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     public String to;
     public LatLongPair location;
     public LocalDateTime dateTime;
-    public List<String> explanations; // doesn't get published, but interpreted
+    public int feedbackCount;
+    public List<String> explanations;
     public String messageId;
-    public int exerciseCount;
-    public LocalDate firstDate;
+    public String messageType;
+    public int exerciseCount; // history TBD
+    public LocalDate firstDate; // history TBD
 
     public static final String perfectMessageText = "Perfect messages!";
     public static final int perfectMessageCount = 0; // in case we need to adjust
@@ -171,11 +233,13 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
       }
 
       var nsTo = to == null ? "(null)" : to;
+      var firstDateString = firstDate == null ? "(null)" : firstDate.toString();
 
       var list = new ArrayList<String>(List
-          .of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback, messageId, s(exerciseCount),
-              firstDate.toString()));
+          .of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback, messageId, //
+              s(exerciseCount), firstDateString));
       return list.toArray(new String[list.size()]);
     }
   }
+
 }

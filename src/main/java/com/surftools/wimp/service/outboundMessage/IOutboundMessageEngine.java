@@ -43,6 +43,14 @@ public interface IOutboundMessageEngine {
   public void finalizeSend();
 
   /**
+   * to edit the text in the "allFeedback.txt" file
+   *
+   * @param text
+   * @return
+   */
+  public String editAllFeedbackText(String text);
+
+  /**
    * @return EngineType of instance
    */
   public EngineType getEngineType();

@@ -72,6 +72,8 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
   protected Map<String, IWritableTable> mIdFeedbackMap = new HashMap<String, IWritableTable>();
   protected List<String> badLocationMessageIds = new ArrayList<String>();
 
+  protected String outboundMessagePrefixContent = "";
+  protected String outboundMessagePostfixContent = "";
   protected String outboundMessageExtraContent = FeedbackProcessor.OB_DISCLAIMER;
 
   protected MessageType messageType;
@@ -151,7 +153,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     beforeCommonProcessing(sender, message);
 
     feedbackLocation = message.mapLocation;
-
   }
 
   @Override
@@ -188,7 +189,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
         explanations.size(), feedback);
     mIdFeedbackMap.put(message.messageId, new FeedbackMessage(feedbackResult, message));
 
-    var outboundMessageFeedback = feedback;
+    var outboundMessageFeedback = outboundMessagePrefixContent + feedback + outboundMessagePostfixContent;
     var outboundMessage = new OutboundMessage(outboundMessageSender, sender, //
         makeOutboundMessageSubject(message), outboundMessageFeedback, null);
     outboundMessageList.add(outboundMessage);
