@@ -112,11 +112,14 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     var addressesString = m.toList + "," + m.ccList;
     var addressesList = Arrays.asList(addressesString.split(","));
 
-    var result = addressesList.stream().distinct().filter(clearinghouseList::contains).toList();
+    count(sts.testList("Addresses should contain ETO-PRACTICE@winlink.org", addressesList, "ETO-PRACTICE@winlink.org"));
 
+    var result = addressesList.stream().distinct().filter(clearinghouseList::contains).toList();
     var intersection = String.join(",", result);
     var pred = intersection.length() == 0;
     count(sts.test("To and Cc list should not contain \"monthly/training\" addresses", pred, intersection));
+
+    count(sts.testStartsWith("Message Subject should start with #EV", referenceMessage.subject, m.subject));
   }
 
   @Override

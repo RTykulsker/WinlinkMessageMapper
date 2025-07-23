@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.practice;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.DayOfWeek;
@@ -89,6 +90,7 @@ public class PracticeGeneratorTool {
 
   @Option(name = "--outputDirName", usage = "path to output directory", required = true)
   private String outputDirName = null;
+  private String referenceDirName = null;
 
   @Option(name = "--rngSeed", usage = "random number generator seed", required = false)
   private Long rngSeed = null;
@@ -119,8 +121,10 @@ public class PracticeGeneratorTool {
   private void run() {
     logger.info("begin run");
     logger.info("outputDir: " + outputDirName);
-    FileUtils.deleteDirectory(Path.of(outputDirName));
-    FileUtils.createDirectory(Path.of(outputDirName));
+
+    referenceDirName = outputDirName + File.separator + "reference";
+    FileUtils.deleteDirectory(Path.of(referenceDirName));
+    FileUtils.createDirectory(Path.of(referenceDirName));
 
     rngSeed = rngSeed == null ? Long.valueOf(2025) : rngSeed;
     logger.info("rngSeed: " + String.valueOf(rngSeed));
@@ -152,7 +156,7 @@ public class PracticeGeneratorTool {
 
   private void generate(LocalDate date, int ord) {
     var messageType = MESSAGE_TYPE_MAP.get(ord);
-    var path = Path.of(outputDirName, date.toString());
+    var path = Path.of(referenceDirName, date.toString());
     FileUtils.createDirectory(path);
     switch (messageType) {
     case ICS_213:
@@ -177,7 +181,7 @@ public class PracticeGeneratorTool {
     return prefix + dtf.format(dateTime);
   }
 
-  private ExportedMessage makeExportedMessage(LocalDate date) {
+  private ExportedMessage makeExportedMessage(LocalDate date, String subject) {
     LocalDateTime dateTime = LocalDateTime.of(date, LocalTime.of(12, 0));
     var messageId = makeMessageId("PX", dateTime);
     var from = NA;
@@ -185,7 +189,6 @@ public class PracticeGeneratorTool {
     var to = NA;
     var toList = NA;
     var ccList = NA;
-    var subject = NA;
 
     var msgLocation = LatLongPair.ZERO_ZERO;
     var locationSource = NA;
@@ -205,21 +208,24 @@ public class PracticeGeneratorTool {
   }
 
   private void handle_Ics213(LocalDate date, int ord, Path path) {
-    var exportedMessage = makeExportedMessage(date);
+    var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    var formSubject = "ETO Practice Exercise for " + dtf.format(date);
+    var subject = "ICS-213: " + formSubject;
+    var exportedMessage = makeExportedMessage(date, subject);
 
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);
 
     var names = pd.getUniqueList(3, ListType.DOUBLED_NAMES);
     var positions = pd.getUniqueList(3, ListType.SHORT_EMERGENCY_ROLES);
-    var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
     var dow_dtf = DateTimeFormatter.ofPattern("EEE yyyy-MM-dd");
 
     var organization = "EmComm Training Organization";
     var incidentName = "ETO Weekly Practice";
     var formFrom = names.get(0) + " / " + positions.get(0);
     var formTo = names.get(1) + " / " + positions.get(1);
-    var formSubject = "ETO Practice Exercise for " + dtf.format(date);
+
     var formDate = NA;
     var formTime = NA;
     var formMessage = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
@@ -278,11 +284,11 @@ public class PracticeGeneratorTool {
     final int nLineItems = 3;
     Ics213RRMessage.setLineItemsToDisplay(nLineItems);
 
-    var exportedMessage = makeExportedMessage(date);
+    var exportedMessage = makeExportedMessage(date, "TBD");
 
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);
-    var prd = new PracticeResourceData(rng);
+    var prd = new PracticeResourceData(rng, outputDirName);
 
     var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     var dow_dtf = DateTimeFormatter.ofPattern("EEE yyyy-MM-dd");
@@ -363,7 +369,7 @@ public class PracticeGeneratorTool {
     final int nRadioEntries = 3;
     Ics205RadioPlanMessage.setRadioEntriesToDisplay(nRadioEntries);
 
-    var exportedMessage = makeExportedMessage(date);
+    var exportedMessage = makeExportedMessage(date, "TBD");
 
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);
@@ -449,7 +455,7 @@ public class PracticeGeneratorTool {
   }
 
   private void handle_Fsr(LocalDate date, int ord, Path path) {
-    var exportedMessage = makeExportedMessage(date);
+    var exportedMessage = makeExportedMessage(date, "TBD");
 
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);

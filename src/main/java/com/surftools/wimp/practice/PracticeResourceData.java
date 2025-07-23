@@ -27,57 +27,64 @@ SOFTWARE.
 
 package com.surftools.wimp.practice;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
+import com.surftools.wimp.processors.std.ReadProcessor;
 
 public class PracticeResourceData {
-  private Map<ResourceType, List<ResourceEntry>> resourceMap = new HashMap<>();
+
+  private static final Logger logger = LoggerFactory.getLogger(PracticeResourceData.class);
   private Random rng;
 
-  public record ResourceEntry(Integer qty, String kind, String type, String description) {
+  public record ResourceEntry(String key, String qty, String kind, String type, String description) {
+    public static ResourceEntry fromArray(String[] array) {
+      return new ResourceEntry(array[0], array[1], array[2], array[3], array[4]);
+    }
   };
 
+  private static final String SANTA_KEY = "SANTA";
+  private final List<ResourceEntry> SANTA_WISH_LIST = new ArrayList<>();
   private final boolean CHRISTMAS_IN_JULY = false; // or any other month
 
-  private final List<ResourceEntry> SANTA_WISH_LIST = List
-      .of(//
-          new ResourceEntry(1, "n/a", "n/a", "Wolf River Silver Bullet 1000"), //
-          new ResourceEntry(1, "n/a", "n/a", "LDG Electronics AT-1000ProII Automatic Antenna Tuner"), //
-          new ResourceEntry(1, "n/a", "n/a", "Heil Sound PRO 7 Headset"), //
-          new ResourceEntry(2, "n/a", "n/a", "Bioenno Power BLF-1220A LiFePO4 Battery"), //
-          new ResourceEntry(1, "n/a", "n/a", "RigExpert Antenna Analyzer AA-55ZOOM"), //
-          new ResourceEntry(1, "n/a", "n/a", "Kenwood TS-990S HF/6 Meter Base Transceiver"), //
-          new ResourceEntry(null, "n/a", "n/a", "DX Engineering Hat DXE-HAT") //
-      );
+  private final Map<String, List<ResourceEntry>> resourceMap = new LinkedHashMap<>();
 
-  private enum ResourceType {
-    DRUGS;
-  }
-
-  PracticeResourceData(Random _rng) {
+  PracticeResourceData(Random _rng, String dirName) {
     rng = _rng;
 
-    var drugsList = List
-        .of(//
-            new ResourceEntry(null, "Bottle", "n/a", "Metformin (1000mg) Bottle of 60 tablets extended-release"), //
-            new ResourceEntry(null, "Bottle", "n/a", "Glimepiride (4mg) Bottle of 60 tablets"), //
-            new ResourceEntry(null, "Carton", "n/a", "Glargine (Insulin) (3ml) 5 - 100 unit pens"), //
-            new ResourceEntry(null, "Box", "n/a", "Empagliflozin (12.5mg) 10 X 10 Tablets"), //
-            new ResourceEntry(null, "Bottle", "n/a", "Pioglitazone (30mg) Bottle of 30 tablets."), //
-            new ResourceEntry(null, "Bottle", "n/a", "Lisinopril (30mg) Bottle of 90 tablets"), //
-            new ResourceEntry(null, "Bottle", "n/a", "Amlodipin (10mg Bottle of 30 tablets"), //
-            new ResourceEntry(null, "Bottle", "n/a", "Atorvastatin (40mg) Bottle of 30 tablets") //
-        );
+    var dataFilePath = Path.of(dirName, "practice-resources.csv");
 
-    resourceMap.put(ResourceType.DRUGS, drugsList);
+    try {
+      var listOfStringArrays = ReadProcessor.readCsvFileIntoFieldsArray(dataFilePath);
+      for (var array : listOfStringArrays) {
+        var key = array[0];
+        if (key.equals("Key")) {
+          continue;
+        }
+        var resource = ResourceEntry.fromArray(array);
+
+        if (key.equals(SANTA_KEY)) {
+          SANTA_WISH_LIST.add(resource);
+        } else {
+          var list = resourceMap.getOrDefault(key, new ArrayList<ResourceEntry>());
+          list.add(resource);
+          resourceMap.put(key, list);
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   private List<ResourceEntry> getResources(LocalDate date) {
@@ -87,7 +94,7 @@ public class PracticeResourceData {
       return resources;
     }
 
-    var keys = new ArrayList<ResourceType>(resourceMap.keySet());
+    var keys = new ArrayList<String>(resourceMap.keySet());
     Collections.shuffle(keys, rng);
     var key = keys.get(0);
     var resources = new ArrayList<ResourceEntry>(resourceMap.get(key));
@@ -102,6 +109,7 @@ public class PracticeResourceData {
       return lineItems;
     }
     var resources = getResources(date);
+    var key = resources.get(0).key;
 
     var minQty = minInt == null ? 1 : minInt.intValue();
     var maxQty = maxInt == null ? 100 : maxInt.intValue();
@@ -112,21 +120,15 @@ public class PracticeResourceData {
     do {
       index = (index + 1) % resources.size();
       var entry = resources.get(index);
-      if (entry.qty == null) {
-        var qty = rng.nextInt(minQty, maxQty);
-        entry = new ResourceEntry(qty, entry.kind, entry.type, entry.description);
+      if (entry.qty.equals("0")) {
+        var qty = String.valueOf(rng.nextInt(minQty, maxQty));
+        entry = new ResourceEntry(key, qty, entry.kind, entry.type, entry.description);
       }
-      var lineItem = new LineItem(String.valueOf(entry.qty), entry.kind, entry.type, entry.description, //
+      var lineItem = new LineItem(entry.qty, entry.kind, entry.type, entry.description, //
           timeString, "", "");
       lineItems.add(lineItem);
     } while (lineItems.size() < desiredCount);
     return lineItems;
   }
-
-  // public static void main(String[] args) {
-  // var app = new PracticeResourceData(null);
-  // var list = app.getRandomResources(LocalDateTime.now(), 3, null, null);
-  // list.stream().forEach(System.out::println);
-  // }
 
 }

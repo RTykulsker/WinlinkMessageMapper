@@ -175,6 +175,28 @@ public class SimpleTestService implements IService {
     }
   }
 
+  public TestResult testStartsWith(String rawLabel, String expectedValue, String value) {
+    if (rawLabel == null) {
+      throw new IllegalArgumentException("null label");
+    }
+
+    var label = rawLabel.contains("#EV") && expectedValue != null //
+        ? rawLabel.replaceAll("#EV", expectedValue)
+        : rawLabel;
+
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, toAlphaNumericWords(expectedValue));
+      entryMap.put(label, entry);
+    }
+
+    expectedValue = entry.expectedValue;
+    var predicate = value != null && toAlphaNumericWords(value).startsWith(expectedValue);
+
+    return internalTest(entry, predicate, wrap(value), null);
+  }
+
   /**
    * another common use case, predicate evaluated by caller
    *
