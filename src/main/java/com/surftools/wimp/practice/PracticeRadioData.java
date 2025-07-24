@@ -63,10 +63,10 @@ public class PracticeRadioData {
     TONE, TSQL
   }
 
-  public List<RadioEntry> makeRadioEntries(int maxEntries) {
+  public List<RadioEntry> makeRadioEntries(int desiredCount) {
     List<RadioEntry> list = new ArrayList<>();
 
-    if (maxEntries == 0) {
+    if (desiredCount == 0) {
       return list;
     }
 
@@ -78,7 +78,7 @@ public class PracticeRadioData {
     var entry = makeRepeater(1, line1Band, line1Offset, line1Width, line1Squelch);
     list.add(entry);
 
-    if (maxEntries == 1) {
+    if (desiredCount == 1) {
       return list;
     }
 
@@ -86,7 +86,7 @@ public class PracticeRadioData {
     var line2Width = line1Width == WIDTH.WIDE ? WIDTH.NARROW : WIDTH.WIDE;
     entry = makeSimplex(2, line2Band, line2Width);
     list.add(entry);
-    if (maxEntries == 2) {
+    if (desiredCount == 2) {
       return list;
     }
 
@@ -118,7 +118,7 @@ public class PracticeRadioData {
     }
 
     list.add(entry);
-    if (maxEntries == 3) {
+    if (desiredCount == 3) {
       return list;
     }
 
@@ -126,12 +126,12 @@ public class PracticeRadioData {
     var line4Squelch = line1Squelch == SQUELCH.TONE ? SQUELCH.TSQL : SQUELCH.TONE;
     entry = makeRepeater(4, line2Band, line4Offset, line2Width, line4Squelch);
     list.add(entry);
-    if (maxEntries == 4) {
+    if (desiredCount == 4) {
       return list;
     }
 
     // just make random repeaters and/or simplex channels
-    for (var count = 5; count <= maxEntries; ++count) {
+    for (var count = 5; count <= desiredCount; ++count) {
       var doRepeater = rng.nextBoolean();
       var band = rng.nextBoolean() ? BAND.VHF : BAND.UHF;
       var width = rng.nextBoolean() ? WIDTH.WIDE : WIDTH.NARROW;

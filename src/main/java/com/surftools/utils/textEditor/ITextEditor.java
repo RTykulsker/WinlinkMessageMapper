@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2023, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,33 +25,25 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.outboundMessage;
+package com.surftools.utils.textEditor;
 
-public interface IOutboundMessageEngine {
+/**
+ * sometimes, I just need to manipulate text
+ */
+public interface ITextEditor {
 
   /**
-   * send a Winlink message,
+   * edit text
    *
-   * @param m
-   * @return messageId, if available
+   * @param source
+   * @return
    */
-  public String send(OutboundMessage m);
+  public String edit(String source);
 
   /**
-   * complete send process, if needed
-   */
-  public void finalizeSend();
-
-  /**
-   * @return EngineType of instance
-   */
-  public EngineType getEngineType();
-
-  /**
-   * properly initialized and ready to process
+   * return name of this editor
    *
    * @return
    */
-  public boolean isReady();
-
+  public String getName();
 }

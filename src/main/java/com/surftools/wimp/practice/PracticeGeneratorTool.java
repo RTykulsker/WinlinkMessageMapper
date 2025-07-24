@@ -56,6 +56,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
 import com.surftools.wimp.message.Ics205RadioPlanMessage;
+import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.practice.PracticeData.ExerciseIdMethod;
@@ -321,8 +322,13 @@ public class PracticeGeneratorTool {
     sb.append(INDENT + "Date/Time: (click in box and accept date/time)" + NL);
     sb.append(INDENT + "Resource Request Number: " + requestNumber + NL);
     sb.append(INDENT + "Order Items (leave Estimated and Cost empty)" + NL);
+
     var lineNumber = 0;
     for (var line : lineItems) {
+      if (line.isEmpty()) {
+        continue;
+      }
+
       ++lineNumber;
       sb.append(INDENT2 + "line " + lineNumber + NL); //
       sb.append(INDENT3 + "Qty: " + line.quantity() + NL);
@@ -331,6 +337,7 @@ public class PracticeGeneratorTool {
       sb.append(INDENT3 + "Description: " + line.item() + NL);
       sb.append(INDENT3 + "Requested Time: " + line.requestedDateTime() + NL);
     }
+
     sb.append(INDENT + "Delivery/Reporting Location: " + delivery + NL);
     sb.append(INDENT + "Substitutes: " + substitutes + NL);
     sb.append(INDENT + "Requested by Name/Position: " + requestedBy + NL);
@@ -388,6 +395,9 @@ public class PracticeGeneratorTool {
     var timeFrom = "00:00 UTC";
     var timeTo = "08:00 UTC";
     var radioItems = prd.makeRadioEntries(nRadioEntries);
+    for (var i = nRadioEntries; i < Ics205RadioPlanMessage.MAX_RADIO_ENTRIES; ++i) {
+      radioItems.add(RadioEntry.EMPTY);
+    }
     var specialInstructions = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
     var approvedBy = names.get(0);
     var iapPage = "1";
@@ -406,9 +416,14 @@ public class PracticeGeneratorTool {
     sb.append(INDENT + "Operational Period Date To: " + dateTo + NL);
     sb.append(INDENT + "Operational Period Time From: " + timeFrom + NL);
     sb.append(INDENT + "Operational Period Time To: " + timeTo + NL);
+
     sb.append(INDENT + "Basic Radio Channel Use:" + NL);
     var lineNumber = 0;
     for (var item : radioItems) {
+      if (item.isEmpty()) {
+        break;
+      }
+
       ++lineNumber;
       sb.append(INDENT2 + "line " + lineNumber + NL); //
       sb.append(INDENT3 + "Ch #: " + item.channelNumber() + NL);

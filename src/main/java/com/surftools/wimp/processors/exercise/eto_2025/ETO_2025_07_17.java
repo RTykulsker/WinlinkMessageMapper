@@ -87,7 +87,7 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
       count(sts.testIfEmpty("Box 4 (line " + lineNumber + "): Type should be empty", lineItem.type()));
       count(sts.test_2line("Box 4 (line " + lineNumber + "): Item should be #EV", expectedItem.item, lineItem.item()));
       count(sts
-          .test("Box 4 (line " + lineNumber + "): Requested Date should be #EV", "15 July 2025 1400",
+          .test_2line("Box 4 (line " + lineNumber + "): Requested Date should be #EV", "15 July 2025 1400",
               lineItem.requestedDateTime()));
       count(sts
           .testIfEmpty("Box 4 (line " + lineNumber + "): Estimated Date should be empty",
@@ -95,7 +95,8 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
       count(sts.testIfEmpty("Box 4 (line " + lineNumber + "): Cost should be empty", lineItem.cost()));
     }
 
-    count(sts.test("Box 5: Delivery/Reporting Location should be #EV", "Mills Pt High School Shelter", m.delivery));
+    count(
+        sts.test_2line("Box 5: Delivery/Reporting Location should be #EV", "Mills Pt High School Shelter", m.delivery));
     count(sts.test_2line("Box 6: Substitutes should be #EV", "No Substitutes - Fill as ordered", m.substitutes));
     count(sts.test_2line("Box 7: Requested by should be #EV", "Sam Chasse MD Shelter Physician", m.requestedBy));
     count(sts.test("Box 8: Priority should be #EV", "URGENT", m.priority));

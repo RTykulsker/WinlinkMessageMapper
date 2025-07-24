@@ -65,7 +65,8 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
 
   public final List<RadioEntry> radioEntries;
 
-  public static int radioEntriesToDisplay = 10;
+  public static final int MAX_RADIO_ENTRIES = 10;
+  public static int radioEntriesToDisplay = MAX_RADIO_ENTRIES;
 
   // because Google MyMaps has a limit of 50 columns -- who knew!
   private static boolean outputRadioEntriesAsSingleValue = true;
@@ -179,6 +180,8 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
       String rxFrequency, String rxNarrowWide, String rxTone, //
       String txFrequency, String txNarrowWide, String txTone, //
       String mode, String remarks) {
+
+    public static RadioEntry EMPTY = new RadioEntry(0, "", "", "", "", "", "", "", "", "", "", "", "", "");
 
     public String[] getValues() {
       return new String[] { String.valueOf(rowNumber), //

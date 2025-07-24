@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2023, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,33 +25,46 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.outboundMessage;
+package com.surftools.wimp.practice;
 
-public interface IOutboundMessageEngine {
+import java.util.ArrayList;
 
+import com.surftools.utils.textEditor.ITextEditor;
+
+public class PracticeAllFeedbackTextEditor implements ITextEditor {
+
+  @Override
   /**
-   * send a Winlink message,
-   *
-   * @param m
-   * @return messageId, if available
+   * skip over all lines up to and including feedback, break on first empty line
    */
-  public String send(OutboundMessage m);
+  public String edit(String source) {
+    boolean inFeedback = false;
+    var inputLines = source.split("\n");
+    var outputLines = new ArrayList<String>(inputLines.length);
+    for (var line : inputLines) {
+      if (line.equals("FEEDBACK")) {
+        inFeedback = true;
+        continue;
+      }
 
-  /**
-   * complete send process, if needed
-   */
-  public void finalizeSend();
+      if (!inFeedback) {
+        continue;
+      }
 
-  /**
-   * @return EngineType of instance
-   */
-  public EngineType getEngineType();
+      if (line.isEmpty()) {
+        break;
+      }
 
-  /**
-   * properly initialized and ready to process
-   *
-   * @return
-   */
-  public boolean isReady();
+      outputLines.add(line);
+    }
+
+    var result = String.join("\n", outputLines);
+    return result;
+  }
+
+  @Override
+  public String getName() {
+    return "PracticeAllFeedback";
+  }
 
 }

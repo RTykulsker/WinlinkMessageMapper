@@ -94,7 +94,11 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
    * generate text for a message
    */
   public String send(OutboundMessage m) {
-    allOutput.append(m.to() + "\n" + m.body() + "\n\n");
+    var allFeedbackText = m.body();
+    if (allFeedbackTextEditor != null) {
+      allFeedbackText = allFeedbackTextEditor.edit(allFeedbackText);
+    }
+    allOutput.append(m.to() + "\n" + allFeedbackText + "\n\n");
 
     /*
      * body is user-generated content. It could contain characters that could interfere with the XML wrapping around
@@ -110,6 +114,10 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
     body = body.replaceAll("<=", "&lt;=3D");
     body = body.replaceAll(">", "&gt;");
     body = body.replaceAll(">=", "&gt;=3D");
+
+    if (bodyTextEditor != null) {
+      body = bodyTextEditor.edit(body);
+    }
 
     var messageId = generateMid(m.toString());
     var text = new String(messageTemplate);

@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2023, Robert Tykulsker
+Copyright (c) 2025, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,33 +25,24 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.outboundMessage;
+package com.surftools.wimp.practice;
 
-public interface IOutboundMessageEngine {
+import com.surftools.utils.textEditor.ITextEditor;
 
+public class PracticeBodyTextEditor implements ITextEditor {
+
+  @Override
   /**
-   * send a Winlink message,
-   *
-   * @param m
-   * @return messageId, if available
+   * just change a line ...
    */
-  public String send(OutboundMessage m);
+  public String edit(String source) {
+    var result = source.replaceAll("INSTRUCTIONS for ETO Exercise Instructions for", "INSTRUCTIONS for");
+    return result;
+  }
 
-  /**
-   * complete send process, if needed
-   */
-  public void finalizeSend();
-
-  /**
-   * @return EngineType of instance
-   */
-  public EngineType getEngineType();
-
-  /**
-   * properly initialized and ready to process
-   *
-   * @return
-   */
-  public boolean isReady();
+  @Override
+  public String getName() {
+    return "PracticeBody";
+  }
 
 }

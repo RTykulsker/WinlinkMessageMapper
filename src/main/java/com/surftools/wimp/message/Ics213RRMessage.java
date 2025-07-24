@@ -37,6 +37,13 @@ public class Ics213RRMessage extends ExportedMessage {
 
   public static record LineItem(String quantity, String kind, String type, String item, String requestedDateTime,
       String estimatedDateTime, String cost) {
+
+    public static LineItem EMPTY = new LineItem("", "", "", "", "", "", "");
+
+    public boolean isEmpty() {
+      return this.equals(EMPTY);
+    }
+
   };
 
   private static final String[] preHeaders = new String[] { "MessageId", "From", "To", "Subject", //
@@ -52,7 +59,8 @@ public class Ics213RRMessage extends ExportedMessage {
       "POC", "Notes", "Auth Log Rep", "Log Date/Time", "Ordered By", //
       "Finance Comments", "Finance Chief", "Finance Date/Time", "File Name" };
 
-  public static int lineItemsToDisplay = 8;
+  public static final int MAX_LINE_ITEMS = 8;
+  public static int lineItemsToDisplay = MAX_LINE_ITEMS;
 
   public final String organization;
   public final String incidentName;

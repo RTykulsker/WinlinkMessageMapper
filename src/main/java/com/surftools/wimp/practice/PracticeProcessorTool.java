@@ -154,6 +154,9 @@ public class PracticeProcessorTool {
       cm.putString(Key.PIPELINE_MAIN, "PracticeProcessor"); // exercise-specific processors go here!
       cm.putString(Key.PIPELINE_STDOUT, "Write");
 
+      cm.putString(Key.PRACTICE_ALL_FEEDBACK_TEXT_EDITOR, "com.surftools.wimp.practice.PracticeAllFeedbackTextEditor");
+      cm.putString(Key.PRACTICE_BODY_TEXT_EDITOR, "com.surftools.wimp.practice.PracticeBodyTextEditor");
+
       cm.putString(Key.OUTBOUND_MESSAGE_SOURCE, outboundMessageSource);
       cm.putString(Key.OUTBOUND_MESSAGE_SENDER, "ETO-PRACTICE");
       cm.putString(Key.OUTBOUND_MESSAGE_SUBJECT, "ETO Practice Exercise Feedback");// TODO fixme

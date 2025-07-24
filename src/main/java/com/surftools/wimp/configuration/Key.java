@@ -77,6 +77,8 @@ public enum Key implements IConfigurationKey {
   PIPELINE_MAIN("pipeline.main"), // list of main processors
 
   PRACTICE_PATH("practice.path"), // path where practice files are written
+  PRACTICE_ALL_FEEDBACK_TEXT_EDITOR("practice.all_feedback.textEditor"), // class name of text editor for AllFeedback
+  PRACTICE_BODY_TEXT_EDITOR("practice.body.textEditor"), // class name of text editor for outbound message body
 
   EXERCISE_DATE("exerciseDate"), // for Summarizer
   EXERCISE_NAME("exerciseName"), // for Summarizer

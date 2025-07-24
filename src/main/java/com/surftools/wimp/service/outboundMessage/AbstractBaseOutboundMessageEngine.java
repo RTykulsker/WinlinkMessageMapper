@@ -39,6 +39,8 @@ import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.textEditor.ITextEditor;
+import com.surftools.utils.textEditor.TextEditorManager;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -58,6 +60,9 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
   protected String source;
   protected String fileName;
 
+  protected ITextEditor allFeedbackTextEditor;
+  protected ITextEditor bodyTextEditor;
+
   public AbstractBaseOutboundMessageEngine(IConfigurationManager cm, String extraContent, String fileName) {
     this.cm = cm;
 
@@ -76,6 +81,10 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
     }
 
     this.fileName = fileName;
+
+    var tem = new TextEditorManager();
+    allFeedbackTextEditor = tem.getTextEditor(cm.getAsString(Key.PRACTICE_ALL_FEEDBACK_TEXT_EDITOR));
+    bodyTextEditor = tem.getTextEditor(cm.getAsString(Key.PRACTICE_BODY_TEXT_EDITOR));
 
     isReady = true;
   }
@@ -111,6 +120,11 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
     }
     body = body.replaceAll("\n", SEP);
     body = body.replaceAll("\\u009d", "");
+
+    if (bodyTextEditor != null) {
+      body = bodyTextEditor.edit(body);
+    }
+
     var to = expandToAddresses(m.to());
 
     var doDebugToAddress = false;
@@ -140,15 +154,13 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
       logger.error("Exception writing b2f file: " + outputPath + ", " + e.getLocalizedMessage());
     }
 
-    var text = editAllFeedbackText(m.body());
+    var text = m.body();
+    if (allFeedbackTextEditor != null) {
+      text = allFeedbackTextEditor.edit(text);
+    }
 
     allOutput.append(m.to() + "\n" + text + "\n\n");
     return messageId;
-  }
-
-  @Override
-  public String editAllFeedbackText(String text) {
-    return text;
   }
 
   @Override

@@ -37,15 +37,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
 import com.surftools.wimp.processors.std.ReadProcessor;
 
 public class PracticeResourceData {
 
-  private static final Logger logger = LoggerFactory.getLogger(PracticeResourceData.class);
   private Random rng;
 
   public record ResourceEntry(String key, String qty, String kind, String type, String description) {
@@ -55,10 +52,13 @@ public class PracticeResourceData {
   };
 
   private static final String SANTA_KEY = "SANTA";
-  private final List<ResourceEntry> SANTA_WISH_LIST = new ArrayList<>();
+  private final List<ResourceEntry> SANTA_WISH_LIST = new ArrayList<>(); // must not be static
   private final boolean CHRISTMAS_IN_JULY = false; // or any other month
 
   private final Map<String, List<ResourceEntry>> resourceMap = new LinkedHashMap<>();
+
+  // static to persist across multiple ctors/months
+  private static final List<List<ResourceEntry>> resourceBucket = new ArrayList<>();
 
   PracticeResourceData(Random _rng, String dirName) {
     rng = _rng;
@@ -72,8 +72,8 @@ public class PracticeResourceData {
         if (key.equals("Key")) {
           continue;
         }
-        var resource = ResourceEntry.fromArray(array);
 
+        var resource = ResourceEntry.fromArray(array);
         if (key.equals(SANTA_KEY)) {
           SANTA_WISH_LIST.add(resource);
         } else {
@@ -82,6 +82,7 @@ public class PracticeResourceData {
           resourceMap.put(key, list);
         }
       }
+
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -94,12 +95,13 @@ public class PracticeResourceData {
       return resources;
     }
 
-    var keys = new ArrayList<String>(resourceMap.keySet());
-    Collections.shuffle(keys, rng);
-    var key = keys.get(0);
-    var resources = new ArrayList<ResourceEntry>(resourceMap.get(key));
-    Collections.shuffle(resources, rng);
+    if (resourceBucket.size() == 0) {
+      resourceBucket.addAll(resourceMap.values());
+      Collections.shuffle(resourceBucket, rng);
+    }
 
+    var resources = resourceBucket.remove(0);
+    Collections.shuffle(resources, rng);
     return resources;
   }
 
@@ -116,18 +118,21 @@ public class PracticeResourceData {
 
     var timeString = rng.nextInt(10, 18) + ":00";
 
-    var index = -1;
-    do {
-      index = (index + 1) % resources.size();
-      var entry = resources.get(index);
-      if (entry.qty.equals("0")) {
-        var qty = String.valueOf(rng.nextInt(minQty, maxQty));
-        entry = new ResourceEntry(key, qty, entry.kind, entry.type, entry.description);
+    for (var i = 0; i < Ics213RRMessage.MAX_LINE_ITEMS; ++i) {
+      if (i < desiredCount) {
+        var index = i % resources.size();
+        var entry = resources.get(index);
+        if (entry.qty.equals("0")) {
+          var qty = String.valueOf(rng.nextInt(minQty, maxQty));
+          entry = new ResourceEntry(key, qty, entry.kind, entry.type, entry.description);
+        }
+        var lineItem = new LineItem(entry.qty, entry.kind, entry.type, entry.description, //
+            timeString, "", "");
+        lineItems.add(lineItem);
+      } else {
+        lineItems.add(LineItem.EMPTY);
       }
-      var lineItem = new LineItem(entry.qty, entry.kind, entry.type, entry.description, //
-          timeString, "", "");
-      lineItems.add(lineItem);
-    } while (lineItems.size() < desiredCount);
+    }
     return lineItems;
   }
 
