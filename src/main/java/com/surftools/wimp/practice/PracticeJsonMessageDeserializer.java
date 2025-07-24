@@ -30,6 +30,7 @@ package com.surftools.wimp.practice;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -44,6 +45,8 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213Message;
+import com.surftools.wimp.message.Ics213RRMessage;
+import com.surftools.wimp.message.Ics213RRMessage.LineItem;
 
 /**
  * between LocalDates, LatLongPairs and so many final members, it'll be easier to deserialize by hand rather than using
@@ -63,6 +66,9 @@ public class PracticeJsonMessageDeserializer {
       switch (messageType) {
       case ICS_213:
         return deserialize_Ics213Message(jsonString);
+
+      case ICS_213_RR:
+        return deserialize_Ics213RRMessage(jsonString);
 
       default:
         throw new RuntimeException("unsupported messageType: " + messageType.toString());
@@ -142,4 +148,61 @@ public class PracticeJsonMessageDeserializer {
         isExercise, formLocation, version, dataSource);
     return m;
   }
+
+  private ExportedMessage deserialize_Ics213RRMessage(String jsonString)
+      throws JsonMappingException, JsonProcessingException {
+    var json = mapper.readTree(jsonString);
+    var exportedMessage = deserialize_ExportedMessage(json);
+
+    var organization = json.get("organization").asText();
+    var incidentName = json.get("incidentName").asText();
+    var activityDateTime = json.get("activityDateTime").asText();
+    var requestNumber = json.get("requestNumber").asText();
+
+    var jsonLineItems = json.get("lineItems");
+    var lineItems = new ArrayList<LineItem>();
+
+    for (var i = 0; i < 8; ++i) {
+      var jsonLineItem = jsonLineItems.get(i);
+      var quantity = jsonLineItem.get("quantity").asText();
+      var kind = jsonLineItem.get("kind").asText();
+      var type = jsonLineItem.get("type").asText();
+      var item = jsonLineItem.get("item").asText();
+      var requestedDateTime = jsonLineItem.get("requestedDateTime").asText();
+      var estimatedDateTime = jsonLineItem.get("estimatedDateTime").asText();
+      var cost = jsonLineItem.get("cost").asText();
+      var lineItem = new LineItem(quantity, kind, type, item, requestedDateTime, estimatedDateTime, cost);
+      lineItems.add(lineItem);
+    }
+
+    var delivery = json.get("delivery").asText();
+    var substitutes = json.get("substitutes").asText();
+    var requestedBy = json.get("requestedBy").asText();
+    var priority = json.get("priority").asText();
+    var approvedBy = json.get("approvedBy").asText();
+
+    var logisticsOrderNumber = json.get("logisticsOrderNumber").asText();
+    var supplierInfo = json.get("supplierInfo").asText();
+    var supplierName = json.get("supplierName").asText();
+    var supplierPointOfContact = json.get("supplierPointOfContact").asText();
+    var supplyNotes = json.get("supplyNotes").asText();
+    var logisticsAuthorizer = json.get("logisticsAuthorizer").asText();
+    var logisticsDateTime = json.get("logisticsDateTime").asText();
+    var orderedBy = json.get("orderedBy").asText();
+
+    var financeComments = json.get("financeComments").asText();
+    var financeName = json.get("financeName").asText();
+    var financeDateTime = json.get("financeDateTime").asText();
+
+    var m = new Ics213RRMessage(exportedMessage, organization, incidentName, activityDateTime, requestNumber, //
+        lineItems, //
+        delivery, substitutes, requestedBy, priority, approvedBy, //
+        logisticsOrderNumber, supplierInfo, supplierName, //
+        supplierPointOfContact, supplyNotes, logisticsAuthorizer, //
+        logisticsDateTime, orderedBy, //
+        financeComments, financeName, financeDateTime);
+
+    return m;
+  }
+
 }

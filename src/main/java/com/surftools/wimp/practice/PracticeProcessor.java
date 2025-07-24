@@ -47,6 +47,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213Message;
+import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
@@ -118,8 +119,6 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     var intersection = String.join(",", result);
     var pred = intersection.length() == 0;
     count(sts.test("To and Cc list should not contain \"monthly/training\" addresses", pred, intersection));
-
-    count(sts.testStartsWith("Message Subject should start with #EV", referenceMessage.subject, m.subject));
   }
 
   @Override
@@ -127,6 +126,9 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     switch (messageType) {
     case ICS_213:
       handle_Ics213(m);
+      break;
+    case ICS_213_RR:
+      handle_Ics213RR(m);
       break;
     default:
       throw new RuntimeException("unsupported messageType: " + messageType.toString() + " for sender: " + m.from);
@@ -140,6 +142,8 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     var m = (Ics213Message) message;
     var ref = (Ics213Message) referenceMessage;
+
+    count(sts.testStartsWith("Message Subject should start with #EV", referenceMessage.subject, m.subject));
 
     count(sts.test("Organization Name should be #EV", ref.organization, m.organization));
     count(sts.test("THIS IS AN EXERCISE should be checked", m.isExercise));
@@ -155,6 +159,86 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     count(sts.test("Message should be #EV", ref.formMessage, m.formMessage));
     count(sts.test("Approved by should be #EV", ref.approvedBy, m.approvedBy));
     count(sts.test("Position/Title should be #EV", ref.position, m.position));
+  }
+
+  private void handle_Ics213RR(ExportedMessage message) {
+    final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    var m = (Ics213RRMessage) message;
+    var ref = (Ics213RRMessage) referenceMessage;
+
+    count(sts.test_2line("Message Subject should be #EV", ref.subject, m.subject));
+
+    count(sts.test("Organization Name should be #EV", ref.organization, m.organization));
+    count(sts.test("Incident Name should be #EV", ref.incidentName, m.incidentName));
+
+    var formDateTime = LocalDateTime.parse(m.activityDateTime, dtf);
+    count(sts.testOnOrAfter("Form Date and Time should be on or after #EV", windowOpenDT, formDateTime, dtf));
+    count(sts.testOnOrBefore("Form Date and Time should be on or before #EV", windowCloseDT, formDateTime, dtf));
+
+    count(sts.test("Resource Request Number should be #EV", ref.requestNumber, m.requestNumber));
+
+    var maxLineItems = Math.min(ref.lineItems.size(), m.lineItems.size());
+    if (m.lineItems.size() != ref.lineItems.size()) {
+      logger
+          .warn("### from: " + m.from + ",mId: " + m.messageId + ", m.items: " + m.lineItems.size() + ", ref.items: "
+              + ref.lineItems.size());
+    }
+    for (var i = 0; i < maxLineItems; ++i) {
+      var lineNumber = i + 1;
+      sts.setExplanationPrefix("(line " + lineNumber + ")");
+      var item = m.lineItems.get(i);
+      var refItem = ref.lineItems.get(i);
+      if (refItem.isEmpty()) {
+        count(sts.testIfEmpty("Quantity should be empty", item.quantity()));
+        count(sts.testIfEmpty("Kind should be empty", item.kind()));
+        count(sts.testIfEmpty("Type should be empty", item.type()));
+        count(sts.testIfEmpty("Item should be empty", item.item()));
+        count(sts.testIfEmpty("Requested Date/Time should be empty", item.requestedDateTime()));
+        count(sts.testIfEmpty("Estimated Date/Time should be empty", item.estimatedDateTime()));
+        count(sts.testIfEmpty("Cost should be empty", item.cost()));
+      } else {
+        count(sts.test("Quantity should be #EV", refItem.quantity(), item.quantity()));
+
+        if (refItem.kind().isEmpty()) {
+          count(sts.testIfEmpty("Kind should be empty", item.kind()));
+        } else {
+          count(sts.test("Kind should be #EV", refItem.kind(), item.kind()));
+        }
+
+        if (refItem.type().isEmpty()) {
+          count(sts.testIfEmpty("Type should be empty", item.type()));
+        } else {
+          count(sts.test("Type should be #EV", refItem.type(), item.type()));
+        }
+
+        count(sts.test_2line("Item should be #EV", refItem.item(), item.item()));
+
+        count(sts.test("Requested Date/Time should be #EV", refItem.requestedDateTime(), item.requestedDateTime()));
+
+        count(sts.testIfEmpty("Estimated Date/Time should be empty", item.estimatedDateTime()));
+        count(sts.testIfEmpty("Cost should be empty", item.cost()));
+      }
+    }
+
+    sts.setExplanationPrefix("");
+
+    count(sts.test("Delivery/Reporting Location should be #EV", ref.delivery, m.delivery));
+    count(sts.test("Substitutes should be #EV", ref.substitutes, m.substitutes));
+    count(sts.test("Requested by should be #EV", ref.requestedBy, m.requestedBy));
+    count(sts.test("Priority should be #EV", ref.priority, m.priority));
+    count(sts.test("Approved by should be #EV", ref.approvedBy, m.approvedBy));
+
+    count(sts.testIfEmpty("Logistics Order Number should be empty", m.logisticsOrderNumber));
+    count(sts.testIfEmpty("Supplier Phone Number should be empty", m.supplierInfo));
+    count(sts.testIfEmpty("Supplier Name should be empty", m.supplierName));
+    count(sts.testIfEmpty("Supplier POC should be empty", m.supplierPointOfContact));
+    count(sts.testIfEmpty("Supply Notes should be empty", m.supplyNotes));
+    count(sts.testIfEmpty("Logistics Authorizer should be empty", m.logisticsAuthorizer));
+    count(sts.testIfEmpty("Logistics Date/Time should be empty", m.logisticsDateTime));
+    count(sts.testIfEmpty("Logistics Ordered by should be empty", m.orderedBy));
+    count(sts.testIfEmpty("inance Comments should be empty", m.financeComments));
+    count(sts.testIfEmpty("Finance Section Chief Name should be #EV", m.financeName));
+    count(sts.testIfEmpty("Finance Date/Time should be empty", m.financeDateTime));
   }
 
   @Override

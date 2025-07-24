@@ -285,11 +285,15 @@ public class PracticeGeneratorTool {
     final int nLineItems = 3;
     Ics213RRMessage.setLineItemsToDisplay(nLineItems);
 
-    var exportedMessage = makeExportedMessage(date, "TBD");
-
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);
     var prd = new PracticeResourceData(rng, outputDirName);
+
+    var incidentName = "ETO Weekly Practice";
+    var requestNumber = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
+
+    var subject = "ICS 213RR- " + incidentName + "- Request #:" + requestNumber;
+    var exportedMessage = makeExportedMessage(date, subject);
 
     var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     var dow_dtf = DateTimeFormatter.ofPattern("EEE yyyy-MM-dd");
@@ -297,12 +301,11 @@ public class PracticeGeneratorTool {
     var positions = pd.getUniqueList(1, ListType.SHORT_EMERGENCY_ROLES);
 
     var organization = "EmComm Training Organization";
-    var incidentName = "ETO Weekly Practice";
-    var requestNumber = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
+
     var lineItems = prd.getRandomResources(date, nLineItems, null, null);
 
     var delivery = (String) pd.deliveryChooser.next();
-    var substitutes = rng.nextBoolean() ? "substitute as apprpropriate" : "no substitutes allowed";
+    var substitutes = rng.nextBoolean() ? "substitute as appropriate" : "no substitutes allowed";
 
     var requestedBy = names.get(0) + " / " + positions.get(0);
     var priority = (String) pd.priorityChooser.next();
