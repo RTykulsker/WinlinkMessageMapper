@@ -44,6 +44,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.message.FieldSituationMessage;
+import com.surftools.wimp.message.Ics205RadioPlanMessage;
+import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
@@ -69,6 +72,12 @@ public class PracticeJsonMessageDeserializer {
 
       case ICS_213_RR:
         return deserialize_Ics213RRMessage(jsonString);
+
+      case ICS_205_RADIO_PLAN:
+        return deserialize_Ics205Message(jsonString);
+
+      case FIELD_SITUATION:
+        return deserialize_FsrMessage(jsonString);
 
       default:
         throw new RuntimeException("unsupported messageType: " + messageType.toString());
@@ -149,7 +158,7 @@ public class PracticeJsonMessageDeserializer {
     return m;
   }
 
-  private ExportedMessage deserialize_Ics213RRMessage(String jsonString)
+  private Ics213RRMessage deserialize_Ics213RRMessage(String jsonString)
       throws JsonMappingException, JsonProcessingException {
     var json = mapper.readTree(jsonString);
     var exportedMessage = deserialize_ExportedMessage(json);
@@ -159,11 +168,11 @@ public class PracticeJsonMessageDeserializer {
     var activityDateTime = json.get("activityDateTime").asText();
     var requestNumber = json.get("requestNumber").asText();
 
-    var jsonLineItems = json.get("lineItems");
     var lineItems = new ArrayList<LineItem>();
-
-    for (var i = 0; i < 8; ++i) {
-      var jsonLineItem = jsonLineItems.get(i);
+    var jsonLineItems = json.get("lineItems");
+    var it = jsonLineItems.iterator();
+    while (it.hasNext()) {
+      var jsonLineItem = it.next();
       var quantity = jsonLineItem.get("quantity").asText();
       var kind = jsonLineItem.get("kind").asText();
       var type = jsonLineItem.get("type").asText();
@@ -205,4 +214,145 @@ public class PracticeJsonMessageDeserializer {
     return m;
   }
 
+  private Ics205RadioPlanMessage deserialize_Ics205Message(String jsonString)
+      throws JsonMappingException, JsonProcessingException {
+    var json = mapper.readTree(jsonString);
+    var exportedMessage = deserialize_ExportedMessage(json);
+
+    var organization = json.get("organization").asText();
+    var incidentName = json.get("incidentName").asText();
+    var dateTimePreparedString = json.get("dateTimePrepared").asText();
+
+    var dateFrom = json.get("dateFrom").asText();
+    var dateTo = json.get("dateTo").asText();
+    var timeFrom = json.get("timeFrom").asText();
+    var timeTo = json.get("timeTo").asText();
+
+    var specialInstructions = json.get("specialInstructions").asText();
+    var approvedBy = json.get("approvedBy").asText();
+    var dateTimeApprovedString = json.get("approvedDateTime").asText();
+    var iapPageString = json.get("iapPage").asText();
+    var version = json.get("version").asText();
+
+    var radioEntries = new ArrayList<RadioEntry>();
+    var jsonRadioEntries = json.get("radioEntries");
+    var it = jsonRadioEntries.iterator();
+    while (it.hasNext()) {
+      var jsonRadioEntry = it.next();
+      var rowNumber = jsonRadioEntry.get("rowNumber").asInt();
+      var zoneGroup = jsonRadioEntry.get("zoneGroup").asText();
+      var channelNumber = jsonRadioEntry.get("channelNumber").asText();
+      var function = jsonRadioEntry.get("function").asText();
+      var channelName = jsonRadioEntry.get("channelName").asText();
+      var assignment = jsonRadioEntry.get("assignment").asText();
+      var rxFrequency = jsonRadioEntry.get("rxFrequency").asText();
+      var rxNarrowWide = jsonRadioEntry.get("rxNarrowWide").asText();
+      var rxTone = jsonRadioEntry.get("rxTone").asText();
+      var txFrequency = jsonRadioEntry.get("txFrequency").asText();
+      var txNarrowWide = jsonRadioEntry.get("txNarrowWide").asText();
+      var txTone = jsonRadioEntry.get("txTone").asText();
+      var mode = jsonRadioEntry.get("mode").asText();
+      var remarks = jsonRadioEntry.get("remarks").asText();
+      var radioEntry = new RadioEntry(rowNumber, //
+          zoneGroup, channelNumber, function, channelName, assignment, //
+          rxFrequency, rxNarrowWide, rxTone, //
+          txFrequency, txNarrowWide, txTone, //
+          mode, remarks);
+      radioEntries.add(radioEntry);
+    }
+
+    var m = new Ics205RadioPlanMessage(exportedMessage, organization, incidentName, //
+        dateTimePreparedString, dateFrom, dateTo, timeFrom, timeTo, //
+        specialInstructions, approvedBy, dateTimeApprovedString, iapPageString, //
+        radioEntries, version);
+
+    return m;
+  }
+
+  private FieldSituationMessage deserialize_FsrMessage(String jsonString)
+      throws JsonMappingException, JsonProcessingException {
+    var json = mapper.readTree(jsonString);
+    var message = deserialize_ExportedMessage(json);
+
+    var organization = json.get("organization").asText();
+    var formLocation = deserialize_LatLongPair(json.get("formLocation"));
+    var precedence = json.get("precedence").asText();
+    var formDateTime = json.get("formDateTime").asText();
+    var task = json.get("task").asText();
+    var formTo = json.get("formTo").asText();
+    var formFrom = json.get("formFrom").asText();
+    var isHelpNeeded = json.get("isHelpNeeded").asText();
+    var neededHelp = json.get("neededHelp").asText();
+
+    var city = json.get("city").asText();
+    var county = json.get("county").asText();
+    var state = json.get("state").asText();
+    var territory = json.get("territory").asText();
+
+    var landlineStatus = json.get("landlineStatus").asText();
+    var landlineComments = json.get("landlineComments").asText();
+
+    var voipStatus = json.get("voipStatus").asText();
+    var voipComments = json.get("voipComments").asText();
+
+    var cellPhoneStatus = json.get("cellPhoneStatus").asText();
+    var cellPhoneComments = json.get("cellPhoneComments").asText();
+
+    var cellTextStatus = json.get("cellTextStatus").asText();
+    var cellTextComments = json.get("cellTextComments").asText();
+
+    var radioStatus = json.get("radioStatus").asText();
+    var radioComments = json.get("radioComments").asText();
+
+    var tvStatus = json.get("tvStatus").asText();
+    var tvComments = json.get("tvComments").asText();
+
+    var satTvStatus = json.get("satTvStatus").asText();
+    var satTvComments = json.get("satTvComments").asText();
+
+    var cableTvStatus = json.get("cableTvStatus").asText();
+    var cableTvComments = json.get("cableTvComments").asText();
+
+    var waterStatus = json.get("waterStatus").asText();
+    var waterComments = json.get("waterComments").asText();
+
+    var powerStatus = json.get("powerStatus").asText();
+    var powerComments = json.get("powerComments").asText();
+
+    var powerStable = json.get("powerStableStatus").asText();
+    var powerStableComments = json.get("powerStableComments").asText();
+
+    var naturalGasStatus = json.get("naturalGasStatus").asText();
+    var naturalGasComments = json.get("naturalGasComments").asText();
+
+    var internetStatus = json.get("internetStatus").asText();
+    var internetComments = json.get("internetComments").asText();
+
+    var noaaStatus = json.get("noaaStatus").asText();
+    var noaaComments = json.get("noaaComments").asText();
+
+    var noaaAudioDegraded = json.get("noaaAudioDegraded").asText();
+    var noaaAudioDegradedComments = json.get("noaaAudioDegradedComments").asText();
+
+    var additionalComments = json.get("additionalComments").asText();
+    var poc = json.get("poc").asText();
+    var formVersion = json.get("formVersion").asText();
+
+    var m = new FieldSituationMessage(//
+        message, organization, formLocation, //
+        precedence, formDateTime, task, formTo, formFrom, isHelpNeeded, neededHelp, //
+        city, county, state, territory, //
+        landlineStatus, landlineComments, voipStatus, voipComments, //
+        cellPhoneStatus, cellPhoneComments, cellTextStatus, cellTextComments, //
+        radioStatus, radioComments, //
+        tvStatus, tvComments, satTvStatus, satTvComments, cableTvStatus, cableTvComments, //
+        waterStatus, waterComments, //
+        powerStatus, powerComments, powerStable, powerStableComments, //
+        naturalGasStatus, naturalGasComments, //
+        internetStatus, internetComments, //
+        noaaStatus, noaaComments, noaaAudioDegraded, noaaAudioDegradedComments, //
+        additionalComments, poc, formVersion);
+
+    return m;
+  }
 }

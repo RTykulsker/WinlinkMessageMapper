@@ -379,7 +379,9 @@ public class PracticeGeneratorTool {
     final int nRadioEntries = 3;
     Ics205RadioPlanMessage.setRadioEntriesToDisplay(nRadioEntries);
 
-    var exportedMessage = makeExportedMessage(date, "TBD");
+    var incidentName = "ETO Weekly Practice";
+    var subject = "ICS 205 - " + incidentName;
+    var exportedMessage = makeExportedMessage(date, subject);
 
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);
@@ -390,7 +392,7 @@ public class PracticeGeneratorTool {
     var names = pd.getUniqueList(1, ListType.NAMES);
 
     var organization = "EmComm Training Organization";
-    var incidentName = "ETO Weekly Practice";
+
     var windowOpenDate = date.minusDays(5);
     var windowCloseDate = date.plusDays(1);
     var dateFrom = dtf.format(windowOpenDate);
@@ -403,7 +405,7 @@ public class PracticeGeneratorTool {
     }
     var specialInstructions = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
     var approvedBy = names.get(0);
-    var iapPage = "1";
+    var iapPage = String.valueOf(rng.nextInt(5, 10));
 
     var sb = new StringBuilder(); // exercise instructions
     sb.append("ETO Exercise Instructions for Thursday, " + dtf.format(date) + NL + NL);
@@ -473,7 +475,8 @@ public class PracticeGeneratorTool {
   }
 
   private void handle_Fsr(LocalDate date, int ord, Path path) {
-    var exportedMessage = makeExportedMessage(date, "TBD");
+    var subject = "//WL2K R/ Routine/ Field Situation Report";
+    var exportedMessage = makeExportedMessage(date, subject);
 
     var rng = new Random(rngSeed + date.toString().hashCode());
     var pd = new PracticeData(rng);
@@ -501,7 +504,7 @@ public class PracticeGeneratorTool {
     final var YES = "YES";
     final var NO = "NO";
     final var UNK = "Unknown - N/A";
-    var chooser = new WeightedRandomChooser(List.of(YES, NO, NO, NO, UNK), rng);
+    var chooser = new WeightedRandomChooser(List.of(YES, NO, UNK), rng);
 
     var landlineStatus = (String) chooser.next();
     var landlineComments = landlineStatus.equals(NO) ? "CenturyLink" : "";
@@ -564,9 +567,9 @@ public class PracticeGeneratorTool {
     sb.append(INDENT + "Setup: agency or group name: " + organization + NL);
     sb.append(INDENT + "Precedence: " + precedence + NL);
     sb.append(INDENT + "Date/Time: (click in box and accept date/time)" + NL);
-    sb.append(INDENT + "Task #" + task + NL);
+    sb.append(INDENT + "Task #: " + task + NL);
     sb.append(INDENT + "From: <YOUR CALL>" + NL);
-    sb.append(INDENT + "To:" + formTo + NL);
+    sb.append(INDENT + "To: " + formTo + NL);
     sb.append(INDENT + "EMERGENT/LIFE SAFETY Need: " + isHelpNeeded + NL);
 
     sb.append(INDENT + "City: " + city + NL);
@@ -599,6 +602,8 @@ public class PracticeGeneratorTool {
     sb.append(INDENT + "Commercial Power provider if NO: " + powerComments + NL);
     sb.append(INDENT + "Commercial Power Stable: " + powerStable + NL);
     sb.append(INDENT + "Commercial Power provider if NO: " + powerStableComments + NL);
+    sb.append(INDENT + "Natural Gas supply functioning: " + naturalGasStatus + NL);
+    sb.append(INDENT + "Natural Gas supply provider if NO: " + naturalGasComments + NL);
     sb.append(INDENT + "Internet functioning: " + internetStatus + NL);
     sb.append(INDENT + "Internet provider if NO: " + internetComments + NL);
 
