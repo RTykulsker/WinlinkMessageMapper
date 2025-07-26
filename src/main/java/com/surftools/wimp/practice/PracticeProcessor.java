@@ -510,7 +510,7 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
 
   @Override
   public void postProcess() {
-    WriteProcessor.writeTable("practice-summaries", summaries);
+    WriteProcessor.writeTable("practice-summary.csv", summaries);
     super.postProcess();
 
     kmlService.finalize(Path.of(outputPath.toString(), "feedback.kml"));

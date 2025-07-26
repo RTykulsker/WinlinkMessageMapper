@@ -117,8 +117,9 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     // allow overriding of outputPathName!
     outputPathName = cm.getAsString(Key.OUTPUT_PATH);
     if (outputPathName == null) {
-      outputPath = Path.of(pathName.toString(), "output");
+      outputPath = Path.of(path.toAbsolutePath().toString(), "output");
       outputPathName = outputPath.toString();
+      logger.info("outputPath: " + outputPath);
     } else {
       outputPath = Path.of(outputPathName);
     }

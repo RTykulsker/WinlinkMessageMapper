@@ -187,8 +187,8 @@
 							<id>wws</id>
 						</program>
 						<program>
-						<mainClass>com.surftools.winlinkMessageMapper.tool.P2PMapper</mainClass>
-							<id>pimp</id>
+							<mainClass>com.surftools.wimp.practice.PracticeProcessorTool</mainClass>
+							<id>ppt</id>
 						</program>
 					</programs>
 				</configuration>

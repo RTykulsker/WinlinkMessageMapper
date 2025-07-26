@@ -1,0 +1,10 @@
+eclipse.preferences.version=1
+org.eclipse.jdt.core.compiler.codegen.targetPlatform=22
+org.eclipse.jdt.core.compiler.compliance=22
+org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures=disabled
+org.eclipse.jdt.core.compiler.problem.forbiddenReference=warning
+org.eclipse.jdt.core.compiler.problem.reportPreviewFeatures=ignore
+org.eclipse.jdt.core.compiler.release=disabled
+org.eclipse.jdt.core.compiler.source=22
+# bobt https://stackoverflow.com/questions/51094274/eclipse-cant-find-xml-related-classes-after-switching-build-path-to-jdk-10/74890645#74890645
+org.eclipse.jdt.core.compiler.ignoreUnnamedModuleForSplitPackage=enabled
