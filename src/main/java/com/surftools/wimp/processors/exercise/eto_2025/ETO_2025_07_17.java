@@ -27,14 +27,20 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2025;
 
+import java.nio.file.Path;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.location.LatLongPair;
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
+import com.surftools.wimp.service.kml.KmlService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -46,6 +52,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2025_07_17.class);
 
+  private KmlService kmlService;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
@@ -54,6 +62,8 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
     doStsFieldValidation = false;
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
+
+    kmlService = new KmlService(cm.getAsString(Key.EXERCISE_NAME), cm.getAsString(Key.EXERCISE_DESCRIPTION));
   }
 
   @Override
@@ -112,5 +122,21 @@ public class ETO_2025_07_17 extends SingleMessageFeedbackProcessor {
     count(sts.testIfEmpty("Box 17 Finance Comments should be empty", m.financeComments));
     count(sts.test("Box 18 Finance Section Chief Name should be #EV", "Kimberly Barton", m.financeName));
     count(sts.test("Box 19 Finance Date/Time should be #EV", "2025-07-03 1200", m.financeDateTime));
+
+  }
+
+  @Override
+  public void postProcess() {
+    super.postProcess();
+
+    for (var x : mIdFeedbackMap.values()) {
+      var m = ((FeedbackMessage) x).feedbackResult();
+      var location = new LatLongPair(m.latitude(), m.longitude());
+      var call = m.call();
+      var description = "Feedback count: " + m.feedbackCount() + "\n\n" + m.feedback();
+      kmlService.addPin(location, call, description);
+    }
+
+    kmlService.finalize(Path.of(outputPath.toString(), "feedback.kml"));
   }
 }
