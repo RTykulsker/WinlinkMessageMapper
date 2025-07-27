@@ -120,11 +120,6 @@ public class WxLocalParser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.WX_LOCAL;
-  }
-
   private String makeRange(String temperatureString) {
     if (temperatureString.startsWith(MISSING)) {
       return MISSING;

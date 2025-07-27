@@ -167,9 +167,4 @@ public class HospitalStatusParser extends AbstractBaseParser {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.HOSPITAL_STATUS;
-  }
 }

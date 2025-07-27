@@ -29,7 +29,6 @@ package com.surftools.wimp.parser;
 
 import java.util.ArrayList;
 
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PegelstandMessage;
@@ -110,11 +109,6 @@ public class PegelstandParser extends AbstractBaseParser {
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.PEGELSTAND;
   }
 
   private String fieldOf(String key, String[] lines) {

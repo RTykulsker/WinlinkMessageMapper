@@ -27,7 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PlainMessage;
 
@@ -37,10 +36,4 @@ public class PlainParser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
     return new PlainMessage(message);
   }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.PLAIN;
-  }
-
 }

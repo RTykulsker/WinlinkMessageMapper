@@ -85,11 +85,6 @@ public class WindshieldDamageParser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.DAMAGE_ASSESSMENT;
-  }
-
   private List<DamageEntry> makeDamageEntries() {
 
     var list = new ArrayList<DamageEntry>();

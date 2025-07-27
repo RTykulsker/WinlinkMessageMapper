@@ -165,11 +165,6 @@ public class FieldSituationParser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.FIELD_SITUATION;
-  }
-
   /**
    * return the underlying type, NOT FSR
    *

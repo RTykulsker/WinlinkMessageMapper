@@ -31,7 +31,6 @@ import java.io.ByteArrayInputStream;
 
 import javax.mail.internet.MimeUtility;
 
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIReplyWelfareRadiogramMessage;
@@ -105,10 +104,4 @@ public class RRiReplyWelfareRadiogramParser extends AbstractBaseParser {
     }
 
   }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.RRI_REPLY_WELFARE_RADIOGRRAM;
-  }
-
 }

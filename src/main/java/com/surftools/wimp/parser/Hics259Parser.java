@@ -109,8 +109,4 @@ public class Hics259Parser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.HICS_259;
-  }
 }

@@ -213,9 +213,4 @@ public class CheckInParser extends AbstractBaseParser {
     return version;
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return messageType;
-  }
-
 }

@@ -33,7 +33,6 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.DyfiMessage.DetailLevel;
@@ -150,11 +149,6 @@ public class DyfiParser extends AbstractBaseParser {
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.DYFI;
   }
 
 }

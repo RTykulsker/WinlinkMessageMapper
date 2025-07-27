@@ -115,11 +115,6 @@ public class Ics214Parser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return messageType;
-  }
-
   protected List<Ics214Message.Resource> makeResources() {
     var list = new ArrayList<Ics214Message.Resource>();
     for (int i = 1; i <= 8; ++i) {

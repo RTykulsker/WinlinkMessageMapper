@@ -31,7 +31,6 @@ import java.io.ByteArrayInputStream;
 
 import javax.mail.internet.MimeUtility;
 
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIQuickWelfareMessage;
@@ -63,11 +62,6 @@ public class RRIQuickWelfareParser extends AbstractBaseParser {
     Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.RRI_QUICK_WELFARE;
   }
 
   // I Am Safe Message From XXX - DO NOT REPLY!

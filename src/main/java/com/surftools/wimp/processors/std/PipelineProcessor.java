@@ -65,20 +65,6 @@ public class PipelineProcessor extends AbstractBaseProcessor {
     }
     super.initialize(cm, _mm, logger);
 
-    // // IGNORE argument mm, create a final mm, because needed for variable capture
-    // var useSuppliedMM = true;
-    // if (useSuppliedMM) {
-    // // final IMessageManager mm = new MessageManager();
-    // // super.uninitialize();
-    // if (_mm == null) {
-    // _mm = new MessageManager();
-    // }
-    // super.initialize(cm, _mm, logger);
-    // } else {
-    // final IMessageManager mm = new MessageManager();
-    // super.uninitialize();
-    // super.initialize(cm, mm, logger);
-    // }
     var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication,Filter");
     var main = cm.getAsString(Key.PIPELINE_MAIN, ""); // exercise-specific processors go here!
     var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,Summary");

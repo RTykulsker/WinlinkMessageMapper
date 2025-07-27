@@ -27,7 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.AckMessage;
 import com.surftools.wimp.message.ExportedMessage;
@@ -55,11 +54,6 @@ public class AckParser extends AbstractBaseParser {
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.ACK;
   }
 
 }

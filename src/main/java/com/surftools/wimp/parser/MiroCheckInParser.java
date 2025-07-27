@@ -37,7 +37,6 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.MiroCheckInMessage;
@@ -86,11 +85,6 @@ public class MiroCheckInParser extends AbstractBaseParser {
     } else {
       return reject(message, RejectType.CANT_PARSE_MIME, message.plainContent);
     }
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.MIRO_CHECK_IN;
   }
 
   private String[] splitLine(String line) {

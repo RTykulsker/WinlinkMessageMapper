@@ -62,9 +62,4 @@ public class WA_WSDOT_BridgeRoadwayDamageParser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE;
-  }
-
 }

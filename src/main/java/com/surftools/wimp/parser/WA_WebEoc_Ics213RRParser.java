@@ -82,9 +82,4 @@ public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.WA_ICS_213_RR_WEB_EOC;
-  }
 }

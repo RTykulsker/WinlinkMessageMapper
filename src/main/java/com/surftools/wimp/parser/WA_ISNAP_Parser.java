@@ -105,10 +105,4 @@ public class WA_ISNAP_Parser extends AbstractBaseParser {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.WA_ISNAP;
-  }
-
 }

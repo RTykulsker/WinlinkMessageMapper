@@ -31,7 +31,6 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.EtoCheckInV2Message;
 import com.surftools.wimp.message.ExportedMessage;
@@ -79,8 +78,4 @@ public class EtoCheckInV2Parser extends AbstractBaseParser {
     return m;
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.ETO_CHECK_IN_V2;
-  }
 }

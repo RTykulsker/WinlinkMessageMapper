@@ -110,11 +110,6 @@ public class WA_EyewarnParser extends AbstractBaseParser {
     }
   }
 
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.WA_EYEWARN;
-  }
-
   private String gx(String tagName) {
     return getStringFromXml(tagName);
   }

@@ -46,13 +46,6 @@ public interface IParser {
    */
   public ExportedMessage parse(ExportedMessage message);
 
-  /**
-   * return the MessageType that this parser supports
-   *
-   * @return
-   */
-  public MessageType getMessageType();
-
   public void initialize(IConfigurationManager cm, IMessageManager mm);
 
 }

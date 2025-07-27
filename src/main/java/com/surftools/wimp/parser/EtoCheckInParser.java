@@ -28,7 +28,6 @@ SOFTWARE.
 package com.surftools.wimp.parser;
 
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.EtoCheckInMessage;
 import com.surftools.wimp.message.ExportedMessage;
@@ -140,11 +139,6 @@ public class EtoCheckInParser extends AbstractBaseParser {
       }
     }
     return sb.toString();
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.ETO_CHECK_IN;
   }
 
 }

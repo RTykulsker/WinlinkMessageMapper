@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.location.LocationUtils;
-import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PositionMessage;
 
@@ -55,11 +54,6 @@ public class PositionParser extends AbstractBaseParser {
 
     PositionMessage m = new PositionMessage(message, latitude, longitude, comments);
     return m;
-  }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.POSITION;
   }
 
   private String getStringFromMime(String needle, String[] mimeLines) {

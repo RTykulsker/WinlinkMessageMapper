@@ -97,9 +97,4 @@ public class Ics213RRParser extends AbstractBaseParser {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
     }
   }
-
-  @Override
-  public MessageType getMessageType() {
-    return MessageType.ICS_213_RR;
-  }
 }
