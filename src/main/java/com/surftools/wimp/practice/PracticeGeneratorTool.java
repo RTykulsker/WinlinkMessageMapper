@@ -69,18 +69,9 @@ import com.surftools.wimp.practice.PracticeData.ListType;
  */
 public class PracticeGeneratorTool {
 
-  public static final boolean DEV_MODE = false;
-  public final static Map<Integer, MessageType> MESSAGE_TYPE_MAP;
-  static {
-    if (DEV_MODE) {
-      MESSAGE_TYPE_MAP = Map
-          .of(1, MessageType.ICS_213, 2, MessageType.ICS_213, 4, MessageType.ICS_213, 5, MessageType.ICS_213);
-    } else {
-      MESSAGE_TYPE_MAP = Map
-          .of(1, MessageType.ICS_213, 2, MessageType.ICS_213_RR, 4, MessageType.ICS_205_RADIO_PLAN, 5,
-              MessageType.FIELD_SITUATION);
-    }
-  }
+  public final static Map<Integer, MessageType> MESSAGE_TYPE_MAP = Map
+      .of(1, MessageType.ICS_213, 2, MessageType.ICS_213_RR, 4, MessageType.ICS_205, 5,
+          MessageType.FIELD_SITUATION);
 
   public final static Set<Integer> VALID_ORDINALS = MESSAGE_TYPE_MAP.keySet();
 
@@ -166,7 +157,7 @@ public class PracticeGeneratorTool {
     case ICS_213_RR:
       handle_Ics213RR(date, ord, path);
       break;
-    case ICS_205_RADIO_PLAN:
+    case ICS_205:
       handle_Ics205(date, ord, path);
       break;
     case FIELD_SITUATION:

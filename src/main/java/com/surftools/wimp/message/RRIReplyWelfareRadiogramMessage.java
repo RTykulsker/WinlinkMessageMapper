@@ -66,7 +66,7 @@ public class RRIReplyWelfareRadiogramMessage extends ExportedMessage {
 
   @Override
   public MessageType getMessageType() {
-    return MessageType.RRI_REPLY_WELFARE_RADIOGRRAM;
+    return MessageType.RRI_REPLY_WELFARE_RADIOGRAM;
   }
 
   @Override

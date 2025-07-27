@@ -238,7 +238,7 @@ public class ETO_2023_08_24 extends AbstractBaseProcessor {
     var callResultsMap = new HashMap<String, IWritableTable>();
     var zeroZeroLocationList = new ArrayList<String>();
 
-    for (var m : mm.getMessagesForType(MessageType.ICS_205_RADIO_PLAN)) {
+    for (var m : mm.getMessagesForType(MessageType.ICS_205)) {
       var message = (Ics205RadioPlanMessage) m;
       var sender = message.from;
 

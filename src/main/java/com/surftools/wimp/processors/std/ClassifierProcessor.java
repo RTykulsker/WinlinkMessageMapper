@@ -77,7 +77,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     typeNameMap.put(MessageType.HOSPITAL_BED, "HospitalBedParser");
     typeNameMap.put(MessageType.HOSPITAL_STATUS, "HospitalStatusParser");
     typeNameMap.put(MessageType.HUMANITARIAN_NEEDS, "HumanitarianNeedsParser");
-    typeNameMap.put(MessageType.ICS_205_RADIO_PLAN, "Ics205Parser");
+    typeNameMap.put(MessageType.ICS_205, "Ics205Parser");
     typeNameMap.put(MessageType.ICS_213, "Ics213Parser");
     typeNameMap.put(MessageType.ICS_213_REPLY, "Ics213ReplyParser");
     typeNameMap.put(MessageType.ICS_213_RR, "Ics213RRParser");
@@ -91,7 +91,7 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
     typeNameMap.put(MessageType.POSITION, "PositionParser");
     typeNameMap.put(MessageType.QUICK, "QuickParser");
     typeNameMap.put(MessageType.RRI_QUICK_WELFARE, "RRIQuickWelfareParser");
-    typeNameMap.put(MessageType.RRI_REPLY_WELFARE_RADIOGRRAM, "RRIWelfareRadiogramParser");
+    typeNameMap.put(MessageType.RRI_REPLY_WELFARE_RADIOGRAM, "RRIWelfareRadiogramParser");
     typeNameMap.put(MessageType.RRI_WELFARE_RADIOGRAM, "RRIWelfareRadiogramParser");
     typeNameMap.put(MessageType.SPOTREP, "SpotRepParser");
     typeNameMap.put(MessageType.WA_EYEWARN, "WA_EyewarnParser");

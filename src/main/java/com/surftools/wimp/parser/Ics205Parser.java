@@ -53,7 +53,7 @@ public class Ics205Parser extends AbstractBaseParser {
   public ExportedMessage parse(ExportedMessage message) {
     try {
 
-      String xmlString = new String(message.attachments.get(MessageType.ICS_205_RADIO_PLAN.rmsViewerName()));
+      String xmlString = new String(message.attachments.get(MessageType.ICS_205.rmsViewerName()));
 
       makeDocument(message.messageId, xmlString);
 

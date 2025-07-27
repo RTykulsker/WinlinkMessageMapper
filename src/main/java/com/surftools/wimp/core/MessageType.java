@@ -48,7 +48,7 @@ public enum MessageType {
   CHECK_IN("check_in", "RMS_Express_Form_Winlink_Check_In_Viewer.xml", "Winlink Check-in"), //
   CHECK_OUT("check_out", "RMS_Express_Form_Winlink_Check_out_Viewer.xml", "Winlink Check-out"), //
   SPOTREP("spotrep", "RMS_Express_Form_Shares_Spotrep-2_Viewer.xml"), //
-  FIELD_SITUATION("fsr", "RMS_Express_Form_Field Situation Report"), //
+  FIELD_SITUATION("field_situation", "RMS_Express_Form_Field Situation Report"), //
   DYFI("dyfi", (s -> s.startsWith("DYFI Automatic Entry") || s.startsWith("FW: DYFI Automatic Entry"))), //
 
   WX_LOCAL("wx_local", "RMS_Express_Form_Local Weather Report Viewer.xml"), //
@@ -57,6 +57,7 @@ public enum MessageType {
 
   HOSPITAL_BED("hospital_bed", "RMS_Express_Form_Hospital_Bed_Report_Viewer.xml"), //
 
+  ICS_205("ics_205", "RMS_Express_Form_ICS205 Radio Plan_Viewer.xml"), //
   ICS_213("ics_213", "RMS_Express_Form_ICS213_Initial_Viewer.xml", "ICS-213"), //
   ICS_213_REPLY("ics_213_reply", "RMS_Express_Form_ICS213_SendReply_Viewer.xml"), //
   ICS_213_RR("ics_213_rr", "RMS_Express_Form_ICS213RR_Viewer.xml"), //
@@ -72,10 +73,10 @@ public enum MessageType {
   MIRO_CHECK_IN("miro_check_in",
       (s -> s.equals("MIRO Check In") || s.startsWith("MIRO Winlink Check In") || s.startsWith("MIRO After Action"))),
 
-  DAMAGE_ASSESSMENT("windshield_damage_assessment", "RMS_Express_Form_Damage_Assessment_Viewer.xml"), //
+  DAMAGE_ASSESSMENT("damage_assessment", "RMS_Express_Form_Damage_Assessment_Viewer.xml"), //
   QUICK("quick", "RMS_Express_Form_Quick Message Viewer.xml"), //
-  ICS_205_RADIO_PLAN("ics_205", "RMS_Express_Form_ICS205 Radio Plan_Viewer.xml"), //
-  HUMANITARIAN_NEEDS("humanitarian", "RMS_Express_Form_Humanitarian Needs Identification viewer.xml"), //
+
+  HUMANITARIAN_NEEDS("humanitarian_needs", "RMS_Express_Form_Humanitarian Needs Identification viewer.xml"), //
   HOSPITAL_STATUS("hospital_status", "RMS_Express_Form_Hospital_Status_Viewer.xml"), //
 
   ETO_RESUME("eto_resume",
@@ -83,7 +84,7 @@ public enum MessageType {
   RRI_QUICK_WELFARE("rri_quick_welfare",
       (s -> s.startsWith("I Am Safe Message From") && s.endsWith(" - DO NOT REPLY!"))), //
   RRI_WELFARE_RADIOGRAM("rri_welfare_radiogram", (s -> s.startsWith("QTC 1 W") || s.startsWith("QTC 1 TEST W"))), //
-  RRI_REPLY_WELFARE_RADIOGRRAM("rri_reply_welfare_radiogram",
+  RRI_REPLY_WELFARE_RADIOGRAM("rri_reply_welfare_radiogram",
       (s -> s.toUpperCase().startsWith("RE: QTC 1 W") || s.toUpperCase().startsWith("RE: QTC 1 TEST W"))), //
 
   WA_ICS_213_RR_WEB_EOC("wa_ics_213_rr_web_eoc", "RMS_Express_Form_RR_WebEOC_WA_Viewer.xml"), //
@@ -98,7 +99,7 @@ public enum MessageType {
   WELFARE_BULLETIN_BOARD("welfare_bulletin_board", "RMS_Express_Form_Welfare Bulletin Board viewer.xml"), //
 
   EYEWARN("eyewarn", "RMS_Express_Form_Eyewarn.xml"), // custom form from SnoVArc
-  EYEWARN_DETAIL("eyewarn_details"), // generated details
+  EYEWARN_DETAIL("eyewarn_detail"), // generated details
 
   PEGELSTAND("pegelstand", (s -> s.startsWith("Pegelstand Report"))), // German water level message, for Tsunami 2025
 
@@ -152,7 +153,7 @@ public enum MessageType {
 
   @Override
   public String toString() {
-    return key;
+    return name().toLowerCase();
   }
 
   public String rmsViewerName() {

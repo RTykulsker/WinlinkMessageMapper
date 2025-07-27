@@ -73,7 +73,7 @@ public class PracticeJsonMessageDeserializer {
       case ICS_213_RR:
         return deserialize_Ics213RRMessage(jsonString);
 
-      case ICS_205_RADIO_PLAN:
+      case ICS_205:
         return deserialize_Ics205Message(jsonString);
 
       case FIELD_SITUATION:

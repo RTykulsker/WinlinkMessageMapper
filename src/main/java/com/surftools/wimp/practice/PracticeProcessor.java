@@ -140,7 +140,7 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     case ICS_213_RR:
       handle_Ics213RR(m);
       break;
-    case ICS_205_RADIO_PLAN:
+    case ICS_205:
       handle_Ics205(m);
       break;
     case FIELD_SITUATION:

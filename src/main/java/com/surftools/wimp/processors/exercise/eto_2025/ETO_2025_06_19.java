@@ -60,7 +60,7 @@ public class ETO_2025_06_19 extends SingleMessageFeedbackProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    messageType = MessageType.ICS_205_RADIO_PLAN;
+    messageType = MessageType.ICS_205;
     doStsFieldValidation = false;
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;

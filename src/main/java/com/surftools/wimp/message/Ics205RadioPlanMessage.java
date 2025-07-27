@@ -159,7 +159,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
 
   @Override
   public MessageType getMessageType() {
-    return MessageType.ICS_205_RADIO_PLAN;
+    return MessageType.ICS_205;
   }
 
   @Override

@@ -154,14 +154,14 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
     Ics309Message.setNDisplayActivities(12);
 
     var acceptableMessageTypesList = List // order matters, last location wins,
-        .of(MessageType.PLAIN, MessageType.ICS_309, MessageType.RRI_REPLY_WELFARE_RADIOGRRAM, //
+        .of(MessageType.PLAIN, MessageType.ICS_309, MessageType.RRI_REPLY_WELFARE_RADIOGRAM, //
             MessageType.RRI_QUICK_WELFARE, MessageType.RRI_WELFARE_RADIOGRAM, MessageType.PDF_ICS_309);
     acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    var sender = (message.getMessageType() == MessageType.RRI_REPLY_WELFARE_RADIOGRRAM) ? message.to : message.from;
+    var sender = (message.getMessageType() == MessageType.RRI_REPLY_WELFARE_RADIOGRAM) ? message.to : message.from;
     var summary = summaryMap.getOrDefault(sender, new Summary(sender, message.to));
 
     var type = message.getMessageType();
@@ -169,7 +169,7 @@ public class ETO_2024_09_19 extends FeedbackProcessor {
       handle_RriQuickWelfareMessage(summary, (RRIQuickWelfareMessage) message);
     } else if (type == MessageType.RRI_WELFARE_RADIOGRAM) {
       handle_RriRadiogramMessage(summary, (RRIWelfareRadiogramMessage) message);
-    } else if (type == MessageType.RRI_REPLY_WELFARE_RADIOGRRAM) {
+    } else if (type == MessageType.RRI_REPLY_WELFARE_RADIOGRAM) {
       handle_RriReplyWelfareMessage(summary, (RRIReplyWelfareRadiogramMessage) message);
     } else if (type == MessageType.PDF_ICS_309) {
       handle_PdfIcs309Message(summary, (PdfIcs309Message) message);
