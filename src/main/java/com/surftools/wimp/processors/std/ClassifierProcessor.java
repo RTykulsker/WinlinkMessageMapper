@@ -62,55 +62,14 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    final var typeNameMap = new HashMap<MessageType, String>();
-
-    typeNameMap.put(MessageType.ACK, "AckParser");
-    typeNameMap.put(MessageType.CHECK_IN, "CheckInParser");
-    typeNameMap.put(MessageType.CHECK_OUT, "CheckOutParser");
-    typeNameMap.put(MessageType.DYFI, "DyfiParser");
-    typeNameMap.put(MessageType.ETO_CHECK_IN, "EtoCheckInParser");
-    typeNameMap.put(MessageType.ETO_CHECK_IN_V2, "EtoCheckInV2Parser");
-    typeNameMap.put(MessageType.ETO_RESUME, "EtoResumeParser");
-    typeNameMap.put(MessageType.EYEWARN, "EyewarnParser");
-    typeNameMap.put(MessageType.FIELD_SITUATION, "FieldSituationParser");
-    typeNameMap.put(MessageType.HICS_259, "Hics259Parser");
-    typeNameMap.put(MessageType.HOSPITAL_BED, "HospitalBedParser");
-    typeNameMap.put(MessageType.HOSPITAL_STATUS, "HospitalStatusParser");
-    typeNameMap.put(MessageType.HUMANITARIAN_NEEDS, "HumanitarianNeedsParser");
-    typeNameMap.put(MessageType.ICS_205, "Ics205Parser");
-    typeNameMap.put(MessageType.ICS_213, "Ics213Parser");
-    typeNameMap.put(MessageType.ICS_213_REPLY, "Ics213ReplyParser");
-    typeNameMap.put(MessageType.ICS_213_RR, "Ics213RRParser");
-    typeNameMap.put(MessageType.ICS_214A, "Ics214AParser");
-    typeNameMap.put(MessageType.ICS_214, "Ics214Parser");
-    typeNameMap.put(MessageType.ICS_309, "Ics309Parser");
-    typeNameMap.put(MessageType.MIRO_CHECK_IN, "MiroCheckInParser");
-    typeNameMap.put(MessageType.PDF_ICS_309, "PdfIcs309Parser");
-    typeNameMap.put(MessageType.PEGELSTAND, "PegelstandParser");
-    typeNameMap.put(MessageType.PLAIN, "PlainParser");
-    typeNameMap.put(MessageType.POSITION, "PositionParser");
-    typeNameMap.put(MessageType.QUICK, "QuickParser");
-    typeNameMap.put(MessageType.RRI_QUICK_WELFARE, "RRIQuickWelfareParser");
-    typeNameMap.put(MessageType.RRI_REPLY_WELFARE_RADIOGRAM, "RRIWelfareRadiogramParser");
-    typeNameMap.put(MessageType.RRI_WELFARE_RADIOGRAM, "RRIWelfareRadiogramParser");
-    typeNameMap.put(MessageType.SPOTREP, "SpotRepParser");
-    typeNameMap.put(MessageType.WA_EYEWARN, "WA_EyewarnParser");
-    typeNameMap.put(MessageType.WA_ICS_213_RR, "WA_Ics213RRParser");
-    typeNameMap.put(MessageType.WA_ISNAP, "WA_ISNAP_Parser");
-    typeNameMap.put(MessageType.WA_ICS_213_RR_WEB_EOC, "WA_WebEoc_Ics213RRParser");
-    typeNameMap.put(MessageType.WA_WSDOT_BRIDGE_DAMAGE, "WA_WSDOT_BridgeDamageParser");
-    typeNameMap.put(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE, "WA_WSDOT_BridgeRoadwayDamageParser");
-    typeNameMap.put(MessageType.WA_WSDOT_ROADWAY_DAMAGE, "WA_WSDOT_RoadwayDamageParser");
-    typeNameMap.put(MessageType.WELFARE_BULLETIN_BOARD, "WelfareBulletinBoardParser");
-    typeNameMap.put(MessageType.DAMAGE_ASSESSMENT, "WindshieldDamageParser");
-    typeNameMap.put(MessageType.WX_HURRICANE, "WxHurricaneParser");
-    typeNameMap.put(MessageType.WX_LOCAL, "WxLocalParser");
-    typeNameMap.put(MessageType.WX_SEVERE, "WxSevereParser");
-
-    for (var type : typeNameMap.keySet()) {
-      var name = "com.surftools.wimp.parser." + typeNameMap.get(type);
+    final var ignoreTypes = List.of(MessageType.EXPORTED, MessageType.REJECTS, MessageType.EYEWARN_DETAIL);
+    for (var type : MessageType.values()) {
+      if (ignoreTypes.contains(type)) {
+        continue;
+      }
+      var parserName = "com.surftools.wimp.parser." + type.makeParserName() + "Parser";
       try {
-        var parserClass = Class.forName(name);
+        var parserClass = Class.forName(parserName);
         var parser = (IParser) parserClass.getDeclaredConstructor().newInstance();
         parser.initialize(cm, mm);
         parserMap.put(type, parser);

@@ -35,7 +35,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIReplyWelfareRadiogramMessage;
 
-public class RRiReplyWelfareRadiogramParser extends AbstractBaseParser {
+public class RriReplyWelfareRadiogramParser extends AbstractBaseParser {
 
   private enum State {
     BEFORE_REPLY, IN_REPLY, IN_SOURCE

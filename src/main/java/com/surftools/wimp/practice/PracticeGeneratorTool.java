@@ -70,8 +70,7 @@ import com.surftools.wimp.practice.PracticeData.ListType;
 public class PracticeGeneratorTool {
 
   public final static Map<Integer, MessageType> MESSAGE_TYPE_MAP = Map
-      .of(1, MessageType.ICS_213, 2, MessageType.ICS_213_RR, 4, MessageType.ICS_205, 5,
-          MessageType.FIELD_SITUATION);
+      .of(1, MessageType.ICS_213, 2, MessageType.ICS_213_RR, 4, MessageType.ICS_205, 5, MessageType.FIELD_SITUATION);
 
   public final static Set<Integer> VALID_ORDINALS = MESSAGE_TYPE_MAP.keySet();
 
@@ -263,8 +262,11 @@ public class PracticeGeneratorTool {
     var objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
     try {
       var json = objectMapper.writeValueAsString(m);
-      Files.writeString(Path.of(path.toString(), "ics_213.json"), json);
-      Files.writeString(Path.of(path.toString(), dtf.format(date) + "-ics_213_instructions.txt"), sb.toString());
+      var typeName = m.getMessageType().toString();
+      Files.writeString(Path.of(path.toString(), typeName + ".json"), json);
+      Files
+          .writeString(Path.of(path.toString(), dtf.format(date) + "-" + typeName + "_instructions.txt"),
+              sb.toString());
     } catch (Exception e) {
       logger.error("Exception: " + e.getLocalizedMessage());
     }
@@ -357,8 +359,11 @@ public class PracticeGeneratorTool {
     var objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
     try {
       var json = objectMapper.writeValueAsString(m);
-      Files.writeString(Path.of(path.toString(), "ics_213_rr.json"), json);
-      Files.writeString(Path.of(path.toString(), dtf.format(date) + "-ics_213_rr_instructions.txt"), sb.toString());
+      var typeName = m.getMessageType().toString();
+      Files.writeString(Path.of(path.toString(), typeName + ".json"), json);
+      Files
+          .writeString(Path.of(path.toString(), dtf.format(date) + "-" + typeName + "_instructions.txt"),
+              sb.toString());
     } catch (Exception e) {
       logger.error("Exception: " + e.getLocalizedMessage());
     }
@@ -456,8 +461,11 @@ public class PracticeGeneratorTool {
     var objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
     try {
       var json = objectMapper.writeValueAsString(m);
-      Files.writeString(Path.of(path.toString(), "ics_205.json"), json);
-      Files.writeString(Path.of(path.toString(), dtf.format(date) + "-ics_205_instructions.txt"), sb.toString());
+      var typeName = m.getMessageType().toString();
+      Files.writeString(Path.of(path.toString(), typeName + ".json"), json);
+      Files
+          .writeString(Path.of(path.toString(), dtf.format(date) + "-" + typeName + "_instructions.txt"),
+              sb.toString());
     } catch (Exception e) {
       logger.error("Exception: " + e.getLocalizedMessage());
     }
@@ -624,8 +632,11 @@ public class PracticeGeneratorTool {
     var objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
     try {
       var json = objectMapper.writeValueAsString(m);
-      Files.writeString(Path.of(path.toString(), "fsr.json"), json);
-      Files.writeString(Path.of(path.toString(), dtf.format(date) + "-fsr_instructions.txt"), sb.toString());
+      var typeName = m.getMessageType().toString();
+      Files.writeString(Path.of(path.toString(), typeName + ".json"), json);
+      Files
+          .writeString(Path.of(path.toString(), dtf.format(date) + "-" + typeName + "_instructions.txt"),
+              sb.toString());
     } catch (Exception e) {
       logger.error("Exception: " + e.getLocalizedMessage());
     }

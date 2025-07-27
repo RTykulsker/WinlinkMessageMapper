@@ -35,7 +35,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.SpotRepMessage;
 
-public class SpotRepParser extends AbstractBaseParser {
+public class SpotrepParser extends AbstractBaseParser {
   private static final String[] OVERRIDE_LAT_LON_TAG_NAMES = new String[] {};
   private static final String MERGED_LAT_LON_TAG_NAMES;
 

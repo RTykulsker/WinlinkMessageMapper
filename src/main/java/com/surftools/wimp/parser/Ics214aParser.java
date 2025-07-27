@@ -27,39 +27,20 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import java.util.LinkedHashMap;
+import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.MessageType;
-import com.surftools.wimp.core.RejectType;
-import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.WA_WSDOT_BridgeRoadwayDamageMessage;
-import com.surftools.wimp.message.WA_WSDOT_BridgeRoadwayDamageMessage.DataType;
 
-public class WA_WSDOT_BridgeRoadwayDamageParser extends AbstractBaseParser {
-
-  @Override
-  public ExportedMessage parse(ExportedMessage message) {
-
-    try {
-      makeDocument(message.messageId,
-          new String(message.attachments.get(MessageType.WA_WSDOT_BRIDGE_ROADWAY_DAMAGE.rmsViewerName())));
-
-      var dataMap = new LinkedHashMap<DataType, String>();
-      for (var dt : DataType.values()) {
-        dataMap.put(dt, getStringFromXml(dt.getFieldName()));
-      }
-
-      if (dataMap.get(DataType.VERSION) != null) {
-        var fields = dataMap.get(DataType.VERSION).split(" ");
-        dataMap.put(DataType.VERSION, fields != null && fields.length >= 4 ? fields[4] : "unknown");
-      }
-
-      var m = new WA_WSDOT_BridgeRoadwayDamageMessage(message, dataMap);
-
-      return m;
-    } catch (Exception e) {
-      return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
-    }
+/**
+ * parser for ICS 214A Individual Activity Log
+ *
+ * @author bobt
+ *
+ */
+public class Ics214aParser extends Ics214Parser {
+  public Ics214aParser() {
+    logger = LoggerFactory.getLogger(Ics214aParser.class);
+    messageType = MessageType.ICS_214A;
   }
 
 }

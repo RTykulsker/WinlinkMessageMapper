@@ -35,7 +35,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIQuickWelfareMessage;
 
-public class RRIQuickWelfareParser extends AbstractBaseParser {
+public class RriQuickWelfareParser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {

@@ -32,7 +32,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.WA_WSDOT_RoadwayDamageMessage;
 
-public class WA_WSDOT_RoadwayDamageParser extends AbstractBaseParser {
+public class WaWsdotRoadwayDamageParser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {

@@ -35,8 +35,8 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
 
-public class Ics213RRParser extends AbstractBaseParser {
-  public Ics213RRParser() {
+public class Ics213RrParser extends AbstractBaseParser {
+  public Ics213RrParser() {
   }
 
   @Override

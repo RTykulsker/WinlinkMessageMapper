@@ -35,9 +35,9 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
 import com.surftools.wimp.message.WA_WebEoc_Ics213RRMessage;
 
-public class WA_WebEoc_Ics213RRParser extends AbstractBaseParser {
+public class WaIcs213RrWebEocParser extends AbstractBaseParser {
 
-  public WA_WebEoc_Ics213RRParser() {
+  public WaIcs213RrWebEocParser() {
   }
 
   @Override

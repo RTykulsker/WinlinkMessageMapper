@@ -32,7 +32,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.WA_ISNAP_Message;
 
-public class WA_ISNAP_Parser extends AbstractBaseParser {
+public class WaIsnapParser extends AbstractBaseParser {
 
   @Override
   public ExportedMessage parse(ExportedMessage message) {

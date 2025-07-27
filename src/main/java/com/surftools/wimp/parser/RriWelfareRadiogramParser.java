@@ -35,7 +35,7 @@ import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.RRIWelfareRadiogramMessage;
 
-public class RRIWelfareRadiogramParser extends AbstractBaseParser {
+public class RriWelfareRadiogramParser extends AbstractBaseParser {
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {

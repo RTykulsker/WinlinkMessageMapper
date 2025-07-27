@@ -32,17 +32,17 @@ import java.util.List;
 
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
+import com.surftools.wimp.message.DamageAssessmentMessage;
+import com.surftools.wimp.message.DamageAssessmentMessage.DamageEntry;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.WindshieldDamageAssessmentMessage;
-import com.surftools.wimp.message.WindshieldDamageAssessmentMessage.DamageEntry;
 
 /**
- * parser for Windshield Damage
+ * parser for (Windshield) DamageAssessment
  *
  * @author bobt
  *
  */
-public class WindshieldDamageParser extends AbstractBaseParser {
+public class DamageAssessmentParser extends AbstractBaseParser {
   @Override
   public ExportedMessage parse(ExportedMessage message) {
     try {
@@ -75,9 +75,9 @@ public class WindshieldDamageParser extends AbstractBaseParser {
         version = fields[fields.length - 1]; // last field
       }
 
-      WindshieldDamageAssessmentMessage m = new WindshieldDamageAssessmentMessage(message, organization, jurisdiction,
-          missionIncidentId, formType, eventType, description, surveyArea, surveyTeam, eventStartDate, surveyDate,
-          damageEntries, totalLossString, comments, version);
+      DamageAssessmentMessage m = new DamageAssessmentMessage(message, organization, jurisdiction, missionIncidentId,
+          formType, eventType, description, surveyArea, surveyTeam, eventStartDate, surveyDate, damageEntries,
+          totalLossString, comments, version);
 
       return m;
     } catch (Exception e) {

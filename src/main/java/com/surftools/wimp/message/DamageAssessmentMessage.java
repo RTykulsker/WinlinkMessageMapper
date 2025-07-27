@@ -40,7 +40,7 @@ import com.surftools.wimp.core.MessageType;
  * @author bobt
  *
  */
-public class WindshieldDamageAssessmentMessage extends ExportedMessage {
+public class DamageAssessmentMessage extends ExportedMessage {
   public final String organization;
   public final String jurisdiction;
   public final String missionIncidentId;
@@ -59,7 +59,7 @@ public class WindshieldDamageAssessmentMessage extends ExportedMessage {
   public final String comments;
   public final String version;
 
-  public WindshieldDamageAssessmentMessage(ExportedMessage exportedMessage, String organization, String jurisdiction,
+  public DamageAssessmentMessage(ExportedMessage exportedMessage, String organization, String jurisdiction,
       String missionIncidentId, String formType, String eventType, String description, String surveyArea,
       String surveyTeam, String eventStartDate, String surveyDate, List<DamageEntry> damageEntries,
       String totalLossString, String comments, String version) {
