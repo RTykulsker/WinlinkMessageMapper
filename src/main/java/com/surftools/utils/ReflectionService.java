@@ -60,7 +60,9 @@ public class ReflectionService {
       var resources = classLoader.getResources(packagePath);
       while (resources.hasMoreElements()) {
         var resource = resources.nextElement();
-        var directory = new File(resource.getFile());
+        var dirName = resource.getFile();
+        dirName = dirName.replaceAll("%20", " ");
+        var directory = new File(dirName);
         if (!directory.exists()) {
           continue;
         }
