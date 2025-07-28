@@ -612,7 +612,7 @@ public class PracticeGeneratorTool {
     sb.append(INDENT + "NOAA transmitter/frequency if NO: " + noaaAudioDegradedComments + NL);
 
     sb.append(INDENT + "Additional Comments: " + additionalComments + NL);
-    sb.append(INDENT + "POC:" + poc + NL);
+    sb.append(INDENT + "POC: " + poc + NL);
 
     var m = new FieldSituationMessage(//
         exportedMessage, organization, formLocation, //
