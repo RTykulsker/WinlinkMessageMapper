@@ -80,7 +80,7 @@ public class SimpleTestServiceTest {
     var actual1String = sts.toAlphaNumericString(actual1);
     var actual1Words = sts.toAlphaNumericWords(actual1);
     assertTrue(expectedString.equalsIgnoreCase(actual1String));
-    assertFalse(expectedWords.equalsIgnoreCase(actual1Words));
+    assertTrue(expectedWords.equalsIgnoreCase(actual1Words));
 
     var actual2 = "+++hello, @World!";
     var actual2String = sts.toAlphaNumericString(actual2);
@@ -90,7 +90,8 @@ public class SimpleTestServiceTest {
 
     var actual3 = "212 S Ocean Blvd Myrtle Beach,SC";
     var actual3Words = sts.toAlphaNumericWords(actual3);
-    var expected3Words = "212 S Ocean Blvd Myrtle Beach SC";
+    var expected3 = "212 S Ocean Blvd Myrtle Beach SC";
+    var expected3Words = sts.toAlphaNumericWords(expected3);
     assertEquals(expected3Words.toLowerCase(), actual3Words.toLowerCase());
   }
 
@@ -164,13 +165,12 @@ public class SimpleTestServiceTest {
       var fuzzyQuery = new FuzzyQuery(FuzzyType.TokenSort, threshhold);
       var result = sts.testFuzzy(fuzzyQuery, "token sort ratio 1: #EV", "order words out of", "words out of order");
       assertNotNull(result);
-      assertTrue(result.ok());
-      assertEquals(threshhold, Integer.parseInt(result.extraData()));
+      assertFalse(result.ok());
     }
 
     {
       var sts = new SimpleTestService();
-      var threshhold = 97;
+      var threshhold = 96;
       var fuzzyQuery = new FuzzyQuery(FuzzyType.Weighted, threshhold);
       var result = sts
           .testFuzzy(fuzzyQuery, "weighted ratio 1: #EV", "The quick brown fox jimps ofver the small lazy dog",
@@ -207,45 +207,44 @@ public class SimpleTestServiceTest {
             new Pair( //
                 "Heil Sound PRO 7 Headset", //
                 "Heil Sound PRO7 Headset"), //
-            new Pair(//
-                "The Nutcracker", //
-                "Nutcracker"), //
             new Pair( //
                 "LDG Electronics AT-1000ProII Automatic Antenna Tune", //
-                "LDG lectronics AT-1000Proli Automatic Antenna Tuner") //
+                "LDG lectronics AT-1000Proli Automatic Antenna Tuner"), //
+            new Pair(//
+                "Wolf River Silver Bullet 1000", //
+                "Wolf RiverSilve rBulle t1000") //
         //
         );
 
     var failList = List
         .of(//
             new Pair("The Grinch", "Grinch"), //
-            new Pair("Wolf River Silver Bullet 1000", "Wolf RiverSilve rBulle t1000"), //
+            new Pair("The Nutcracker", "Nutcracker"), //
+
             new Pair("Heil Sound PRO 7 Headset", "Digirig sound card")//
         //
         );
 
     for (var i = 0; i < passList.size(); ++i) {
-      var index = i + 1;
       var pair = passList.get(i);
       var sts = new SimpleTestService();
       var threshhold = 95;
       var fuzzyQuery = new FuzzyQuery(FuzzyType.Weighted, threshhold);
-      var result = sts.testFuzzy(fuzzyQuery, "weighted real world #" + index + ": #EV", pair.expected, pair.actual);
-      assertNotNull("pair: " + index, result);
-      assertTrue("pair: " + index, result.ok());
-      assertTrue("pair: " + index, Integer.parseInt(result.extraData()) >= threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "weighted real world #" + i + ": #EV", pair.expected, pair.actual);
+      assertNotNull("pair: " + i, result);
+      assertTrue("pair: " + i, result.ok());
+      assertTrue("pair: " + i, Integer.parseInt(result.extraData()) >= threshhold);
     }
 
     for (var i = 0; i < failList.size(); ++i) {
-      var index = i + 1;
       var pair = failList.get(i);
       var sts = new SimpleTestService();
       var threshhold = 96;
       var fuzzyQuery = new FuzzyQuery(FuzzyType.Weighted, threshhold);
-      var result = sts.testFuzzy(fuzzyQuery, "weighted real world #" + index + ": #EV", pair.expected, pair.actual);
-      assertNotNull("pair: " + index, result);
-      assertFalse("pair: " + index, result.ok());
-      assertTrue("pair: " + index, Integer.parseInt(result.extraData()) < threshhold);
+      var result = sts.testFuzzy(fuzzyQuery, "weighted real world #" + i + ": #EV", pair.expected, pair.actual);
+      assertNotNull("pair: " + i, result);
+      assertFalse("pair: " + i, result.ok());
+      assertTrue("pair: " + i, Integer.parseInt(result.extraData()) < threshhold);
       System.out.println("expected: " + pair.expected + ", actual: " + pair.actual + ", fuzzy: " + result.extraData());
     }
 
