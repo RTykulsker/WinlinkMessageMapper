@@ -1,20 +1,17 @@
-import static org.junit.Assert.assertEquals;
+package com.surftools.wimp.processors.std;
 
-import java.util.List;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.surftools.wimp.core.MessageType;
-
-public class ParserNameTest {
+public class ClassificationProcessorTest {
 
   @Test
   public void test_makeParserName() {
 
-    final var ignoreTypes = List.of(MessageType.EXPORTED, MessageType.REJECTS, MessageType.EYEWARN_DETAIL);
     var mismatchCount = 0;
     for (var type : com.surftools.wimp.core.MessageType.values()) {
-      if (ignoreTypes.contains(type)) {
+      if (ClassifierProcessor.IGNORED_TYPES.contains(type)) {
         System.out.println("Skipping type: " + type);
         continue;
       }

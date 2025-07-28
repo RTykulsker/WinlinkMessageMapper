@@ -53,6 +53,9 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public class ClassifierProcessor extends AbstractBaseProcessor {
 
+  public final static List<MessageType> IGNORED_TYPES = List
+      .of(MessageType.EXPORTED, MessageType.REJECTS, MessageType.EYEWARN_DETAIL);
+
   private static final Logger logger = LoggerFactory.getLogger(ClassifierProcessor.class);
 
   private Map<MessageType, IParser> parserMap = new HashMap<>();
@@ -62,9 +65,8 @@ public class ClassifierProcessor extends AbstractBaseProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    final var ignoreTypes = List.of(MessageType.EXPORTED, MessageType.REJECTS, MessageType.EYEWARN_DETAIL);
     for (var type : MessageType.values()) {
-      if (ignoreTypes.contains(type)) {
+      if (IGNORED_TYPES.contains(type)) {
         continue;
       }
       var parserName = "com.surftools.wimp.parser." + type.makeParserName() + "Parser";
