@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
+import com.surftools.wimp.message.Ics205Message.RadioEntry;
 
 public class PracticeRadioData {
   private Random rng;

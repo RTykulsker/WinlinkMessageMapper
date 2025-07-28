@@ -55,8 +55,8 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
+import com.surftools.wimp.message.Ics205Message;
+import com.surftools.wimp.message.Ics205Message.RadioEntry;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.practice.PracticeData.ExerciseIdMethod;
@@ -373,7 +373,7 @@ public class PracticeGeneratorTool {
 
   private void handle_Ics205(LocalDate date, int ord, Path path) {
     final int nRadioEntries = 3;
-    Ics205RadioPlanMessage.setRadioEntriesToDisplay(nRadioEntries);
+    Ics205Message.setRadioEntriesToDisplay(nRadioEntries);
 
     var incidentName = "ETO Weekly Practice";
     var subject = "ICS 205 - " + incidentName;
@@ -396,7 +396,7 @@ public class PracticeGeneratorTool {
     var timeFrom = "00:00 UTC";
     var timeTo = "08:00 UTC";
     var radioItems = prd.makeRadioEntries(nRadioEntries);
-    for (var i = nRadioEntries; i < Ics205RadioPlanMessage.MAX_RADIO_ENTRIES; ++i) {
+    for (var i = nRadioEntries; i < Ics205Message.MAX_RADIO_ENTRIES; ++i) {
       radioItems.add(RadioEntry.EMPTY);
     }
     var specialInstructions = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
@@ -453,7 +453,7 @@ public class PracticeGeneratorTool {
     sb.append("Refer to https://Emcomm-Training.org/practice for further instructions " + NL);
     sb.append("about the weekly practice exercises and/or monthly training exercises." + NL);
 
-    var m = new Ics205RadioPlanMessage(exportedMessage, organization, incidentName, NA, //
+    var m = new Ics205Message(exportedMessage, organization, incidentName, NA, //
         dateFrom, dateTo, timeFrom, timeTo, //
         specialInstructions, approvedBy, NA, iapPage, //
         radioItems, NA);

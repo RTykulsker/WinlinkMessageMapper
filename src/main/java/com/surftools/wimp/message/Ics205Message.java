@@ -48,7 +48,7 @@ import com.surftools.wimp.core.MessageType;
  * @author bobt
  *
  */
-public class Ics205RadioPlanMessage extends ExportedMessage {
+public class Ics205Message extends ExportedMessage {
 
   public final String organization;
   public final String incidentName;
@@ -74,7 +74,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
   // because Google MyMaps doesn't deal well will blanks or 360
   private static boolean mapBadLocationsToZeroZero = true;
 
-  public Ics205RadioPlanMessage(ExportedMessage exportedMessage, String organization, String incidentName,
+  public Ics205Message(ExportedMessage exportedMessage, String organization, String incidentName,
       String dateTimePrepared, String dateFrom, String dateTo, String timeFrom, String timeTo,
       String specialInstructions, String approvedBy, String approvedDateTime, String iapPage,
       List<RadioEntry> radioEntries, String version) {
@@ -172,7 +172,7 @@ public class Ics205RadioPlanMessage extends ExportedMessage {
   }
 
   public static void setRadioEntriesToDisplay(int radioEntriesToDisplay) {
-    Ics205RadioPlanMessage.radioEntriesToDisplay = radioEntriesToDisplay;
+    Ics205Message.radioEntriesToDisplay = radioEntriesToDisplay;
   }
 
   public record RadioEntry(int rowNumber, //

@@ -35,8 +35,8 @@ import java.util.List;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
+import com.surftools.wimp.message.Ics205Message;
+import com.surftools.wimp.message.Ics205Message.RadioEntry;
 
 /**
  * parser for ICS 205 Radio Plan
@@ -108,7 +108,7 @@ public class Ics205Parser extends AbstractBaseParser {
         }
       }
 
-      var m = new Ics205RadioPlanMessage(message, organization, incidentName, //
+      var m = new Ics205Message(message, organization, incidentName, //
           dateTimePreparedString, dateFrom, dateTo, timeFrom, timeTo, //
           specialInstructions, approvedBy, dateTimeApprovedString, iapPageString, //
           radioEntries, version);

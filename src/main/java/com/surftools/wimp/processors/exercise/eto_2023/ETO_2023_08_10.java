@@ -50,7 +50,7 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FFType;
 import com.surftools.wimp.formField.FormField;
 import com.surftools.wimp.formField.FormFieldManager;
-import com.surftools.wimp.message.Ics205RadioPlanMessage;
+import com.surftools.wimp.message.Ics205Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
@@ -77,14 +77,14 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
   private FormFieldManager ffm;
 
   static record Result(String call, String latitude, String longitude, String feedback, String feedbackCountString,
-      Ics205RadioPlanMessage message) implements IWritableTable {
+      Ics205Message message) implements IWritableTable {
 
     @Override
     public String[] getHeaders() {
-      var resultList = new ArrayList<String>(Ics205RadioPlanMessage.getStaticHeaders().length + 5);
+      var resultList = new ArrayList<String>(Ics205Message.getStaticHeaders().length + 5);
       Collections
           .addAll(resultList, new String[] { "Call", "Map Latitude", "Map Longitude", "Feedback Count", "Feedback", });
-      Collections.addAll(resultList, Ics205RadioPlanMessage.getStaticHeaders());
+      Collections.addAll(resultList, Ics205Message.getStaticHeaders());
       return resultList.toArray(new String[resultList.size()]);
     }
 
@@ -225,7 +225,7 @@ public class ETO_2023_08_10 extends AbstractBaseProcessor {
     var zeroZeroLocationList = new ArrayList<String>();
 
     for (var m : mm.getMessagesForType(MessageType.ICS_205)) {
-      var message = (Ics205RadioPlanMessage) m;
+      var message = (Ics205Message) m;
       var sender = message.from;
 
       var explanations = new ArrayList<String>();

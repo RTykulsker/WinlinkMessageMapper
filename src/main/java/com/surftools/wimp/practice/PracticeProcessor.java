@@ -48,7 +48,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage;
+import com.surftools.wimp.message.Ics205Message;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.processors.std.AcknowledgementProcessor;
@@ -262,8 +262,8 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
   }
 
   private void handle_Ics205(ExportedMessage message) {
-    var m = (Ics205RadioPlanMessage) message;
-    var ref = (Ics205RadioPlanMessage) referenceMessage;
+    var m = (Ics205Message) message;
+    var ref = (Ics205Message) referenceMessage;
 
     count(sts.testStartsWith("Message Subject should start with #EV", referenceMessage.subject, m.subject));
 

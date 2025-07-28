@@ -45,8 +45,8 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
+import com.surftools.wimp.message.Ics205Message;
+import com.surftools.wimp.message.Ics205Message.RadioEntry;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.message.Ics213RRMessage.LineItem;
@@ -214,7 +214,7 @@ public class PracticeJsonMessageDeserializer {
     return m;
   }
 
-  private Ics205RadioPlanMessage deserialize_Ics205Message(String jsonString)
+  private Ics205Message deserialize_Ics205Message(String jsonString)
       throws JsonMappingException, JsonProcessingException {
     var json = mapper.readTree(jsonString);
     var exportedMessage = deserialize_ExportedMessage(json);
@@ -261,7 +261,7 @@ public class PracticeJsonMessageDeserializer {
       radioEntries.add(radioEntry);
     }
 
-    var m = new Ics205RadioPlanMessage(exportedMessage, organization, incidentName, //
+    var m = new Ics205Message(exportedMessage, organization, incidentName, //
         dateTimePreparedString, dateFrom, dateTo, timeFrom, timeTo, //
         specialInstructions, approvedBy, dateTimeApprovedString, iapPageString, //
         radioEntries, version);

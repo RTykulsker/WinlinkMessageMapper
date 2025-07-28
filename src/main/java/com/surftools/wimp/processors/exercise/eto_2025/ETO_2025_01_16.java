@@ -41,8 +41,8 @@ import com.surftools.utils.radioUtils.Frequency;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage;
-import com.surftools.wimp.message.Ics205RadioPlanMessage.RadioEntry;
+import com.surftools.wimp.message.Ics205Message;
+import com.surftools.wimp.message.Ics205Message.RadioEntry;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -67,7 +67,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    Ics205RadioPlanMessage m = (Ics205RadioPlanMessage) message;
+    Ics205Message m = (Ics205Message) message;
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Incident Name should be #EV", "Winter Field Day 2025", m.incidentName));
@@ -139,7 +139,7 @@ public class ETO_2025_01_16 extends SingleMessageFeedbackProcessor {
     count(sts.test("IAP Page should be #EV", "5", m.iapPage));
   }
 
-  private void handleRadioEntries(Ics205RadioPlanMessage m, List<RadioEntry> entries) {
+  private void handleRadioEntries(Ics205Message m, List<RadioEntry> entries) {
     count(sts.test("Number of Radio Channels defined should be #EV", "10", String.valueOf(entries.size())));
 
     Frequency vhfRepeaterOffset = null;
