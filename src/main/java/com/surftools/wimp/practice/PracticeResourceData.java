@@ -86,6 +86,7 @@ public class PracticeResourceData {
     } catch (Exception e) {
       e.printStackTrace();
     }
+
   }
 
   private List<ResourceEntry> getResources(LocalDate date) {
@@ -96,7 +97,7 @@ public class PracticeResourceData {
     }
 
     if (resourceBucket.size() == 0) {
-      resourceBucket.addAll(resourceMap.values());
+      resourceBucket.addAll(new ArrayList<List<ResourceEntry>>(resourceMap.values()));
       Collections.shuffle(resourceBucket, rng);
     }
 

@@ -48,6 +48,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
+import com.surftools.wimp.message.Hics259Message;
 import com.surftools.wimp.message.Ics205Message;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
@@ -139,6 +140,9 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
       break;
     case ICS_213_RR:
       handle_Ics213RR(m);
+      break;
+    case HICS_259:
+      handle_Hics259(m);
       break;
     case ICS_205:
       handle_Ics205(m);
@@ -490,6 +494,39 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     count(sts.test("POC should be #EV", ref.poc, m.poc));
   }
 
+  private void handle_Hics259(ExportedMessage message) {
+    var m = (Hics259Message) message;
+    var ref = (Hics259Message) referenceMessage;
+
+    count(sts.testStartsWith("Message Subject should start with #EV", ref.subject, m.subject));
+    count(sts.test("Incident name should be #EV", ref.incidentName, m.incidentName));
+
+    var formDateTime = m.formDateTime;
+    var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    var date_dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    var time_dtf = DateTimeFormatter.ofPattern("HH:mm");
+    count(sts.testOnOrAfter("Form Date and Time should be on or after #EV", windowOpenDT, formDateTime, dtf));
+    count(sts.testOnOrBefore("Form Date and Time should be on or before #EV", windowCloseDT, formDateTime, dtf));
+    count(sts.test("Operational Period # should be #EV", ref.operationalPeriod, m.operationalPeriod));
+    count(sts.test("Operational Date From should be #EV", date_dtf.format(ref.opFrom), date_dtf.format(m.opFrom)));
+    count(sts.test("Operational Date To should be #EV", date_dtf.format(ref.opTo), date_dtf.format(m.opTo)));
+    count(sts.test("Operational Time From should be #EV", time_dtf.format(ref.opFrom), time_dtf.format(m.opFrom)));
+    count(sts.test("Operational Time To should be #EV", time_dtf.format(ref.opTo), time_dtf.format(m.opTo)));
+
+    var refMap = ref.casualtyMap;
+    var mMap = m.casualtyMap;
+    for (var key : Hics259Message.CASUALTY_KEYS) {
+      var refEntry = refMap.get(key);
+      var mEntry = mMap.get(key);
+      count(sts.test(key + " Adult Count should be #EV", refEntry.adultCount(), mEntry.adultCount()));
+      count(sts.test(key + " Pediatric Count should be #EV", refEntry.childCount(), mEntry.childCount()));
+      count(sts.test(key + " Comment should be #EV", refEntry.comment(), mEntry.comment()));
+    }
+
+    count(sts.test("Patient Tracking Manager should be #EV", ref.patientTrackingManager, m.patientTrackingManager));
+    count(sts.test("Facility Name should be #EV", ref.facilityName, m.facilityName));
+  }
+
   @Override
   protected String makeOutboundMessageSubject(Object object) {
     return "ETO Practice Exercise Feedback for " + date;
@@ -525,8 +562,6 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     public List<String> explanations;
     public String messageId;
     public String messageType;
-    public int exerciseCount; // history TBD
-    public LocalDate firstDate; // history TBD
 
     public static final String perfectMessageText = "Perfect messages!";
     public static final int perfectMessageCount = 0; // in case we need to adjust
@@ -539,7 +574,6 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
       this.messageId = m.messageId;
       this.explanations = sts.getExplanations();
 
-      // TODO get exerciseCount, firstDate from database
     }
 
     @Override
@@ -550,9 +584,8 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
 
     @Override
     public String[] getHeaders() {
-      var list = new ArrayList<String>(List
-          .of("From", "To", "Latitude", "Longitude", "Date", "Time", "Feedback Count", "Feedback", "Message Id",
-              "Exercise Count", "First Date"));
+      var list = new ArrayList<String>(
+          List.of("From", "To", "Latitude", "Longitude", "Date", "Time", "Feedback Count", "Feedback", "Message Id"));
       return list.toArray(new String[list.size()]);
     }
 
@@ -571,11 +604,9 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
       }
 
       var nsTo = to == null ? "(null)" : to;
-      var firstDateString = firstDate == null ? "(null)" : firstDate.toString();
 
-      var list = new ArrayList<String>(List
-          .of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback, messageId, //
-              s(exerciseCount), firstDateString));
+      var list = new ArrayList<String>(
+          List.of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback, messageId));
       return list.toArray(new String[list.size()]);
     }
   }

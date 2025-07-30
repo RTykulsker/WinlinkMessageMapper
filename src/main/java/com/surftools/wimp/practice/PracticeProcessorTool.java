@@ -68,6 +68,9 @@ public class PracticeProcessorTool {
   @Option(name = "--winlinkCallsign", usage = "Winlink Express callsign for sending feedback", required = true)
   private String outboundMessageSource = null;
 
+  @Option(name = "--enableLegacy", usage = "set true to generate HICS_259 instructions on week 2", required = false)
+  private boolean enableLegacy = false;
+
   public static void main(String[] args) {
     var tool = new PracticeProcessorTool();
     CmdLineParser parser = new CmdLineParser(tool);
@@ -112,7 +115,7 @@ public class PracticeProcessorTool {
       var referenceMessage = deserializer.deserialize(jsonString, messageType);
 
       final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-      var nextExerciseDate = exerciseDate.plusDays(ord == 2 ? 14 : 7);
+      var nextExerciseDate = exerciseDate.plusDays((ord == 2 && !enableLegacy) ? 14 : 7);
       var nextOrd = PracticeUtils.getOrdinalDayOfWeek(nextExerciseDate);
       var nextExerciseDateString = dtf.format(nextExerciseDate);
       var nextMessageType = PracticeGeneratorTool.MESSAGE_TYPE_MAP.get(nextOrd);
@@ -123,7 +126,7 @@ public class PracticeProcessorTool {
       var instructionText = Files.readString(instructionPath);
       var sb = new StringBuilder();
       sb.append("\n\n");
-      if (ord == 2) {
+      if (ord == 2 && !enableLegacy) {
         sb.append("INSTRUCTIONS for next week:" + "\n");
         sb.append("Next Thursday is a \"Third Thursday Training Exercise\"," + "\n");
         sb
@@ -148,9 +151,6 @@ public class PracticeProcessorTool {
       var windowCloseDate = exerciseDate.plusDays(1);
       cm.putString(Key.EXERCISE_WINDOW_CLOSE, dtf.format(windowCloseDate) + " 08:00");
 
-      // TODO EXERCISE_NAME, database
-      // cm.putString(Key.NEW_DATABASE_PATH, newDatabasePath.toString());
-
       cm.putString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication");
       cm.putString(Key.PIPELINE_MAIN, "PracticeProcessor"); // exercise-specific processors go here!
       cm.putString(Key.PIPELINE_STDOUT, "Write");
@@ -160,7 +160,7 @@ public class PracticeProcessorTool {
 
       cm.putString(Key.OUTBOUND_MESSAGE_SOURCE, outboundMessageSource);
       cm.putString(Key.OUTBOUND_MESSAGE_SENDER, "ETO-PRACTICE");
-      cm.putString(Key.OUTBOUND_MESSAGE_SUBJECT, "ETO Practice Exercise Feedback");// TODO fixme
+      cm.putString(Key.OUTBOUND_MESSAGE_SUBJECT, "ETO Practice Exercise Feedback");
       cm.putString(Key.OUTBOUND_MESSAGE_ENGINE_TYPE, "WINLINK_EXPRESS");
 
       var mm = new MessageManager();

@@ -27,7 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.surftools.utils.location.LatLongPair;
@@ -194,7 +194,7 @@ public class FieldSituationMessage extends ExportedMessage {
       setMapLocation(formLocation);
     }
 
-    resourceMap = new HashMap<>();
+    resourceMap = new LinkedHashMap<>();
     add(ResourceType.POTS_LANDLINES, landlineStatus, landlineComments);
     add(ResourceType.VOIP_LANDLINES, voipStatus, voipComments);
     add(ResourceType.CELL_VOICE, cellPhoneStatus, cellPhoneComments);

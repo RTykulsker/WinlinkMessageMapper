@@ -28,6 +28,8 @@ SOFTWARE.
 package com.surftools.wimp.practice;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -35,6 +37,12 @@ import com.surftools.wimp.message.Ics205Message.RadioEntry;
 
 public class PracticeRadioData {
   private Random rng;
+
+  private enum BONUS {
+    WX, GMRS, TAC, MARINE
+  }
+
+  private static List<BONUS> bonusBucket = new ArrayList<>();
 
   public PracticeRadioData() {
     this.rng = new Random();
@@ -90,11 +98,12 @@ public class PracticeRadioData {
       return list;
     }
 
-    enum BONUS {
-      WX, GMRS, TAC, MARINE
+    if (bonusBucket.size() == 0) {
+      bonusBucket.addAll(Arrays.asList(BONUS.values()));
+      Collections.shuffle(bonusBucket, rng);
     }
+    var bonus = bonusBucket.remove(0);
 
-    var bonus = BONUS.values()[rng.nextInt(BONUS.values().length)];
     var lineNumber = 3;
     switch (bonus) {
     case BONUS.WX:

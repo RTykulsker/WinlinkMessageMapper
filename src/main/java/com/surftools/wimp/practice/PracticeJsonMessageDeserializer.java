@@ -45,6 +45,8 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
+import com.surftools.wimp.message.Hics259Message;
+import com.surftools.wimp.message.Hics259Message.CasualtyEntry;
 import com.surftools.wimp.message.Ics205Message;
 import com.surftools.wimp.message.Ics205Message.RadioEntry;
 import com.surftools.wimp.message.Ics213Message;
@@ -78,6 +80,9 @@ public class PracticeJsonMessageDeserializer {
 
       case FIELD_SITUATION:
         return deserialize_FsrMessage(jsonString);
+
+      case HICS_259:
+        return deserialize_Hics259Message(jsonString);
 
       default:
         throw new RuntimeException("unsupported messageType: " + messageType.toString());
@@ -352,6 +357,40 @@ public class PracticeJsonMessageDeserializer {
         internetStatus, internetComments, //
         noaaStatus, noaaComments, noaaAudioDegraded, noaaAudioDegradedComments, //
         additionalComments, poc, formVersion);
+
+    return m;
+  }
+
+  private ExportedMessage deserialize_Hics259Message(String jsonString)
+      throws JsonMappingException, JsonProcessingException {
+    var json = mapper.readTree(jsonString);
+    var message = deserialize_ExportedMessage(json);
+
+    var incidentName = json.get("incidentName").asText();
+    var formDateTime = deserialize_LocalDateTime(json.get("formDateTime"));
+    var operationalPeriod = json.get("operationalPeriod").asText();
+    var opFrom = deserialize_LocalDateTime(json.get("opFrom"));
+    var opTo = deserialize_LocalDateTime(json.get("opTo"));
+    var patientTrackingManager = json.get("patientTrackingManager").asText();
+    var facilityName = json.get("facilityName").asText();
+    var version = json.get("version").asText();
+
+    var casualtyMap = new HashMap<String, CasualtyEntry>();
+    var jsonCasualtyMap = json.get("casualtyMap");
+    for (var key : Hics259Message.CASUALTY_KEYS) {
+      var jsonEntry = jsonCasualtyMap.get(key);
+      var adultCount = jsonEntry.get("adultCount").asText();
+      var childCount = jsonEntry.get("childCount").asText();
+      var comment = jsonEntry.get("comment").asText();
+      var casualEntry = new CasualtyEntry(adultCount, childCount, comment);
+      casualtyMap.put(key, casualEntry);
+    }
+
+    var m = new Hics259Message(message, //
+        incidentName, formDateTime, //
+        operationalPeriod, opFrom, opTo, //
+        casualtyMap, //
+        patientTrackingManager, facilityName, version);
 
     return m;
   }

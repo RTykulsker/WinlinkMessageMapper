@@ -55,12 +55,14 @@ import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.FieldSituationMessage;
+import com.surftools.wimp.message.Hics259Message;
 import com.surftools.wimp.message.Ics205Message;
 import com.surftools.wimp.message.Ics205Message.RadioEntry;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.message.Ics213RRMessage;
 import com.surftools.wimp.practice.PracticeData.ExerciseIdMethod;
 import com.surftools.wimp.practice.PracticeData.ListType;
+import com.surftools.wimp.practice.PracticeHicsData.Types;
 
 /**
  * Program to generate many weeks work "data" for ETO weekly "practice" semi-automatic exercises
@@ -70,7 +72,12 @@ import com.surftools.wimp.practice.PracticeData.ListType;
 public class PracticeGeneratorTool {
 
   public final static Map<Integer, MessageType> MESSAGE_TYPE_MAP = Map
-      .of(1, MessageType.ICS_213, 2, MessageType.ICS_213_RR, 4, MessageType.ICS_205, 5, MessageType.FIELD_SITUATION);
+      .of(//
+          1, MessageType.ICS_213, //
+          2, MessageType.ICS_213_RR, //
+          3, MessageType.HICS_259, //
+          4, MessageType.ICS_205, //
+          5, MessageType.FIELD_SITUATION);
 
   public final static Set<Integer> VALID_ORDINALS = MESSAGE_TYPE_MAP.keySet();
 
@@ -93,9 +100,6 @@ public class PracticeGeneratorTool {
   private static final String INDENT = "    ";
   private static final String INDENT2 = INDENT + INDENT;
   private static final String INDENT3 = INDENT + INDENT2;
-
-  // private Random rng;
-  // private PracticeData pd;
 
   public static void main(String[] args) {
     var app = new PracticeGeneratorTool();
@@ -134,10 +138,6 @@ public class PracticeGeneratorTool {
 
     while (date.getYear() <= nowDate.getYear() + 1) {
       var ord = PracticeUtils.getOrdinalDayOfWeek(date);
-      if (ord == 3) {
-        date = date.plusDays(7);
-        continue;
-      }
       generate(date, ord);
       date = date.plusDays(7);
     }
@@ -155,6 +155,9 @@ public class PracticeGeneratorTool {
       break;
     case ICS_213_RR:
       handle_Ics213RR(date, ord, path);
+      break;
+    case HICS_259:
+      handle_Hics259(date, ord, path);
       break;
     case ICS_205:
       handle_Ics205(date, ord, path);
@@ -369,6 +372,82 @@ public class PracticeGeneratorTool {
     }
     var ordName = PracticeUtils.getOrdinalLabel(ord);
     logger.info("generated date: " + date + ", " + ordName + " " + date.getDayOfWeek().toString() + ", ICS_213RR");
+  }
+
+  private void handle_Hics259(LocalDate date, int ord, Path path) {
+
+    var rng = new Random(rngSeed + date.toString().hashCode());
+    var pd = new PracticeData(rng);
+    var phd = new PracticeHicsData(rng);
+
+    var incidentName = "Exercise Id: " + pd.getExerciseId(ExerciseIdMethod.PHONE);
+    var facilityName = phd.get(Types.HOSPITAL_NAMES);
+    var subject = "HICS-259 HOSPITAL CASUALTY/FATALITY REPORT-" + incidentName;
+    var exportedMessage = makeExportedMessage(date, subject);
+
+    var operationalPeriod = String.valueOf(rng.nextInt(1, 3));
+    var windowOpenDate = date.minusDays(5);
+    var windowCloseDate = date.plusDays(1);
+    var opFrom = LocalDateTime.of(windowOpenDate, LocalTime.of(0, 0));
+    var opTo = LocalDateTime.of(windowCloseDate, LocalTime.of(8, 0));
+    var casualtyMap = phd.makeCasualtyMap();
+    var patientTrackingManager = pd.getUniqueList(1, ListType.DOUBLED_NAMES).get(0);
+
+    var date_dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    var time_dtf = DateTimeFormatter.ofPattern("HH:mm");
+    var dow_dtf = DateTimeFormatter.ofPattern("EEE yyyy-MM-dd");
+    var sb = new StringBuilder(); // exercise instructions
+    sb.append("ETO Exercise Instructions for Thursday, " + date_dtf.format(date) + NL + NL);
+    sb.append("Complete an HICS 259 Hospital Casualty/Fatality Report Message" + NL + NL);
+    sb.append("Exercise window: " + dow_dtf.format(windowOpenDate) + " 00:00 UTC - " + //
+        dow_dtf.format(windowCloseDate) + " 08:00 UTC" + NL + NL);
+    sb.append("Use the following values when completing the form:" + NL);
+    sb.append(INDENT + "Incident name: " + incidentName + NL);
+    sb.append(INDENT + "Date: (click in box and accept date)" + NL);
+    sb.append(INDENT + "Time: (click in box and accept time)" + NL);
+    sb.append(INDENT + "Operational Period #: " + operationalPeriod + NL);
+    sb.append(INDENT + "Operational Period Date From: " + date_dtf.format(opFrom) + NL);
+    sb.append(INDENT + "Operational Period Date To: " + date_dtf.format(opTo) + NL);
+    sb.append(INDENT + "Operational Period Time From: " + time_dtf.format(opFrom) + NL);
+    sb.append(INDENT + "Operational Period Time To: " + time_dtf.format(opTo) + NL);
+
+    sb.append("Number Of Casualties" + NL);
+
+    for (var key : Hics259Message.CASUALTY_KEYS) {
+      var entry = casualtyMap.get(key);
+      sb.append(INDENT + key + NL);
+      sb.append(INDENT2 + "Adult: " + entry.adultCount() + NL);
+      sb.append(INDENT2 + "Pediatric: " + entry.childCount() + NL);
+      sb.append(INDENT2 + "Comments: " + entry.comment() + NL);
+    }
+    sb.append("Prepared by: " + patientTrackingManager + NL);
+    sb.append("Facility Name: " + facilityName + NL);
+
+    sb.append(NL);
+    sb.append("Send the message via the Session type of your choice to ETO-PRACTICE." + NL);
+    sb.append(NL);
+    sb.append("Refer to https://Emcomm-Training.org/practice for further instructions " + NL);
+    sb.append("about the weekly practice exercises and/or monthly training exercises." + NL);
+
+    var m = new Hics259Message(exportedMessage, //
+        incidentName, LocalDateTime.of(1970, 1, 1, 0, 0), //
+        operationalPeriod, opFrom, opTo, //
+        casualtyMap, //
+        patientTrackingManager, facilityName, NA);
+
+    var objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
+    try {
+      var json = objectMapper.writeValueAsString(m);
+      var typeName = m.getMessageType().toString();
+      Files.writeString(Path.of(path.toString(), typeName + ".json"), json);
+      Files
+          .writeString(Path.of(path.toString(), date_dtf.format(date) + "-" + typeName + "_instructions.txt"),
+              sb.toString());
+    } catch (Exception e) {
+      logger.error("Exception: " + e.getLocalizedMessage());
+    }
+    var ordName = PracticeUtils.getOrdinalLabel(ord);
+    logger.info("generated date: " + date + ", " + ordName + " " + date.getDayOfWeek().toString() + ", HICS_259");
   }
 
   private void handle_Ics205(LocalDate date, int ord, Path path) {
