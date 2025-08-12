@@ -181,7 +181,7 @@
 					<platforms>
 						<platform>all</platform>
 					</platforms>					
-					<programs>
+					<programs>					
 						<program>
 							<mainClass>com.surftools.wimp.web.WimpWebServer</mainClass>
 							<id>wws</id>

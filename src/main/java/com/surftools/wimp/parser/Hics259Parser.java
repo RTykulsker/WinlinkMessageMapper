@@ -27,12 +27,11 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -96,12 +95,11 @@ public class Hics259Parser extends AbstractBaseParser {
       return null;
     }
 
-    final var DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    final var TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
+    final var MULTI_DATE_PARSER = new MultiDateTimeParser(List.of("yyyy-MM-dd", "MM/dd/yyyy", "M/dd/yyyy", "M/dd/yy"));
+    final var MULTI_TIME_PARSER = new MultiDateTimeParser(List.of("HH:mm", "HHmm"));
     try {
-      var localDate = LocalDate.parse(date, DATE_FORMATTER);
-      var localTime = LocalTime.parse(time, TIME_FORMATTER);
+      var localDate = MULTI_DATE_PARSER.parseDate(date);
+      var localTime = MULTI_TIME_PARSER.parseTime(time);
       var localDateTime = LocalDateTime.of(localDate, localTime);
       return localDateTime;
     } catch (Exception e) {

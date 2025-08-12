@@ -68,13 +68,13 @@ public class ETO_2025_08_21 extends SingleMessageFeedbackProcessor {
                 "Emergency Room is at capacity. Less critical patients are being placed in the hallways."), //
             Hics259Message.CASUALTY_KEYS.get(1), new CasualtyEntry("14", "4", ""), //
             Hics259Message.CASUALTY_KEYS.get(2), new CasualtyEntry("22", "2", ""), //
-            Hics259Message.CASUALTY_KEYS.get(3), new CasualtyEntry("3", "2", ""), //
-            Hics259Message.CASUALTY_KEYS.get(4), new CasualtyEntry("0", "0", ""), //
-            Hics259Message.CASUALTY_KEYS.get(5), new CasualtyEntry("0", "0", ""), //
+            Hics259Message.CASUALTY_KEYS.get(3), new CasualtyEntry("18", "0", ""), //
+            Hics259Message.CASUALTY_KEYS.get(4), new CasualtyEntry("4", "0", ""), //
+            Hics259Message.CASUALTY_KEYS.get(5), new CasualtyEntry("0", "2", ""), //
             Hics259Message.CASUALTY_KEYS.get(6), new CasualtyEntry("7", "1", ""), //
             Hics259Message.CASUALTY_KEYS.get(7),
             new CasualtyEntry("3", "0", "Adults to University Medical Center. More transfers are needed."), //
-            Hics259Message.CASUALTY_KEYS.get(8), new CasualtyEntry("0", "0", "") //
+            Hics259Message.CASUALTY_KEYS.get(8), new CasualtyEntry("1", "0", "") //
         );
   }
 
@@ -82,17 +82,31 @@ public class ETO_2025_08_21 extends SingleMessageFeedbackProcessor {
   protected void specificProcessing(ExportedMessage message) {
     Hics259Message m = (Hics259Message) message;
 
-    count(sts.test("Incident Names should be #EV", "HEATWAVE ADAM", m.incidentName));
+    count(sts.test("Incident Name should be #EV", "HEATWAVE ADAM", m.incidentName));
 
-    final DateTimeFormatter DATE_DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    final DateTimeFormatter TIME_DTF = DateTimeFormatter.ofPattern("HH:mm");
-    count(sts.test("Form Date should be #EV", "2025-08-21", DATE_DTF.format(m.formDateTime)));
-    count(sts.test("Form Time should be #EV", "13:48", TIME_DTF.format(m.formDateTime)));
+    final var formDTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    count(sts.testOnOrAfter("Form Date/Time should be on or after #EV", windowOpenDT, m.formDateTime, formDTF));
+    count(sts.testOnOrBefore("Form Date/Time should be on or before #EV", windowCloseDT, m.formDateTime, formDTF));
+
     count(sts.test("Operational Period # should be #EV", "1", m.operationalPeriod));
-    count(sts.test("Operational Date From Should be #EV", "2025-08-21", DATE_DTF.format(m.opFrom)));
-    count(sts.test("Operational Date To Should be #EV", "2025-08-21", DATE_DTF.format(m.opTo)));
-    count(sts.test("Operational Time From Should be #EV", "00:00", TIME_DTF.format(m.opFrom)));
-    count(sts.test("Operational Time To Should be #EV", "23:59", TIME_DTF.format(m.opTo)));
+
+    final var dateDTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    final var timeDTF = DateTimeFormatter.ofPattern("HH:mm");
+    if (m.opFrom != null) {
+      count(sts.test("Operational Date From Should be #EV", "2025-08-21", dateDTF.format(m.opFrom)));
+      count(sts.test("Operational Time From Should be #EV", "00:00", timeDTF.format(m.opFrom)));
+    } else {
+      count(sts.test("Operational Date From Should be 2025-08-21", false));
+      count(sts.test("Operational Time From Should be 00:00", false));
+    }
+
+    if (m.opTo != null) {
+      count(sts.test("Operational Date To Should be #EV", "2025-08-21", dateDTF.format(m.opTo)));
+      count(sts.test("Operational Time To Should be #EV", "23:59", timeDTF.format(m.opTo)));
+    } else {
+      count(sts.test("Operational Date To Should be 2025-08-21", false));
+      count(sts.test("Operational Time To Should be 23:59", false));
+    }
 
     var lineNumber = 0;
     for (var key : Hics259Message.CASUALTY_KEYS) {
