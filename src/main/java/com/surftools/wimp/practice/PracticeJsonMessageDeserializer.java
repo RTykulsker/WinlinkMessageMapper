@@ -367,10 +367,14 @@ public class PracticeJsonMessageDeserializer {
     var message = deserialize_ExportedMessage(json);
 
     var incidentName = json.get("incidentName").asText();
-    var formDateTime = deserialize_LocalDateTime(json.get("formDateTime"));
+    var formDate = json.get("formDate").asText();
+    var formTime = json.get("formTime").asText();
+    ;
     var operationalPeriod = json.get("operationalPeriod").asText();
-    var opFrom = deserialize_LocalDateTime(json.get("opFrom"));
-    var opTo = deserialize_LocalDateTime(json.get("opTo"));
+    var opFromDate = json.get("opFromDate").asText();
+    var opFromTime = json.get("opFromTime").asText();
+    var opToDate = json.get("opToDate").asText();
+    var opToTime = json.get("opToTime").asText();
     var patientTrackingManager = json.get("patientTrackingManager").asText();
     var facilityName = json.get("facilityName").asText();
     var version = json.get("version").asText();
@@ -387,8 +391,8 @@ public class PracticeJsonMessageDeserializer {
     }
 
     var m = new Hics259Message(message, //
-        incidentName, formDateTime, //
-        operationalPeriod, opFrom, opTo, //
+        incidentName, formDate, formTime, //
+        operationalPeriod, opFromDate, opFromTime, opToDate, opToTime, //
         casualtyMap, //
         patientTrackingManager, facilityName, version);
 

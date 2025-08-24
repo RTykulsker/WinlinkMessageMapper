@@ -501,17 +501,14 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     count(sts.testStartsWith("Message Subject should start with #EV", ref.subject, m.subject));
     count(sts.test("Incident name should be #EV", ref.incidentName, m.incidentName));
 
-    var formDateTime = m.formDateTime;
-    var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    var date_dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    var time_dtf = DateTimeFormatter.ofPattern("HH:mm");
-    count(sts.testOnOrAfter("Form Date and Time should be on or after #EV", windowOpenDT, formDateTime, dtf));
-    count(sts.testOnOrBefore("Form Date and Time should be on or before #EV", windowCloseDT, formDateTime, dtf));
+    // rely on gateways to filter to window
+    count(sts.testIfPresent("Form Date should be present", m.formDate));
+    count(sts.testIfPresent("Form Time should be present", m.formTime));
     count(sts.test("Operational Period # should be #EV", ref.operationalPeriod, m.operationalPeriod));
-    count(sts.test("Operational Date From should be #EV", date_dtf.format(ref.opFrom), date_dtf.format(m.opFrom)));
-    count(sts.test("Operational Date To should be #EV", date_dtf.format(ref.opTo), date_dtf.format(m.opTo)));
-    count(sts.test("Operational Time From should be #EV", time_dtf.format(ref.opFrom), time_dtf.format(m.opFrom)));
-    count(sts.test("Operational Time To should be #EV", time_dtf.format(ref.opTo), time_dtf.format(m.opTo)));
+    count(sts.test("Operational Date From should be #EV", ref.opFromDate, m.opFromDate));
+    count(sts.test("Operational Date To should be #EV", ref.opToDate, m.opToDate));
+    count(sts.test("Operational Time From should be #EV", ref.opFromTime, m.opFromTime));
+    count(sts.test("Operational Time To should be #EV", ref.opToTime, m.opToTime));
 
     var refMap = ref.casualtyMap;
     var mMap = m.casualtyMap;

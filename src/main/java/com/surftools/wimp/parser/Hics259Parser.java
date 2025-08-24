@@ -27,11 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.parser;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 
-import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -47,11 +44,14 @@ public class Hics259Parser extends AbstractBaseParser {
 
       var incidentName = getStringFromXml("incidentname");
 
-      var formDateTime = makeDateTime(getStringFromXml("thedate"), getStringFromXml("thetime"));
+      var formDate = getStringFromXml("thedate");
+      var formTime = getStringFromXml("thetime");
 
       var operationalPeriod = getStringFromXml("opperiod");
-      var opFrom = makeDateTime(getStringFromXml("datefrom"), getStringFromXml("timefrom"));
-      var opTo = makeDateTime(getStringFromXml("dateto"), getStringFromXml("timeto"));
+      var opFromDate = getStringFromXml("datefrom");
+      var opFromTime = getStringFromXml("timefrom");
+      var opToDate = getStringFromXml("dateto");
+      var opToTime = getStringFromXml("timeto");
 
       var casualtyMap = new HashMap<String, CasualtyEntry>();
 
@@ -79,35 +79,14 @@ public class Hics259Parser extends AbstractBaseParser {
       }
 
       var m = new Hics259Message(message, //
-          incidentName, formDateTime, //
-          operationalPeriod, opFrom, opTo, //
+          incidentName, formDate, formTime, //
+          operationalPeriod, opFromDate, opFromTime, opToDate, opToTime, //
           casualtyMap, //
           patientTrackingManager, facilityName, version);
 
       return m;
     } catch (Exception e) {
       return reject(message, RejectType.PROCESSING_ERROR, e.getMessage());
-    }
-  }
-
-  private LocalDateTime makeDateTime(String date, String time) {
-    if (date == null || date.isBlank() || time == null || time.isBlank()) {
-      return null;
-    }
-
-    date = date.trim();
-    time = time.trim();
-
-    final var MULTI_DATE_PARSER = new MultiDateTimeParser(
-        List.of("yyyy-MM-dd", "MM/dd/yyyy", "M/dd/yyyy", "M/dd/yy", "yyyy-MM-dd','"));
-    final var MULTI_TIME_PARSER = new MultiDateTimeParser(List.of("HH:mm", "HHmm", "HH.mm"));
-    try {
-      var localDate = MULTI_DATE_PARSER.parseDate(date);
-      var localTime = MULTI_TIME_PARSER.parseTime(time);
-      var localDateTime = LocalDateTime.of(localDate, localTime);
-      return localDateTime;
-    } catch (Exception e) {
-      return null;
     }
   }
 

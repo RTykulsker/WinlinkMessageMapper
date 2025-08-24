@@ -27,8 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.message;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,11 +45,14 @@ public class Hics259Message extends ExportedMessage {
   };
 
   public final String incidentName;
-  public final LocalDateTime formDateTime;
+  public final String formDate;
+  public final String formTime;
 
   public final String operationalPeriod;
-  public final LocalDateTime opFrom;
-  public final LocalDateTime opTo;
+  public final String opFromDate;
+  public final String opFromTime;
+  public final String opToDate;
+  public final String opToTime;
 
   public final Map<String, CasualtyEntry> casualtyMap;
 
@@ -61,19 +62,22 @@ public class Hics259Message extends ExportedMessage {
   public final String version;
 
   public Hics259Message(ExportedMessage exportedMessage, //
-      String incidentName, LocalDateTime formDateTime, //
-      String operationalPeriod, LocalDateTime opFrom, LocalDateTime opTo, //
+      String incidentName, String formDate, String formTime, //
+      String operationalPeriod, String opFromDate, String opFromTime, String opToDate, String opToTime, //
       Map<String, CasualtyEntry> casualtyMap, //
       String patientTrackingManager, String facilityName, String version) {
 
     super(exportedMessage);
 
     this.incidentName = incidentName;
-    this.formDateTime = formDateTime;
+    this.formDate = formDate;
+    this.formTime = formTime;
 
     this.operationalPeriod = operationalPeriod;
-    this.opFrom = opFrom;
-    this.opTo = opTo;
+    this.opFromDate = opFromDate;
+    this.opFromTime = opFromTime;
+    this.opToDate = opToDate;
+    this.opToTime = opToTime;
 
     this.casualtyMap = casualtyMap;
 
@@ -118,13 +122,12 @@ public class Hics259Message extends ExportedMessage {
   public String[] getValues() {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
-    DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     var firstList = List
         .of(messageId, from, to, subject, date, time, msgLocation == null ? "" : msgLocation.toString(), //
-            incidentName, formDateTime == null ? "" : DT_FORMATTER.format(formDateTime), //
-            operationalPeriod, opFrom == null ? "" : DT_FORMATTER.format(opFrom),
-            opTo == null ? "" : DT_FORMATTER.format(opTo));//
+            incidentName, formDate + " " + formTime, //
+            operationalPeriod, opFromDate + " " + opFromTime, //
+            opToDate + " " + opToTime);//
 
     var casualtyList = new ArrayList<String>();
     for (var key : CASUALTY_KEYS) {

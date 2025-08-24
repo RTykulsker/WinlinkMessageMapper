@@ -27,8 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2025;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -85,44 +83,13 @@ public class ETO_2025_08_21 extends SingleMessageFeedbackProcessor {
 
     count(sts.test_2line("Incident Name should be #EV", "HEATWAVE ADAM", m.incidentName));
 
-    final var formDTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    if (m.formDateTime == null) {
-      count(sts.test("Form Date/Time should be valid", false));
-    } else {
-      count(sts.test("Form Date/Time should be valid", true));
-      if (m.formDateTime.toLocalDate() == LocalDate.MIN) {
-        count(sts.test("Form Date/Time should be specified", false));
-      } else {
-        count(sts.test("Form Date/Time should be specified", true));
-      }
-      count(sts.testOnOrAfter("Form Date/Time should be on or after #EV", windowOpenDT, m.formDateTime, formDTF));
-      count(sts.testOnOrBefore("Form Date/Time should be on or before #EV", windowCloseDT, m.formDateTime, formDTF));
-    }
-
-    count(sts.test("Operational Period # should be #EV", "1", m.operationalPeriod));
-
-    final var dateDTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    final var timeDTF = DateTimeFormatter.ofPattern("HH:mm");
-    if (m.opFrom == null) {
-      count(sts.test("Operational Date From Should be 2025-08-21", false));
-      count(sts.test("Operational Time From Should be 00:00", false));
-    } else if (m.opFrom.toLocalDate().equals(LocalDate.MIN)) {
-      count(sts.test("Operational Date From Should be 2025-08-21", false));
-    } else {
-      count(sts.test("Operational Date From Should be #EV", "2025-08-21", dateDTF.format(m.opFrom)));
-      count(sts.test("Operational Time From Should be #EV", "00:00", timeDTF.format(m.opFrom)));
-    }
-
-    if (m.opTo == null) {
-      count(sts.test("Operational Date To Should be 2025-08-21", false));
-      count(sts.test("Operational Time To Should be 23:59", false));
-    } else if (m.opTo.toLocalDate() == LocalDate.MIN) {
-      count(sts.test("Operational Date To Should be 2025-08-21", false));
-      count(sts.test("Operational Time To Should be 23:59", false));
-    } else {
-      count(sts.test("Operational Date To Should be #EV", "2025-08-21", dateDTF.format(m.opTo)));
-      count(sts.test("Operational Time To Should be #EV", "23:59", timeDTF.format(m.opTo)));
-    }
+    // rely on gateways to filter to window
+    count(sts.testIfPresent("Form Date should be present", m.formDate));
+    count(sts.testIfPresent("Form Time should be present", m.formTime));
+    count(sts.testIfPresent("Operational Date From should be present", m.opFromDate));
+    count(sts.testIfPresent("Operational Date To should be present", m.opToDate));
+    count(sts.testIfPresent("Operational Time From should be present", m.opFromTime));
+    count(sts.testIfPresent("Operational Time To should be present", m.opToTime));
 
     var lineNumber = 0;
     for (var key : Hics259Message.CASUALTY_KEYS) {

@@ -388,13 +388,17 @@ public class PracticeGeneratorTool {
     var operationalPeriod = String.valueOf(rng.nextInt(1, 3));
     var windowOpenDate = date.minusDays(5);
     var windowCloseDate = date.plusDays(1);
-    var opFrom = LocalDateTime.of(windowOpenDate, LocalTime.of(0, 0));
-    var opTo = LocalDateTime.of(windowCloseDate, LocalTime.of(8, 0));
+
+    var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    var opFromDate = dtf.format(windowOpenDate);
+    var opFromTime = "00:00";
+    var opToDate = dtf.format(windowCloseDate);
+    var opToTime = "08:00";
+
     var casualtyMap = phd.makeCasualtyMap();
     var patientTrackingManager = pd.getUniqueList(1, ListType.DOUBLED_NAMES).get(0);
 
     var date_dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    var time_dtf = DateTimeFormatter.ofPattern("HH:mm");
     var dow_dtf = DateTimeFormatter.ofPattern("EEE yyyy-MM-dd");
     var sb = new StringBuilder(); // exercise instructions
     sb.append("ETO Exercise Instructions for Thursday, " + date_dtf.format(date) + NL + NL);
@@ -406,10 +410,10 @@ public class PracticeGeneratorTool {
     sb.append(INDENT + "Date: (click in box and accept date)" + NL);
     sb.append(INDENT + "Time: (click in box and accept time)" + NL);
     sb.append(INDENT + "Operational Period #: " + operationalPeriod + NL);
-    sb.append(INDENT + "Operational Period Date From: " + date_dtf.format(opFrom) + NL);
-    sb.append(INDENT + "Operational Period Date To: " + date_dtf.format(opTo) + NL);
-    sb.append(INDENT + "Operational Period Time From: " + time_dtf.format(opFrom) + NL);
-    sb.append(INDENT + "Operational Period Time To: " + time_dtf.format(opTo) + NL);
+    sb.append(INDENT + "Operational Period Date From: " + opFromDate + NL);
+    sb.append(INDENT + "Operational Period Date To: " + opToDate + NL);
+    sb.append(INDENT + "Operational Period Time From: " + opFromTime + NL);
+    sb.append(INDENT + "Operational Period Time To: " + opToTime + NL);
 
     sb.append("Number Of Casualties" + NL);
 
@@ -430,8 +434,8 @@ public class PracticeGeneratorTool {
     sb.append("about the weekly practice exercises and/or monthly training exercises." + NL);
 
     var m = new Hics259Message(exportedMessage, //
-        incidentName, LocalDateTime.of(1970, 1, 1, 0, 0), //
-        operationalPeriod, opFrom, opTo, //
+        incidentName, NA, NA, //
+        operationalPeriod, opFromDate, opFromTime, opToDate, opToTime, //
         casualtyMap, //
         patientTrackingManager, facilityName, NA);
 
