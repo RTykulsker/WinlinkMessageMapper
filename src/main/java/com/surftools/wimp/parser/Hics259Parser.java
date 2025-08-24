@@ -95,8 +95,12 @@ public class Hics259Parser extends AbstractBaseParser {
       return null;
     }
 
-    final var MULTI_DATE_PARSER = new MultiDateTimeParser(List.of("yyyy-MM-dd", "MM/dd/yyyy", "M/dd/yyyy", "M/dd/yy"));
-    final var MULTI_TIME_PARSER = new MultiDateTimeParser(List.of("HH:mm", "HHmm"));
+    date = date.trim();
+    time = time.trim();
+
+    final var MULTI_DATE_PARSER = new MultiDateTimeParser(
+        List.of("yyyy-MM-dd", "MM/dd/yyyy", "M/dd/yyyy", "M/dd/yy", "yyyy-MM-dd','"));
+    final var MULTI_TIME_PARSER = new MultiDateTimeParser(List.of("HH:mm", "HHmm", "HH.mm"));
     try {
       var localDate = MULTI_DATE_PARSER.parseDate(date);
       var localTime = MULTI_TIME_PARSER.parseTime(time);

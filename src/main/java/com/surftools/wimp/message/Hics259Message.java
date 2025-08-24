@@ -88,7 +88,7 @@ public class Hics259Message extends ExportedMessage {
     var firstList = List
         .of("MessageId", "From", "To", "Subject", "Date", "Time", "Msg Location", //
             "Incident Name", "Form Date/Time", //
-            "Op Period #", "From", "To" //
+            "Op Period #", "Op From", "Op To" //
         );
 
     var casualtyList = new ArrayList<String>();
