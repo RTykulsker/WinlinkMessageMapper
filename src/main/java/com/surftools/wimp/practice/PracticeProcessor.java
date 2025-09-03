@@ -56,11 +56,15 @@ import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.service.kml.KmlService;
+import com.surftools.wimp.service.map.MapEntry;
+import com.surftools.wimp.service.map.MapHeader;
+import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PracticeProcessor extends SingleMessageFeedbackProcessor {
   private static final Logger logger = LoggerFactory.getLogger(PracticeProcessor.class);
   private LocalDate date;
+  private String dateString;
   private MessageType messageType;
   private ExportedMessage referenceMessage;
 
@@ -78,7 +82,7 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
 
-    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    dateString = cm.getAsString(Key.EXERCISE_DATE);
     date = LocalDate.parse(dateString);
     var ord = PracticeUtils.getOrdinalDayOfWeek(date);
     var dow = date.getDayOfWeek();
@@ -548,9 +552,13 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
     super.postProcess();
 
     kmlService.finalize(Path.of(outputPath.toString(), "feedback.kml"));
+
+    var mapEntries = summaries.stream().map(s -> MapEntry.fromSummary(s)).toList();
+    var mapService = new MapService(null, null);
+    mapService.makeMap(outputPath, new MapHeader("ETO-" + dateString + "--" + messageType.name(), ""), mapEntries);
   }
 
-  protected class Summary implements IWritableTable {
+  public class Summary implements IWritableTable {
     public String from;
     public String to;
     public LatLongPair location;
@@ -570,7 +578,6 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
       this.dateTime = m.sortDateTime;
       this.messageId = m.messageId;
       this.explanations = sts.getExplanations();
-
     }
 
     @Override
@@ -586,24 +593,37 @@ public class PracticeProcessor extends SingleMessageFeedbackProcessor {
       return list.toArray(new String[list.size()]);
     }
 
+    public int getFeedbackCount() {
+      return explanations.size() - perfectMessageCount;
+    }
+
+    public String getFeedback() {
+      if (explanations.size() > 0) {
+        return String.join("\n", explanations);
+      } else {
+        return perfectMessageText;
+      }
+    }
+
     @Override
     public String[] getValues() {
       var latitude = location == null ? "0.0" : location.getLatitude();
       var longitude = location == null ? "0.0" : location.getLongitude();
       var date = dateTime == null ? "" : dateTime.toLocalDate().toString();
       var time = dateTime == null ? "" : dateTime.toLocalTime().toString();
-      var feedbackCount = "0";
-      var feedback = perfectMessageText;
+      // var feedbackCount = "0";
+      // var feedback = perfectMessageText;
 
-      if (explanations.size() > 0) {
-        feedbackCount = String.valueOf(explanations.size() - perfectMessageCount);
-        feedback = String.join("\n", explanations);
-      }
+      // if (explanations.size() > 0) {
+      // feedbackCount = String.valueOf(explanations.size() - perfectMessageCount);
+      // feedback = String.join("\n", explanations);
+      // }
 
       var nsTo = to == null ? "(null)" : to;
 
-      var list = new ArrayList<String>(
-          List.of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback, messageId));
+      var list = new ArrayList<String>(List
+          .of(from, nsTo, latitude, longitude, date, time, String.valueOf(getFeedbackCount()), getFeedback(),
+              messageId));
       return list.toArray(new String[list.size()]);
     }
   }
