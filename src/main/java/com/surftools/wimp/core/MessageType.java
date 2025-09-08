@@ -94,6 +94,7 @@ public enum MessageType {
   WA_WSDOT_ROADWAY_DAMAGE("RMS_Express_Form_WSDOT Roadway Damage Report viewer.xml"), //
   WA_WSDOT_BRIDGE_ROADWAY_DAMAGE("RMS_Express_Form_WSDOT Bridge-Roadway Damage Report viewer.xml"), //
   WA_EYEWARN("RMS_Express_Form_EyeWarn_Form_Viewer.xml"), //
+  WA_FIELD_SITUATION("RMS_Express_Form_WA Field Situation Report viewer.xml"), //
 
   WELFARE_BULLETIN_BOARD("RMS_Express_Form_Welfare Bulletin Board viewer.xml"), //
 
