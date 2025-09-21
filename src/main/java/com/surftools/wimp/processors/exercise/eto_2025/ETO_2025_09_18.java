@@ -62,13 +62,14 @@ public class ETO_2025_09_18 extends SingleMessageFeedbackProcessor {
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
 
+    Ics309Message.setNDisplayActivities(6);
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
     Ics309Message m = (Ics309Message) message;
 
-    count(sts.test("Organization name shoulb be #EV", "EmComm Training Organization", m.organization));
+    count(sts.test_2line("Organization name shoulb be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Task # should be #EV", "091801", m.taskNumber));
 
     final var formDTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -78,9 +79,9 @@ public class ETO_2025_09_18 extends SingleMessageFeedbackProcessor {
         sts.testOnOrBefore("Date/Time Prepared should be on or before #EV", windowCloseDT, dateTimePrepared, formDTF));
 
     count(sts.test("Operational Period # should be #EV", "20250918", m.operationalPeriod));
-    count(sts.test("Task Name should be #EV", "ETO 09/18/2025 ICS-309 Exercise", m.taskName));
+    count(sts.test_2line("Task Name should be #EV", "ETO 09/18/2025 ICS-309 Exercise", m.taskName));
 
-    count(sts.test("Operator Name should be #EV", "Taylor Lane", m.operatorName));
+    count(sts.test_2line("Operator Name should be #EV", "Taylor Lane", m.operatorName));
     count(sts.test("Station ID should be #EV", "W0LTD", m.stationId));
     count(sts.test("Page # should be #EV", "1", m.page));
 
@@ -117,5 +118,6 @@ public class ETO_2025_09_18 extends SingleMessageFeedbackProcessor {
       }
 
     }
+    sts.setExplanationPrefix("");
   }
 }

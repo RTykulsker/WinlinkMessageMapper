@@ -49,6 +49,9 @@ import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
+import com.surftools.wimp.service.map.MapEntry;
+import com.surftools.wimp.service.map.MapHeader;
+import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -245,6 +248,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
         var messageId = badLocationMessageIds.get(i);
         var feedbackMessage = (FeedbackMessage) mIdFeedbackMap.get(messageId);
         var newLocation = newLocations.get(i);
+        feedbackMessage.message().mapLocation = newLocation;
         var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
         mIdFeedbackMap.put(messageId, newFeedbackMessage);
       }
@@ -268,6 +272,10 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     var chartService = ChartServiceFactory.getChartService(cm);
     chartService.initialize(cm, counterMap, messageType);
     chartService.makeCharts();
+
+    var mapEntries = mIdFeedbackMap.values().stream().map(s -> MapEntry.fromSingleMessageFeedback(s)).toList();
+    var mapService = new MapService(null, null);
+    mapService.makeMap(outputPath, new MapHeader(cm.getAsString(Key.EXERCISE_NAME), ""), mapEntries);
   }
 
   protected void beforePostProcessing(MessageType messageType) {

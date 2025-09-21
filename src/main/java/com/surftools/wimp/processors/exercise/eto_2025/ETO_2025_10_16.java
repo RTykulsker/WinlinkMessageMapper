@@ -57,7 +57,7 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
   protected static final DateTimeFormatter DYFI_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
   protected static final DateTimeFormatter DYFI_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-  protected static final String EXPECTED_DATE = "10/16/2024";
+  protected static final String EXPECTED_DATE = "10/16/2025";
   protected static final String EXPECTED_TIME = "10:16";
 
   static record Email(String from, String address) implements IWritableTable {
@@ -94,7 +94,7 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
     var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS.toUpperCase());
     count(sts.test("To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
     count(sts.test("Event Type must be: EXERCISE", !m.isRealEvent));
-    count(sts.test("Exercise Id must be: #EV", "ETO Winlink Thursday DYFI 2024", m.exerciseId));
+    count(sts.test("Exercise Id must be: #EV", "SHAKEOUT", m.exerciseId));
     count(sts.test("Did You feel it must be: Yes", m.isFelt));
     var response = m.response == null ? "Not specified" : m.response;
     count(sts.test("How did you respond must be: Dropped and covered", "duck", response));
@@ -104,22 +104,30 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
     count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
     count(sts.test("Time of Earthquake should be #EV", EXPECTED_TIME, m.formDateTime.format(DYFI_TIME_FORMATTER)));
 
-    getCounter("Intensity").increment(m.intensity);
+    var intensityString = m.intensity;
+    getCounter("Intensity").increment(intensityString);
+    try {
+      intensityString = intensityString == null || intensityString.isEmpty() ? "0" : intensityString;
+      var intensity = Integer.parseInt(intensityString);
+      count(sts.test("Intensity should be at least 5", intensity >= 5));
+    } catch (Exception e) {
+      count(sts.test("Intensity should be at least 5", false));
+    }
     getCounter("Version").increment(m.formVersion);
-    getCounter("Feedback Count").increment(sts.getExplanations().size());
+    // getCounter("Feedback Count").increment(sts.getExplanations().size());
 
     if (feedbackLocation == null) {
       feedbackLocation = m.formLocation;
     }
 
     if (m.comments != null) {
-      var words = m.comments.split(" ");
-      if (words[0].split("@").length == 2) { // no attempt at validation, let someone else deal with email bounces
-        var emailEntry = new Email(m.from, words[0]);
-        emailAddresses.add(emailEntry);
-        var provider = words[0].split("@")[1].toUpperCase();
-        getCounter("Email Provider").increment(provider);
-      } // endif words[0] contains @
+      var fields = m.comments.split(",");
+      if (fields.length >= 4) { // AFFILIATION, ORGANIZATION, MODE, BAND,COMMENTS
+        getCounter("Affiliation").increment(fields[0].toUpperCase().trim());
+        getCounter("Organization").increment(fields[1].toUpperCase().trim());
+        getCounter("Mode").increment(fields[2].toUpperCase().trim());
+        getCounter("Band").increment(fields[3].toUpperCase().trim());
+      } // endif fields.length >= 4
     } // endif comments != null
 
   }

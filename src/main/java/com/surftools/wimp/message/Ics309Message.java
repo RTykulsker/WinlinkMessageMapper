@@ -126,8 +126,8 @@ public class Ics309Message extends ExportedMessage {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
 
-    var lat = mapLocation == null ? "" : mapLocation.getLatitude();
-    var lon = mapLocation == null ? "" : mapLocation.getLongitude();
+    var lat = mapLocation == null ? "0" : mapLocation.getLatitude();
+    var lon = mapLocation == null ? "0" : mapLocation.getLongitude();
 
     var fixedValues = new String[] { messageId, from, to, subject, date, time, //
         lat, lon, organization, taskNumber, dateTimePrepared, operationalPeriod, taskName, operatorName, stationId,
