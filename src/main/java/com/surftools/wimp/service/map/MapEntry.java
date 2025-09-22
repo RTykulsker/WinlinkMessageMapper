@@ -30,15 +30,8 @@ package com.surftools.wimp.service.map;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.feedback.FeedbackMessage;
-import com.surftools.wimp.practice.PracticeProcessor.Summary;
 
 public record MapEntry(String label, LatLongPair location, String message) {
-
-  public static MapEntry fromSummary(Summary summary) {
-    var content = "MessageId: " + summary.messageId + "\n" + "Feedback Count: " + summary.getFeedbackCount() + "\n"
-        + "Feedback: " + summary.getFeedback();
-    return new MapEntry(summary.from, summary.location, content);
-  }
 
   public static MapEntry fromSingleMessageFeedback(IWritableTable s) {
     var feedbackMessage = (FeedbackMessage) s;
