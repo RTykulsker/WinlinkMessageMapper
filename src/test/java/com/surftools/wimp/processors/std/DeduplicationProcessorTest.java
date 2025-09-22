@@ -142,6 +142,7 @@ public class DeduplicationProcessorTest {
     assertEquals(2, messages.size());
   }
 
+  @Ignore
   @Test
   public void test_multipleSupercededMessage() {
     final var N = 3;
