@@ -28,14 +28,11 @@ SOFTWARE.
 package com.surftools.wimp.processors.exercise.eto_2025;
 
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
-import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.DyfiMessage.DetailLevel;
@@ -59,26 +56,6 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
 
   protected static final String EXPECTED_DATE = "10/16/2025";
   protected static final String EXPECTED_TIME = "10:16";
-
-  static record Email(String from, String address) implements IWritableTable {
-    @Override
-    public String[] getHeaders() {
-      return new String[] { "Call", "Email" };
-    }
-
-    @Override
-    public String[] getValues() {
-      return new String[] { from, address };
-    }
-
-    @Override
-    public int compareTo(IWritableTable o) {
-      var other = (Email) o;
-      return address.compareTo(other.address());
-    }
-  };
-
-  private List<Email> emailAddresses = new ArrayList<Email>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -114,7 +91,6 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
       count(sts.test("Intensity should be at least 5", false));
     }
     getCounter("Version").increment(m.formVersion);
-    // getCounter("Feedback Count").increment(sts.getExplanations().size());
 
     if (feedbackLocation == null) {
       feedbackLocation = m.formLocation;
@@ -135,7 +111,6 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
   @Override
   public void postProcess() {
     super.postProcess();
-    writeTable("email.csv", new ArrayList<IWritableTable>(emailAddresses));
   }
 
 }
