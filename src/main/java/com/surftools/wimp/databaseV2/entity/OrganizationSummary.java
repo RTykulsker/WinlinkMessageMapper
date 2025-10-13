@@ -25,20 +25,43 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database.entity;
+package com.surftools.wimp.databaseV2.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-public record ExerciseId(LocalDate date, String name) implements Comparable<Object> {
+import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.databaseV2.IDatabaseService;
+
+/**
+ * one record per organization
+ */
+public record OrganizationSummary(//
+    int exerciseCount, //
+    int uniqueParticipants, //
+    int messageCount, //
+    LocalDate firstDate, //
+    LocalDate lastDate) implements IWritableTable {
 
   @Override
-  public int compareTo(Object other) {
-    var o = (ExerciseId) other;
-    var cmp = date.compareTo(o.date);
-    if (cmp != 0) {
-      return cmp;
-    }
-    return name.compareTo(o.name());
+  public int compareTo(IWritableTable other) {
+    var o = (OrganizationSummary) other;
+    return firstDate.compareTo(o.lastDate);
+  }
+
+  @Override
+  public String[] getHeaders() {
+    return new String[] { "# Exercises", "# Participants", "# Messages", //
+        "First Date", "Last Date", "Execution Date" };
+  }
+
+  @Override
+  public String[] getValues() {
+    final var DB_DTF = IDatabaseService.DB_DTF;
+    var now = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss").format(LocalDateTime.now());
+    return new String[] { s(exerciseCount), s(uniqueParticipants), s(messageCount), //
+        DB_DTF.format(firstDate), DB_DTF.format(lastDate), now };
   }
 
 }

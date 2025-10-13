@@ -25,23 +25,40 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database;
+package com.surftools.wimp.databaseV2;
 
 import java.util.List;
 
-import com.surftools.wimp.database.entity.ExerciseId;
-import com.surftools.wimp.database.entity.ParticipantDetail;
+import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.databaseV2.entity.ParticipantDetail;
+import com.surftools.wimp.utils.config.IConfigurationManager;
 
-/**
- * optimized for what I think will be the most common operation, updating list of ParticipantDetail entries
- */
-public interface IDatabaseEngine {
+public class DatabaseManager {
+  private IDatabaseEngine engine;
 
-  public void load();
+  public DatabaseManager(IConfigurationManager cm) {
 
-  public void store();
+    var engineTypeName = cm.getAsString(Key.DATABASE_ENGINE_TYPE, DatabaseEngineType.CSV.name());
+    var engineType = DatabaseEngineType.valueOf(engineTypeName);
+    if (engineType == null) {
+      throw new RuntimeException("Could not find engineType for: " + engineTypeName);
+    }
 
-  public void update(ExerciseId transactionKey, List<ParticipantDetail> list);
+    switch (engineType) {
+    case CSV:
+      engine = new CsvDatabaseEngine(cm);
+      break;
 
-  public List<ParticipantDetail> getAllParticipantDetails();
+    default:
+      throw new RuntimeException("Could not find database engine for " + engineType.name());
+    }
+  }
+
+  public List<ParticipantDetail> getParticipantAllDetails() {
+    return engine.getAllParticipantDetails();
+  }
+
+  public IDatabaseEngine getEngine() {
+    return engine;
+  }
 }

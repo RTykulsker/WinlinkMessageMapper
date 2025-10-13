@@ -1,4 +1,4 @@
-package com.surftools.wimp.database;
+package com.surftools.wimp.databaseV2;
 
 public enum DatabaseEngineType {
   CSV

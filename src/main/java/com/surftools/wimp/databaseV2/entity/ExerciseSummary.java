@@ -25,54 +25,34 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database.entity;
+package com.surftools.wimp.databaseV2.entity;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
-import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.database.IDatabaseService;
+import com.surftools.wimp.databaseV2.IDatabaseService;
 
 /**
- * one row per participant, per exercise
+ * one record per exercise
  */
-public record ParticipantDetail(//
-    String call, //
-    LatLongPair location, //
+public record ExerciseSummary(//
     ExerciseId exerciseId, //
-    int messageCount, //
-    String messageIds) implements IWritableTable {
-
-  static final DateTimeFormatter DB_DTF = IDatabaseService.DB_DTF;
-
-  public static ParticipantDetail make(String[] fields) {
-    return new ParticipantDetail(fields[0], new LatLongPair(fields[1], fields[2]),
-        new ExerciseId(LocalDate.parse(fields[3], DB_DTF), fields[4]), Integer.valueOf(fields[5]), fields[6]);
-  }
+    int totalMessages, //
+    int uniqueParticipants) implements IWritableTable {
 
   @Override
   public String[] getHeaders() {
-    return new String[] { "Call", "Latitude", "Longitude", //
-        "Date", "Name", //
-        "Message Count", "Message Ids" };
+    return new String[] { "Exercise Date", "Exercise Name", "Total Messages", "Unique Participants" };
   }
 
   @Override
   public String[] getValues() {
-    return new String[] { call, location.getLatitude(), location.getLongitude(), //
-        DB_DTF.format(exerciseId.date()), exerciseId.name(), //
-        s(messageCount), messageIds };
+    final var DB_DTF = IDatabaseService.DB_DTF;
+    return new String[] { DB_DTF.format(exerciseId.date()), exerciseId.name(), s(totalMessages),
+        s(uniqueParticipants) };
   }
 
   @Override
   public int compareTo(IWritableTable other) {
-    var o = (ParticipantDetail) other;
-    var cmp = call.compareTo(o.call);
-    if (cmp != 0) {
-      return cmp;
-    }
+    var o = (ExerciseSummary) other;
     return exerciseId.compareTo(o.exerciseId);
   }
-
 }

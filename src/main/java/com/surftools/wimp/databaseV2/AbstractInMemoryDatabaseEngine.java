@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database;
+package com.surftools.wimp.databaseV2;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,8 +35,8 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 
-import com.surftools.wimp.database.entity.ExerciseId;
-import com.surftools.wimp.database.entity.ParticipantDetail;
+import com.surftools.wimp.databaseV2.entity.ExerciseId;
+import com.surftools.wimp.databaseV2.entity.ParticipantDetail;
 
 /**
  * optimized for what I think will be most common operation, updating list of ParticipantDetail entries

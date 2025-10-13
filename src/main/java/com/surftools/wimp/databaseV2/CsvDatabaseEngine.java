@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database;
+package com.surftools.wimp.databaseV2;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.database.entity.ExerciseSummary;
-import com.surftools.wimp.database.entity.OrganizationSummary;
-import com.surftools.wimp.database.entity.ParticipantDetail;
-import com.surftools.wimp.database.entity.ParticipantSummary;
+import com.surftools.wimp.databaseV2.entity.ExerciseSummary;
+import com.surftools.wimp.databaseV2.entity.OrganizationSummary;
+import com.surftools.wimp.databaseV2.entity.ParticipantDetail;
+import com.surftools.wimp.databaseV2.entity.ParticipantSummary;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;

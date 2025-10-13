@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database;
+package com.surftools.wimp.databaseV2;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.wimp.database.entity.ParticipantDetail;
+import com.surftools.wimp.databaseV2.entity.ParticipantDetail;
 import com.surftools.wimp.service.IService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 

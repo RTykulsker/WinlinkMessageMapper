@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.configuration.Key;
-import com.surftools.wimp.database.CsvDatabaseEngine;
+import com.surftools.wimp.databaseV2.CsvDatabaseEngine;
 import com.surftools.wimp.processors.std.PipelineProcessor;
 import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 

@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database;
+package com.surftools.wimp.databaseV2;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;

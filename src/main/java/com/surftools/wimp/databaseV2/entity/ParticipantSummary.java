@@ -25,13 +25,13 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database.entity;
+package com.surftools.wimp.databaseV2.entity;
 
 import java.time.LocalDate;
 
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.database.IDatabaseService;
+import com.surftools.wimp.databaseV2.IDatabaseService;
 
 /**
  * one row per participant

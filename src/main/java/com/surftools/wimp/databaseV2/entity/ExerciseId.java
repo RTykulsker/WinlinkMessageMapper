@@ -25,34 +25,20 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.database.entity;
+package com.surftools.wimp.databaseV2.entity;
 
-import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.database.IDatabaseService;
+import java.time.LocalDate;
 
-/**
- * one record per exercise
- */
-public record ExerciseSummary(//
-    ExerciseId exerciseId, //
-    int totalMessages, //
-    int uniqueParticipants) implements IWritableTable {
+public record ExerciseId(LocalDate date, String name) implements Comparable<Object> {
 
   @Override
-  public String[] getHeaders() {
-    return new String[] { "Exercise Date", "Exercise Name", "Total Messages", "Unique Participants" };
+  public int compareTo(Object other) {
+    var o = (ExerciseId) other;
+    var cmp = date.compareTo(o.date);
+    if (cmp != 0) {
+      return cmp;
+    }
+    return name.compareTo(o.name());
   }
 
-  @Override
-  public String[] getValues() {
-    final var DB_DTF = IDatabaseService.DB_DTF;
-    return new String[] { DB_DTF.format(exerciseId.date()), exerciseId.name(), s(totalMessages),
-        s(uniqueParticipants) };
-  }
-
-  @Override
-  public int compareTo(IWritableTable other) {
-    var o = (ExerciseSummary) other;
-    return exerciseId.compareTo(o.exerciseId);
-  }
 }
