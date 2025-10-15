@@ -72,6 +72,7 @@ public class ETO_2025_10_16 extends SingleMessageFeedbackProcessor {
     count(sts.test("To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
     count(sts.test("Event Type must be: EXERCISE", !m.isRealEvent));
     count(sts.test("Exercise Id must be: #EV", "SHAKEOUT", m.exerciseId));
+    getCounter("ExerciseId").increment(m.exerciseId);
     count(sts.test("Did You feel it must be: Yes", m.isFelt));
     var response = m.response == null ? "Not specified" : m.response;
     count(sts.test("How did you respond must be: Dropped and covered", "duck", response));
