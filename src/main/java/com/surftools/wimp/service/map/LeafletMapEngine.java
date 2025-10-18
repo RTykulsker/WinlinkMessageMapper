@@ -54,8 +54,10 @@ public class LeafletMapEngine implements IMapService {
   public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries) {
     var sb = new StringBuilder();
 
+    var labelIndex = 0;
     for (var entry : entries) {
       var point = new String(POINT_TEMPLATE);
+      point = point.replaceAll("#LABEL_INDEX#", "label_" + labelIndex++);
       point = point.replaceAll("#LABEL#", entry.label());
       point = point.replace("#LATITUDE#", entry.location().getLatitude());
       point = point.replace("#LONGITUDE#", entry.location().getLongitude());
@@ -78,7 +80,7 @@ public class LeafletMapEngine implements IMapService {
   }
 
   private static final String POINT_TEMPLATE = """
-        const #LABEL# = L.marker([#LATITUDE#, #LONGITUDE#])
+        const #LABEL_INDEX# = L.marker([#LATITUDE#, #LONGITUDE#])
             .bindTooltip("#LABEL#",{permanent: true,direction: 'bottom', className: "my-labels"})
           .bindPopup('<b>#LABEL#</b><br/>#CONTENT#')
           .addTo(map);

@@ -62,6 +62,15 @@ public class LatLongPair {
   private static int precision = 4;
 
   public LatLongPair(String latitude, String longitude) {
+    // for Europeans
+    if (latitude != null && latitude.indexOf(".") == -1 && latitude.indexOf(",") != -1) {
+      latitude = latitude.replaceAll(",", ".");
+    }
+
+    if (longitude != null && longitude.indexOf(".") == -1 && longitude.indexOf(",") != -1) {
+      longitude = longitude.replaceAll(",", ".");
+    }
+
     this.latitude = latitude;
     this.longitude = longitude;
   }
