@@ -136,15 +136,15 @@ public class ETO_2024_11_09 extends MultiMessageFeedbackProcessor {
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    super.initialize(cm, mm, logger);
-
-    Ics309Message.setNDisplayActivities(6);
-
     // #MM must define acceptableMessages
     var acceptableMessageTypesList = List
         .of( // order matters, last location wins,
             MessageType.CHECK_IN, MessageType.FIELD_SITUATION, MessageType.PDF_ICS_309);
     acceptableMessageTypesSet.addAll(acceptableMessageTypesList);
+
+    super.initialize(cm, mm, logger);
+
+    Ics309Message.setNDisplayActivities(6);
   }
 
   @Override

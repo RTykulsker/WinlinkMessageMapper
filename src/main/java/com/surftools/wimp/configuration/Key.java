@@ -45,6 +45,9 @@ public enum Key implements IConfigurationKey {
   DATABASE_PATH("databasePath"), // path to input database summary files
   DATABASE_ENGINE_TYPE("databaseEngineType"), // what implements the database
 
+  PERSISTENCE_SQLITE_URL("persistence.sqlite.url"), //
+  PERSISTENCE_EXERCISE_TYPE("persistence.exercise.type"), //
+
   EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle
 
   ACKNOWLEDGEMENT_SPECIFICATION("acknowledgement.specification"), // what to acknowledge, expected vs unexpectd

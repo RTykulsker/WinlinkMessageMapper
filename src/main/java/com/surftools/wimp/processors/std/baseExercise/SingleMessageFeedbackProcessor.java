@@ -28,8 +28,11 @@ SOFTWARE.
 package com.surftools.wimp.processors.std.baseExercise;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +50,11 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.persistence.PersistenceManager;
+import com.surftools.wimp.persistence.dto.BulkInsertEntry;
+import com.surftools.wimp.persistence.dto.Event;
+import com.surftools.wimp.persistence.dto.Exercise;
+import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
 import com.surftools.wimp.service.map.MapEntry;
@@ -276,6 +284,31 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     var mapEntries = mIdFeedbackMap.values().stream().map(s -> MapEntry.fromSingleMessageFeedback(s)).toList();
     var mapService = new MapService(null, null);
     mapService.makeMap(outputPath, new MapHeader(cm.getAsString(Key.EXERCISE_NAME), ""), mapEntries);
+
+    var db = new PersistenceManager(cm);
+    var input = makeDbInput(cm, mIdFeedbackMap.values());
+    var dbResult = db.bulkInsert(input);
+    if (dbResult.status() == ReturnStatus.ERROR) {
+      logger.error("### database update failed: " + dbResult.content());
+    }
+  }
+
+  private BulkInsertEntry makeDbInput(IConfigurationManager cm, Collection<IWritableTable> values) {
+    var exerciseDate = LocalDate.parse(cm.getAsString(Key.EXERCISE_DATE), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    var exerciseType = cm.getAsString(Key.PERSISTENCE_EXERCISE_TYPE, "Training");
+    var exerciseName = cm.getAsString(Key.EXERCISE_NAME);
+    var exerciseDescription = cm.getAsString(Key.EXERCISE_DESCRIPTION);
+    Exercise exercise = new Exercise(-1, exerciseDate, exerciseType, exerciseName, exerciseDescription);
+    List<Event> events = new ArrayList<>();
+    for (var value : values) {
+      var fm = (FeedbackMessage) value;
+      var fr = fm.feedbackResult();
+      var em = fm.message();
+      var event = new Event(-1, -1, -1, fr.call(), new LatLongPair(fr.latitude(), fr.longitude()), //
+          fr.feedbackCount(), fr.feedback(), "{\"messageId\":\"" + em.messageId + "\"}");
+      events.add(event);
+    }
+    return new BulkInsertEntry(exercise, events);
   }
 
   protected void beforePostProcessing(MessageType messageType) {

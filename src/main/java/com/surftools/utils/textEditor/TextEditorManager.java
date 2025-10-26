@@ -36,6 +36,10 @@ public class TextEditorManager {
   private static final Logger logger = LoggerFactory.getLogger(TextEditorManager.class);
 
   public ITextEditor getTextEditor(String editorName) {
+    if (editorName == null || editorName.isBlank()) {
+      logger.debug("null editor name");
+      return null;
+    }
     final var PREFIXES = List.of("", "com.surftools.utils.textEditor.");
     final var SUFFIXES = List.of("TextEditor", "");
 
@@ -56,7 +60,7 @@ public class TextEditorManager {
         }
       } // end loop over suffixes
     } // end loop over prefixes
-    logger.error("Could not find an editor for: " + editorName);
+    logger.info("Could not find an editor for: " + editorName);
     return null;
   }
 
