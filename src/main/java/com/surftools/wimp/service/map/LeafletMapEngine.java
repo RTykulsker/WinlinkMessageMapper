@@ -30,6 +30,7 @@ package com.surftools.wimp.service.map;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,13 +55,20 @@ public class LeafletMapEngine implements IMapService {
   public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries) {
     var sb = new StringBuilder();
 
+    final Set<String> validColors = Set
+        .of("blue", "gold", "red", "green", "orange", "yellow", "violet", "grey", "black");
     var labelIndex = 0;
     for (var entry : entries) {
+      var color = entry.iconColor() == null ? "blue" : entry.iconColor();
+      if (!validColors.contains(color)) {
+        throw new RuntimeException("mapEntry: " + entry + ", invalid color: " + color);
+      }
       var point = new String(POINT_TEMPLATE);
       point = point.replaceAll("#LABEL_INDEX#", "label_" + labelIndex++);
       point = point.replaceAll("#LABEL#", entry.label());
       point = point.replace("#LATITUDE#", entry.location().getLatitude());
       point = point.replace("#LONGITUDE#", entry.location().getLongitude());
+      point = point.replace("#COLOR#", color);
       var message = entry.message().replaceAll("\n", "<br/>");
       point = point.replace("#CONTENT#", message);
       sb.append(point + "\n");
@@ -80,10 +88,10 @@ public class LeafletMapEngine implements IMapService {
   }
 
   private static final String POINT_TEMPLATE = """
-        const #LABEL_INDEX# = L.marker([#LATITUDE#, #LONGITUDE#])
-            .bindTooltip("#LABEL#",{permanent: true,direction: 'bottom', className: "my-labels"})
-          .bindPopup('<b>#LABEL#</b><br/>#CONTENT#')
-          .addTo(map);
+      const #LABEL_INDEX# = L.marker([#LATITUDE#, #LONGITUDE#],{icon: #COLOR#Icon})
+        .bindTooltip("#LABEL#",{permanent: true,direction: 'bottom', className: "my-labels"})
+        .bindPopup('<b>#LABEL#</b><br/>#CONTENT#')
+        .addTo(map);
       """;
 
   private static final String FILE_TEMPLATE = """
@@ -112,19 +120,31 @@ public class LeafletMapEngine implements IMapService {
           }
 
           .leaflet-container {
-            height: 1000px;
-            width: 2000px;
-            max-width: 100%;
-            max-height: 100%;
+              height: 1000px;
+              width: 2000px;
+              max-width: 100%;
+              max-height: 100%;
           }
 
           .leaflet-tooltip.my-labels {
-                  background-color: transparent;
-                  border: transparent;
-                  box-shadow: none;
-                  font-weight: bold;
-                  font-size: 14px;
-              }
+              background-color: transparent;
+              border: transparent;
+              box-shadow: none;
+              font-weight: bold;
+              font-size: 14px;
+          }
+
+          .leaflet-popup-tip {
+              background: rgba(0, 0, 0, 0) !important;
+              box-shadow: none !important;
+          }
+
+          .leaflet-tooltip-top:before,
+          .leaflet-tooltip-bottom:before,
+          .leaflet-tooltip-left:before,
+          .leaflet-tooltip-right:before {
+              border: none !important;
+          }
 
         </style>
 
@@ -135,6 +155,18 @@ public class LeafletMapEngine implements IMapService {
       <script>
 
         const map = L.map('map').setView([40, -91], 4);
+
+        const iconSizeX = [13,21];
+
+        const blueIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', iconSize: iconSizeX});
+        const goldIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png', iconSize: iconSizeX});
+        const redIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png', iconSize: iconSizeX});
+        const greenIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png', iconSize: iconSizeX});
+        const orangeIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png', iconSize: iconSizeX});
+        const yellowIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png', iconSize: iconSizeX});
+        const violetIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png', iconSize: iconSizeX});
+        const greyIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png', iconSize: iconSizeX});
+        const blackIcon = new L.Icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png', iconSize: iconSizeX});
 
         const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,

@@ -25,22 +25,49 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.map;
+package com.surftools.wimp.persistence;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.feedback.FeedbackMessage;
+import com.surftools.wimp.persistence.dto.Event;
+import com.surftools.wimp.persistence.dto.Exercise;
+import com.surftools.wimp.persistence.dto.User;
 
-public record MapEntry(String label, LatLongPair location, String message, String iconColor) {
+public class JoinedUser {
+  public User user;
+  public LatLongPair location;
+  public LocalDate dateJoined;
+  public LocalDate lastExerciseDate;
+  public List<Event> events;
+  public List<Exercise> exercises;
+  public Object context;
 
-  public static MapEntry fromSingleMessageFeedback(IWritableTable s) {
-    var feedbackMessage = (FeedbackMessage) s;
-    var feedbackResult = feedbackMessage.feedbackResult();
-    var location = new LatLongPair(feedbackResult.latitude(), feedbackResult.longitude());
-    var messageId = feedbackMessage.message().messageId;
-    var content = "MessageId: " + messageId + "\n" + "Feedback Count: " + feedbackResult.feedbackCount() + "\n"
-        + "Feedback: " + feedbackResult.feedback();
-    return new MapEntry(feedbackResult.call(), location, content, "blue");
+  public JoinedUser(User user) {
+    this.user = user;
+    this.location = null;
+    this.dateJoined = user.dateJoined();
+    this.lastExerciseDate = null;
+    this.events = new ArrayList<>();
+    this.exercises = new ArrayList<>();
+  }
+
+  public void update(Event event, Exercise exercise) {
+    if (lastExerciseDate == null || exercise.date().isAfter(lastExerciseDate)) {
+      lastExerciseDate = exercise.date();
+      location = event.location();
+    }
+
+    events.add(event);
+    exercises.add(exercise);
+  }
+
+  @Override
+  public void finalize() {
+    Collections.sort(exercises);
   }
 
 }

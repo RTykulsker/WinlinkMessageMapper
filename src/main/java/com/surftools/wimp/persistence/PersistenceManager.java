@@ -27,7 +27,10 @@ SOFTWARE.
 
 package com.surftools.wimp.persistence;
 
+import java.util.Set;
+
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
+import com.surftools.wimp.persistence.dto.Exercise;
 import com.surftools.wimp.persistence.dto.ReturnRecord;
 import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -36,10 +39,6 @@ public class PersistenceManager implements IPersistenceManager {
   protected IConfigurationManager cm;
   protected IPersistenceEngine engine;
   protected EngineType engineType;
-
-  public PersistenceManager() {
-
-  }
 
   public PersistenceManager(IConfigurationManager cm) {
     this.cm = cm;
@@ -53,8 +52,35 @@ public class PersistenceManager implements IPersistenceManager {
   }
 
   @Override
+  public ReturnRecord getAllExercises() {
+    return engine.getAllExercises();
+  }
+
+  @Override
+  public ReturnRecord getAllEvents() {
+    return engine.getAllEvents();
+  }
+
+  @Override
   public ReturnRecord bulkInsert(BulkInsertEntry input) {
     return engine.bulkInsert(input);
+  }
+
+  @Override
+  public ReturnRecord updateDateJoined() {
+    return engine.updateDateJoined();
+  }
+
+  @Override
+  public ReturnRecord getUsersMissingExercises(Set<String> requiredExerciseTypes, Exercise fromExercise,
+      int missLimit) {
+
+    return engine.getUsersMissingExercises(requiredExerciseTypes, fromExercise, missLimit);
+  }
+
+  @Override
+  public ReturnRecord getUsersHistory(Set<String> requiredExerciseTypes, Exercise fromExercise, boolean doPartition) {
+    return engine.getUsersHistory(requiredExerciseTypes, fromExercise, doPartition);
   }
 
   @Override
@@ -68,4 +94,5 @@ public class PersistenceManager implements IPersistenceManager {
     }
     return ret;
   }
+
 }

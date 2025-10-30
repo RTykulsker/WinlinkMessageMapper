@@ -46,6 +46,7 @@ public enum Key implements IConfigurationKey {
   DATABASE_ENGINE_TYPE("databaseEngineType"), // what implements the database
 
   PERSISTENCE_SQLITE_URL("persistence.sqlite.url"), //
+  PERSISTENCE_ALLOW_FUTURE("persistence.allow.future"), // allow/disallow future exercises into db
   PERSISTENCE_EXERCISE_TYPE("persistence.exercise.type"), //
 
   EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle

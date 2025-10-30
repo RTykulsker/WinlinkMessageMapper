@@ -32,9 +32,26 @@ import java.time.LocalDate;
 /**
  * Data Transfer Object (DTO) for Exercise
  */
-public record Exercise(long id, LocalDate date, String type, String name, String description) {
+public record Exercise(long id, LocalDate date, String type, String name, String description)
+    implements Comparable<Exercise> {
 
   public static Exercise updateExerciseId(Exercise old, long exerciseId) {
     return new Exercise(exerciseId, old.date, old.type, old.name, old.description);
+  }
+
+  @Override
+  public int compareTo(Exercise o) {
+    // descending date
+    var cmp = -date.compareTo(o.date);
+    if (cmp != 0) {
+      return cmp;
+    }
+
+    cmp = name.compareTo(o.name);
+    if (cmp != 0) {
+      return cmp;
+    }
+
+    return type.compareTo(o.type);
   }
 }

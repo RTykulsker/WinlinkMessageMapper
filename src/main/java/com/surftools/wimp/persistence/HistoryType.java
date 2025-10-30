@@ -25,22 +25,12 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.service.map;
+package com.surftools.wimp.persistence;
 
-import com.surftools.utils.location.LatLongPair;
-import com.surftools.wimp.core.IWritableTable;
-import com.surftools.wimp.feedback.FeedbackMessage;
-
-public record MapEntry(String label, LatLongPair location, String message, String iconColor) {
-
-  public static MapEntry fromSingleMessageFeedback(IWritableTable s) {
-    var feedbackMessage = (FeedbackMessage) s;
-    var feedbackResult = feedbackMessage.feedbackResult();
-    var location = new LatLongPair(feedbackResult.latitude(), feedbackResult.longitude());
-    var messageId = feedbackMessage.message().messageId;
-    var content = "MessageId: " + messageId + "\n" + "Feedback Count: " + feedbackResult.feedbackCount() + "\n"
-        + "Feedback: " + feedbackResult.feedback();
-    return new MapEntry(feedbackResult.call(), location, content, "blue");
-  }
-
+public enum HistoryType {
+  FIRST_TIME, // first participation is last exercise
+  ONE_AND_DONE, // only one participation, but not last exercise
+  HEAVY_HITTER, // participated in 90% or more of exercises
+  ALL_OTHER, // catch all bucket for the rest
+  FILTERED_OUT // no exercises match filters
 }
