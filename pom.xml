@@ -179,6 +179,7 @@
 					<extraJvmArguments>
 						-DLogback.debug=false
 						-Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener
+						--enable-native-access=ALL-UNNAMED
 					</extraJvmArguments>
 					<configurationSourceDirectory>src/main/resources/conf</configurationSourceDirectory>
 					<configurationDirectory>conf</configurationDirectory>
