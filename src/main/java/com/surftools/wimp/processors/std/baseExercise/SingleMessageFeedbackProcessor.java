@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import com.surftools.wimp.persistence.dto.BulkInsertEntry;
 import com.surftools.wimp.persistence.dto.Event;
 import com.surftools.wimp.persistence.dto.Exercise;
 import com.surftools.wimp.persistence.dto.ReturnStatus;
+import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
 import com.surftools.wimp.service.map.MapEntry;
@@ -259,6 +261,26 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
         feedbackMessage.message().mapLocation = newLocation;
         var newFeedbackMessage = feedbackMessage.updateLocation(newLocation);
         mIdFeedbackMap.put(messageId, newFeedbackMessage);
+      }
+    }
+
+    // feedback to folks who only send unexpected messages
+    // we already have a separate acknowledgement outbound message, so we just need feedback
+    var enableFeedbackForOnlyUnexpected = true;
+    if (enableFeedbackForOnlyUnexpected) {
+      @SuppressWarnings("unchecked")
+      var ackTextMap = (Map<String, String>) (mm.getContextObject(AcknowledgementProcessor.ACK_TEXT_MAP));
+      var allSenderSet = new HashSet<String>(ackTextMap.keySet());
+      var expectedSenderList = outboundMessageList.stream().map(m -> m.to()).toList();
+      allSenderSet.removeAll(expectedSenderList);
+      var unexpectedSenderSet = allSenderSet;
+      logger.info("Senders who only sent unexpected messages: " + String.join(",", unexpectedSenderSet));
+
+      var subject = outboundMessageSubject.substring(0, outboundMessageSubject.indexOf(","));
+      for (var sender : unexpectedSenderSet) {
+        var text = "no " + messageType.name() + " message received";
+        var outboundMessage = new OutboundMessage(outboundMessageSender, sender, subject, text, null);
+        outboundMessageList.add(outboundMessage);
       }
     }
 

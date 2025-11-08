@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ import com.surftools.wimp.persistence.dto.BulkInsertEntry;
 import com.surftools.wimp.persistence.dto.Event;
 import com.surftools.wimp.persistence.dto.Exercise;
 import com.surftools.wimp.persistence.dto.ReturnStatus;
+import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
 import com.surftools.wimp.service.outboundMessage.AbstractBaseOutboundMessageEngine;
@@ -347,6 +349,26 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     var list = new ArrayList<IWritableTable>((summaryMap.values()));
     WriteProcessor.writeTable(list, Path.of(outputPathName, "summary-feedback.csv"));
+
+    // feedback to folks who only send unexpected messages
+    // we already have a separate acknowledgement outbound message, so we just need feedback
+    var enableFeedbackForOnlyUnexpected = true;
+    if (enableFeedbackForOnlyUnexpected) {
+      @SuppressWarnings("unchecked")
+      var ackTextMap = (Map<String, String>) (mm.getContextObject(AcknowledgementProcessor.ACK_TEXT_MAP));
+      var allSenderSet = new HashSet<String>(ackTextMap.keySet());
+      var expectedSenderList = outboundMessageList.stream().map(m -> m.to()).toList();
+      allSenderSet.removeAll(expectedSenderList);
+      var unexpectedSenderSet = allSenderSet;
+      logger.info("Senders who only sent unexpected messages: " + String.join(",", unexpectedSenderSet));
+
+      var subject = cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);
+      for (var sender : unexpectedSenderSet) {
+        var text = "no " + messageType.name() + " message received";
+        var outboundMessage = new OutboundMessage(outboundMessageSender, sender, subject, text, null);
+        outboundMessageList.add(outboundMessage);
+      }
+    }
 
     if (doOutboundMessaging) {
       for (var summary : summaryMap.values()) {
