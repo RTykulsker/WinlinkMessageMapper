@@ -156,6 +156,30 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
       var r = new RejectionMessage(message, RejectType.CANT_PARSE_ETO_JSON, m.plainContent);
       rejects.add(r);
     } else {
+      count(sts.testIfPresent("1st Preferred Exercise should be present", q.pref1));
+      getCounter("1st Preferred Exercise").increment(q.pref1);
+      getCounter("Any Preferred Exercise").increment(q.pref1);
+
+      count(sts.testIfPresent("2nd Preferred Exercise should be present", q.pref2));
+      getCounter("2nd Preferred Exercise").increment(q.pref2);
+      getCounter("Any Preferred Exercise").increment(q.pref2);
+
+      count(sts.testIfPresent("3rd Preferred Exercise should be present", q.pref3));
+      getCounter("3rd Preferred Exercise").increment(q.pref3);
+      getCounter("Any Preferred Exercise").increment(q.pref3);
+
+      count(sts.testIfPresent("4th Preferred Exercise should be present", q.pref4));
+      getCounter("4th Preferred Exercise").increment(q.pref4);
+      getCounter("Any Preferred Exercise").increment(q.pref4);
+
+      getCounter("Other Preferred Exercise").increment(q.prefOther);
+
+      count(sts.testIfPresent("Data Presentation Style should be present", q.style));
+      getCounter("Data Presentation Style").increment(q.style);
+
+      count(sts.testIfPresent("Frequency should be present", q.level));
+      getCounter("Frequency").increment(q.level);
+
       questionnaires.add(q);
     }
   }
