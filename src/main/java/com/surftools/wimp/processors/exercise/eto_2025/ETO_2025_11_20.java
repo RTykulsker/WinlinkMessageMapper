@@ -40,7 +40,6 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.message.RejectionMessage;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -81,46 +80,38 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
           style, level };
     }
 
+    private static String parseBetween(String s, String begin, String end) {
+      return s.substring(s.indexOf(begin) + begin.length(), s.indexOf(end)).trim();
+    }
+
     @SuppressWarnings("unchecked")
-    public static Questionnaire parse(PlainMessage m) {
+    public static Questionnaire parse(ExportedMessage m) {
       var content = m.plainContent;
 
+      final var error = "Error parsing json from " + m.from + " in file: " + m.fileName + ", content: " + content
+          + ", error: ";
+
       final var BEGIN_JSON = "--- begin json ---";
-      if (!content.contains(BEGIN_JSON)) {
-        return null;
-      }
-
       final var END_JSON = "--- end json ---";
-      if (!content.contains(END_JSON)) {
-        return null;
-      }
-
       final var BEGIN_COMMENTS = "--- begin comments ---";
-      if (!content.contains(BEGIN_COMMENTS)) {
-        return null;
-      }
-
       final var END_COMMENTS = "--- end comments ---";
-      if (!content.contains(END_COMMENTS)) {
-        return null;
+      var tags = List.of(BEGIN_JSON, END_JSON, BEGIN_COMMENTS, END_COMMENTS);
+      for (var tag : tags) {
+        if (!content.contains(tag)) {
+          logger.error(error + " NO " + tag);
+          return null;
+        }
       }
 
-      String jsonString = content
-          .substring(content.indexOf(BEGIN_JSON) + BEGIN_JSON.length(), content.indexOf(END_JSON));
-      jsonString = jsonString.trim();
+      String jsonString = parseBetween(content, BEGIN_JSON, END_JSON);
       ObjectMapper mapper = new ObjectMapper();
       Map<String, String> map = null;
       try {
         map = mapper.readValue(jsonString, Map.class);
       } catch (Exception e) {
-        logger
-            .error("Exception parsing json from " + m.fileName + ", content: " + jsonString + ", error: "
-                + e.getMessage());
+        logger.error(error + e.getMessage());
         return null;
       }
-
-      var comments = content
-          .substring(content.indexOf(BEGIN_COMMENTS) + BEGIN_COMMENTS.length(), content.indexOf(END_COMMENTS));
 
       var dateTime = m.msgDateTime != null ? m.msgDateTime.toString() : "";
       var lat = m.msgLocation != null ? m.msgLocation.getLatitude() : "0.0";
@@ -132,11 +123,13 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
       var prefOther = map.getOrDefault("Other-Winlink-Form", "");
       var style = map.getOrDefault("Data-Presentation-Style", "");
       var level = map.getOrDefault("Participation-Level", "");
+      var comments = parseBetween(content, BEGIN_COMMENTS, END_COMMENTS);
       var questionnaire = new Questionnaire(m.from, m.messageId, dateTime, lat, lon, //
           pref1, pref2, pref3, pref4, prefOther, //
           style, level, comments);
       return questionnaire;
     }
+
   };
 
   @Override
@@ -150,12 +143,8 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    PlainMessage m = (PlainMessage) message;
-    var q = Questionnaire.parse(m);
-    if (q == null) {
-      var r = new RejectionMessage(message, RejectType.CANT_PARSE_ETO_JSON, m.plainContent);
-      rejects.add(r);
-    } else {
+    var q = Questionnaire.parse(message);
+    if (q != null) {
       count(sts.testIfPresent("1st Preferred Exercise should be present", q.pref1));
       getCounter("1st Preferred Exercise").increment(q.pref1);
       getCounter("Any Preferred Exercise").increment(q.pref1);
@@ -173,6 +162,7 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
       getCounter("Any Preferred Exercise").increment(q.pref4);
 
       getCounter("Other Preferred Exercise").increment(q.prefOther);
+      getCounter("Any Preferred Exercise").increment(q.prefOther);
 
       count(sts.testIfPresent("Data Presentation Style should be present", q.style));
       getCounter("Data Presentation Style").increment(q.style);
@@ -181,6 +171,9 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
       getCounter("Frequency").increment(q.level);
 
       questionnaires.add(q);
+    } else { // end if valid questionnaire
+      var reject = new RejectionMessage(message, RejectType.CANT_PARSE_ETO_JSON, message.plainContent);
+      rejects.add(reject);
     }
   }
 
