@@ -65,8 +65,7 @@ public class JoinedUser {
     exercises.add(exercise);
   }
 
-  @Override
-  public void finalize() {
+  public void finish() {
     Collections.sort(exercises);
   }
 

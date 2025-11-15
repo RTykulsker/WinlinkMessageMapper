@@ -90,7 +90,7 @@ public abstract class BaseQueryEngine implements IPersistenceEngine {
     }
 
     for (var entry : allJoinMap.values()) {
-      entry.finalize();
+      entry.finish();
     }
 
     var tmpExercises = new ArrayList<Exercise>(idExerciseMap.values());
