@@ -270,17 +270,19 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     if (enableFeedbackForOnlyUnexpected) {
       @SuppressWarnings("unchecked")
       var ackTextMap = (Map<String, String>) (mm.getContextObject(AcknowledgementProcessor.ACK_TEXT_MAP));
-      var allSenderSet = new HashSet<String>(ackTextMap.keySet());
-      var expectedSenderList = outboundMessageList.stream().map(m -> m.to()).toList();
-      allSenderSet.removeAll(expectedSenderList);
-      var unexpectedSenderSet = allSenderSet;
-      logger.info("Senders who only sent unexpected messages: " + String.join(",", unexpectedSenderSet));
+      if (ackTextMap != null) {
+        var allSenderSet = new HashSet<String>(ackTextMap.keySet());
+        var expectedSenderList = outboundMessageList.stream().map(m -> m.to()).toList();
+        allSenderSet.removeAll(expectedSenderList);
+        var unexpectedSenderSet = allSenderSet;
+        logger.info("Senders who only sent unexpected messages: " + String.join(",", unexpectedSenderSet));
 
-      var subject = outboundMessageSubject.substring(0, outboundMessageSubject.indexOf(","));
-      for (var sender : unexpectedSenderSet) {
-        var text = "no " + messageType.name() + " message received";
-        var outboundMessage = new OutboundMessage(outboundMessageSender, sender, subject, text, null);
-        outboundMessageList.add(outboundMessage);
+        var subject = outboundMessageSubject.substring(0, outboundMessageSubject.indexOf(","));
+        for (var sender : unexpectedSenderSet) {
+          var text = "no " + messageType.name() + " message received";
+          var outboundMessage = new OutboundMessage(outboundMessageSender, sender, subject, text, null);
+          outboundMessageList.add(outboundMessage);
+        }
       }
     }
 

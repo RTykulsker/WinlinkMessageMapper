@@ -161,8 +161,9 @@ public class ETO_2025_11_20 extends SingleMessageFeedbackProcessor {
       getCounter("4th Preferred Exercise").increment(q.pref4);
       getCounter("Any Preferred Exercise").increment(q.pref4);
 
-      getCounter("Other Preferred Exercise").increment(q.prefOther);
-      getCounter("Any Preferred Exercise").increment(q.prefOther);
+      if (q.prefOther.length() > 0) {
+        getCounter("Other Preferred Exercise").increment(q.prefOther);
+      }
 
       count(sts.testIfPresent("Data Presentation Style should be present", q.style));
       getCounter("Data Presentation Style").increment(q.style);
