@@ -161,7 +161,8 @@ public abstract class BaseQueryEngine implements IPersistenceEngine {
 
     var candidateJoins = new ArrayList<JoinedUser>();
     for (var join : joinMap.values()) {
-      if (join.exercises.get(0).id() == firstFilteredExercise.id()) {
+      var joinExerciseIds = new HashSet<Long>(join.exercises.stream().map(e -> e.id()).toList());
+      if (joinExerciseIds.contains(firstFilteredExercise.id())) {
         logger.debug("skipping call: " + join.user.call() + " because they participated in last exercise");
         continue;
       } else {
