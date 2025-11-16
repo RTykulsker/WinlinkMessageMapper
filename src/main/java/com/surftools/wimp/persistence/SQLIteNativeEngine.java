@@ -164,9 +164,9 @@ public class SQLIteNativeEngine extends BaseQueryEngine {
       var exerciseDate = input.exercise().date();
       var nowDate = LocalDate.now();
       if (exerciseDate.isAfter(nowDate)) {
-        logger
-            .warn("### Skipping bulkInsert because Exercise date: " + exerciseDate //
-                + " is in future of now: " + nowDate);
+        var message = "skipping bulkInsert because Exercise date: " + exerciseDate + " is in future of now: " + nowDate;
+        logger.warn("### " + message);
+        return new ReturnRecord(ReturnStatus.ERROR, message, nowDate);
       }
     }
 
