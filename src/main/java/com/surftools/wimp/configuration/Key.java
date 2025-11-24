@@ -93,7 +93,8 @@ public enum Key implements IConfigurationKey {
   EXERCISE_WINDOW_CLOSE("exerciseWindowClose"), //
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
-  SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, list ETO-BK
+  SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, like ETO-BK
+  UNEXPECTED_DESTINATIONS("unexpectedDestinations"), // comma-delimited list, like ETO-PRACTICE
 
   MAX_DAYS_BEFORE_LATE("maxDaysBeforeLate"), // for warning about late messages
 

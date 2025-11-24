@@ -125,7 +125,7 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
     text = text.replaceAll("#SOURCE#", sender);// or source to allow editing in WE
     text = text.replaceAll("#SENDER#", sender);
     text = text.replaceAll("#SUBJECT#", m.subject());
-    text = text.replaceAll("#BODY#", body);
+    text = text.replace("#BODY#", body);
     text = text.replaceAll("#TO#", m.to());
     text = text.replaceAll("#MESSAGE_TIME#", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm").format(now));
     text = text
@@ -144,7 +144,7 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
     text = text.replaceAll("#SOURCE#", source);
     text = text
         .replaceAll("#EXPORT_DATETIME#", DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(UtcDateTime.ofNow()));
-    text = text.replaceAll("#MESSAGES#", allMessages.toString());
+    text = text.replace("#MESSAGES#", allMessages.toString());
     text = text.replaceAll("\n", "\r\n");
 
     var aFileName = fileName == null ? "all-winlinkExpressOutboundMessages.xml" : fileName;

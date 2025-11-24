@@ -357,14 +357,15 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       @SuppressWarnings("unchecked")
       var ackTextMap = (Map<String, String>) (mm.getContextObject(AcknowledgementProcessor.ACK_TEXT_MAP));
       var allSenderSet = new HashSet<String>(ackTextMap.keySet());
-      var expectedSenderList = outboundMessageList.stream().map(m -> m.to()).toList();
+      var expectedSenderList = new ArrayList<String>(summaryMap.keySet());
       allSenderSet.removeAll(expectedSenderList);
       var unexpectedSenderSet = allSenderSet;
       logger.info("Senders who only sent unexpected messages: " + String.join(",", unexpectedSenderSet));
 
       var subject = cm.getAsString(Key.OUTBOUND_MESSAGE_SUBJECT);
+      var typeNames = String.join(", ", acceptableMessageTypesSet.stream().map(s -> s.name()).toList());
+      var text = "no " + typeNames + " messages received";
       for (var sender : unexpectedSenderSet) {
-        var text = "no " + messageType.name() + " message received";
         var outboundMessage = new OutboundMessage(outboundMessageSender, sender, subject, text, null);
         outboundMessageList.add(outboundMessage);
       }

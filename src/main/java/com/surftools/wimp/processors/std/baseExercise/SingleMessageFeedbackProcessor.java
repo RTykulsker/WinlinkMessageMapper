@@ -29,7 +29,6 @@ package com.surftools.wimp.processors.std.baseExercise;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,24 +101,6 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
           + String.join(",", expectedMessageTypes.stream().map(s -> s.toString()).toList()));
     }
     messageType = expectedMessageTypes.iterator().next();
-
-    var windowOpenString = cm.getAsString(Key.EXERCISE_WINDOW_OPEN);
-    if (windowOpenString != null) {
-      windowOpenDT = LocalDateTime.from(DTF.parse(windowOpenString));
-    }
-
-    var windowCloseString = cm.getAsString(Key.EXERCISE_WINDOW_CLOSE);
-    if (windowCloseString != null) {
-      windowCloseDT = LocalDateTime.from(DTF.parse(windowCloseString));
-    }
-
-    var secondaryDestinationsString = cm.getAsString(Key.SECONDARY_DESTINATIONS);
-    if (secondaryDestinationsString != null) {
-      var fields = secondaryDestinationsString.split(",");
-      for (var field : fields) {
-        secondaryDestinations.add(field.toUpperCase());
-      }
-    }
   }
 
   @Override

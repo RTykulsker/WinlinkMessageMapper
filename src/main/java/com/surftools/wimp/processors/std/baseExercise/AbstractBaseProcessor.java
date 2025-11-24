@@ -436,7 +436,25 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
            """;
 
-    final var texts = new String[] { null, text_2023, text_2024 };
+    final String text_2025 = """
+
+        -----------------------------------------------------------------------------------------------------
+
+        This year, we've got three "asks" of you.
+
+        First, if you enjoy our monthly training exercises, why don't you tell a fellow ham and get them Winlinking to us too. The more, the merrier!
+
+        Second, if you haven't heard, we'll be starting a new trial of weekly practice exercises. Details on emcomm-training.org/Weekly_Practice.html
+
+        Finally, ETO needs financial sponsors to continue hosting our services. You can learn more on emcomm-training.org/Donate.html
+
+        EmComm Training Organization is a nonprofit, tax-exempt charitable organization
+        (tax ID number 92-2282844) under Section 501(c)(3) of the Internal Revenue Code.
+        Donations are tax-deductible as allowed by law.
+
+         """;
+
+    final var texts = new String[] { null, text_2023, text_2024, text_2025 };
     var text = texts[textId];
     var result = text.replaceAll("\\$YEAR", String.valueOf(year));
     return result;

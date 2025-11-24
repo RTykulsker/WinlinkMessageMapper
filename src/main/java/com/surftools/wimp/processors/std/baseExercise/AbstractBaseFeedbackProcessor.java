@@ -66,6 +66,7 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   protected String sender;
   protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
   protected Set<String> secondaryDestinations = new LinkedHashSet<>();
+  protected Set<String> unexpectedDestinations = new LinkedHashSet<>();
 
   public int ppMessageCount = 0;
   public int ppParticipantCount = 0;
@@ -94,7 +95,15 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
     if (secondaryDestinationsString != null) {
       var fields = secondaryDestinationsString.split(",");
       for (var field : fields) {
-        secondaryDestinations.add(field.toUpperCase());
+        secondaryDestinations.add(field.toUpperCase().trim());
+      }
+    }
+
+    var unexpectedDestinationsString = cm.getAsString(Key.UNEXPECTED_DESTINATIONS);
+    if (unexpectedDestinationsString != null) {
+      var fields = unexpectedDestinationsString.split(",");
+      for (var field : fields) {
+        unexpectedDestinations.add(field.toUpperCase().trim());
       }
     }
   }
@@ -120,13 +129,20 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
 
   protected void beginCommonProcessing(ExportedMessage message) {
 
+    var addressList = (message.toList + "," + message.ccList).toUpperCase();
+
     if (secondaryDestinations.size() > 0) {
       if (messageTypesRequiringSecondaryAddress.size() == 0
           || messageTypesRequiringSecondaryAddress.contains(message.getMessageType())) {
-        var addressList = (message.toList + "," + message.ccList).toUpperCase();
         for (var ev : secondaryDestinations) {
           count(sts.test("To and/or CC addresses should contain " + ev, addressList.contains(ev)));
         }
+      }
+    }
+
+    if (unexpectedDestinations.size() > 0) {
+      for (var ev : unexpectedDestinations) {
+        count(sts.test("To and/or CC addresses should NOT contain " + ev, !addressList.contains(ev)));
       }
     }
 
