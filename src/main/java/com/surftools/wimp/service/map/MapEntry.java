@@ -30,6 +30,7 @@ package com.surftools.wimp.service.map;
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.feedback.FeedbackMessage;
+import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor.BaseSummary;
 
 public record MapEntry(String label, LatLongPair location, String message, String iconColor) {
 
@@ -41,6 +42,15 @@ public record MapEntry(String label, LatLongPair location, String message, Strin
     var content = "MessageId: " + messageId + "\n" + "Feedback Count: " + feedbackResult.feedbackCount() + "\n"
         + "Feedback: " + feedbackResult.feedback();
     return new MapEntry(feedbackResult.call(), location, content, "blue");
+  }
+
+  public static MapEntry fromMultiMessageFeedback(IWritableTable s) {
+    var e = (BaseSummary) s;
+    var location = e.location;
+    var messageIds = e.messageIds;
+    var content = (messageIds == null) ? "" : "MessageIds: " + messageIds + "\n";
+    content = content + "Feedback Count: " + e.getFeedbackCountString() + "\n" + "Feedback: " + e.getFeedback();
+    return new MapEntry(e.from, location, content, "blue");
   }
 
 }

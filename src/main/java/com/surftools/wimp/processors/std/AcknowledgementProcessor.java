@@ -177,7 +177,8 @@ public class AcknowledgementProcessor extends AbstractBaseProcessor {
         outboundAcknowledgementList.add(outboundMessage);
       }
 
-      var fileName = "acknowledgment-winlinkExpressOutboundMessages.xml";
+      var dateString = cm.getAsString(Key.EXERCISE_DATE);
+      var fileName = dateString + "-Winlink-Import-Acknowledgement-Messages.xml";
       var service = (OutboundMessageService) null;
       service = new OutboundMessageService(cm, fileName);
       service.sendAll(outboundAcknowledgementList);

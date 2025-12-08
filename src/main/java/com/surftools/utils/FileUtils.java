@@ -27,9 +27,15 @@ SOFTWARE.
 
 package com.surftools.utils;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 /**
  * static methods to support basic file operations
@@ -120,6 +126,43 @@ public class FileUtils {
 
     String suffix = fileName.substring(index + 1).toUpperCase();
     return suffix;
+  }
+
+  /**
+   * recursively copy directory
+   *
+   * @param sourceDir
+   * @param targetDir
+   */
+  public static void copyDirectory(Path sourceDir, Path targetDir) {
+    try {
+      Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+          Path targetPath = targetDir.resolve(sourceDir.relativize(dir));
+          if (!Files.exists(targetPath)) {
+            Files.createDirectories(targetPath);
+          }
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.copy(file, targetDir.resolve(sourceDir.relativize(file)), REPLACE_EXISTING);
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+          // Handle errors during file visits, e.g., print error and continue or terminate
+          System.err.println("Failed to visit file: " + file + " - " + exc.getMessage());
+          return FileVisitResult.CONTINUE; // or FileVisitResult.TERMINATE;
+        }
+      });
+    } catch (IOException e) {
+      throw new RuntimeException(
+          "exception copying directory: " + sourceDir.toString() + ", " + e.getLocalizedMessage());
+    }
   }
 
 }

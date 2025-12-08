@@ -48,6 +48,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.feedback.StandardSummary;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.persistence.PersistenceManager;
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
@@ -57,6 +58,9 @@ import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
+import com.surftools.wimp.service.map.MapEntry;
+import com.surftools.wimp.service.map.MapHeader;
+import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.service.outboundMessage.AbstractBaseOutboundMessageEngine;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
@@ -77,7 +81,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
   };
 
   // concrete, so we can initialize
-  protected class BaseSummary implements ISummary {
+  public class BaseSummary implements ISummary {
     public String from;
     public String to;
     public LatLongPair location;
@@ -85,6 +89,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     public List<String> explanations; // doesn't get published, but interpreted
     public int perfectMessageCount;
     public static String perfectMessageText = "Perfect messages!";
+    public String messageIds;
 
     @Override
     public int compareTo(IWritableTable o) {
@@ -99,19 +104,34 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       return list.toArray(new String[list.size()]);
     }
 
+    public String getFeedbackCountString() {
+      var feedbackCount = "0";
+
+      if (explanations.size() > 0) {
+        feedbackCount = String.valueOf(explanations.size() - perfectMessageCount);
+      }
+
+      return feedbackCount;
+    }
+
+    public String getFeedback() {
+      var feedback = perfectMessageText;
+
+      if (explanations.size() > 0) {
+        feedback = String.join("\n", explanations);
+      }
+
+      return feedback;
+    }
+
     @Override
     public String[] getValues() {
       var latitude = location == null ? "0.0" : location.getLatitude();
       var longitude = location == null ? "0.0" : location.getLongitude();
       var date = dateTime == null ? "" : dateTime.toLocalDate().toString();
       var time = dateTime == null ? "" : dateTime.toLocalTime().toString();
-      var feedbackCount = "0";
-      var feedback = perfectMessageText;
-
-      if (explanations.size() > 0) {
-        feedbackCount = String.valueOf(explanations.size() - perfectMessageCount);
-        feedback = String.join("\n", explanations);
-      }
+      var feedbackCount = getFeedbackCountString();
+      var feedback = getFeedback();
 
       var nsTo = to == null ? "(null)" : to;
 
@@ -389,6 +409,14 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     var chartService = ChartServiceFactory.getChartService(cm);
     chartService.initialize(cm, counterMap, null);
     chartService.makeCharts();
+
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapEntries = summaryMap.values().stream().map(s -> MapEntry.fromMultiMessageFeedback(s)).toList();
+    var mapService = new MapService(null, null);
+    mapService.makeMap(outputPath, new MapHeader(dateString + "-map", ""), mapEntries);
+
+    var standardSummaries = summaryMap.values().stream().map(s -> StandardSummary.fromMultiMessageFeedback(s)).toList();
+    writeTable(dateString + "-standard-summary.csv", new ArrayList<IWritableTable>(standardSummaries));
 
     var db = new PersistenceManager(cm);
     var input = makeDbInput(cm, summaryMap.values());

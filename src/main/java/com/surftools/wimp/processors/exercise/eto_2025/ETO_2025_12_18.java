@@ -207,6 +207,7 @@ public class ETO_2025_12_18 extends MultiMessageFeedbackProcessor {
     var allRequests = String.join("\n", lineItems.stream().map(a -> a.item()).filter(Objects::nonNull).toList());
     summary.allRequests = allRequests;
     summary.ics213RRMessage = m;
+    summary.messageIds = m.messageId;
   }
 
   private void handle_Ics214Message(Summary summary, Ics214Message m) {
@@ -300,6 +301,7 @@ public class ETO_2025_12_18 extends MultiMessageFeedbackProcessor {
     summary.allActivities = allActivities;
     summary.activityCount = validActivityCount;
     summary.isNice = isNice;
+    summary.messageIds += "," + m.messageId;
   }
 
   @Override

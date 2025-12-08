@@ -49,6 +49,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
+import com.surftools.wimp.feedback.StandardSummary;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.persistence.PersistenceManager;
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
@@ -286,9 +287,17 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     chartService.initialize(cm, counterMap, messageType);
     chartService.makeCharts();
 
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
     var mapEntries = mIdFeedbackMap.values().stream().map(s -> MapEntry.fromSingleMessageFeedback(s)).toList();
     var mapService = new MapService(null, null);
-    mapService.makeMap(outputPath, new MapHeader(cm.getAsString(Key.EXERCISE_NAME), ""), mapEntries);
+    mapService.makeMap(outputPath, new MapHeader(dateString + "-map", ""), mapEntries);
+
+    var standardSummaries = mIdFeedbackMap
+        .values()
+          .stream()
+          .map(s -> StandardSummary.fromSingleMessageFeedback(s))
+          .toList();
+    writeTable(dateString + "-standard-summary.csv", new ArrayList<IWritableTable>(standardSummaries));
 
     var db = new PersistenceManager(cm);
     var input = makeDbInput(cm, mIdFeedbackMap.values());

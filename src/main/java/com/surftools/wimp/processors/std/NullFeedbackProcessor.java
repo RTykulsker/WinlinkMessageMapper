@@ -25,7 +25,7 @@ SOFTWARE.
 
 */
 
-package com.surftools.wimp.processors.exercise.eto_2025;
+package com.surftools.wimp.processors.std;
 
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;

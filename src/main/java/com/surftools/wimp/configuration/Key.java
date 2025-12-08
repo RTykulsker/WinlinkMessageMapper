@@ -52,6 +52,8 @@ public enum Key implements IConfigurationKey {
 
   EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle
 
+  ENABLE_FINALIZE("enableFinalize"), // copy outputDir, etc
+
   ACKNOWLEDGEMENT_SPECIFICATION("acknowledgement.specification"), // what to acknowledge, expected vs unexpectd
   ACKNOWLEDGEMENT_EXPECTED("acknowledgement.expected"), // content for expected messages
   ACKNOWLEDGEMENT_UNEXPECTED("acknowledgement.unexpected"), // content for unexpected messages

@@ -67,7 +67,7 @@ public class PipelineProcessor extends AbstractBaseProcessor {
 
     var stdin = cm.getAsString(Key.PIPELINE_STDIN, "Read,Classifier,Acknowledgement,Deduplication,Filter");
     var main = cm.getAsString(Key.PIPELINE_MAIN, ""); // exercise-specific processors go here!
-    var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,FormData,Summary");
+    var stdout = cm.getAsString(Key.PIPELINE_STDOUT, "Write,MissingDestination,FormData,Summary,Cleanup");
     var processorString = String.join(",", List.of(stdin, main, stdout));
     var processorNames = Arrays.stream(processorString.split(",")).filter(s -> isValidProcessorName(s)).toList();
     processors = processorNames.stream().map(pn -> findProcessor(pn)).toList();
