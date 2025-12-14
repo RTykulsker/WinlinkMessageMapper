@@ -75,9 +75,9 @@ public class WriteProcessor extends AbstractBaseProcessor {
     }
 
     @Override
-    public int compareTo(IWritableTable o) {
-      var other = (ExportedMessage) o;
-      return m.compareTo(other);
+    public int compareTo(IWritableTable writable) {
+      var o = (TypedMessage) writable;
+      return m.compareTo(o.m);
     }
 
     @Override

@@ -281,7 +281,7 @@ public class ETO_2025_12_18 extends MultiMessageFeedbackProcessor {
     final int NUMBER_OF_ACTIVITIES_TO_BE_NICE = 2;
     var isNice = validActivityCount >= NUMBER_OF_ACTIVITIES_TO_BE_NICE;
     count(sts
-        .test("Number of Notable Activites should be at least " + NUMBER_OF_ACTIVITIES_TO_BE_NICE, isNice,
+        .test("Number of Notable Activities should be at least " + NUMBER_OF_ACTIVITIES_TO_BE_NICE, isNice,
             " not: " + String.valueOf(validActivityCount)));
 
     var expectedPreparedBy = selfResource.name() + "/" + selfResource.icsPosition();
