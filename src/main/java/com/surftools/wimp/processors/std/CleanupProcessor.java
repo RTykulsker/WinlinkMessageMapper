@@ -84,19 +84,19 @@ public class CleanupProcessor extends AbstractBaseProcessor {
           Files.move(outputFile.toPath(), Path.of(unusedDirName, name), StandardCopyOption.ATOMIC_MOVE);
           logger.info("moved output/" + name + " to usused/");
         } catch (Exception e) {
-          logger.error("Exception moving file: " + outputFile.toString(), e.getMessage());
+          logger.error("Exception moving file: " + outputFile.toString() + ", " + e.getMessage());
         }
       }
     } // end loop over files
 
-    // copy allFeedback.txt to usused
-    var allFeedbackSource = Path.of(pathName.toString(), "allFeedback.txt");
+    // copy allFeedback.txt to unused
+    var allFeedbackSource = Path.of(pathName, "allFeedback.txt");
     var allFeedbackDestination = Path.of(unusedDirName, "allFeedback.txt");
     try {
       Files.copy(allFeedbackSource, allFeedbackDestination, StandardCopyOption.REPLACE_EXISTING);
       logger.info("copied allFeedback.txt to unused/");
     } catch (Exception e) {
-      logger.error("Exception copying file: " + allFeedbackSource.toString(), e.getMessage());
+      logger.error("Exception copying file: " + allFeedbackSource.toString() + ", " + e.getMessage());
     }
 
     // rename chart, map and Winlink import files
@@ -113,7 +113,7 @@ public class CleanupProcessor extends AbstractBaseProcessor {
           outputFile.renameTo(newFile);
           logger.info("renamed chart file to: " + newFile.getName());
         } catch (Exception e) {
-          logger.error("Exception renaming file: " + name, e.getMessage());
+          logger.error("Exception renaming file: " + name + ", " + e.getMessage());
         }
       }
 
@@ -124,7 +124,7 @@ public class CleanupProcessor extends AbstractBaseProcessor {
           outputFile.renameTo(newFile);
           logger.info("renamed map file to: " + newFile.getName());
         } catch (Exception e) {
-          logger.error("Exception renaming file: " + name, e.getMessage());
+          logger.error("Exception renaming file: " + name + ", " + e.getMessage());
         }
       }
 
@@ -134,7 +134,7 @@ public class CleanupProcessor extends AbstractBaseProcessor {
           outputFile.renameTo(newFile);
           logger.info("renamed Winlink import file to: " + newFile.getName());
         } catch (Exception e) {
-          logger.error("Exception renaming file: " + name, e.getMessage());
+          logger.error("Exception renaming file: " + name + ", " + e.getMessage());
         }
       }
     } // end rename loop over files
@@ -147,6 +147,16 @@ public class CleanupProcessor extends AbstractBaseProcessor {
       var finalPath = Path.of(outputPath + "-FINAL-" + timestamp);
       FileUtils.copyDirectory(outputPath, finalPath);
       logger.info("copied output dir to: " + finalPath.toString());
+    }
+
+    // link log file
+    var logSource = Path.of(cm.getAsString(Key.LOG_PATH), "stdout.txt");
+    var logTarget = Path.of(outputPathName, dateString + "-stdout.txt");
+    try {
+      Files.createLink(logTarget, logSource);
+      logger.info("copied stdout.txt to output/");
+    } catch (Exception e) {
+      logger.error("Exception copying file: " + logSource.toString() + ", " + e.getMessage());
     }
 
   } // end postProcess

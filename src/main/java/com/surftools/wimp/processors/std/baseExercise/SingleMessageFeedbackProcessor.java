@@ -37,6 +37,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 
@@ -290,7 +292,49 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     var dateString = cm.getAsString(Key.EXERCISE_DATE);
     var mapEntries = mIdFeedbackMap.values().stream().map(s -> MapEntry.fromSingleMessageFeedback(s)).toList();
     var mapService = new MapService(null, null);
-    mapService.makeMap(outputPath, new MapHeader(dateString + "-map", ""), mapEntries);
+    mapService.makeMap(outputPath, new MapHeader(dateString + "-map-feedbackCount", ""), mapEntries);
+
+    // now a map colorized by to address, this is for clearinghouses, etc
+    var doClearinghouseMap = true;
+    if (doClearinghouseMap) {
+      var expectedDestinationsString = cm.getAsString(Key.EXPECTED_DESTINATIONS);
+      var expectedDestinationsSet = Stream.of(expectedDestinationsString.split(",")).collect(Collectors.toSet());
+      var toColorMap = new HashMap<String, String>();
+      var validColorIndex = 0;
+      var invalidIconColor = mapService.getInvalidIconColor();
+      var validColorList = new ArrayList<String>(mapService.getValidIconColors());
+
+      var fromToMap = new HashMap<String, String>();
+      for (var writeable : mIdFeedbackMap.values()) {
+        var feedbackMessage = (FeedbackMessage) writeable;
+        var message = feedbackMessage.message();
+        var from = message.from;
+        var to = message.to;
+        fromToMap.put(from, to);
+      }
+
+      var newMapEntries = new ArrayList<MapEntry>(mapEntries.size());
+      for (var mapEntry : mapEntries) {
+        var to = fromToMap.get(mapEntry.label());
+        var iconColor = invalidIconColor;
+        var isValid = expectedDestinationsSet.contains(to);
+        if (isValid) {
+          iconColor = toColorMap.get(to);
+          if (iconColor == null) {
+            iconColor = validColorList.get(validColorIndex);
+            ++validColorIndex;
+            if (validColorIndex == validColorList.size()) {
+              validColorIndex = 0;
+            }
+            toColorMap.put(to, iconColor);
+          }
+        } // end if isValid destination
+        var newMessage = "To: " + to + "\n" + mapEntry.message();
+        mapEntry = new MapEntry(mapEntry.label(), mapEntry.location(), newMessage, iconColor);
+        newMapEntries.add(mapEntry);
+      } // end loop over mapEntries
+      mapService.makeMap(outputPath, new MapHeader(dateString + "-map-byClearinghouse", ""), newMapEntries);
+    }
 
     var standardSummaries = mIdFeedbackMap
         .values()

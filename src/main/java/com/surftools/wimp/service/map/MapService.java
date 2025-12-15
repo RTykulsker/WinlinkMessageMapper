@@ -29,11 +29,12 @@ package com.surftools.wimp.service.map;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
-public class MapService {
+public class MapService implements IMapService {
 
   private IMapService engine;
 
@@ -51,7 +52,18 @@ public class MapService {
     }
   }
 
+  @Override
   public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries) {
     engine.makeMap(outputPath, mapHeader, entries);
+  }
+
+  @Override
+  public Set<String> getValidIconColors() {
+    return engine.getValidIconColors();
+  }
+
+  @Override
+  public String getInvalidIconColor() {
+    return engine.getInvalidIconColor();
   }
 }

@@ -41,6 +41,7 @@ public enum Key implements IConfigurationKey {
   NEW_DATABASE_PATH("newDatabasePath"), // path to input database summary files
   OUTPUT_PATH("output.path"), // to override as subdir of path
   OUTPUT_PATH_CLEAR_ON_START("output.path.clearOnStart"), // if true contents of outputDir cleared
+  LOG_PATH("log.path"), // where log files are placed
 
   DATABASE_PATH("databasePath"), // path to input database summary files
   DATABASE_ENGINE_TYPE("databaseEngineType"), // what implements the database

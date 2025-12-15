@@ -46,6 +46,12 @@ public class LeafletMapEngine implements IMapService {
   @SuppressWarnings("unused")
   private IMessageManager mm;
 
+  final Set<String> ALL_ICON_COLORS = Set
+      .of("blue", "gold", "red", "green", "orange", "yellow", "violet", "grey", "black");
+
+  final Set<String> VALID_ICON_COLORS = Set // no grey
+      .of("blue", "gold", "red", "green", "orange", "yellow", "violet", "black");
+
   public LeafletMapEngine(IConfigurationManager cm, IMessageManager mm) {
     this.cm = cm;
     this.mm = mm;
@@ -68,12 +74,10 @@ public class LeafletMapEngine implements IMapService {
   public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries) {
     var sb = new StringBuilder();
 
-    final Set<String> validColors = Set
-        .of("blue", "gold", "red", "green", "orange", "yellow", "violet", "grey", "black");
     var labelIndex = 0;
     for (var entry : entries) {
       var color = entry.iconColor() == null ? "blue" : entry.iconColor();
-      if (!validColors.contains(color)) {
+      if (!ALL_ICON_COLORS.contains(color)) {
         throw new RuntimeException("mapEntry: " + entry + ", invalid color: " + color);
       }
       var point = new String(POINT_TEMPLATE);
@@ -194,19 +198,13 @@ public class LeafletMapEngine implements IMapService {
       </html>
             """;
 
-  // public static void main(String[] args) throws Exception {
-  // var outputPath = Path.of("2025-08-21/output");
-  // var inputPath = Path.of(outputPath.toString(), "feedback-hics_259.csv");
-  // var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(inputPath, ',', false, 1);
-  // var mapEntries = new ArrayList<MapEntry>(fieldsArray.size());
-  // for (var fieldEntry : fieldsArray) {
-  // var pair = new LatLongPair(fieldEntry[1], fieldEntry[2]);
-  // var content = "MessageId: " + fieldEntry[5] + "\n" + "Feedback Count: " + fieldEntry[3] + "\n" + "Feedback: "
-  // + fieldEntry[4];
-  // var mapEntry = new MapEntry(fieldEntry[0], pair, content);
-  // mapEntries.add(mapEntry);
-  // }
-  // var mapService = new MapService(null, null);
-  // mapService.makeMap(outputPath, new MapHeader("ETO-2025-08-21--HIC-259", ""), mapEntries);
-  // }
+  @Override
+  public Set<String> getValidIconColors() {
+    return VALID_ICON_COLORS;
+  }
+
+  @Override
+  public String getInvalidIconColor() {
+    return "grey";
+  }
 }

@@ -29,7 +29,12 @@ package com.surftools.wimp.service.map;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 public interface IMapService {
   public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries);
+
+  public Set<String> getValidIconColors();
+
+  public String getInvalidIconColor();
 }
