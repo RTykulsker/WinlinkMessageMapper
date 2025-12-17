@@ -196,6 +196,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
   }
 
+  protected boolean breakLoopForMessageType = false;
+
   @Override
   public void process() {
     var senderIterator = mm.getSenderIterator();
@@ -210,9 +212,13 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
         if (typedMessages == null || typedMessages.size() == 0) {
           continue;
         }
+        breakLoopForMessageType = false;
         for (var message : typedMessages) {
           beginCommonProcessing(message);
           specificProcessing(message);
+          if (breakLoopForMessageType) {
+            break;
+          }
           endCommonProcessing(message);
         } // end processing for a message
       } // end processing for a messageType
@@ -313,7 +319,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
   @Override
   protected void endCommonProcessing(ExportedMessage message) {
-
+    super.endCommonProcessing(message);
   }
 
   /**
