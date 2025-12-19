@@ -244,7 +244,7 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
         var content = new String(attachments.get(name));
         var fileLines = content.split("\n");
         for (var fileLine : fileLines) {
-          if (fileLine.toUpperCase().contains("ETO WINLINK THURSDAY EXERCISE 1/15/2026")) {
+          if (fileLine.toUpperCase().contains("ETO WINLINK THURSDAY EXERCISE")) {
             ++actualNeighbors;
           } // end if ETO WLT line
         } // end loop over lines

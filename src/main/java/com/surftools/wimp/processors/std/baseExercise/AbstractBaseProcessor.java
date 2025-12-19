@@ -440,11 +440,13 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
         -----------------------------------------------------------------------------------------------------
 
-        This year, we've got two "asks" of you.
+        This year, we've got three "asks" of you.
 
         First, if you enjoy our monthly training exercises, why don't you tell a fellow ham and get them Winlinking to us too. The more, the merrier!
 
-        Second, ETO needs financial sponsors to continue hosting our services. You can learn more on emcomm-training.org/Donate.html
+        Second, if you haven't heard, we'll be starting a new trial of weekly practice exercises. Details on emcomm-training.org/Winlink_Thursdays.html
+
+        Finally, ETO needs financial sponsors to continue hosting our services. You can learn more on emcomm-training.org/Donate.html
 
         EmComm Training Organization is a nonprofit, tax-exempt charitable organization
         (tax ID number 92-2282844) under Section 501(c)(3) of the Internal Revenue Code.
