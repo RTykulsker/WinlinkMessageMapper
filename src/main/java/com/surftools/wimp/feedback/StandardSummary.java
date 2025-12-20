@@ -76,10 +76,8 @@ public class StandardSummary implements IWritableTable {
     var date = dateTime == null ? "" : dateTime.toLocalDate().toString();
     var time = dateTime == null ? "" : dateTime.toLocalTime().toString();
 
-    var nsTo = to == null ? "(null)" : to;
-
     var list = new ArrayList<String>(
-        List.of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback, messageId));
+        List.of(from, ns(to), latitude, longitude, date, time, feedbackCount, feedback, ns(messageId)));
     return list.toArray(new String[list.size()]);
   }
 
@@ -98,4 +96,7 @@ public class StandardSummary implements IWritableTable {
         String.valueOf(r.feedbackCount()), r.feedback(), m.messageId);
   }
 
+  private String ns(String s) {
+    return s != null ? s : "";
+  }
 }

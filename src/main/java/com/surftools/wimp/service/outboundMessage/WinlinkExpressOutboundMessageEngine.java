@@ -110,6 +110,7 @@ public class WinlinkExpressOutboundMessageEngine extends AbstractBaseOutboundMes
       body = body + "\n" + extraContent;
     }
 
+    body = body.replaceAll("&", "&amp;");
     body = body.replaceAll("<", "&lt;");
     body = body.replaceAll("<=", "&lt;=3D");
     body = body.replaceAll(">", "&gt;");

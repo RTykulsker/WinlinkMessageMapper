@@ -136,9 +136,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       var feedbackCount = getFeedbackCountString();
       var feedback = getFeedback();
 
-      var nsTo = to == null ? "(null)" : to;
-
-      var list = new ArrayList<String>(List.of(from, nsTo, latitude, longitude, date, time, feedbackCount, feedback));
+      var list = new ArrayList<String>(
+          List.of(ns(from), ns(to), latitude, longitude, date, time, feedbackCount, feedback));
       return list.toArray(new String[list.size()]);
     }
   }

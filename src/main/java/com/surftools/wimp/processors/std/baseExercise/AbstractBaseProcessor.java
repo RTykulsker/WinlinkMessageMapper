@@ -35,6 +35,7 @@ import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -204,11 +205,15 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     return "\n" + field.label + ":\n" + formatCounter(field.counter.getDescendingCountIterator(), "value", "count");
   }
 
+  protected String ns(String s) {
+    return s != null ? s : "";
+  }
+
   public static void writeTable(String pathName, String fileName, List<IWritableTable> entries) {
     var myDirPath = FileUtils.makeDirIfNeeded(pathName);
     var myFilePath = Path.of(myDirPath.toString(), fileName);
     var messageCount = 0;
-    // TODO Collections.sort(entries);
+    Collections.sort(entries);
     try {
       CSVWriter writer = new CSVWriter(new FileWriter(myFilePath.toString()));
       if (entries.size() > 0) {

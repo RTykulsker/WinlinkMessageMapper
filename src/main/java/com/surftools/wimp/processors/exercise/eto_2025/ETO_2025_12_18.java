@@ -89,12 +89,12 @@ public class ETO_2025_12_18 extends MultiMessageFeedbackProcessor {
 
     @Override
     public String[] getValues() {
-      var list = new ArrayList<>();
+      var list = new ArrayList<String>();
       list.addAll(Arrays.asList(super.getValues()));
       list
           .addAll(List
               .of(mId(ics213RRMessage), mId(ics214Message), //
-                  allRequests, allResources, allActivities, //
+                  ns(allRequests), ns(allResources), ns(allActivities), //
                   s(activityCount), Boolean.toString(isNice) //
               ));
 
