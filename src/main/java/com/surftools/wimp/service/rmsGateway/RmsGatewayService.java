@@ -46,6 +46,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.service.IService;
 import com.surftools.wimp.service.cms.ChannelRecord;
 import com.surftools.wimp.service.cms.CmsWebService;
@@ -202,7 +203,7 @@ public class RmsGatewayService implements IService {
   }
 
   private void readChannelData() {
-    var channelDataPath = Path.of(cm.getAsString(Key.PATH), "channelData.csv");
+    var channelDataPath = Path.of(AbstractBaseProcessor.inputPathName, "channelData.csv");
     var data = ReadProcessor.readCsvFileIntoFieldsArray(channelDataPath);
     for (var fields : data) {
       var channelRecord = ChannelRecord.fromFields(fields);
@@ -215,7 +216,7 @@ public class RmsGatewayService implements IService {
   }
 
   private void writeChannelData() {
-    var oldPath = Path.of(cm.getAsString(Key.PATH), "channelData.csv");
+    var oldPath = Path.of(AbstractBaseProcessor.inputPathName, "channelData.csv");
     if (oldPath.toFile().exists()) {
       var timeStamp = LocalDateTime.now().toString();
       var newPath = Path.of(oldPath.toString() + "-" + timeStamp + ".csv");
@@ -231,7 +232,7 @@ public class RmsGatewayService implements IService {
   }
 
   private void readTrafficData() {
-    var trafficDataPath = Path.of(cm.getAsString(Key.PATH), "trafficData.csv");
+    var trafficDataPath = Path.of(AbstractBaseProcessor.inputPathName, "trafficData.csv");
     var data = ReadProcessor.readCsvFileIntoFieldsArray(trafficDataPath);
     for (var fields : data) {
       var trafficRecord = TrafficRecord.fromFields(fields);
@@ -244,7 +245,7 @@ public class RmsGatewayService implements IService {
   }
 
   private void writeTrafficData() {
-    var oldPath = Path.of(cm.getAsString(Key.PATH), "trafficData.csv");
+    var oldPath = Path.of(AbstractBaseProcessor.inputPathName, "trafficData.csv");
     if (oldPath.toFile().exists()) {
       var timeStamp = LocalDateTime.now().toString();
       var newPath = Path.of(oldPath.toString() + "-" + timeStamp + ".csv");

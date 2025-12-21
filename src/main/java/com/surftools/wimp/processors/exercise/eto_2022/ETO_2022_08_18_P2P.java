@@ -603,7 +603,7 @@ public class ETO_2022_08_18_P2P extends AbstractBaseP2PProcessor {
   }
 
   public void writeFields(Map<String, BaseField> fieldMap) {
-    Path outputPath = Path.of(cm.getAsString(Key.PATH), "output", "updated-fields.csv");
+    Path outputPath = Path.of(outputPathName, "updated-fields.csv");
     var list = new ArrayList<IWritableTable>();
     for (var field : fieldMap.values()) {
       list.add((Field) field);
@@ -612,7 +612,7 @@ public class ETO_2022_08_18_P2P extends AbstractBaseP2PProcessor {
   }
 
   public void writeTargets(Map<String, BaseTarget> targetMap) {
-    Path outputPath = Path.of(cm.getAsString(Key.PATH), "output", "updated-targets.csv");
+    Path outputPath = Path.of(outputPathName, "updated-targets.csv");
     var list = new ArrayList<IWritableTable>();
     for (var target : targetMap.values()) {
       list.add((Target) target);

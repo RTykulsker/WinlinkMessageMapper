@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.service.outboundMessage;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,11 +42,10 @@ public class WinlinkExpressOutboundMessageEngineTest {
   @Test
   public void hello() {
     var cm = new MemoryConfigurationManager(Key.values());
+    cm.putString(Key.EXERCISE_DATE, LocalDate.now().toString());
     cm.putString(Key.OUTBOUND_MESSAGE_SENDER, "WIMP-TEST");
     cm.putString(Key.OUTBOUND_MESSAGE_SOURCE, "WIMP-TEST");
-    cm.putString(Key.OUTPUT_PATH, "/tmp");
-    cm.putString(Key.PATH, "/tmp");
-    cm.putBoolean(Key.OUTPUT_PATH_CLEAR_ON_START, false);
+    cm.putString(Key.PATH_EXERCISES, "/tmp");
     cm.putInt(Key.OUTBOUND_MESSAGE_EXTRA_CONTEXT, 1000);
     var writeProcessor = new WriteProcessor();
     writeProcessor.initialize(cm, null);

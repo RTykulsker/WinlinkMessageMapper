@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.MessageType;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class AbstractBaseChartService implements IChartService {
@@ -92,7 +93,7 @@ public abstract class AbstractBaseChartService implements IChartService {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private void parseConfig() {
     var fileName = messageType == null ? "summary" : messageType.name().toLowerCase();
-    fileOutputPath = Path.of(cm.getAsString(Key.PATH), "output", fileName + "_" + "plottly_chart.html");
+    fileOutputPath = Path.of(AbstractBaseProcessor.outputPathName, fileName + "_" + "plottly_chart.html");
 
     var defaultConfig = new ChartConfig(List.of(ChartType.PIE), false, 0, 10);
     var jsonString = cm.getAsString(Key.CHART_CONFIG, "").trim();

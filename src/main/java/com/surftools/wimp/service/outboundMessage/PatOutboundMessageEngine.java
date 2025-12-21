@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.FileUtils;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PatOutboundMessageEngine extends AbstractBaseOutboundMessageEngine {
@@ -60,8 +61,7 @@ public class PatOutboundMessageEngine extends AbstractBaseOutboundMessageEngine 
       return;
     }
 
-    var path = cm.getAsString(Key.PATH);
-    mailboxPath = Path.of(path, "output", "mailbox");
+    mailboxPath = Path.of(AbstractBaseProcessor.outputPathName, "mailbox");
     // FileUtils.deleteDirectory(mailboxPath);
     outboxPath = mailboxPath;
 

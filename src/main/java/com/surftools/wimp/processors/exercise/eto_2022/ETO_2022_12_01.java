@@ -64,7 +64,7 @@ public class ETO_2022_12_01 extends AbstractBaseProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    Path path = Path.of(pathName, "forecastOffices.txt");
+    Path path = Path.of(inputPathName, "forecastOffices.txt");
     try {
       var lines = Files.readAllLines(path);
       for (var line : lines) {

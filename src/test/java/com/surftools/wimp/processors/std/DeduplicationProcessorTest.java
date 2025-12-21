@@ -50,7 +50,7 @@ public class DeduplicationProcessorTest {
   @Test
   public void test_zeroMessages() {
     var cm = new MemoryConfigurationManager(Key.values());
-    cm.putString(Key.PATH, "src/test/resources/");
+    // TODO cm.putString(Key.PATH, "src/test/resources/");
     var mm = new MessageManager();
     mm.load(new ArrayList<ExportedMessage>());
     var p = new DeduplicationProcessor();
@@ -68,7 +68,7 @@ public class DeduplicationProcessorTest {
   @Test
   public void test_oneMessage() {
     var cm = new MemoryConfigurationManager(Key.values());
-    cm.putString(Key.PATH, "src/test/resources/");
+    // TODO cm.putString(Key.PATH, "src/test/resources/");
     cm.putString(Key.DEDUPLICATION_RULES, "{plain:0}");
     var mm = new MessageManager();
     var sender = "UNIT_TEST";
@@ -91,7 +91,7 @@ public class DeduplicationProcessorTest {
   @Test
   public void test_oneDuplicateMessage() {
     var cm = new MemoryConfigurationManager(Key.values());
-    cm.putString(Key.PATH, "src/test/resources/");
+    // TODO cm.putString(Key.PATH, "src/test/resources/");
     var mm = new MessageManager();
 
     List<ExportedMessage> messages = new ArrayList<ExportedMessage>();
@@ -117,7 +117,7 @@ public class DeduplicationProcessorTest {
   @Test
   public void test_oneSupercededMessage() {
     var cm = new MemoryConfigurationManager(Key.values());
-    cm.putString(Key.PATH, "src/test/resources/");
+    // TODO cm.putString(Key.PATH, "src/test/resources/");
     cm.putString(Key.DEDUPLICATION_RULES, "{plain:1}");
     var mm = new MessageManager();
 
@@ -147,7 +147,7 @@ public class DeduplicationProcessorTest {
   public void test_multipleSupercededMessage() {
     final var N = 3;
     var cm = new MemoryConfigurationManager(Key.values());
-    cm.putString(Key.PATH, "src/test/resources/");
+    // TODO cm.putString(Key.PATH, "src/test/resources/");
     cm.putString(Key.DEDUPLICATION_RULES, "{plain:" + N + "}");
     var mm = new MessageManager();
 

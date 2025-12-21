@@ -48,8 +48,6 @@ public class UploadProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(UploadProcessor.class);
   private String dateString = null;
 
-  private String outputPathName;
-  private Path outputPath;
   private String ftpLocalPathName;
   private Path ftpLocalPath;
   private boolean isInitialized = false;
@@ -67,17 +65,6 @@ public class UploadProcessor extends AbstractBaseProcessor {
         logger.warn("### " + message);
         return;
       }
-    }
-
-    outputPathName = cm.getAsString(Key.OUTPUT_PATH);
-    if (outputPathName == null) {
-      var pathString = cm.getAsString(Key.PATH);
-      var path = Path.of(pathString);
-      outputPath = Path.of(path.toAbsolutePath().toString(), "output");
-      outputPathName = outputPath.toString();
-      logger.info("outputPath: " + outputPath);
-    } else {
-      outputPath = Path.of(outputPathName);
     }
 
     ftpLocalPathName = null;// cm.getAsString(Key.PRACTICE_PATH_UPLOAD_FTP_LOCAL);

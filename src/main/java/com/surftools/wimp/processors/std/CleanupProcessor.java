@@ -30,7 +30,6 @@ package com.surftools.wimp.processors.std;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -45,12 +44,10 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class CleanupProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CleanupProcessor.class);
-  private String dateString = null;
   private boolean isFinalizing = false;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    dateString = cm.getAsString(Key.EXERCISE_DATE);
     isFinalizing = cm.getAsBoolean(Key.ENABLE_FINALIZE);
   }
 
@@ -60,93 +57,55 @@ public class CleanupProcessor extends AbstractBaseProcessor {
 
   @Override
   public void postProcess() {
-    // move unused files
-    var unusedDirPath = Path.of(outputPath.toString(), "unused");
-    var unusedDirName = unusedDirPath.toString();
-    FileUtils.deleteDirectory(unusedDirPath);
-    FileUtils.makeDirIfNeeded(unusedDirPath.toString());
-
+    // move files out of output and into published
     var outputDir = new File(outputPath.toString());
     var outputFiles = outputDir.listFiles();
-
-    for (var outputFile : outputFiles) {
-      if (!outputFile.isFile()) {
+    for (var file : outputFiles) {
+      if (!file.isFile()) {
         continue;
       }
 
-      var name = outputFile.getName();
-      if (name.endsWith(".csv")) {
-        if (name.equals(dateString + "-standard-summary.csv")) {
-          continue;
-        }
-
+      var fileName = file.getName();
+      if (fileName.startsWith(dateString + "-Winlink-Import")) {
         try {
-          Files.move(outputFile.toPath(), Path.of(unusedDirName, name), StandardCopyOption.ATOMIC_MOVE);
-          logger.info("moved output/" + name + " to usused/");
+          Files.move(file.toPath(), Path.of(winlinkPathName, dateString + "-Winlink-Acknowledgements.xml"));
+          logger.info("moved: " + fileName + " to: " + winlinkPathName);
         } catch (Exception e) {
-          logger.error("Exception moving file: " + outputFile.toString() + ", " + e.getMessage());
+          logger.error("Exception moving file: " + file.toString(), e.getMessage());
         }
-      }
-    } // end loop over files
-
-    // copy allFeedback.txt to unused
-    var allFeedbackSource = Path.of(pathName, "allFeedback.txt");
-    var allFeedbackDestination = Path.of(unusedDirName, "allFeedback.txt");
-    try {
-      Files.copy(allFeedbackSource, allFeedbackDestination, StandardCopyOption.REPLACE_EXISTING);
-      logger.info("copied allFeedback.txt to unused/");
-    } catch (Exception e) {
-      logger.error("Exception copying file: " + allFeedbackSource.toString() + ", " + e.getMessage());
-    }
-
-    // rename chart, map and Winlink import files
-    outputFiles = outputDir.listFiles();
-    for (var outputFile : outputFiles) {
-      if (!outputFile.isFile()) {
         continue;
       }
 
-      var name = outputFile.getName();
-      if (name.endsWith("chart.html")) {
+      if (fileName.equals("all-winlinkExpressOutboundMessages.xml")) {
         try {
-          var newFile = Path.of(outputPathName, dateString + "-chart.html").toFile();
-          outputFile.renameTo(newFile);
-          logger.info("renamed chart file to: " + newFile.getName());
+          Files.move(file.toPath(), Path.of(winlinkPathName, dateString + "-Winlink-Feedback.xml"));
+          logger.info("moved: " + fileName + " to: " + winlinkPathName);
         } catch (Exception e) {
-          logger.error("Exception renaming file: " + name + ", " + e.getMessage());
+          logger.error("Exception moving file: " + file.toString(), e.getMessage());
         }
+        continue;
       }
 
-      if (name.startsWith("leaflet-" + dateString)) {
+      if (fileName.startsWith(dateString)) {
         try {
-          var newName = name.substring(8);
-          var newFile = Path.of(outputPathName, newName).toFile();
-          outputFile.renameTo(newFile);
-          logger.info("renamed map file to: " + newFile.getName());
+          Files.move(file.toPath(), Path.of(publishedPathName, fileName));
+          logger.info("moved: " + fileName + " to: " + publishedPathName);
         } catch (Exception e) {
-          logger.error("Exception renaming file: " + name + ", " + e.getMessage());
+          logger.error("Exception moving file: " + file.toString(), e.getMessage());
         }
+        continue;
       }
 
-      if (name.startsWith("all-winlink")) {
+      if (fileName.startsWith("leaflet-" + dateString)) {
         try {
-          var newFile = Path.of(outputPathName, dateString + "-Winlink-Import-Feedback-Messages.xml").toFile();
-          outputFile.renameTo(newFile);
-          logger.info("renamed Winlink import file to: " + newFile.getName());
+          var newFileName = fileName.substring("leaflet-".length());
+          Files.move(file.toPath(), Path.of(publishedPathName, newFileName));
+          logger.info("moved: " + fileName + " to: " + publishedPathName);
         } catch (Exception e) {
-          logger.error("Exception renaming file: " + name + ", " + e.getMessage());
+          logger.error("Exception moving file: " + file.toString(), e.getMessage());
         }
+        continue;
       }
-    } // end rename loop over files
-
-    if (isFinalizing) {
-      var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
-      LocalDateTime now = LocalDateTime.now();
-      var timestamp = now.format(formatter);
-
-      var finalPath = Path.of(outputPath + "-FINAL-" + timestamp);
-      FileUtils.copyDirectory(outputPath, finalPath);
-      logger.info("copied output dir to: " + finalPath.toString());
     }
 
     // link log file
@@ -159,6 +118,19 @@ public class CleanupProcessor extends AbstractBaseProcessor {
       logger.error("Exception copying file: " + logSource.toString() + ", " + e.getMessage());
     }
 
-  } // end postProcess
+    isFinalizing = true;
+    if (isFinalizing) {
+      var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
+      LocalDateTime now = LocalDateTime.now();
+      var timestamp = now.format(formatter);
 
+      var tempPath = Path.of(exercisesPathName, "FINAL-" + timestamp);
+      FileUtils.copyDirectory(exercisePath, tempPath);
+      var tempDir = tempPath.toFile();
+      var finalDir = Path.of(exercisePathName, "FINAL-" + timestamp).toFile();
+      tempDir.renameTo(finalDir);
+      logger.info("copied exercise dir to: " + finalDir.toString());
+    }
+
+  } // end postProcess
 }

@@ -96,7 +96,7 @@ public class ETO_2022_08_18_RMS extends AbstractBaseProcessor {
     targetSet = new HashSet<>();
 
     String targetFilePathName = cm.getAsString(Key.P2P_TARGET_PATH);
-    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(Path.of(pathName, targetFilePathName));
+    var fieldsArray = ReadProcessor.readCsvFileIntoFieldsArray(Path.of(inputPathName, targetFilePathName));
     for (var fields : fieldsArray) {
       var target = Target.makeTarget(fields);
       if (target == null) {

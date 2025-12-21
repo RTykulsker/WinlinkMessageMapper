@@ -42,6 +42,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.IWritableTable;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -74,7 +75,7 @@ public class CsvColumnCutterProcessor implements IProcessor {
       return;
     }
 
-    contextsString = contextsString.replaceAll("\\$PATH", cm.getAsString(Key.PATH));
+    contextsString = contextsString.replaceAll("\\$PATH", AbstractBaseProcessor.inputPathName);
     if (contextsString != null && contextsString.length() > 0) {
       for (var contextString : contextsString.split(CONTEXT_DELIMITER)) {
         var fields = contextString.split(FIELD_DELIMITER);

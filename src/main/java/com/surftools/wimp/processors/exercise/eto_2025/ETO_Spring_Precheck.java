@@ -185,7 +185,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
   }
 
   private void loadWxLocalMessages() {
-    var inputPath = Path.of(cm.getAsString(Key.PATH), "lwx.csv");
+    var inputPath = Path.of(inputPathName, "lwx.csv");
     var skipLines = 2;
     var lines = ReadProcessor.readCsvFileIntoFieldsArray(inputPath, ',', false, skipLines);
 
@@ -255,7 +255,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
   }
 
   private void loadHospitalBedMessages() {
-    var inputPath = Path.of(cm.getAsString(Key.PATH), "hbr.csv");
+    var inputPath = Path.of(inputPathName, "hbr.csv");
     var skipLines = 2;
     var lines = ReadProcessor.readCsvFileIntoFieldsArray(inputPath, ',', false, skipLines);
 
@@ -330,7 +330,7 @@ public class ETO_Spring_Precheck extends MultiMessageFeedbackProcessor {
   }
 
   private void loadFsrMessages() {
-    var inputPath = Path.of(cm.getAsString(Key.PATH), "fsr.csv");
+    var inputPath = Path.of(inputPathName, "fsr.csv");
     var skipLines = 2;
     var lines = ReadProcessor.readCsvFileIntoFieldsArray(inputPath, ',', false, skipLines);
 

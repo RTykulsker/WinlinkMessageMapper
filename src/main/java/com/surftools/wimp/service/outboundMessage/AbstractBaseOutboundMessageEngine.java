@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.utils.textEditor.ITextEditor;
 import com.surftools.utils.textEditor.TextEditorManager;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMessageEngine {
@@ -170,8 +171,7 @@ public abstract class AbstractBaseOutboundMessageEngine implements IOutboundMess
     }
 
     try {
-      var path = cm.getAsString(Key.PATH);
-      Files.writeString(Path.of(path, "allFeedback.txt"), allOutput.toString());
+      Files.writeString(Path.of(AbstractBaseProcessor.inputPathName, "allFeedback.txt"), allOutput.toString());
     } catch (Exception e) {
       logger.error("error writing allFeedback.txt: " + e.getLocalizedMessage());
     }

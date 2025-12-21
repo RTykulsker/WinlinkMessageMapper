@@ -135,7 +135,7 @@ public class NeighborProcessor extends AbstractBaseProcessor {
 
   private List<Position> makePositionList(String inputFileName) {
     var list = new ArrayList<Position>();
-    var path = Path.of(pathName, inputFileName);
+    var path = Path.of(inputPathName, inputFileName);
     var fieldsList = ReadProcessor.readCsvFileIntoFieldsArray(path);
     var skipCount = 0;
     for (var fields : fieldsList) {
@@ -188,7 +188,7 @@ public class NeighborProcessor extends AbstractBaseProcessor {
   }
 
   public void output(Position targetPosition, LinkedHashMap<DistanceBound, Set<RangedPosition>> bins) {
-    var outputPath = Path.of(pathName, "output", targetPosition.call());
+    var outputPath = Path.of(outputPathName, targetPosition.call());
     FileUtils.deleteDirectory(outputPath);
     FileUtils.createDirectory(outputPath);
 

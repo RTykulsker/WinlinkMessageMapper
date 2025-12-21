@@ -69,7 +69,7 @@ public class ETO_2022_05_14_AAR extends AbstractBaseProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    var summaryPath = Path.of(pathName, "participantSummary.csv");
+    var summaryPath = Path.of(inputPathName, "participantSummary.csv");
     var fieldsList = ReadProcessor.readCsvFileIntoFieldsArray(summaryPath);
     for (var fields : fieldsList) {
       var ph = ParticipantHistory.make(fields);

@@ -94,7 +94,7 @@ public class ETO_2022_06_09 extends AbstractBaseProcessor {
     var exerciseDateString = cm.getAsString(Key.EXERCISE_DATE);
     exerciseDate = LocalDate.parse(exerciseDateString, DateTimeFormatter.ofPattern("yyyy/MM/dd"));
 
-    var refFile = Path.of(pathName, "reference.jpg").toFile();
+    var refFile = Path.of(inputPathName, "reference.jpg").toFile();
     if (!refFile.exists()) {
       throw new RuntimeException("Reference file: " + refFile.toString() + " not found");
     }
@@ -120,7 +120,7 @@ public class ETO_2022_06_09 extends AbstractBaseProcessor {
     logger.info("Required Date: " + exerciseDateString);
     logger.info("Grade Date as Bonus: " + gradeDateAsBonus);
 
-    processOverrideFile(Path.of(pathName, "imgSim-overrides.txt"));
+    processOverrideFile(Path.of(inputPathName, "imgSim-overrides.txt"));
   }
 
   /**

@@ -589,7 +589,7 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
       lines.add(target.call + "|" + target.centerFreq + "/500");
     }
 
-    var favoritesPath = Path.of(cm.getAsString(Key.PATH), "output", "Vara P2P Favorites.dat");
+    var favoritesPath = Path.of(outputPathName, "Vara P2P Favorites.dat");
     try {
       Files.writeString(favoritesPath, String.join("\n", lines));
       logger.info("wrote " + lines.size() + " favorites to: " + favoritesPath);
@@ -607,7 +607,7 @@ public abstract class AbstractBaseP2PProcessor extends AbstractBaseProcessor {
       calls.add(target.call);
     }
 
-    var targetCallPath = Path.of(cm.getAsString(Key.PATH), "output", "targetList.txt");
+    var targetCallPath = Path.of(outputPathName, "targetList.txt");
     try {
       Files.writeString(targetCallPath, String.join(";", calls));
       logger.info("wrote " + calls.size() + " target calls to: " + targetCallPath);

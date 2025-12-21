@@ -115,8 +115,6 @@ public class ETO_2022_12_22 extends AbstractBaseProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
 
-    outputPathName = Path.of(pathName, "output").toString();
-
     var imageOutputPath = Path.of(outputPathName.toString(), "image");
     FileUtils.deleteDirectory(imageOutputPath);
 

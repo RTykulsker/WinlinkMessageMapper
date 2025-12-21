@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -76,8 +77,8 @@ public class CsvColumnHeaderRenameProcessor implements IProcessor {
       throw new IllegalArgumentException(
           "can't parse CsvHeaderRename configuration for " + configString + ", must have exactly 3 fields");
     }
-    inputFileName = fields[0].trim().replaceAll("\\$PATH", cm.getAsString(Key.PATH));
-    outputFileName = fields[1].trim().replaceAll("\\$PATH", cm.getAsString(Key.PATH));
+    inputFileName = fields[0].trim().replaceAll("\\$PATH", AbstractBaseProcessor.inputPathName);
+    outputFileName = fields[1].trim().replaceAll("\\$PATH", AbstractBaseProcessor.inputPathName);
     var pairs = fields[2].split(PAIR_DELIMITER);
     for (var pair : pairs) {
       var strings = pair.split(HEADER_DELIMITER);

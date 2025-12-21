@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.databaseV2.CsvDatabaseEngine;
 import com.surftools.wimp.processors.std.PipelineProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 
 public class DatabaseUpdateTool {
@@ -75,7 +76,7 @@ public class DatabaseUpdateTool {
         var configPath = Path.of(parentDir, configurationFileName);
         var cm = new PropertyFileConfigurationManager(configPath.toString(), Key.values());
 
-        var inputPathName = cm.getAsString(Key.PATH);
+        var inputPathName = AbstractBaseProcessor.inputPathName;
         logger.info("config file: " + configurationFileName + ", input path: " + inputPathName);
         var inputDir = new File(inputPathName);
         if (!inputDir.exists()) {
@@ -86,8 +87,7 @@ public class DatabaseUpdateTool {
         var newDatabasePath = Path.of(parentDir, "database");
 
         // do some SERIOUS editing on the configuration
-        cm.putBoolean(Key.OUTPUT_PATH_CLEAR_ON_START, true);
-        cm.putString(Key.OUTPUT_PATH, exerciseOutputPath.toString());
+
         cm.putString(Key.NEW_DATABASE_PATH, newDatabasePath.toString());
 
         cm.putString(Key.PIPELINE_STDIN, "Read,Classifier,Deduplication");

@@ -33,7 +33,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,11 +66,9 @@ public class ReadProcessor extends BaseReadProcessor {
   public void process() {
     super.process();
 
-    Path path = Paths.get(pathName);
-
     // read all Exported Messages from files
     List<ExportedMessage> exportedMessages = new ArrayList<>();
-    for (File file : Arrays.asList(path.toFile().listFiles()).stream().sorted().toList()) {
+    for (File file : Arrays.asList(inputPath.toFile().listFiles()).stream().sorted().toList()) {
       if (file.isFile()) {
         if (!file.getName().toLowerCase().endsWith(".xml")) {
           continue;

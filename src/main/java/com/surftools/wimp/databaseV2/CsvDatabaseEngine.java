@@ -44,6 +44,7 @@ import com.surftools.wimp.databaseV2.entity.ParticipantDetail;
 import com.surftools.wimp.databaseV2.entity.ParticipantSummary;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -68,8 +69,7 @@ public class CsvDatabaseEngine extends AbstractInMemoryDatabaseEngine {
     super(logger);
     inputDbPathName = cm.getAsString(Key.NEW_DATABASE_PATH);
 
-    // allow overriding of outputPathName!
-    var outputPathName = cm.getAsString(Key.OUTPUT_PATH);
+    var outputPathName = AbstractBaseProcessor.outputPathName;
     outputDbPath = Path.of(outputPathName, "newDatabase");
     if (!outputDbPath.toFile().exists()) {
       outputDbPath.toFile().mkdirs();

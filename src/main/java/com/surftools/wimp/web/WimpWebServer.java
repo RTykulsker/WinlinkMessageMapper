@@ -59,6 +59,7 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IProcessor;
 import com.surftools.wimp.core.MessageManager;
 import com.surftools.wimp.processors.std.PipelineProcessor;
+import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 import com.surftools.wimp.utils.config.impl.PropertyFileConfigurationManager;
 
@@ -113,8 +114,8 @@ public class WimpWebServer {
 
       cm = new PropertyFileConfigurationManager(configurationFileName, Key.values());
       mm = new MessageManager();
-      pathName = cm.getAsString(Key.PATH);
-      outputPathName = cm.getAsString(Key.OUTPUT_PATH);
+      pathName = AbstractBaseProcessor.inputPathName;
+      outputPathName = AbstractBaseProcessor.outputPathName;
       if (outputPathName == null) {
         outputPathName = Path.of(pathName, "webOutput").toString();
       }
