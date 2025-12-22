@@ -27,6 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.service.map;
 
-public record MapHeader(String title, String description) {
+public record MapHeader(String fileName, String mapTitle, String legendHTML) {
 
 }

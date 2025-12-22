@@ -106,6 +106,17 @@ public class CleanupProcessor extends AbstractBaseProcessor {
         }
         continue;
       }
+
+      if (fileName.contains("plottly")) {
+        try {
+          var newFileName = dateString + "-chart.html";
+          Files.move(file.toPath(), Path.of(publishedPathName, newFileName));
+          logger.info("moved: " + fileName + " to: " + publishedPathName);
+        } catch (Exception e) {
+          logger.error("Exception moving file: " + file.toString(), e.getMessage());
+        }
+        continue;
+      }
     }
 
     // link log file
@@ -118,7 +129,6 @@ public class CleanupProcessor extends AbstractBaseProcessor {
       logger.error("Exception copying file: " + logSource.toString() + ", " + e.getMessage());
     }
 
-    isFinalizing = true;
     if (isFinalizing) {
       var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
       LocalDateTime now = LocalDateTime.now();

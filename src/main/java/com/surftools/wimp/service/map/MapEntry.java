@@ -32,16 +32,17 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor.BaseSummary;
 
-public record MapEntry(String label, LatLongPair location, String message, String iconColor) {
+public record MapEntry(String label, String to, LatLongPair location, String message, String iconColor) {
 
   public static MapEntry fromSingleMessageFeedback(IWritableTable s) {
     var feedbackMessage = (FeedbackMessage) s;
     var feedbackResult = feedbackMessage.feedbackResult();
+    var to = feedbackMessage.message().to;
     var location = new LatLongPair(feedbackResult.latitude(), feedbackResult.longitude());
     var messageId = feedbackMessage.message().messageId;
     var content = "MessageId: " + messageId + "\n" + "Feedback Count: " + feedbackResult.feedbackCount() + "\n"
         + "Feedback: " + feedbackResult.feedback();
-    return new MapEntry(feedbackResult.call(), location, content, "blue");
+    return new MapEntry(feedbackResult.call(), to, location, content, "blue");
   }
 
   public static MapEntry fromMultiMessageFeedback(IWritableTable s) {
@@ -50,7 +51,7 @@ public record MapEntry(String label, LatLongPair location, String message, Strin
     var messageIds = e.messageIds;
     var content = (messageIds == null) ? "" : "MessageIds: " + messageIds + "\n";
     content = content + "Feedback Count: " + e.getFeedbackCountString() + "\n" + "Feedback: " + e.getFeedback();
-    return new MapEntry(e.from, location, content, "blue");
+    return new MapEntry(e.from, e.to, location, content, "blue");
   }
 
 }

@@ -31,10 +31,18 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.counter.Counter;
+
 public interface IMapService {
   public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries);
 
   public Set<String> getValidIconColors();
 
   public String getInvalidIconColor();
+
+  public String makeLegendForFeedbackCount(int participantCount, Counter feedbackCounter);
+
+  public List<MapEntry> makeColorizedEntriesByRecipients(List<MapEntry> mapEntries);
+
+  public String makeLegendForRecipients(List<MapEntry> colorizedMapEntries);
 }

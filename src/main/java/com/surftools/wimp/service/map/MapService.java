@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
+import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -65,5 +66,19 @@ public class MapService implements IMapService {
   @Override
   public String getInvalidIconColor() {
     return engine.getInvalidIconColor();
+  }
+
+  @Override
+  public String makeLegendForFeedbackCount(int participantCount, Counter feedbackCounter) {
+    return engine.makeLegendForFeedbackCount(participantCount, feedbackCounter);
+  }
+
+  @Override
+  public List<MapEntry> makeColorizedEntriesByRecipients(List<MapEntry> mapEntries) {
+    return engine.makeColorizedEntriesByRecipients(mapEntries);
+  }
+
+  public String makeLegendForRecipients(List<MapEntry> colorizedMapEntries) {
+    return engine.makeLegendForRecipients(colorizedMapEntries);
   }
 }
