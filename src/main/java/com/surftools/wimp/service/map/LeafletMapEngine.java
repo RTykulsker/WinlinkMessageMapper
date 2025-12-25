@@ -387,16 +387,16 @@ public class LeafletMapEngine extends MapService {
           if (popupText) {
             marker.bindPopup(popupText);
           }
-
-          L.marker([lat, lng], {
-            interactive: false,
-            icon: L.divIcon({
-              className: "",
-              iconAnchor: [-5, -30],
-              html: `<div class="label-text">${labelText}</div>`
-            })
-          }).addTo(map);
         }
+
+        L.marker([lat, lng], {
+          interactive: false,
+          icon: L.divIcon({
+            className: "",
+            iconAnchor: [-5, -13],
+            html: `<div class="label-text">${labelText}</div>`
+          })
+        }).addTo(map);
       }
 
       // ------------------------------------------------------------
@@ -474,13 +474,13 @@ public class LeafletMapEngine extends MapService {
       } else {
         var color = gradientMap.get(entryIndex);
         sb
-            .append("<div><span class=\"box\" style=\"background:" + color + "\">&nbsp;&nbsp;&nbsp;</span>" + "value: "
-                + entryIndex + ", count: " + count + "</div>" + "\n");
+            .append("<div><span class=\"box\" style=\"background:" + color + "\">&nbsp;&nbsp;&nbsp;</span>"
+                + "&nbsp;value: " + entryIndex + ", count: " + count + "</div>" + "\n");
       }
     }
     sb
-        .append("<div><span class=\"box\" style=\"background:" + lastColor + "\">&nbsp;&nbsp;&nbsp;</span>" + "value: "
-            + lastIndex + " or more" + ", count: " + lastCount + "</div>" + "\n");
+        .append("<div><span class=\"box\" style=\"background:" + lastColor + "\">&nbsp;&nbsp;&nbsp;</span>"
+            + "&nbsp;value: " + lastIndex + " or more" + ", count: " + lastCount + "</div>" + "\n");
     legendHTML += "<br><br>Feedback Count:<br>" + sb.toString();
     return legendHTML;
   }
@@ -505,9 +505,10 @@ public class LeafletMapEngine extends MapService {
       var rgb = rgbMap.get(colorName);
       rgb = (rgb != null) ? rgb : "ffffff";
       var count = countMap.get(to);
+      var countString = count == null ? "0" : String.valueOf(count);
       sb
           .append("<div><span class=\"box\" style=\"background:#" + rgb + "\">&nbsp;&nbsp;&nbsp;</span> " + to + ": "
-              + count + " participants</div>" + "\n");
+              + countString + " participants</div>" + "\n");
     }
     return sb.toString();
   }
