@@ -46,7 +46,7 @@ import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
-public class LeafletMapEngine implements IMapService {
+public class LeafletMapEngine extends MapService {
   private static final Logger logger = LoggerFactory.getLogger(LeafletMapEngine.class);
 
   private IConfigurationManager cm;
@@ -114,26 +114,27 @@ public class LeafletMapEngine implements IMapService {
     var labelIndex = 0;
     for (var entry : entries) {
       var color = entry.iconColor() == null ? "blue" : entry.iconColor();
-      if (!ALL_ICON_COLORS.contains(color)) {
+      if (!color.startsWith("#") && !ALL_ICON_COLORS.contains(color)) {
         throw new RuntimeException("mapEntry: " + entry + ", invalid color: " + color);
       }
-      var point = new String(POINT_TEMPLATE);
-      point = point.replaceAll("#LABEL_INDEX#", "label_" + labelIndex++);
-      point = point.replaceAll("#LABEL#", entry.label());
-      point = point.replace("#LATITUDE#", entry.location().getLatitude());
-      point = point.replace("#LONGITUDE#", entry.location().getLongitude());
-      point = point.replace("#COLOR#", color);
+
+      var marker = new String(MARKER_TEMPLATE);
+      marker = marker.replaceAll("#LABEL_INDEX#", "label_" + labelIndex++);
+      marker = marker.replaceAll("#LABEL#", entry.label());
+      marker = marker.replace("#LATITUDE#", entry.location().getLatitude());
+      marker = marker.replace("#LONGITUDE#", entry.location().getLongitude());
+      marker = marker.replace("#COLOR#", color);
       var message = entry.message().replaceAll("\n", "<br/>");
       message = escapeForJavaScript(message);
-      point = point.replace("#CONTENT#", message);
-      sb.append(point + "\n");
+      marker = marker.replace("#CONTENT#", message);
+      sb.append(marker + "\n");
     }
 
     var legendHTML = mapHeader.legendHTML();
 
     var fileContent = new String(FILE_TEMPLATE);
     fileContent = fileContent.replaceAll("#TITLE#", mapHeader.mapTitle());
-    fileContent = fileContent.replace("#POINTS#", sb.toString());
+    fileContent = fileContent.replace("#MARKERS#", sb.toString());
     fileContent = fileContent.replace("#LEGEND_HTML#", legendHTML);
 
     var filePath = Path.of(outputPath.toString(), "leaflet-" + mapHeader.fileName() + ".html");
@@ -145,8 +146,8 @@ public class LeafletMapEngine implements IMapService {
     }
   }
 
-  private static final String POINT_TEMPLATE = """
-      addMarkerWithLabel(#LATITUDE#, #LONGITUDE#, "#LABEL#", "#CONTENT#","#COLOR#");
+  private static final String MARKER_TEMPLATE = """
+      addMarker(#LATITUDE#, #LONGITUDE#, "#LABEL#", "#CONTENT#","#COLOR#");
             """;
 
   private static final String FILE_TEMPLATE = """
@@ -339,39 +340,69 @@ public class LeafletMapEngine implements IMapService {
       };
 
       // ------------------------------------------------------------
-      // Marker + scalable label + optional popup + icon color
-      // NEW SIGNATURE: addMarkerWithLabel(lat, lng, labelText, popupText, color)
+      // Marker icon generator using arbitrary hex color
       // ------------------------------------------------------------
-      function addMarkerWithLabel(lat, lng, labelText, popupText = null, color = "blue") {
-        const iconUrl = iconColors[color] || iconColors.blue;
-
-        const markerIcon = L.icon({
-          iconUrl,
-          iconSize: [13, 21],
-          iconAnchor: [-5, 10],
-          popupAnchor: [1, -10]
+      function makeColorIcon(hexColor) {
+        return L.divIcon({
+          className: "",
+          html: `
+            <div style="
+              width: 18px;
+              height: 18px;
+              background: ${hexColor};
+              border-radius: 50%;
+              border: 2px solid white;
+              box-shadow: 0 0 3px rgba(0,0,0,0.4);
+            "></div>
+          `,
+          iconSize: [13, 13],
+          iconAnchor: [0, 0]
         });
-
-        const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
-
-        if (popupText) {
-          marker.bindPopup(popupText);
-        }
-
-        L.marker([lat, lng], {
-          interactive: false,
-          icon: L.divIcon({
-            className: "",
-            iconAnchor: [-5, -10],
-            html: `<div class="label-text">${labelText}</div>`
-          })
-        }).addTo(map);
       }
 
       // ------------------------------------------------------------
-      // Base markers
+      // addMarker
       // ------------------------------------------------------------
-      #POINTS#
+      function addMarker(lat, lng, labelText, popupText = null, color) {
+
+
+        if (!color.startsWith("#")) {
+          const iconUrl = iconColors[color] || iconColors.blue;
+
+          const markerIcon = L.icon({
+            iconUrl,
+            iconSize: [13, 21],
+            iconAnchor: [-5, 10],
+            popupAnchor: [1, -10]
+          });
+
+          const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
+
+          if (popupText) {
+            marker.bindPopup(popupText);
+          }
+        } else {
+          const marker = L.marker([lat, lng], { icon: makeColorIcon(color) }).addTo(map);
+
+          if (popupText) {
+            marker.bindPopup(popupText);
+          }
+
+          L.marker([lat, lng], {
+            interactive: false,
+            icon: L.divIcon({
+              className: "",
+              iconAnchor: [-5, -30],
+              html: `<div class="label-text">${labelText}</div>`
+            })
+          }).addTo(map);
+        }
+      }
+
+      // ------------------------------------------------------------
+      // add markers here
+      // ------------------------------------------------------------
+      #MARKERS#
 
       // ------------------------------------------------------------
       // Update label scale on zoom
@@ -417,6 +448,39 @@ public class LeafletMapEngine implements IMapService {
       var entry = it.next();
       sb.append("value" + ": " + entry.getKey() + ", " + "count" + ": " + entry.getValue() + "<br>");
     }
+    legendHTML += "<br><br>Feedback Count:<br>" + sb.toString();
+    return legendHTML;
+  }
+
+  @Override
+  public String makeColorizedLegendForFeedbackCount(int participantCount, Counter counter,
+      Map<Integer, String> gradientMap) {
+
+    var lastIndex = gradientMap.size() - 1;
+    var lastColor = gradientMap.get(lastIndex);
+    var legendHTML = "For " + participantCount + " participants";
+
+    var it = counter.getAscendingKeyIterator();
+    var sb = new StringBuilder();
+    var lastCount = 0;
+    var entryIndex = -1;
+    while (it.hasNext()) {
+      var entry = it.next();
+      var count = entry.getValue();
+
+      ++entryIndex;
+      if (entryIndex >= gradientMap.size() - 1) {
+        lastCount += count;
+      } else {
+        var color = gradientMap.get(entryIndex);
+        sb
+            .append("<div><span class=\"box\" style=\"background:" + color + "\">&nbsp;&nbsp;&nbsp;</span>" + "value: "
+                + entryIndex + ", count: " + count + "</div>" + "\n");
+      }
+    }
+    sb
+        .append("<div><span class=\"box\" style=\"background:" + lastColor + "\">&nbsp;&nbsp;&nbsp;</span>" + "value: "
+            + lastIndex + " or more" + ", count: " + lastCount + "</div>" + "\n");
     legendHTML += "<br><br>Feedback Count:<br>" + sb.toString();
     return legendHTML;
   }

@@ -288,8 +288,15 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     chartService.makeCharts();
 
     var dateString = cm.getAsString(Key.EXERCISE_DATE);
-    var mapEntries = mIdFeedbackMap.values().stream().map(s -> MapEntry.fromSingleMessageFeedback(s)).toList();
     var mapService = new MapService(cm, mm);
+
+    var gradientMap = mapService.makeGradientMap(120, 0, 10);
+    var mapEntries = mIdFeedbackMap
+        .values()
+          .stream()
+          .map(s -> MapEntry.fromSingleMessageFeedback(s, gradientMap))
+          .toList();
+
     var legendHTML = mapService.makeLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"));
     var mapTitle = dateString + " Feedback Counts";
     var mapHeader = new MapHeader(dateString + "-map-feedbackCount", mapTitle, legendHTML);

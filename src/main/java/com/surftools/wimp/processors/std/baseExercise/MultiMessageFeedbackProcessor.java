@@ -416,9 +416,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     chartService.makeCharts();
 
     var dateString = cm.getAsString(Key.EXERCISE_DATE);
-    var mapEntries = summaryMap.values().stream().map(s -> MapEntry.fromMultiMessageFeedback(s)).toList();
     var mapService = new MapService(cm, mm);
-    var legendHTML = mapService.makeLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"));
+
+    var gradientMap = mapService.makeGradientMap(120, 0, 10);
+    var mapEntries = summaryMap.values().stream().map(s -> MapEntry.fromMultiMessageFeedback(s, gradientMap)).toList();
+    var legendHTML = mapService
+        .makeColorizedLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"), gradientMap);
     var mapTitle = dateString + " Feedback Counts";
     var mapHeader = new MapHeader(dateString + "-map-feedbackCount", mapTitle, legendHTML);
     mapService.makeMap(outputPath, mapHeader, mapEntries);
