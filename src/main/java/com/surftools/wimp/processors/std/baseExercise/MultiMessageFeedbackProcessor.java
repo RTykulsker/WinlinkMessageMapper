@@ -420,11 +420,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     var gradientMap = mapService.makeGradientMap(120, 0, 10);
     var mapEntries = summaryMap.values().stream().map(s -> MapEntry.fromMultiMessageFeedback(s, gradientMap)).toList();
+    var labeledMapEntries = mapEntries.stream().map(m -> MapEntry.highlightLabel(m)).toList();
     var legendHTML = mapService
         .makeColorizedLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"), gradientMap);
     var mapTitle = dateString + " Feedback Counts";
     var mapHeader = new MapHeader(dateString + "-map-feedbackCount", mapTitle, legendHTML);
-    mapService.makeMap(outputPath, mapHeader, mapEntries);
+    mapService.makeMap(outputPath, mapHeader, labeledMapEntries);
 
     var colorizedMapEntries = mapService.makeColorizedEntriesByRecipients(mapEntries);
     legendHTML = mapService.makeLegendForRecipients(colorizedMapEntries);

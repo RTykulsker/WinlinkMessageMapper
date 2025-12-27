@@ -296,11 +296,12 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
           .stream()
           .map(s -> MapEntry.fromSingleMessageFeedback(s, gradientMap))
           .toList();
-
-    var legendHTML = mapService.makeLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"));
+    var labeledMapEntries = mapEntries.stream().map(m -> MapEntry.highlightLabel(m)).toList();
+    var legendHTML = mapService
+        .makeColorizedLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"), gradientMap);
     var mapTitle = dateString + " Feedback Counts";
     var mapHeader = new MapHeader(dateString + "-map-feedbackCount", mapTitle, legendHTML);
-    mapService.makeMap(outputPath, mapHeader, mapEntries);
+    mapService.makeMap(outputPath, mapHeader, labeledMapEntries);
 
     var colorizedMapEntries = mapService.makeColorizedEntriesByRecipients(mapEntries);
     legendHTML = mapService.makeLegendForRecipients(colorizedMapEntries);

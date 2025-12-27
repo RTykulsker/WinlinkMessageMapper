@@ -543,7 +543,7 @@ public class LeafletMapEngine extends MapService {
           tempColorMap.put(to, colorName);
         } // end if !isValid expectedDestination
       } // end not eto
-      var newMessage = "From: " + mapEntry.label() + "\n" + "To: " + to + "\n" + mapEntry.message();
+      var newMessage = "<b>From: " + mapEntry.label() + "\n" + "To: " + to + "</b><hr>\n" + mapEntry.message();
       var newMapEntry = new MapEntry(mapEntry.label(), to, mapEntry.location(), newMessage, colorName);
       newMapEntries.add(newMapEntry);
     } // end loop over mapEntries

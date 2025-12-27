@@ -84,4 +84,10 @@ public record MapEntry(String label, String to, LatLongPair location, String mes
     return new MapEntry(s.from, s.to, location, content, color);
   }
 
+  public static MapEntry highlightLabel(MapEntry m) {
+    var prefix = "<b>" + m.label + "</b>" + "<hr>";
+    var content = prefix + m.message;
+    return new MapEntry(m.label, m.to(), m.location, content, m.iconColor);
+  }
+
 }
