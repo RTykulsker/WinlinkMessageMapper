@@ -27,7 +27,6 @@ SOFTWARE.
 
 package com.surftools.wimp.service.map;
 
-import com.surftools.utils.location.LatLongPair;
+public record MapLayer(String name, String color) {
 
-public record MapEntry(String label, String to, LatLongPair location, String message, String iconColor) {
 }

@@ -29,69 +29,19 @@ package com.surftools.wimp.service.map;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.counter.Counter;
-import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class LeafletMapEngine extends MapService {
   private static final Logger logger = LoggerFactory.getLogger(LeafletMapEngine.class);
 
-  private IConfigurationManager cm;
-
-  private String exerciseOrganization;
-  private Map<String, String> colorMap;
-
-  final Map<String, String> etoColorMap = Map
-      .ofEntries(//
-          Map.entry("ETO-01", "yellow"), //
-          Map.entry("ETO-02", "blue"), //
-          Map.entry("ETO-03", "red"), //
-          Map.entry("ETO-04", "green"), //
-          Map.entry("ETO-05", "orange"), //
-          Map.entry("ETO-06", "violet"), //
-          Map.entry("ETO-07", "yellow"), //
-          Map.entry("ETO-08", "green"), //
-          Map.entry("ETO-09", "red"), //
-          Map.entry("ETO-10", "blue"), //
-          Map.entry("ETO-CAN", "violet"), //
-          Map.entry("ETO-DX", "gold"), //
-          Map.entry("unknown", "grey"));
-
-  final Map<String, String> rgbMap = Map
-      .ofEntries( //
-          Map.entry("blue", "2a81cb"), //
-          Map.entry("gold", "ffd326"), //
-          Map.entry("red", "cb2b32"), //
-          Map.entry("green", "2aad27"), //
-          Map.entry("orange", "cb8427"), //
-          Map.entry("yellow", "cac428"), //
-          Map.entry("violet", "9c2bcb"), //
-          Map.entry("grey", "7b7b7b"), //
-          Map.entry("black", "3d3d3d") //
-      );
-
-  final Set<String> ALL_ICON_COLORS = Set
-      .of("blue", "gold", "red", "green", "orange", "yellow", "violet", "grey", "black");
-
-  final Set<String> VALID_ICON_COLORS = Set // no grey
-      .of("blue", "gold", "red", "green", "orange", "yellow", "violet", "black");
-
   public LeafletMapEngine(IConfigurationManager cm, IMessageManager mm) {
-    this.cm = cm;
-    this.exerciseOrganization = cm.getAsString(Key.EXERCISE_ORGANIZATION);
   }
 
   public static String escapeForJavaScript(String input) {
@@ -108,323 +58,422 @@ public class LeafletMapEngine extends MapService {
   }
 
   @Override
-  public void makeMap(Path outputPath, MapHeader mapHeader, List<MapEntry> entries) {
+  public void makeMap(MapContext mapContext) {
+
+    var colorLayerMap = new HashMap<String, String>();
+
     var sb = new StringBuilder();
-
-    var labelIndex = 0;
-    for (var entry : entries) {
-      var color = entry.iconColor() == null ? "blue" : entry.iconColor();
-      if (!color.startsWith("#") && !ALL_ICON_COLORS.contains(color)) {
-        throw new RuntimeException("mapEntry: " + entry + ", invalid color: " + color);
-      }
-
-      var marker = new String(MARKER_TEMPLATE);
-      marker = marker.replaceAll("#LABEL_INDEX#", "label_" + labelIndex++);
-      marker = marker.replaceAll("#LABEL#", entry.label());
-      marker = marker.replace("#LATITUDE#", entry.location().getLatitude());
-      marker = marker.replace("#LONGITUDE#", entry.location().getLongitude());
-      marker = marker.replace("#COLOR#", color);
-      var message = entry.message().replaceAll("\n", "<br/>");
-      message = escapeForJavaScript(message);
-      marker = marker.replace("#CONTENT#", message);
-      sb.append(marker + "\n");
+    for (var layer : mapContext.layers()) {
+      var text = LAYER_TEMPLATE;
+      text = text.replace("#LAYER_NAME#", layer.name());
+      text = text.replace("#LAYER_COLOR#", layer.color());
+      sb.append(text);
+      colorLayerMap.put(layer.color(), layer.name());
     }
+    var layers = sb.toString();
+    layers = layers.substring(0, layers.length() - 2);
 
-    var legendHTML = mapHeader.legendHTML();
+    sb = new StringBuilder();
+    for (var mapEntry : mapContext.mapEntries()) {
+      var marker = MARKER_TEMPLATE;
+      marker = marker.replace("#LATITUDE#", mapEntry.location().getLatitude());
+      marker = marker.replace("#LONGITUDE#", mapEntry.location().getLongitude());
+      marker = marker.replace("#LABEL#", mapEntry.label());
+      var layerName = colorLayerMap.get(mapEntry.iconColor());
+      if (layerName == null) {
+        layerName = "";
+        logger.error("### no layer name for mapEntry: " + mapEntry);
+      }
+      marker = marker.replace("#LAYER_NAME#", layerName);
+      marker = marker.replace("#COLOR#", mapEntry.iconColor());
+
+      var message = mapEntry.message().replaceAll("\n", "<br/>");
+      message = escapeForJavaScript(message);
+      marker = marker.replace("#POPUP#", message);
+      sb.append(marker);
+    }
+    var markers = sb.toString();
 
     var fileContent = new String(FILE_TEMPLATE);
-    fileContent = fileContent.replaceAll("#TITLE#", mapHeader.mapTitle());
-    fileContent = fileContent.replace("#MARKERS#", sb.toString());
-    fileContent = fileContent.replace("#LEGEND_HTML#", legendHTML);
+    fileContent = fileContent.replace("#MAP_TITLE#", mapContext.mapTitle());
+    fileContent = fileContent.replace("#LEGEND_TITLE#", mapContext.legendTitle());
 
-    var filePath = Path.of(outputPath.toString(), "leaflet-" + mapHeader.fileName() + ".html");
+    // TODO make this work!
+    var makeThisWork = false;
+    if (makeThisWork) {
+      var geo = mapContext.mapGeometry();
+      if (geo == null) {
+        geo = MapService.DEFAULT_MAP_GEOMETRY;
+      }
+      fileContent.replace("#CENTER_LAT#", geo.centerLatitude());
+      fileContent.replace("#CENTER_LNG#", geo.centerLatitude());
+      fileContent.replaceAll("#BASE_ZOOM#", geo.baseZoom());
+      fileContent.replace("#MAX_ZOOM#", geo.maxZoom());
+    }
+
+    fileContent = fileContent.replace("#LAYERS#", layers);
+    fileContent = fileContent.replace("#MARKERS#", markers);
+
+    var filePath = Path.of(mapContext.path().toString(), "leaflet-" + mapContext.fileName() + ".html");
     try {
       Files.writeString(filePath, fileContent.toString());
-      logger.info("wrote " + entries.size() + " entries to: " + filePath.toString());
+      logger.info("wrote " + mapContext.mapEntries().size() + " entries to: " + filePath.toString());
     } catch (Exception e) {
       logger.error("Exception writing leaflet file: " + filePath.toString() + ", " + e.getMessage());
     }
   }
 
+  private static final String LAYER_TEMPLATE = """
+        { name: "#LAYER_NAME#", color: "#LAYER_COLOR#"},
+      """;
+
   private static final String MARKER_TEMPLATE = """
-      addMarker(#LATITUDE#, #LONGITUDE#, "#LABEL#", "#CONTENT#","#COLOR#");
-            """;
+      markers.push({lat: #LATITUDE#,lng: #LONGITUDE#,name: "#LABEL#", layerName: "#LAYER_NAME#", color: "#COLOR#", popup: "#POPUP#"});
+        """;
 
-  private static final String FILE_TEMPLATE = """
+  private static String FILE_TEMPLATE = """
       <!DOCTYPE html>
-      <html lang="en">
+      <html>
       <head>
-      <meta charset="utf-8" />
-      <title>#TITLE#</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <title>#MAP_TITLE#</title>
 
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      />
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
 
-      <style>
-        html, body { height: 100%; margin: 0; }
-        #map { height: 100%; }
+        <style>
+          #map {
+            height: 100vh;
+            width: 100vw;
+          }
 
-        .label-text {
-          font-family: system-ui, sans-serif;
-          font-weight: 600;
-          color: #1a237e;
-          white-space: nowrap;
-          text-shadow: 0 0 2px white, 0 0 4px white;
-          transform-origin: left center;
-          pointer-events: none;
-        }
+          /* CSS marker body (circle + pointer) */
+          .hex-pin {
+            position: relative;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            transform: translate(-10px, -10px);
+          }
 
-        .leaflet-custom-legend {
-        background: white;
-        padding: 8px;
-        border-radius: 4px;
-        box-shadow: 0 0 8px rgba(0,0,0,0.3);
-        font-family: sans-serif;
-        font-size: 13px;
-        resize: both;
-        overflow: auto;
-        max-width: 260px;
-        max-height: 300px;
-        position: relative;
-        }
+          /* white dot in center */
+          .hex-pin::before {
+            content: "";
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+          }
 
-        .leaflet-custom-legend-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-weight: bold;
-        margin-bottom: 6px;
-        }
+          /* pointer triangle */
+          .hex-pin::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid #333;
+            transform: translateX(-50%);
+          }
 
-        .leaflet-custom-legend-close {
-        cursor: pointer;
-        border: none;
-        background: transparent;
-        font-size: 16px;
-        line-height: 1;
-        padding: 0 4px;
-        }
+          /* Marker label under marker */
+          .marker-label {
+            position: absolute;
+            white-space: nowrap;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 12px;
+            pointer-events: none;
+            transform-origin: top center;
+            transform: translate(-50%, 4px);
+            z-index: 9999;
+          }
 
-        .leaflet-custom-legend-close:hover {
-        background: #eee;
-        }
+          .legend-control {
+            position: absolute;
+            bottom: 5px;
+            left: 10px;
+            background: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            box-shadow: 0 0 6px rgba(0,0,0,0.3);
+            font-family: sans-serif;
+            z-index: 9999;
 
-        .legend-toggle-btn {
-        background: white;
-        padding: 4px 6px;
-        border-radius: 4px;
-        box-shadow: 0 0 6px rgba(0,0,0,0.3);
-        cursor: pointer;
-        font-size: 12px;
-        }
+            width: auto;              /* auto-size to content */
+            max-width: none;          /* remove any implicit max */
+            white-space: nowrap;      /* prevent wrapping */
+          }
 
-        .legend .box {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        margin-right: 6px;
-        vertical-align: middle;
-        }
+          .legend-control.collapsed #legendBody {
+            display: none;
+          }
 
-      </style>
+          .legend-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+          }
+
+          .legend-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;      /* force single line */
+          }
+
+          .legend-row:last-child {
+            margin-bottom: 0;
+          }
+
+          .legend-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            margin-right: 8px;
+            position: relative;
+            flex-shrink: 0;           /* icon never shrinks */
+          }
+
+          .legend-icon::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 8px solid #333;
+            transform: translateX(-50%);
+          }
+
+          .legend-row span {
+            white-space: nowrap;      /* force single line */
+            overflow: visible;        /* allow full expansion */
+          }
+
+          .legend-row.disabled {
+            opacity: 0.35;
+          }
+
+          #legendClose {
+            float: right;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+          }
+        </style>
       </head>
+
       <body>
-      <div id="map"></div>
+        <div id="map"></div>
 
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <!-- Legend-control hybrid -->
+        <div class="legend-control" id="legendControl">
+          <div class="legend-title" id="legendTitle">
+            #LEGEND_TITLE#
+      	  <!-- span id="legendClose">▁</span> -->
+      	  <span id="legendClose">_</span>
+          </div>
+          <div id="legendBody"></div>
+        </div>
 
-      <script>
-      // ------------------------------------------------------------
-      // Map
-      // ------------------------------------------------------------
-      const map = L.map('map').setView([40, -91], 4);
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
-      }).addTo(map);
+        <script>
+          // ------------------------------------------------------------
+          // Initialize map
+          // ------------------------------------------------------------
 
-      // ------------------------------
-      // Legend Control
-      // ------------------------------
-      let legendContainer;  // <-- store reference so toggle can reopen it
+          const map = L.map("map").setView([40, -100], 5);
+          // ------------------------------------------------------------
+          // BASEMAPS
+          // ------------------------------------------------------------
+          const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              maxZoom: 19,
+              attribution: 'Map Tiles from <a href="http://openstreetmap.org/copyright">OpenStreetMap</a>'
+            });
 
-      const LegendControl = L.Control.extend({
-        options: { position: 'bottomleft' },
+          const usgs = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',{
+              maxZoom: 19,
+              attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
+            });
 
-        onAdd: function (map) {
-        legendContainer = L.DomUtil.create('div', 'leaflet-custom-legend');
+          osm.addTo(map);
 
-        L.DomEvent.disableClickPropagation(legendContainer);
-        L.DomEvent.disableScrollPropagation(legendContainer);
+          // ------------------------------------------------------------
+          // BASEMAP CONTROL
+          // ------------------------------------------------------------
+          const baseMaps = {
+            "OpenStreetMap": osm,
+            "USGS Topo": usgs
+          };
 
-        // Header
-        const header = L.DomUtil.create('div', 'leaflet-custom-legend-header', legendContainer);
-        header.innerHTML = `<span>#TITLE#</span>`;
+          L.control.layers(baseMaps, null, { collapsed: true }).addTo(map);
 
-        const closeBtn = L.DomUtil.create('button', 'leaflet-custom-legend-close', header);
-        closeBtn.innerHTML = '&times;';
+          // ------------------------------------------------------------
+          // CSS-based hex marker
+          // ------------------------------------------------------------
+          function hexMarker(hexColor) {
+            return L.divIcon({
+              className: "",
+              iconSize: [20, 30],
+              iconAnchor: [10, 30],
+              html: `<div class="hex-pin" style="background:${hexColor};"></div>`
+            });
+          }
 
-        closeBtn.addEventListener('click', () => {
-          legendContainer.style.display = 'none';
-          toggleButton.style.display = 'block';
-        });
+          // ------------------------------------------------------------
+          // Label under marker
+          // ------------------------------------------------------------
+          function labelIcon(text) {
+            return L.divIcon({
+              className: "",
+              iconSize: null,
+              iconAnchor: [0, 30],
+              html: `<div class="marker-label">${text}</div>`
+            });
+          }
 
-        // Body
-        const body = L.DomUtil.create('div', '', legendContainer);
-        body.innerHTML = `#LEGEND_HTML#`;
+          // ------------------------------------------------------------
+          // 1. CREATE LAYERS FIRST
+          // ------------------------------------------------------------
+          const layerDefs = [
+              #LAYERS#
+          ];
 
-        return legendContainer;
-        }
-      });
-
-      map.addControl(new LegendControl());
-
-      // ------------------------------
-      // Toggle Button Control
-      // ------------------------------
-      let toggleButton;
-
-      const ToggleLegendControl = L.Control.extend({
-        options: { position: 'bottomleft' },
-
-        onAdd: function (map) {
-        toggleButton = L.DomUtil.create('div', 'legend-toggle-btn');
-        toggleButton.innerHTML = '#TITLE#';
-
-        L.DomEvent.disableClickPropagation(toggleButton);
-
-        toggleButton.addEventListener('click', () => {
-          legendContainer.style.display = 'block';
-          toggleButton.style.display = 'none';
-        });
-
-        return toggleButton;
-        }
-      });
-
-      map.addControl(new ToggleLegendControl());
-
-      // Hide toggle button initially
-      toggleButton.style.display = 'none';
-
-
-      // ------------------------------------------------------------
-      // Marker icon color map (no shadow)
-      // ------------------------------------------------------------
-      const iconColors = {
-        blue:  "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-        red:   "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-        green: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-        orange:"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-        yellow:"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
-        violet:"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
-        grey:  "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png",
-        black: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png"
-      };
-
-      // ------------------------------------------------------------
-      // Marker icon generator using arbitrary hex color
-      // ------------------------------------------------------------
-      function makeColorIcon(hexColor) {
-        return L.divIcon({
-          className: "",
-          html: `
-            <div style="
-              width: 18px;
-              height: 18px;
-              background: ${hexColor};
-              border-radius: 50%;
-              border: 2px solid white;
-              box-shadow: 0 0 3px rgba(0,0,0,0.4);
-            "></div>
-          `,
-          iconSize: [13, 13],
-          iconAnchor: [0, 0]
-        });
-      }
-
-      // ------------------------------------------------------------
-      // addMarker
-      // ------------------------------------------------------------
-      function addMarker(lat, lng, labelText, popupText = null, color) {
-
-
-        if (!color.startsWith("#")) {
-          const iconUrl = iconColors[color] || iconColors.blue;
-
-          const markerIcon = L.icon({
-            iconUrl,
-            iconSize: [13, 21],
-            iconAnchor: [-5, 10],
-            popupAnchor: [1, -10]
+          const layers = {};
+          layerDefs.forEach(def => {
+            layers[def.name] = L.layerGroup().addTo(map);
           });
 
-          const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
+          // ------------------------------------------------------------
+          // 2. CREATE LEGEND SECOND
+          // ------------------------------------------------------------
+          const legend = document.getElementById("legendControl");
+          const legendBody = document.getElementById("legendBody");
+          const legendTitle = document.getElementById("legendTitle");
+          const legendClose = document.getElementById("legendClose");
 
-          if (popupText) {
-            marker.bindPopup(popupText);
+          layerDefs.forEach(def => {
+            const row = document.createElement("div");
+            row.className = "legend-row";
+            row.dataset.layer = def.name;
+
+            const icon = document.createElement("div");
+            icon.className = "legend-icon";
+            icon.style.background = def.color;
+
+            const label = document.createElement("span");
+            label.textContent = def.name;
+
+            row.appendChild(icon);
+            row.appendChild(label);
+            legendBody.appendChild(row);
+
+            // Toggle behavior
+            row.addEventListener("click", () => {
+              const layer = layers[def.name];
+
+              if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+                row.classList.add("disabled");
+              } else {
+                map.addLayer(layer);
+                row.classList.remove("disabled");
+              }
+            });
+          });
+
+          // Collapse button
+          legendClose.addEventListener("click", (e) => {
+            e.stopPropagation();
+            legend.classList.add("collapsed");
+          });
+
+          // Clicking title re-opens
+          legendTitle.addEventListener("click", () => {
+            legend.classList.remove("collapsed");
+          });
+
+          // ------------------------------------------------------------
+          // 3. CREATE MARKERS SEPARATELY
+          // ------------------------------------------------------------
+          const markers = [];
+
+          layerDefs.forEach(def => {
+          #MARKERS#
+          });
+
+          // ------------------------------------------------------------
+          // 4. ADD MARKERS TO THEIR LAYERS
+          // ------------------------------------------------------------
+          markers.forEach(m => {
+            const group = layers[m.layerName];
+
+            L.marker([m.lat, m.lng], { icon: hexMarker(m.color) })
+              .addTo(group)
+              .bindPopup(`${m.popup == null ? m.name : m.popup}`);
+
+            L.marker([m.lat, m.lng], {
+              icon: labelIcon(m.name),
+              interactive: false
+            }).addTo(group);
+          });
+
+          // ------------------------------------------------------------
+          // Zoom-scaling for markers + labels
+          // ------------------------------------------------------------
+          const baseZoom = 5;
+
+          function updateScale() {
+            const z = map.getZoom();
+            const dz = z - baseZoom;
+
+              // Hard cutoff: unreadable at zoom 4 or below
+              if (z <= baseZoom) {
+                scale = 0.05;   // microscopic
+              } else {
+                // Smooth sigmoid curve above zoom 4
+                const minScale = 0.25;
+                const maxScale = 2.8;
+                const growth = 0.45;
+
+                scale = minScale + (maxScale - minScale) * (1 / (1 + Math.exp(-growth * dz)));
+              }
+
+        //    document.querySelectorAll(".hex-pin").forEach(el => {
+        //      el.style.transform = `translate(-10px, -10px) scale(${scale})`;
+        //    });
+
+            document.querySelectorAll(".marker-label").forEach(el => {
+              el.style.transform = `translate(-50%, 4px) scale(${scale})`;
+            });
           }
-        } else {
-          const marker = L.marker([lat, lng], { icon: makeColorIcon(color) }).addTo(map);
 
-          if (popupText) {
-            marker.bindPopup(popupText);
-          }
-        }
-
-        L.marker([lat, lng], {
-          interactive: false,
-          icon: L.divIcon({
-            className: "",
-            iconAnchor: [-5, -13],
-            html: `<div class="label-text">${labelText}</div>`
-          })
-        }).addTo(map);
-      }
-
-      // ------------------------------------------------------------
-      // add markers here
-      // ------------------------------------------------------------
-      #MARKERS#
-
-      // ------------------------------------------------------------
-      // Update label scale on zoom
-      // ------------------------------------------------------------
-      function updateLabelScale() {
-        const baseZoom = 4;
-        const z = map.getZoom();
-        const dz = z - baseZoom;
-
-        let scale;
-
-        // Hard cutoff: unreadable at zoom 4 or below
-        if (z <= 4) {
-          scale = 0.05;   // microscopic
-        } else {
-          // Smooth sigmoid curve above zoom 4
-          const minScale = 0.25;
-          const maxScale = 2.8;
-          const growth = 0.45;
-
-          scale = minScale + (maxScale - minScale) * (1 / (1 + Math.exp(-growth * dz)));
-        }
-
-        document.querySelectorAll(".label-text").forEach(el => {
-          el.style.transform = `translate(-50%, 4px) scale(${scale})`;
-        });
-      }
-
-      map.on(" zoomend", updateLabelScale);
-      updateLabelScale();
-
-      </script>
+          map.on("zoom zoomend", updateScale);
+          updateScale();
+        </script>
       </body>
       </html>
-
-                       """;
+            """;
 
   @Override
   public Set<String> getValidIconColors() {
@@ -436,119 +485,4 @@ public class LeafletMapEngine extends MapService {
     return "black";
   }
 
-  @Override
-  public String makeLegendForFeedbackCount(int participantCount, Counter counter) {
-    var legendHTML = "For " + participantCount + " participants";
-
-    var it = counter.getAscendingKeyIterator();
-    var sb = new StringBuilder();
-    while (it.hasNext()) {
-      var entry = it.next();
-      sb.append("value" + ": " + entry.getKey() + ", " + "count" + ": " + entry.getValue() + "<br>");
-    }
-    legendHTML += "<br><br>Feedback Count:<br>" + sb.toString();
-    return legendHTML;
-  }
-
-  @Override
-  public String makeColorizedLegendForFeedbackCount(int participantCount, Counter counter,
-      Map<Integer, String> gradientMap) {
-
-    var lastIndex = gradientMap.size() - 1;
-    var lastColor = gradientMap.get(lastIndex);
-    var legendHTML = "For " + participantCount + " participants";
-
-    var it = counter.getAscendingKeyIterator();
-    var sb = new StringBuilder();
-    var lastCount = 0;
-    var entryIndex = -1;
-    while (it.hasNext()) {
-      var entry = it.next();
-      var count = entry.getValue();
-
-      ++entryIndex;
-      if (entryIndex >= gradientMap.size() - 1) {
-        lastCount += count;
-      } else {
-        var color = gradientMap.get(entryIndex);
-        sb
-            .append("<div><span class=\"box\" style=\"background:" + color + "\">&nbsp;&nbsp;&nbsp;</span>"
-                + "&nbsp;value: " + entryIndex + ", count: " + count + "</div>" + "\n");
-      }
-    }
-    sb
-        .append("<div><span class=\"box\" style=\"background:" + lastColor + "\">&nbsp;&nbsp;&nbsp;</span>"
-            + "&nbsp;value: " + lastIndex + " or more" + ", count: " + lastCount + "</div>" + "\n");
-    legendHTML += "<br><br>Feedback Count:<br>" + sb.toString();
-    return legendHTML;
-  }
-
-  @Override
-  public String makeLegendForRecipients(List<MapEntry> colorizedMapEntries) {
-    var countMap = new HashMap<String, Integer>();
-    for (var entry : colorizedMapEntries) {
-      var to = entry.to();
-      to = (to == null || to.length() == 0) ? "unknown" : to;
-      var count = countMap.getOrDefault(to, Integer.valueOf(0));
-      ++count;
-      countMap.put(to, count);
-    }
-
-    var sb = new StringBuilder();
-    sb.append("For " + colorizedMapEntries.size() + " participants<br>" + "\n");
-    var keys = new ArrayList<String>(colorMap.keySet());
-    Collections.sort(keys);
-    for (var to : keys) {
-      var colorName = colorMap.get(to);
-      var rgb = rgbMap.get(colorName);
-      rgb = (rgb != null) ? rgb : "ffffff";
-      var count = countMap.get(to);
-      var countString = count == null ? "0" : String.valueOf(count);
-      sb
-          .append("<div><span class=\"box\" style=\"background:#" + rgb + "\">&nbsp;&nbsp;&nbsp;</span> " + to + ": "
-              + countString + " participants</div>" + "\n");
-    }
-    return sb.toString();
-  }
-
-  @Override
-  public List<MapEntry> makeColorizedEntriesByRecipients(List<MapEntry> mapEntries) {
-    List<MapEntry> newMapEntries = new ArrayList<MapEntry>();
-    var tempColorMap = new HashMap<String, String>();
-    var validColorIndex = 0;
-    var expectedDestinationsString = cm.getAsString(Key.EXPECTED_DESTINATIONS);
-    var expectedDestinationsSet = Stream.of(expectedDestinationsString.split(",")).collect(Collectors.toSet());
-    var validColorList = new ArrayList<String>(getValidIconColors());
-
-    var colorName = getInvalidIconColor();
-    for (var mapEntry : mapEntries) {
-      var to = mapEntry.to();
-      to = (to != null) ? to : "";
-      if (exerciseOrganization.equals("ETO")) {
-        colorName = etoColorMap.getOrDefault(to, getInvalidIconColor());
-      } else {
-        var isValid = expectedDestinationsSet.contains(to);
-        if (isValid) {
-          colorName = tempColorMap.get(to);
-          if (colorName == null) {
-            colorName = validColorList.get(validColorIndex);
-            ++validColorIndex;
-            if (validColorIndex == validColorList.size()) {
-              validColorIndex = 0;
-            }
-            tempColorMap.put(to, colorName);
-          }
-        } else {// end isValid
-          colorName = getInvalidIconColor();
-          tempColorMap.put(to, colorName);
-        } // end if !isValid expectedDestination
-      } // end not eto
-      var newMessage = "<b>From: " + mapEntry.label() + "\n" + "To: " + to + "</b><hr>\n" + mapEntry.message();
-      var newMapEntry = new MapEntry(mapEntry.label(), to, mapEntry.location(), newMessage, colorName);
-      newMapEntries.add(newMapEntry);
-    } // end loop over mapEntries
-
-    colorMap = tempColorMap.size() > 0 ? tempColorMap : etoColorMap;
-    return newMapEntries;
-  }
 }

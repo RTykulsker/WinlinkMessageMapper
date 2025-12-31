@@ -27,6 +27,17 @@ SOFTWARE.
 
 package com.surftools.wimp.service.map;
 
-public record MapHeader(String fileName, String mapTitle, String legendHTML) {
+import java.nio.file.Path;
+import java.util.List;
+
+public record MapContext(//
+    Path path, //
+    String fileName, //
+    String mapTitle, //
+    MapGeometry mapGeometry, //
+    String legendTitle, //
+    List<MapLayer> layers, //
+    List<MapEntry> mapEntries //
+) {
 
 }

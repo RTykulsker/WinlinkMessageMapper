@@ -59,8 +59,9 @@ import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
+import com.surftools.wimp.service.map.MapContext;
 import com.surftools.wimp.service.map.MapEntry;
-import com.surftools.wimp.service.map.MapHeader;
+import com.surftools.wimp.service.map.MapLayer;
 import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.service.outboundMessage.OutboundMessageService;
@@ -290,24 +291,117 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     var dateString = cm.getAsString(Key.EXERCISE_DATE);
     var mapService = new MapService(cm, mm);
 
-    var gradientMap = mapService.makeGradientMap(120, 0, 10);
-    var mapEntries = mIdFeedbackMap
-        .values()
-          .stream()
-          .map(s -> MapEntry.fromSingleMessageFeedback(s, gradientMap))
-          .toList();
-    var labeledMapEntries = mapEntries.stream().map(m -> MapEntry.highlightLabel(m)).toList();
-    var legendHTML = mapService
-        .makeColorizedLegendForFeedbackCount(mapEntries.size(), counterMap.get("Feedback Count"), gradientMap);
-    var mapTitle = dateString + " Feedback Counts";
-    var mapHeader = new MapHeader(dateString + "-map-feedbackCount", mapTitle, legendHTML);
-    mapService.makeMap(outputPath, mapHeader, labeledMapEntries);
+    // feedback map
+    var feedbackCounter = new Counter();
+    final int nLayers = 6;
+    var truncatedCountMap = new HashMap<Integer, Integer>(); // 9 -> 9 or more
+    for (var summary : mIdFeedbackMap.values()) {
+      var feedbackMessage = (FeedbackMessage) summary;
+      var count = feedbackMessage.feedbackResult().feedbackCount();
+      var key = Math.min(nLayers - 1, count);
+      var value = truncatedCountMap.getOrDefault(key, Integer.valueOf(0));
+      ++value;
+      truncatedCountMap.put(key, value);
+    }
 
-    var colorizedMapEntries = mapService.makeColorizedEntriesByRecipients(mapEntries);
-    legendHTML = mapService.makeLegendForRecipients(colorizedMapEntries);
-    mapTitle = dateString + " By Destination";
-    mapHeader = new MapHeader(dateString + "-map-byClearinghouse", mapTitle, legendHTML);
-    mapService.makeMap(outputPath, mapHeader, colorizedMapEntries);
+    var gradientMap = mapService.makeGradientMap(120, 0, nLayers);
+    var layers = new ArrayList<MapLayer>();
+    var countLayerNameMap = new HashMap<Integer, String>();
+    for (var i = 0; i < nLayers; ++i) {
+      var value = String.valueOf(i);
+      var count = truncatedCountMap.get(i);
+      if (i == nLayers - 1) {
+        value = i + " or more";
+      }
+      var layerName = "value: " + value + ", count: " + count;
+      countLayerNameMap.put(i, layerName);
+
+      var color = gradientMap.get(i);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var mapEntries = new ArrayList<MapEntry>(mIdFeedbackMap.values().size());
+    for (var s : mIdFeedbackMap.values()) {
+      var feedbackMessage = (FeedbackMessage) s;
+      var m = feedbackMessage.message();
+      var r = feedbackMessage.feedbackResult();
+      var count = r.feedbackCount();
+
+      final var lastColorMapIndex = gradientMap.size() - 1;
+      final var lastColor = gradientMap.get(lastColorMapIndex);
+
+      var location = m.mapLocation;
+      var color = gradientMap.getOrDefault(count, lastColor);
+      var prefix = "<b>" + m.from + "</b><hr>";
+      var content = prefix + "Feedback Count: " + r.feedbackCount() + "\n" + "Feedback: " + r.feedback();
+      var mapEntry = new MapEntry(m.from, m.to, location, content, color);
+      mapEntries.add(mapEntry);
+      feedbackCounter.increment(r.feedbackCount());
+    }
+
+    var legendTitle = dateString + " Feedback Counts (" + mIdFeedbackMap.values().size() + " total)";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-feedbackCount", // file name
+        dateString + " Feedback Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+
+    // clearinghouse map
+    var organizationName = cm.getAsString(Key.EXERCISE_ORGANIZATION);
+    if (!organizationName.equals("ETO")) {
+      logger.info("skipping clearinghouse map because not defined for org: " + organizationName);
+    } else {
+      var clearinghouseNames = new ArrayList<String>(List.of(cm.getAsString(Key.EXPECTED_DESTINATIONS).split(",")));
+      clearinghouseNames.add("unknown");
+      var clearinghouseCountMap = new LinkedHashMap<String, Integer>();
+      for (var s : mIdFeedbackMap.values()) {
+        var feedbackMessage = (FeedbackMessage) s;
+        var m = feedbackMessage.message();
+        var to = m.to;
+        if (!clearinghouseNames.contains(to)) {
+          to = "unknown";
+        }
+        var count = clearinghouseCountMap.getOrDefault(to, Integer.valueOf(0));
+        ++count;
+        clearinghouseCountMap.put(to, count);
+      }
+
+      layers.clear();
+      for (var name : clearinghouseNames) {
+        var count = clearinghouseCountMap.get(name);
+        var layerName = name + ": " + count + " participants";
+
+        var color = MapService.etoColorMap.get(name);
+        var layer = new MapLayer(layerName, color);
+        layers.add(layer);
+      }
+
+      mapEntries.clear();
+      for (var s : mIdFeedbackMap.values()) {
+        var feedbackMessage = (FeedbackMessage) s;
+        var m = feedbackMessage.message();
+        var r = feedbackMessage.feedbackResult();
+        var to = m.to;
+        var clearinghouseName = clearinghouseNames.contains(to) ? to : "unknown";
+        var location = m.mapLocation;
+        var color = MapService.etoColorMap.get(clearinghouseName);
+        var prefix = "<b>From: " + m.from + "<br>To: " + to + "</b><hr>";
+        var messageId = feedbackMessage.message().messageId;
+        var content = "MessageId: " + messageId + "\n" + "Feedback Count: " + r.feedbackCount() + "\n" + "Feedback: "
+            + r.feedback();
+        content = prefix + content;
+        var mapEntry = new MapEntry(m.from, m.to, location, content, color);
+        mapEntries.add(mapEntry);
+      }
+
+      legendTitle = dateString + " By Clearinghouse (" + mIdFeedbackMap.values().size() + " total)";
+      context = new MapContext(outputPath, //
+          dateString + "-map-byClearinghouse", // file name
+          dateString + " By Clearinghouse", // map title
+          null, legendTitle, layers, mapEntries);
+      mapService.makeMap(context);
+    }
 
     var standardSummaries = mIdFeedbackMap
         .values()
