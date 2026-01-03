@@ -437,7 +437,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     var countLayerNameMap = new HashMap<Integer, String>();
     for (var i = 0; i < nLayers; ++i) {
       var value = String.valueOf(i);
-      var count = truncatedCountMap.get(i);
+      var count = truncatedCountMap.getOrDefault(i, Integer.valueOf(0));
       if (i == nLayers - 1) {
         value = i + " or more";
       }
@@ -492,7 +492,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
       layers.clear();
       for (var name : clearinghouseNames) {
-        var count = clearinghouseCountMap.get(name);
+        var count = clearinghouseCountMap.getOrDefault(name, Integer.valueOf(0));
         var layerName = name + ": " + count + " participants";
 
         var color = MapService.etoColorMap.get(name);
