@@ -27,6 +27,8 @@ SOFTWARE.
 
 package com.surftools.wimp.persistence;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
@@ -83,29 +85,34 @@ public interface IPersistenceManager {
   public ReturnRecord updateDateJoined();
 
   /**
+   * return a List of Exercises that meet filter criteria
    *
    * @param requiredExerciseTypes
    *          -- if list is empty or null, all exercise types, else only specified types
-   * @param fromExercise
-   *          -- if null, from last Exercise, else from specified exercise
+   * @param fromDate
+   *          -- if null, all exercises, else from on or after specified date
+   * @return -- if Ok, a List of Exercises that meet the search criteria the context
+   */
+  public ReturnRecord getFilteredExercises(Set<String> requiredExerciseTypes, LocalDate fromDate);
+
+  /**
+   *
+   * @param filteredExercises
+   *          -- the list of exercises to consider
    * @param missLimit
    *          -- max number of Exercises to miss before we'll ignore the user, ie, 3 strikes and you're out!
    * @return -- if Ok, a list of JoinedUser entries that meet the search criteria, with a List of missed Exercises as
    *         the context
    */
-  public ReturnRecord getUsersMissingExercises(Set<String> requiredExerciseTypes, Exercise fromExercise, int missLimit);
+  public ReturnRecord getUsersMissingExercises(List<Exercise> filteredExercises, int missLimit);
 
   /**
-   * return User participation history
+   * return User participation history. Specifically, a list of JoinedUsers
    *
-   * @param requiredExerciseTypes
-   *          -- if list is empty or null, all exercise types, else only specified types
-   * @param fromExercise
-   *          -- if null, from last Exercise, else from specified exercise
-   * @param doPartition
-   *          -- if true, return contains a Map of HistoryType by List of JoinedUsers -- if false, return a List of all
-   *          JoinedUsers matching filter criter
-   * @return -- if Ok, a Map/List of JoinedUser entries that meet the search criteria the context
+   * @param filteredExercises
+   *          -- the list of exercises to consider
+   *
+   * @return -- if Ok, a List of JoinedUser entries that meet the search criteria the context
    */
-  public ReturnRecord getUsersHistory(Set<String> requiredExerciseTypes, Exercise fromExercise, boolean doPartition);
+  public ReturnRecord getUsersHistory(List<Exercise> filteredExercises);
 }

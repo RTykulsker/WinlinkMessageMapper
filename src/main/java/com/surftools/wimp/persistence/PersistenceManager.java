@@ -27,7 +27,12 @@ SOFTWARE.
 
 package com.surftools.wimp.persistence;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
 import com.surftools.wimp.persistence.dto.Exercise;
@@ -36,6 +41,8 @@ import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class PersistenceManager implements IPersistenceManager {
+  private static final Logger logger = LoggerFactory.getLogger(PersistenceManager.class);
+
   protected IConfigurationManager cm;
   protected IPersistenceEngine engine;
   protected EngineType engineType;
@@ -72,25 +79,29 @@ public class PersistenceManager implements IPersistenceManager {
   }
 
   @Override
-  public ReturnRecord getUsersMissingExercises(Set<String> requiredExerciseTypes, Exercise fromExercise,
-      int missLimit) {
+  public ReturnRecord getUsersMissingExercises(List<Exercise> filteredExercises, int missLimit) {
 
-    return engine.getUsersMissingExercises(requiredExerciseTypes, fromExercise, missLimit);
+    return engine.getUsersMissingExercises(filteredExercises, missLimit);
   }
 
   @Override
-  public ReturnRecord getUsersHistory(Set<String> requiredExerciseTypes, Exercise fromExercise, boolean doPartition) {
-    return engine.getUsersHistory(requiredExerciseTypes, fromExercise, doPartition);
+  public ReturnRecord getFilteredExercises(Set<String> requiredExerciseTypes, LocalDate fromDate) {
+    return engine.getFilteredExercises(requiredExerciseTypes, fromDate);
+  }
+
+  @Override
+  public ReturnRecord getUsersHistory(List<Exercise> filteredExercises) {
+    return engine.getUsersHistory(filteredExercises);
   }
 
   @Override
   public ReturnRecord getHealth() {
     var ret = engine.getHealth();
     if (ret == null) {
-      throw new RuntimeException("null return from getHealth()");
-    }
-    if (ret.status() == ReturnStatus.ERROR) {
-      throw new RuntimeException("Database health error: " + ret.content());
+      logger.error("null return from getHealth()");
+      ret = new ReturnRecord(ReturnStatus.ERROR, "null return from getHealth()", null);
+    } else if (ret.status() == ReturnStatus.ERROR) {
+      logger.error("Database health error: " + ret.content());
     }
     return ret;
   }

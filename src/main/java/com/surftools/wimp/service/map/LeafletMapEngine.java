@@ -302,7 +302,7 @@ public class LeafletMapEngine extends MapService {
           // Initialize map
           // ------------------------------------------------------------
 
-          const map = L.map("map").setView([40, -100], 5);
+          const map = L.map("map").setView([40, -100], 4);
           // ------------------------------------------------------------
           // BASEMAPS
           // ------------------------------------------------------------
@@ -441,7 +441,7 @@ public class LeafletMapEngine extends MapService {
           // ------------------------------------------------------------
           // Zoom-scaling for markers + labels
           // ------------------------------------------------------------
-          const baseZoom = 5;
+          const baseZoom = 4;
 
           function updateScale() {
             const z = map.getZoom();

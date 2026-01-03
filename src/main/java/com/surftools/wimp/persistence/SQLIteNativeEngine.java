@@ -53,7 +53,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class SQLIteNativeEngine extends BaseQueryEngine {
   private static final Logger logger = LoggerFactory.getLogger(SQLIteNativeEngine.class);
 
-  private final String url;
+  private String url;
 
   public SQLIteNativeEngine(IConfigurationManager cm) {
     super(cm);
@@ -425,18 +425,24 @@ public class SQLIteNativeEngine extends BaseQueryEngine {
   }
 
   @Override
-  public ReturnRecord getUsersMissingExercises(Set<String> requiredExerciseTypes, Exercise fromExercise,
-      int missLimit) {
+  public ReturnRecord getUsersMissingExercises(List<Exercise> filteredExercises, int missLimit) {
 
     handleDirty();
-    return super.getUsersMissingExercises(requiredExerciseTypes, fromExercise, missLimit);
+    return super.getUsersMissingExercises(filteredExercises, missLimit);
   }
 
   @Override
-  public ReturnRecord getUsersHistory(Set<String> requiredExerciseTypes, Exercise fromExercise, boolean doPartition) {
+  public ReturnRecord getFilteredExercises(Set<String> requiredExerciseTypes, LocalDate fromDate) {
 
     handleDirty();
-    return super.getUsersHistory(requiredExerciseTypes, fromExercise, doPartition);
+    return super.getFilteredExercises(requiredExerciseTypes, fromDate);
+  }
+
+  @Override
+  public ReturnRecord getUsersHistory(List<Exercise> filteredExercises) {
+
+    handleDirty();
+    return super.getUsersHistory(filteredExercises);
   }
 
 }

@@ -36,7 +36,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class MapService implements IMapService {
 
-  public static final MapGeometry DEFAULT_MAP_GEOMETRY = new MapGeometry("40", "-91", "5", "19");
+  public static final MapGeometry DEFAULT_MAP_GEOMETRY = new MapGeometry("40", "-100", "4", "19");
 
   private IMapService engine;
 
