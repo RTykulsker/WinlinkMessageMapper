@@ -118,7 +118,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     this.subject = subject;
 
     this.msgDateTime = dateTime;
-    this.msgLocation = location;
+    this.msgLocation = (location != null) ? location : LatLongPair.INVALID;
     this.msgLocationSource = locationSource;
 
     this.mime = mime;
