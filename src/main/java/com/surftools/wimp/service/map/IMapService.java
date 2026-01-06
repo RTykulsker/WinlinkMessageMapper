@@ -41,19 +41,19 @@ public interface IMapService {
 
   public static final Map<String, String> etoColorMap = Map
       .ofEntries(//
-          Map.entry("ETO-01", "#cac428"), //
-          Map.entry("ETO-02", "#2a81cb"), //
-          Map.entry("ETO-03", "#cb2b32"), //
-          Map.entry("ETO-04", "#2aad27"), //
-          Map.entry("ETO-05", "#cb8427"), //
-          Map.entry("ETO-06", "#9c2bcb"), //
-          Map.entry("ETO-07", "#cac428"), //
-          Map.entry("ETO-08", "#2aad27"), //
-          Map.entry("ETO-09", "#cb2b32"), //
-          Map.entry("ETO-10", "#2a81cb"), //
-          Map.entry("ETO-CAN", "#9c2bcb"), //
-          Map.entry("ETO-DX", "#ffd326"), //
-          Map.entry("unknown", "#7b7b7b"));
+          Map.entry("ETO-01", "#e6194b"), // red
+          Map.entry("ETO-02", "#fabed4"), // pink
+          Map.entry("ETO-03", "#3cb44b"), // green
+          Map.entry("ETO-04", "#911eb4"), // purple
+          Map.entry("ETO-05", "#f58231"), // orange
+          Map.entry("ETO-06", "#ffe119"), // yellow
+          Map.entry("ETO-07", "#42d4f4"), // cyan
+          Map.entry("ETO-08", "#f032e6"), // magenta
+          Map.entry("ETO-09", "#469990"), // teal
+          Map.entry("ETO-10", "#4363d8"), // //blue
+          Map.entry("ETO-CAN", "#9a6324"), // brown
+          Map.entry("ETO-DX", "#000000"), // black
+          Map.entry("unknown", "#7b7b7b")); // gray
 
   public static final Map<String, String> rgbMap = Map
       .ofEntries( //
