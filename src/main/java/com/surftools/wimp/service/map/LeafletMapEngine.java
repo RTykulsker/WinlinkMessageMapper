@@ -44,6 +44,16 @@ public class LeafletMapEngine extends MapService {
   public LeafletMapEngine(IConfigurationManager cm, IMessageManager mm) {
   }
 
+  @Override
+  public Set<String> getValidIconColors() {
+    return VALID_ICON_COLORS;
+  }
+
+  @Override
+  public String getInvalidIconColor() {
+    return "black";
+  }
+
   public static String escapeForJavaScript(String input) {
     if (input == null) {
       return null;
@@ -474,15 +484,5 @@ public class LeafletMapEngine extends MapService {
       </body>
       </html>
             """;
-
-  @Override
-  public Set<String> getValidIconColors() {
-    return VALID_ICON_COLORS;
-  }
-
-  @Override
-  public String getInvalidIconColor() {
-    return "black";
-  }
 
 }
