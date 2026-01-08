@@ -35,13 +35,17 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class LeafletMapEngine extends MapService {
   private static final Logger logger = LoggerFactory.getLogger(LeafletMapEngine.class);
 
+  protected IConfigurationManager cm;
+
   public LeafletMapEngine(IConfigurationManager cm, IMessageManager mm) {
+    this.cm = cm;
   }
 
   @Override
@@ -104,7 +108,15 @@ public class LeafletMapEngine extends MapService {
     }
     var markers = sb.toString();
 
-    var fileContent = new String(FILE_TEMPLATE);
+    /**
+     * the fast template is supposed to be faster for large (1500 markers than the slow template. It is faster on one
+     * machine/browser, but not another
+     */
+    var mapTemplateMethod = cm.getAsString(Key.MAP_TEMPLATE_METHOD, "fast");
+    var doFast = mapTemplateMethod.toLowerCase().equals("fast");
+    logger.info("Using " + (doFast ? "fast" : "slow") + " file template");
+    var template = doFast ? FAST_FILE_TEMPLATE : SLOW_FILE_TEMPLATE;
+    var fileContent = new String(template);
     fileContent = fileContent.replace("#MAP_TITLE#", mapContext.mapTitle());
     fileContent = fileContent.replace("#LEGEND_TITLE#", mapContext.legendTitle());
 
@@ -141,7 +153,7 @@ public class LeafletMapEngine extends MapService {
       markers.push({lat: #LATITUDE#,lng: #LONGITUDE#,name: "#LABEL#", layerName: "#LAYER_NAME#", color: "#COLOR#", popup: "#POPUP#"});
         """;
 
-  private static String FILE_TEMPLATE = """
+  private static String SLOW_FILE_TEMPLATE = """
       <!DOCTYPE html>
       <html>
       <head>
@@ -299,8 +311,8 @@ public class LeafletMapEngine extends MapService {
         <div class="legend-control" id="legendControl">
           <div class="legend-title" id="legendTitle">
             #LEGEND_TITLE#
-      	  <!-- span id="legendClose">▁</span> -->
-      	  <span id="legendClose">_</span>
+          <!-- span id="legendClose">▁</span> -->
+          <span id="legendClose">_</span>
           </div>
           <div id="legendBody"></div>
         </div>
@@ -484,5 +496,367 @@ public class LeafletMapEngine extends MapService {
       </body>
       </html>
             """;
+
+  private static String FAST_FILE_TEMPLATE = """
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title#MAP_TITLE#</title>
+
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
+
+        <style>
+          #map {
+            height: 100vh;
+            width: 100vw;
+          }
+
+          /* Legend-control hybrid */
+          .legend-control {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            box-shadow: 0 0 6px rgba(0,0,0,0.3);
+            font-family: sans-serif;
+            z-index: 9999;
+
+            width: auto;
+            max-width: none;
+            white-space: nowrap;
+          }
+
+          .legend-control.collapsed #legendBody {
+            display: none;
+          }
+
+          .legend-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+          }
+
+          .legend-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+          }
+
+          .legend-row:last-child {
+            margin-bottom: 0;
+          }
+
+          .legend-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            margin-right: 8px;
+            position: relative;
+            flex-shrink: 0;
+            background: gray;
+          }
+
+          .legend-icon::before {
+            content: "";
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+          }
+
+          .legend-icon::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 8px solid #333;
+            transform: translateX(-50%);
+          }
+
+          .legend-row.disabled {
+            opacity: 0.35;
+          }
+
+          #legendClose {
+            float: right;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+          }
+
+          /* Tooltip labels — transparent background */
+          :root {
+            --label-font-size: 12px;
+          }
+
+          .marker-label-canvas {
+            background: transparent !important;
+            border: none !important;
+            padding: 0;
+            font-size: var(--label-font-size);
+            white-space: nowrap;
+            box-shadow: none !important;
+          }
+
+          /* Remove upward white tooltip arrow */
+          .leaflet-tooltip-top:before,
+          .leaflet-tooltip-bottom:before,
+          .leaflet-tooltip-left:before,
+          .leaflet-tooltip-right:before {
+            display: none !important;
+          }
+        </style>
+      </head>
+
+      <body>
+        <div id="map"></div>
+
+        <!-- Legend-control hybrid -->
+        <div class="legend-control" id="legendControl">
+          <div class="legend-title" id="legendTitle">
+            #LEGEND_TITLE#
+            <span id="legendClose">_</span>
+          </div>
+          <div id="legendBody"></div>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        <script>
+          // ------------------------------------------------------------
+          // Initialize map (Canvas renderer enabled)
+          // ------------------------------------------------------------
+          const map = L.map("map", { preferCanvas: true }).setView([50, -100], 4);
+
+          // ------------------------------------------------------------
+          // BASEMAPS (ONLY OSM + USGS)
+          // ------------------------------------------------------------
+          const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap contributors"
+          });
+
+          const usgs = L.tileLayer(
+            "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 20, attribution: "USGS The National Map" }
+          );
+
+          osm.addTo(map);
+
+          L.control.layers(
+            {
+              "OpenStreetMap": osm,
+              "USGS Topo": usgs
+            },
+            null,
+            { collapsed: true }
+          ).addTo(map);
+
+          // ------------------------------------------------------------
+          // CUSTOM CANVAS MARKER (circle + white dot + downward black triangle)
+          // ------------------------------------------------------------
+          const CanvasMarker = L.CircleMarker.extend({
+            _updatePath: function () {
+              const ctx = this._renderer._ctx;
+              const p = this._point;
+              const r = this._radius;
+
+              ctx.save();
+
+              // Outer circle
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+              ctx.fillStyle = this.options.fillColor;
+              ctx.fill();
+              ctx.lineWidth = this.options.weight;
+              ctx.strokeStyle = this.options.color;
+              ctx.stroke();
+
+              // White dot
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, r * 0.35, 0, Math.PI * 2);
+              ctx.fillStyle = "#ffffff";
+              ctx.fill();
+
+              // Downward triangle (constant size)
+              const triHeight = r * 1.2;
+              const triWidth = r * 1.2;
+
+              ctx.beginPath();
+              ctx.moveTo(p.x - triWidth / 2, p.y + r);          // left
+              ctx.lineTo(p.x + triWidth / 2, p.y + r);          // right
+              ctx.lineTo(p.x, p.y + r + triHeight);             // bottom point
+              ctx.closePath();
+
+              ctx.fillStyle = this.options.color;
+              ctx.fill();
+
+              ctx.restore();
+            }
+          });
+
+          // ------------------------------------------------------------
+          // 1. CREATE LAYERS FIRST
+          // ------------------------------------------------------------
+          const layerDefs = [
+            #LAYERS#
+          ];
+
+          const layers = {};
+          layerDefs.forEach(def => {
+            layers[def.name] = L.layerGroup().addTo(map);
+          });
+
+          // ------------------------------------------------------------
+          // 2. CREATE LEGEND SECOND
+          // ------------------------------------------------------------
+          const legend = document.getElementById("legendControl");
+          const legendBody = document.getElementById("legendBody");
+          const legendTitle = document.getElementById("legendTitle");
+          const legendClose = document.getElementById("legendClose");
+
+          layerDefs.forEach(def => {
+            const row = document.createElement("div");
+            row.className = "legend-row";
+            row.dataset.layer = def.name;
+
+            const icon = document.createElement("div");
+            icon.className = "legend-icon";
+            icon.style.background = def.color;
+
+            const label = document.createElement("span");
+            label.textContent = def.name;
+
+            row.appendChild(icon);
+            row.appendChild(label);
+            legendBody.appendChild(row);
+
+            row.addEventListener("click", () => {
+              const layer = layers[def.name];
+              if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+                row.classList.add("disabled");
+              } else {
+                map.addLayer(layer);
+                row.classList.remove("disabled");
+              }
+            });
+          });
+
+          legendClose.addEventListener("click", (e) => {
+            e.stopPropagation();
+            legend.classList.add("collapsed");
+          });
+
+          legendTitle.addEventListener("click", () => {
+            legend.classList.remove("collapsed");
+          });
+
+          // ------------------------------------------------------------
+          // 3. CREATE MARKERS SEPARATELY
+          // ------------------------------------------------------------
+          const markers = [];
+
+          layerDefs.forEach(def => {
+          #MARKERS#
+          });
+
+          // ------------------------------------------------------------
+          // 4. ADD MARKERS TO THEIR LAYERS (Canvas) + POPUPS
+          // ------------------------------------------------------------
+          markers.forEach(m => {
+            const group = layers[m.layerName];
+
+            const marker = new CanvasMarker([m.lat, m.lng], {
+              radius: 8,
+              color: "#333",
+              weight: 2,
+              fillColor: m.color,
+              fillOpacity: 1
+            }).addTo(group);
+
+            // Popup on click
+            marker.bindPopup(`${m.popup}`);
+            marker.on("click", () => {
+              marker.openPopup();
+            });
+
+            // Label
+            L.tooltip({
+              permanent: true,
+              direction: "bottom",
+              offset: [0, 10],
+              className: "marker-label-canvas"
+            })
+              .setContent(m.name)
+              .setLatLng([m.lat, m.lng])
+              .addTo(group);
+          });
+
+          // ------------------------------------------------------------
+          // HIDE LABELS AT LOW ZOOM (≤ 5)
+          // ------------------------------------------------------------
+          function updateLabelVisibility() {
+            const show = map.getZoom() > 5;
+
+            Object.values(layers).forEach(layer => {
+              layer.eachLayer(l => {
+                if (l instanceof L.Tooltip) {
+                  if (show) map.addLayer(l);
+                  else map.removeLayer(l);
+                }
+              });
+            });
+          }
+
+          map.on("zoomend", updateLabelVisibility);
+          updateLabelVisibility();
+
+          // ------------------------------------------------------------
+          // DYNAMIC LABEL FONT SCALING
+          // ------------------------------------------------------------
+          function updateLabelFont() {
+            const z = map.getZoom();
+
+            const minZoom = 4;
+            const maxZoom = 12;
+
+            const minSize = 10;
+            const maxSize = 22;
+
+            const t = Math.max(0, Math.min(1, (z - minZoom) / (maxZoom - minZoom)));
+
+            const size = minSize + (maxSize - minSize) * (t * t * (3 - 2 * t));
+
+            document.documentElement.style.setProperty("--label-font-size", size + "px");
+          }
+
+          map.on("zoomend", updateLabelFont);
+          updateLabelFont();
+        </script>
+      </body>
+      </html>
+                  """;
 
 }

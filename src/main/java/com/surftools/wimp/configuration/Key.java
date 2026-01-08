@@ -127,6 +127,8 @@ public enum Key implements IConfigurationKey {
   WEB_SERVER_PORT("web.serverPort"), // that we listen on
 
   READ_FILTER_ENABLED("read.filterEnabled"), // to filter in/out messages by sender/from in BaseReadProcessor
+
+  MAP_TEMPLATE_METHOD("map.template.method"), // "fast" or "slow", default "fast"
   ;
 
   private final String key;
