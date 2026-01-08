@@ -32,6 +32,9 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -47,6 +50,10 @@ import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor.BaseSummary;
+import com.surftools.wimp.service.map.MapContext;
+import com.surftools.wimp.service.map.MapEntry;
+import com.surftools.wimp.service.map.MapLayer;
+import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.service.simpleTestService.SimpleTestService;
 import com.surftools.wimp.service.simpleTestService.TestResult;
 import com.surftools.wimp.utils.config.IConfigurationManager;
@@ -75,6 +82,9 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   public Map<String, Counter> counterMap = new LinkedHashMap<String, Counter>();
 
   protected String outboundMessageExtraContent = FeedbackProcessor.OB_DISCLAIMER;
+
+  protected final int FEEDBACK_MAP_N_LAYERS = 6;
+  protected Map<Integer, String> gradientMap;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -106,6 +116,8 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
         unexpectedDestinations.add(field.toUpperCase().trim());
       }
     }
+
+    gradientMap = new MapService(cm, mm).makeGradientMap(120, 0, FEEDBACK_MAP_N_LAYERS);
   }
 
   /**
@@ -207,6 +219,59 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   @Override
   public void postProcess() {
 
+  }
+
+  protected void makeFeedbackMap(Map<Integer, Integer> truncatedCountMap, List<MapEntry> mapEntries) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+    var nLayers = FEEDBACK_MAP_N_LAYERS;
+
+    var layers = new ArrayList<MapLayer>();
+    var countLayerNameMap = new HashMap<Integer, String>();
+    for (var i = 0; i < nLayers; ++i) {
+      var value = String.valueOf(i);
+      var count = truncatedCountMap.getOrDefault(i, Integer.valueOf(0));
+      if (i == nLayers - 1) {
+        value = i + " or more";
+      }
+      var layerName = "value: " + value + ", count: " + count;
+      countLayerNameMap.put(i, layerName);
+
+      var color = gradientMap.get(i);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var legendTitle = dateString + " Feedback Counts (" + mapEntries.size() + " total)";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-feedbackCount", // file name
+        dateString + " Feedback Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+  }
+
+  protected void makeClearinghouseMap(Map<String, Integer> clearinghouseCountMap, Map<String, String> colorMap,
+      List<MapEntry> mapEntries) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+
+    var names = new ArrayList<String>(clearinghouseCountMap.keySet());
+    Collections.sort(names);
+    var layers = new ArrayList<MapLayer>();
+    for (var name : names) {
+      var count = clearinghouseCountMap.getOrDefault(name, Integer.valueOf(0));
+      var layerName = name + ": " + count + " participants";
+      var color = colorMap.get(name);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var legendTitle = dateString + " By Clearinghouse (" + mapEntries.size() + " total)";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-byClearinghouse", // file name
+        dateString + " By Clearinghouse", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
   }
 
   protected LocalDate parseDate(String s, List<DateTimeFormatter> formatters) {

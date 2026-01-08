@@ -60,9 +60,7 @@ import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.processors.std.AcknowledgementProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.service.chart.ChartServiceFactory;
-import com.surftools.wimp.service.map.MapContext;
 import com.surftools.wimp.service.map.MapEntry;
-import com.surftools.wimp.service.map.MapLayer;
 import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.service.outboundMessage.AbstractBaseOutboundMessageEngine;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
@@ -418,44 +416,36 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     chartService.initialize(cm, counterMap, null);
     chartService.makeCharts();
 
-    var dateString = cm.getAsString(Key.EXERCISE_DATE);
-    var mapService = new MapService(cm, mm);
+    // maps
+    makeFeedbackMap();
+    makeClearinghouseMap();
 
-    // feedback map
+    var standardSummaries = summaryMap.values().stream().map(s -> StandardSummary.fromMultiMessageFeedback(s)).toList();
+    writeTable(dateString + "-standard-summary.csv", new ArrayList<IWritableTable>(standardSummaries));
+
+    var db = new PersistenceManager(cm);
+    var input = makeDbInput(cm, summaryMap.values());
+    var dbResult = db.bulkInsert(input);
+    if (dbResult.status() == ReturnStatus.ERROR) {
+      logger.error("### database update failed: " + dbResult.content());
+    }
+  }
+
+  private void makeFeedbackMap() {
     var feedbackCounter = new Counter();
-    final int nLayers = 6;
-    var truncatedCountMap = new HashMap<Integer, Integer>(); // 9 -> 9 or more
+    var truncatedCountMap = new HashMap<Integer, Integer>(); // 6 -> 6 or more
     for (var summary : summaryMap.values()) {
-      var key = Math.min(nLayers - 1, Integer.parseInt(summary.getFeedbackCountString()));
+      var key = Math.min(FEEDBACK_MAP_N_LAYERS - 1, Integer.parseInt(summary.getFeedbackCountString()));
       var value = truncatedCountMap.getOrDefault(key, Integer.valueOf(0));
       ++value;
       truncatedCountMap.put(key, value);
     }
 
-    var gradientMap = mapService.makeGradientMap(120, 0, nLayers);
-    var layers = new ArrayList<MapLayer>();
-    var countLayerNameMap = new HashMap<Integer, String>();
-    for (var i = 0; i < nLayers; ++i) {
-      var value = String.valueOf(i);
-      var count = truncatedCountMap.getOrDefault(i, Integer.valueOf(0));
-      if (i == nLayers - 1) {
-        value = i + " or more";
-      }
-      var layerName = "value: " + value + ", count: " + count;
-      countLayerNameMap.put(i, layerName);
-
-      var color = gradientMap.get(i);
-      var layer = new MapLayer(layerName, color);
-      layers.add(layer);
-    }
-
     var mapEntries = new ArrayList<MapEntry>(summaryMap.values().size());
+    final var lastColorMapIndex = gradientMap.size() - 1;
+    final var lastColor = gradientMap.get(lastColorMapIndex);
     for (var s : summaryMap.values()) {
       var count = Integer.parseInt(s.getFeedbackCountString());
-
-      final var lastColorMapIndex = gradientMap.size() - 1;
-      final var lastColor = gradientMap.get(lastColorMapIndex);
-
       var location = s.location;
       var color = gradientMap.getOrDefault(count, lastColor);
       var prefix = "<b>" + s.from + "</b><hr>";
@@ -465,18 +455,15 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       feedbackCounter.increment(Integer.parseInt(s.getFeedbackCountString()));
     }
 
-    var legendTitle = dateString + " Feedback Counts (" + summaryMap.values().size() + " total)";
-    var context = new MapContext(outputPath, //
-        dateString + "-map-feedbackCount", // file name
-        dateString + " Feedback Counts", // map title
-        null, legendTitle, layers, mapEntries);
-    mapService.makeMap(context);
+    makeFeedbackMap(truncatedCountMap, mapEntries);
+  }
 
-    // clearinghouse map
+  private void makeClearinghouseMap() {
     var organizationName = cm.getAsString(Key.EXERCISE_ORGANIZATION);
     if (!organizationName.equals("ETO")) {
       logger.info("skipping clearinghouse map because not defined for org: " + organizationName);
     } else {
+      var colorMap = MapService.etoColorMap;
       var clearinghouseNames = new ArrayList<String>(List.of(cm.getAsString(Key.EXPECTED_DESTINATIONS).split(",")));
       clearinghouseNames.add("unknown");
       var clearinghouseCountMap = new LinkedHashMap<String, Integer>();
@@ -490,22 +477,12 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
         clearinghouseCountMap.put(to, count);
       }
 
-      layers.clear();
-      for (var name : clearinghouseNames) {
-        var count = clearinghouseCountMap.getOrDefault(name, Integer.valueOf(0));
-        var layerName = name + ": " + count + " participants";
-
-        var color = MapService.etoColorMap.get(name);
-        var layer = new MapLayer(layerName, color);
-        layers.add(layer);
-      }
-
-      mapEntries.clear();
+      var mapEntries = new ArrayList<MapEntry>();
       for (var s : summaryMap.values()) {
         var to = s.to;
         var clearinghouseName = clearinghouseNames.contains(to) ? to : "unknown";
         var location = s.location;
-        var color = MapService.etoColorMap.get(clearinghouseName);
+        var color = colorMap.get(clearinghouseName);
         var prefix = "<b>From: " + s.from + "<br>To: " + to + "</b><hr>";
         var messageIds = s.messageIds;
         var content = (messageIds == null) ? "" : "MessageIds: " + messageIds + "\n";
@@ -515,22 +492,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
         mapEntries.add(mapEntry);
       }
 
-      legendTitle = dateString + " By Clearinghouse (" + summaryMap.values().size() + " total)";
-      context = new MapContext(outputPath, //
-          dateString + "-map-byClearinghouse", // file name
-          dateString + " By Clearinghouse", // map title
-          null, legendTitle, layers, mapEntries);
-      mapService.makeMap(context);
-    }
-
-    var standardSummaries = summaryMap.values().stream().map(s -> StandardSummary.fromMultiMessageFeedback(s)).toList();
-    writeTable(dateString + "-standard-summary.csv", new ArrayList<IWritableTable>(standardSummaries));
-
-    var db = new PersistenceManager(cm);
-    var input = makeDbInput(cm, summaryMap.values());
-    var dbResult = db.bulkInsert(input);
-    if (dbResult.status() == ReturnStatus.ERROR) {
-      logger.error("### database update failed: " + dbResult.content());
+      makeClearinghouseMap(clearinghouseCountMap, colorMap, mapEntries);
     }
   }
 
