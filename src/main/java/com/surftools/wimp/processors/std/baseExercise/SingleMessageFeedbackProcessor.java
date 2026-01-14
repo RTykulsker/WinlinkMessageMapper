@@ -258,7 +258,12 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
         var unexpectedSenderSet = allSenderSet;
         logger.info("Senders who only sent unexpected messages: " + String.join(",", unexpectedSenderSet));
 
-        var subject = outboundMessageSubject.substring(0, outboundMessageSubject.indexOf(","));
+        var subject = outboundMessageSubject;
+        var commaIndex = outboundMessageSubject.indexOf(",");
+        if (commaIndex >= 0) {
+          subject = subject.substring(0, subject.indexOf(","));
+        }
+
         for (var sender : unexpectedSenderSet) {
           var text = "no " + messageType.name() + " message received";
           var outboundMessage = new OutboundMessage(outboundMessageSender, sender, subject, text, null);
@@ -339,7 +344,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
   private void makeClearinghouseMap() {
     var organizationName = cm.getAsString(Key.EXERCISE_ORGANIZATION);
-    if (!organizationName.equals("ETO")) {
+    if (organizationName == null || !organizationName.equals("ETO")) {
       logger.info("skipping clearinghouse map because not defined for org: " + organizationName);
     } else {
       var colorMap = MapService.etoColorMap;

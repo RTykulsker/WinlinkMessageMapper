@@ -460,7 +460,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
   private void makeClearinghouseMap() {
     var organizationName = cm.getAsString(Key.EXERCISE_ORGANIZATION);
-    if (!organizationName.equals("ETO")) {
+    if (organizationName == null || !organizationName.equals("ETO")) {
       logger.info("skipping clearinghouse map because not defined for org: " + organizationName);
     } else {
       var colorMap = MapService.etoColorMap;
