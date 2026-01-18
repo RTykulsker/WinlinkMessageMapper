@@ -110,6 +110,79 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     acceptableMessageTypesSet = new LinkedHashSet<MessageType>(List.of(MessageType.POSITION, MessageType.PLAIN));
     super.initialize(cm, mm, logger);
+
+    var extraOutboundMessageText = """
+
+        -----------------------------------------------------------------------------------------------------
+
+        ETO Exercise Instructions for Thursday, 2026-01-22
+
+        Task: Complete an ICS-205 Incident Radio Communications Plan Message
+
+        Exercise window: Sat 2026-01-17 00:00 UTC - Fri 2026-01-23 08:00 UTC
+
+        Use the following values when completing the form:
+            Setup: agency or group name: EmComm Training Organization
+            Incident name: ETO Weekly Practice
+            Date/Time: (click in box and accept date/time)
+            Operational Period Date From: 2026-01-17
+            Operational Period Date To: 2026-01-23
+            Operational Period Time From: 00:00 UTC
+            Operational Period Time To: 08:00 UTC
+            Basic Radio Channel Use:
+                line 1
+                    Ch #: 1
+                    Function: Coordination
+                    Channel Name: Repeater
+                    Assignment: amateur
+                    RX Freq: 146.700
+                    RX N or W: W
+                    RX Tone: 91.5
+                    Tx Freq: 146.100
+                    TX N or W: W
+                    TX Tone: 91.5
+                    Mode: A
+                    Remarks: Primary repeater
+                line 2
+                    Ch #: 2
+                    Function: Tactical
+                    Channel Name: Simplex
+                    Assignment: amateur
+                    RX Freq: 446.125
+                    RX N or W: N
+                    RX Tone:
+                    Tx Freq: 446.125
+                    TX N or W: N
+                    TX Tone:
+                    Mode: A
+                    Remarks: Primary simplex
+                line 3
+                    Ch #: 3
+                    Function: InterOp
+                    Channel Name: UCALL40
+                    Assignment: public safety
+                    RX Freq: 453.2125
+                    RX N or W: N
+                    RX Tone: 156.7
+                    Tx Freq:
+                    TX N or W:
+                    TX Tone:
+                    Mode: A
+                    Remarks: Receive only. Do not Transmit!
+            Special Instructions: Exercise Id: 864-099-8591
+            Approved by: Anna Park
+            Approved Date/Time: (click in box and accept date/time)
+            IAP Page: 6
+            Attach CSV: (No)
+
+        Send the message via the Session type of your choice to ETO-PRACTICE.
+
+        Refer to https://emcomm-training.org/Winlink_Thursdays.html for further instructions
+        about the weekly practice exercises and/or monthly training exercises.
+
+                """;
+
+    outboundMessageExtraContent = OB_DISCLAIMER + extraOutboundMessageText;
   }
 
   @Override
@@ -183,8 +256,7 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
         && addressesSet.contains("INQUIRY@winlink.org") //
         && m.plainContent.startsWith("WL2K_NEARBY")) {
       handle_CatalogMessage(summary, m);
-    } else if (m.subject.toUpperCase().startsWith("ETO Winlink Thursday".toUpperCase()) //
-        && m.plainContent.startsWith("From")) {
+    } else if (m.subject.toUpperCase().startsWith("ETO Winlink Thursday".toUpperCase())) {
       handle_QuickMessage(summary, m);
     } else {
       logger
@@ -220,7 +292,7 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
     if (imageFileName != null) {
       var bytes = attachments.get(imageFileName);
       count(sts
-          .test("Image files size should be less that 5 kb", bytes.length <= (5 * 1024), String.valueOf(bytes.length)));
+          .test("Image files size should be less that 5 kb", bytes.length <= (6 * 1024), String.valueOf(bytes.length)));
       attachedImageSize = bytes.length;
     }
 
