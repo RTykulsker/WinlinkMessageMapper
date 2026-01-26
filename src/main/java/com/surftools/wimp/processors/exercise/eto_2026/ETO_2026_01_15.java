@@ -298,13 +298,13 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
 
     var reportedNeighbors = 0;
     var messageLines = m.plainContent.split("\n");
-    var lastLine = messageLines[messageLines.length - 1];
-    getCounter("reported neighbors").increment(lastLine);
+    var countLine = messageLines[3].replaceAll("\"", "'");
+    getCounter("reported neighbors").increment(countLine);
     try {
-      reportedNeighbors = Integer.parseInt(lastLine);
+      reportedNeighbors = Integer.parseInt(countLine);
       count(sts.test("Message should be a number", true, String.valueOf(reportedNeighbors)));
     } catch (Exception e) {
-      count(sts.test("Message should be a number", true, lastLine));
+      count(sts.test("Message should be a number", false, countLine));
     }
 
     var actualNeighbors = 0;

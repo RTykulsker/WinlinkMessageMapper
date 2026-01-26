@@ -137,16 +137,27 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
 
           count(sts.testIfPresent("Response field #6 should be present", fields[5]));
           var mgrs = fields[5];
+          final var nMgrsChars = 9;
           count(sts
-              .test("Response field #6 should have #EV characters", String.valueOf(9), String.valueOf(mgrs.length())));
+              .test("Response field #6 should have #EV characters", String.valueOf(nMgrsChars),
+                  String.valueOf(mgrs.length())));
           try {
             count(sts.test("Response field #6 should be a valid MGRS location", true));
-            var pair = MgrsUtils.mgrsToLatLongPair(mgrs);
-            var distanceMiles = Math.round(LocationUtils.computeDistanceMiles(m.mapLocation, pair));
-            pred = distanceMiles <= 5;
+            var mgrsLoc = MgrsUtils.mgrsToLatLongPair(mgrs);
+            var distanceMiles = Math.round(LocationUtils.computeDistanceMiles(m.mapLocation, mgrsLoc));
+            final var maxDistanceMiles = 2;
+            pred = distanceMiles <= maxDistanceMiles;
+            var extraText = "";
+            if (!pred) {
+              var msgMGRS = MgrsUtils.latLongPairToMgrs(m.mapLocation, 2);
+              extraText = "(msgLL: " + m.mapLocation + ", msgMgrs: " + msgMGRS + ", stripLL: " + mgrsLoc
+                  + ", stripMGRS:" + mgrs + ")";
+              logger.info(">>> call: " + m.from + ", " + extraText);
+            }
             count(sts
-                .test("Response field #6 should be within 5 miles from message location", pred,
-                    ", not " + distanceMiles));
+                .test("Response field #6 (MGRS) should be within " + maxDistanceMiles //
+                    + " miles from message location", pred, String.valueOf(distanceMiles) + " miles " + extraText));
+
             getCounter("mgrsDistanceFromMsgLocation").increment(distanceMiles);
           } catch (Exception e) {
             count(sts.test("Response field #6 should be a valid MGRS location", false));

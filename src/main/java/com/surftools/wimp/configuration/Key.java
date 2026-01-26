@@ -38,6 +38,8 @@ import com.surftools.wimp.utils.config.IConfigurationKey;
 public enum Key implements IConfigurationKey {
 
   PATH_EXERCISES("path.exercises"), // dir where we find input/ exported messages and will create output/ and published/
+  PATH_PUBLICATION("path.publication"), // path to remote folder for publishing results
+  PATH_ARCHIVE("path.archive"), // path to remote folder for archiving entire exercise
   NEW_DATABASE_PATH("newDatabasePath"), // path to input database summary files
   LOG_PATH("log.path"), // where log files are placed
 
@@ -52,7 +54,14 @@ public enum Key implements IConfigurationKey {
 
   EXPECTED_MESSAGE_TYPES("expectedMessageTypes"), // MessageTypes that we will handle
 
-  ENABLE_FINALIZE("enableFinalize"), // copy outputDir, etc
+  ENABLE_FINALIZE("enable.finalize"), // set to true to enable, published, archive, snapshot to cloud, sends email,
+  // set on command line
+  ENABLE_FINALIZE_PUBLISHED("enable.finalize.published"), // transfer only published folder to cloud
+  ENABLE_FINALIZE_ARCHIVE("enable.finalize.archive"), // transfer all folders (input, output, published, winlink) to
+  // cloud
+  ENABLE_FINALIZE_EMAIL("enable.finalize.email"), // send email to interested parties
+  ENABLE_FINALIZE_SNAPSHOT("enable.finalize.snapshot"), // create a local copy final-yyyy-mm-dd-hh-mm-ss of entire
+  // exercise
 
   ACKNOWLEDGEMENT_SPECIFICATION("acknowledgement.specification"), // what to acknowledge, expected vs unexpectd
   ACKNOWLEDGEMENT_EXPECTED("acknowledgement.expected"), // content for expected messages
@@ -93,6 +102,12 @@ public enum Key implements IConfigurationKey {
   EXERCISE_ORGANIZATION("exerciseOrganization"), // for Database
   EXERCISE_WINDOW_OPEN("exerciseWindowOpen"), //
   EXERCISE_WINDOW_CLOSE("exerciseWindowClose"), //
+
+  EMAIL_NOTIFICATION_FROM("email.notification.from"), //
+  EMAIL_NOTIFICATION_TO("email.notification.to"), // comma-delimited list
+  EMAIL_NOTIFICATION_PASSWORD_FILEPATH("email.notification.password.filePath"), // no password in config
+  EMAIL_NOTIFICATION_SUBJECT("email.notification.subject"), // with #DATE# substitution
+  EMAIL_NOTIFICATION_BODY("email.notification.body"), // with #DATE# substitution
 
   EXPECTED_DESTINATIONS("expectedDestinations"), // comma-delimited list, like ETO-01,ETO-02
   SECONDARY_DESTINATIONS("secondaryDestinations"), // comma-delimited list, like ETO-BK

@@ -68,6 +68,8 @@ public class LeafletMapEngine extends MapService {
     escaped = escaped.replace("'", "\\'");
     // Optionally escape newlines if embedding directly
     escaped = escaped.replace("\n", "\\n").replace("\r", "\\r");
+    // no double-quote characters
+    escaped = escaped.replaceAll("\"", "&quot;");
     return escaped;
   }
 
