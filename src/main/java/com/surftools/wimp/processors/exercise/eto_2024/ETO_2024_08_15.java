@@ -120,7 +120,7 @@ public class ETO_2024_08_15 extends FeedbackProcessor {
     count(sts.test("At least one infrastructure should be non-functional", nonFunctionalCount > 0));
     getCounter("Non-functional infrastructure items").increment(nonFunctionalCount);
 
-    getCounter("Form Version").increment(m.formVersion);
+    getCounter("Form Version").increment(m.version);
     getCounter("Feedback Count").increment(sts.getExplanations().size());
 
     setExtraOutboundMessageText(sts.getExplanations().size() == 0 ? "" : OB_DISCLAIMER);

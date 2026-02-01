@@ -46,8 +46,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * @author bobt
  *
  */
-public class ETO_2026_03_17 extends SingleMessageFeedbackProcessor {
-  private static Logger logger = LoggerFactory.getLogger(ETO_2026_03_17.class);
+public class ETO_2026_03_19 extends SingleMessageFeedbackProcessor {
+  private static Logger logger = LoggerFactory.getLogger(ETO_2026_03_19.class);
 
   private static final String referenceMessage = """
       Name,Address,Notes,
@@ -67,7 +67,7 @@ public class ETO_2026_03_17 extends SingleMessageFeedbackProcessor {
       Training Ex To Entry,ETO-BK,ETO-BK CC Field for Training,
                               """;
 
-  private static List<String> referenceLines;
+  private static List<String> refLines;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -77,7 +77,7 @@ public class ETO_2026_03_17 extends SingleMessageFeedbackProcessor {
     var extraOutboundMessageText = "";
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
 
-    referenceLines = Arrays.asList(referenceMessage.split("\n"));
+    refLines = Arrays.asList(referenceMessage.split("\n"));
   }
 
   @Override
@@ -86,28 +86,18 @@ public class ETO_2026_03_17 extends SingleMessageFeedbackProcessor {
 
     count(sts.test("Agency/Group Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("THIS IS AN EXERCISE should be checked", m.isExercise));
-    count(sts.test("Incident Name should be #EV", "March 19th, 2026 Training Exer", m.incidentName));
+    count(sts.test("Incident Name should be #EV", "03/19/2026 Training Exercise", m.incidentName));
     count(sts.test("Form To should be #EV", "EmComm Training Organization", m.formTo));
     count(sts.test("Form From should contain '/ Participant'", m.formFrom.contains("/ Participant")));
     count(sts.testIfPresent("Form Date should be present", m.formDate));
     count(sts.testIfPresent("Form Time should be present", m.formTime));
 
-    var messageLines = Arrays.asList(m.formMessage.split("\n"));
-    for (var i = 0; i < referenceLines.size(); ++i) {
-      var lineNumber = i + 1;
-      var refLine = referenceLines.get(i);
-      var line = "";
-      if (i < messageLines.size()) {
-        line = messageLines.get(i);
-      }
-      count(sts.test_2line("Message line " + lineNumber + " should be #EV", refLine, line));
+    var msgLines = Arrays.asList(m.formMessage.split("\n"));
+    for (var i = 0; i < refLines.size(); ++i) {
+      var line = (i < msgLines.size()) ? msgLines.get(i) : "";
+      count(sts.test_2line("Message line " + (i + 1) + " should be #EV", refLines.get(i), line));
     }
-
-    if (messageLines.size() <= referenceLines.size()) {
-      count(sts.test("Message should not have more lines than instructions", true));
-    } else {
-      count(sts.test("Message should not have more lines than instructions", false));
-    }
+    count(sts.test("Message should not have more lines than instructions", msgLines.size() <= refLines.size()));
 
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
     count(sts.test("Position/Title should match call sign", m.position.equals(m.from)));

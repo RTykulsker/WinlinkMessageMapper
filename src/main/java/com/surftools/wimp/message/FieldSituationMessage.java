@@ -118,7 +118,7 @@ public class FieldSituationMessage extends ExportedMessage {
   public final String noaaAudioDegradedComments;
   public final String additionalComments;
   public final String poc;
-  public final String formVersion;
+  public final String version;
 
   public final Map<ResourceType, Resource> resourceMap;
 
@@ -188,7 +188,7 @@ public class FieldSituationMessage extends ExportedMessage {
     this.noaaAudioDegraded = noaaAudioDegraded;
     this.noaaAudioDegradedComments = noaaAudioDegradedComments;
     this.poc = poc;
-    this.formVersion = formVersion;
+    this.version = formVersion;
 
     if (formLocation.isValid()) {
       setMapLocation(formLocation);
@@ -251,7 +251,7 @@ public class FieldSituationMessage extends ExportedMessage {
         naturalGasStatus, naturalGasComments, //
         internetStatus, internetComments, //
         noaaStatus, noaaComments, noaaAudioDegraded, noaaAudioDegradedComments, //
-        additionalComments, poc, formVersion, fileName };
+        additionalComments, poc, version, fileName };
   }
 
   @Override
