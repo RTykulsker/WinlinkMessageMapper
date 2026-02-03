@@ -95,7 +95,7 @@ public abstract class AbstractBaseChartService implements IChartService {
     var fileName = messageType == null ? "summary" : messageType.name().toLowerCase();
     fileOutputPath = Path.of(AbstractBaseProcessor.outputPathName, fileName + "_" + "plottly_chart.html");
 
-    var defaultConfig = new ChartConfig(List.of(ChartType.PIE), false, 0, 10);
+    var defaultConfig = new ChartConfig(List.of(ChartType.PIE), true, 0, 16);
     var jsonString = cm.getAsString(Key.CHART_CONFIG, "").trim();
     if (jsonString.isEmpty()) {
       // since there is no override configuration, must go with defaults for everything

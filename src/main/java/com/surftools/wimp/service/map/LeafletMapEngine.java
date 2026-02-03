@@ -446,6 +446,8 @@ public class LeafletMapEngine extends MapService {
           #MARKERS#
           });
 
+
+
           // ------------------------------------------------------------
           // 4. ADD MARKERS TO THEIR LAYERS
           // ------------------------------------------------------------
@@ -628,10 +630,45 @@ public class LeafletMapEngine extends MapService {
           .leaflet-tooltip-right:before {
             display: none !important;
           }
+
+        	.search-control {
+        	  background: white;
+        	  padding: 4px 6px;
+        	  border-radius: 4px;
+        	  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+        	  display: flex;
+        	  align-items: center;
+        	  gap: 4px;
+        	}
+
+        	.search-control input {
+        	  width: 140px;
+        	  border: none;
+        	  outline: none;
+        	  padding: 4px;
+        	  background: #dddddd; /* requested */
+        	  border-radius: 3px;
+        	}
+
+        	.search-icon {
+        	  font-size: 16px;
+        	  user-select: none;
+        	}
+
+        	#busy-overlay {
+        	  position: fixed;
+        	  inset: 0;
+        	  background: transparent;
+        	  cursor: wait;
+        	  z-index: 999999; /* above Leaflet controls */
+        	  display: none;
+        	}
+
         </style>
       </head>
 
       <body>
+        <div id="busy-overlay"></div>
         <div id="map"></div>
 
         <!-- Legend-control hybrid -->
@@ -779,6 +816,7 @@ public class LeafletMapEngine extends MapService {
           // 3. CREATE MARKERS SEPARATELY
           // ------------------------------------------------------------
           const markers = [];
+          const markerByName = {};
 
           layerDefs.forEach(def => {
           #MARKERS#
@@ -797,6 +835,7 @@ public class LeafletMapEngine extends MapService {
               fillColor: m.color,
               fillOpacity: 1
             }).addTo(group);
+            markerByName[m.name] = marker;
 
             // Popup on click
             marker.bindPopup(`${m.popup}`);
@@ -853,6 +892,58 @@ public class LeafletMapEngine extends MapService {
 
             document.documentElement.style.setProperty("--label-font-size", size + "px");
           }
+
+          // ---------------------------------------------------------------------
+          // Search control (press Enter → zoom + open popup)
+          // ---------------------------------------------------------------------
+          const SearchControl = L.Control.extend({
+            options: { position: "topleft" },
+
+            onAdd: function () {
+              const container = L.DomUtil.create("div", "search-control");
+
+          // magnifying glass icon
+      		const icon = L.DomUtil.create("div", "search-icon", container);
+      		icon.innerHTML = "🔍";
+
+          const input = L.DomUtil.create("input", "", container);
+          input.type = "text";
+          input.placeholder = "Search by call sign…";
+
+          L.DomEvent.disableClickPropagation(container);
+
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              const query = input.value.trim().toLowerCase();
+              if (!query) return;
+
+      			const overlay = document.getElementById("busy-overlay");
+      			overlay.style.display = "block";   // show busy cursor immediately
+
+      			// Force repaint before running the search
+      			requestAnimationFrame(() => {
+
+      				const match = markers.find(f =>
+                f.name.toLowerCase() === query
+              );
+
+      				if (match) {
+      				  const m = markerByName[match.name];
+      				  map.setView(m.getLatLng(), 16);
+      				  m.openPopup();
+      				}
+
+      				// restore cursor
+      				overlay.style.display = "none";  // remove busy cursor
+
+      			});
+      		  }
+      		});
+
+              return container;
+            }
+          });
+          map.addControl(new SearchControl());
 
           map.on("zoomend", updateLabelFont);
           updateLabelFont();

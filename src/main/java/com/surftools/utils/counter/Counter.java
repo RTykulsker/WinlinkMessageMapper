@@ -37,10 +37,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.opencsv.CSVWriter;
 
 @SuppressWarnings("rawtypes")
 public class Counter implements ICounter, Comparable {
+  protected Logger logger = LoggerFactory.getLogger(Counter.class);
+
   protected Map<Comparable, Integer> map = new HashMap<>();
   protected String name;
 
@@ -142,7 +147,30 @@ public class Counter implements ICounter, Comparable {
       var value = entry.getValue();
       increment(key, value);
     }
+  }
 
+  @Override
+  public Counter squeeze(int maxEntries, String label) {
+    if (getKeyCount() <= maxEntries) {
+      return this;
+    }
+
+    var newCounter = new Counter(name);
+    var it = getDescendingCountIterator();
+    var count = 0;
+    while (it.hasNext()) {
+      var entry = it.next();
+      ++count;
+      if (count < maxEntries) {
+        newCounter.increment(entry.getKey(), entry.getValue());
+      } else {
+        newCounter.increment(label, entry.getValue());
+        logger.warn("### squeezing Counter: " + name + ",  key:" + entry.getKey() + ", count: " + entry.getValue()
+            + " to " + label);
+      } // endif count < maxEntries
+    } // end loop over iterator
+
+    return newCounter;
   }
 
   @Override

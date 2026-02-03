@@ -46,10 +46,10 @@ public interface IMapService {
           Map.entry("ETO-03", "#3cb44b"), // green
           Map.entry("ETO-04", "#911eb4"), // purple
           Map.entry("ETO-05", "#f58231"), // orange
-          Map.entry("ETO-06", "#469990"), // teal
+          Map.entry("ETO-06", "#ffe119"), // yellow
           Map.entry("ETO-07", "#42d4f4"), // cyan
           Map.entry("ETO-08", "#f032e6"), // magenta
-          Map.entry("ETO-09", "#ffe119"), // yellow
+          Map.entry("ETO-09", "#469990"), // teal
           Map.entry("ETO-10", "#4363d8"), // //blue
           Map.entry("ETO-CAN", "#9a6324"), // brown
           Map.entry("ETO-DX", "#000000"), // black

@@ -95,6 +95,13 @@ public class PropertyFileConfigurationManager extends DefaultConfigurationManage
       if (substitutionMap.size() > 0) {
         doSubstitutions(substitutionMap);
       }
+
+      var dumpMap = false;
+      if (dumpMap) {
+        for (var key : map.keySet()) {
+          logger.info("DUMP key: " + key + " -> " + map.get(key));
+        }
+      }
     } catch (Exception e) {
       logger.error("Exception processing configuration file: " + configFileName + ": " + e.getMessage());
       throw e;

@@ -60,7 +60,7 @@ public class TextEditorManager {
         }
       } // end loop over suffixes
     } // end loop over prefixes
-    logger.info("Could not find an editor for: " + editorName);
+    logger.error("Could not find an editor for: " + editorName);
     return null;
   }
 

@@ -27,7 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.utils.config;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -43,7 +43,7 @@ public class DefaultConfigurationManager implements IWritableConfigurationManage
   protected IConfigurationKey[] values = null;
 
   public DefaultConfigurationManager() {
-    map = new HashMap<>();
+    map = new LinkedHashMap<>();
   }
 
   public void setValues(IConfigurationKey[] values) {

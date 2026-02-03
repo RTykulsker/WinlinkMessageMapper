@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.persistence.dto.Event;
 import com.surftools.wimp.persistence.dto.Exercise;
+import com.surftools.wimp.persistence.dto.JoinedUser;
 import com.surftools.wimp.persistence.dto.ReturnRecord;
 import com.surftools.wimp.persistence.dto.ReturnStatus;
 import com.surftools.wimp.persistence.dto.User;
@@ -151,8 +152,9 @@ public abstract class BaseQueryEngine implements IPersistenceEngine {
           join.context = intersection;
           candidateJoins.add(join);
         } else {
-          logger.debug("skipping call: " + join.user.call() + " because didn't participate in previous " + missLimit
-              + " exercises");
+          logger
+              .debug("skipping call: " + join.user.call() + " because didn't participate in previous " + missLimit
+                  + " exercises");
         }
       }
     } // end for over all calls/joins
@@ -211,6 +213,13 @@ public abstract class BaseQueryEngine implements IPersistenceEngine {
     }
 
     for (var join : joinMap.values()) {
+
+      @SuppressWarnings("unused")
+      var debug = false;
+      if (join.user.call().equals("KM6SO")) {
+        debug = true;
+      }
+
       var intersection = new HashSet<Exercise>(filteredExercises);
       intersection.retainAll(join.exercises);
 
@@ -220,6 +229,10 @@ public abstract class BaseQueryEngine implements IPersistenceEngine {
 
       join.exercises = selectedExercises;
       content.add(join);
+
+      var selectedExerciseIdSet = new HashSet<Long>(selectedExercises.stream().map(ex -> ex.id()).toList());
+      var selectedEvents = join.events.stream().filter(ev -> selectedExerciseIdSet.contains(ev.exerciseId())).toList();
+      join.events = selectedEvents;
     } // end for over all calls/joins
 
     return new ReturnRecord(ReturnStatus.OK, null, content);

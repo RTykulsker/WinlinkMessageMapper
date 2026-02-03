@@ -121,6 +121,17 @@ public interface ICounter<K extends Comparable<K>> {
   public void merge(Counter subCounter);
 
   /**
+   * return a counter with "long tail" values (descending count) squeezed into a
+   * single bucket
+   *
+   * @param maxEntries -- total entries to remain, last will be squeezed
+   * @param label      -- label for last entry
+   *
+   * @return this Counter if possible, else a new Counter
+   */
+  public Counter squeeze(int maxEntries, String label);
+
+  /**
    * write the Counter keys and values with a default ordering
    *
    * @param path

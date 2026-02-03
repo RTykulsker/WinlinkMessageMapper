@@ -33,6 +33,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * various static methods for location-based services
  *
@@ -40,6 +43,7 @@ import java.util.List;
  *
  */
 public class LocationUtils {
+  private static final Logger logger = LoggerFactory.getLogger(LocationUtils.class);
 
   // https://en.wikipedia.org/wiki/Great-circle_distance
   public static final double R_METERS = 6_371_009d;
@@ -158,6 +162,102 @@ public class LocationUtils {
   }
 
   /**
+   *
+   * Returns the (x, y) coordinates on the unit circle for the given index. Uses binary angular subdivision: 0: 0° 1:
+   * 180° 2: 90° 3: 270° 4: 45° 5: 135° 6: 225° 7: 315° 8+: recursively subdivide remaining arcs.
+   *
+   * @param index
+   * @param center
+   * @param distanceMeters
+   * @return
+   */
+
+  public static LatLongPair binaryAngularSubdivision(int index, LatLongPair center, double distanceMeters) {
+    if (index < 0) {
+      throw new IllegalArgumentException("negative: " + index);
+    }
+
+    if (distanceMeters <= 0) {
+      throw new IllegalArgumentException("non-positve distance:" + distanceMeters);
+    }
+
+    if (center == null) {
+      center = new LatLongPair(0, 0);
+    }
+
+    var centerLat = center.getLatitudeAsDouble();
+    var centerLon = center.getLongitudeAsDouble();
+
+    var thetaDegrees = 0d;
+    if (index == 1) {
+      thetaDegrees = 180d;
+    } else if (index == 2) {
+      thetaDegrees = 90d;
+    } else if (index == 3) {
+      thetaDegrees = 270d;
+    } else {
+      // For index >= 4:
+      // Determine which "layer" of binary subdivision this index belongs to.
+      // Layer 0: 4 points (already handled)
+      // Layer 1: 4 points (45°, 135°, 225°, 315°)
+      // Layer 2: 8 points (22.5°, 67.5°, ...)
+      // Layer 3: 16 points, etc.
+
+      int layer = 1;
+      int start = 4;
+      int count = 4;
+
+      while (index >= start + count) {
+        start += count;
+        count *= 2;
+        layer++;
+      }
+
+      // Position inside this layer
+      int pos = index - start;
+
+      // Angle step for this layer
+      double step = 360.0 / (4 * Math.pow(2, layer - 1));
+
+      // First angle in this layer is step/2 offset from cardinal directions
+      thetaDegrees = step / 2 + pos * step;
+    }
+    var thetaRadians = Math.toRadians(thetaDegrees);
+
+    var lo = 0d;
+    var hi = distanceMeters / 10_000d;
+    var pair = (LatLongPair) null;
+    var iterations = 0;
+    var done = false;
+    while (!done) {
+      ++iterations;
+      var mid = (lo + hi) / 2;
+      var newLongitude = centerLon + (mid * Math.cos(thetaRadians));
+      var newLatitude = centerLat + (mid * Math.sin(thetaRadians));
+      pair = new LatLongPair(newLatitude, newLongitude);
+
+      var computedDistance = computeDistanceMeters(center, pair);
+      var delta = distanceMeters - computedDistance;
+      if (Math.abs(delta) <= 10d || iterations >= 1000) {
+        done = true;
+
+        logger.debug("done, mid: " + mid + ", delta: " + delta + ", iterations: " + iterations);
+        break;
+      } else {
+        logger.debug("iteration: " + iterations + ", delta: " + delta + ", lo: " + lo + ", hi: " + hi);
+        if (computedDistance < distanceMeters) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+
+    }
+
+    return pair;
+  }
+
+  /**
    * return a list of LatLongPair points evenly spaced at a distance around the center
    *
    * @param n
@@ -212,9 +312,11 @@ public class LocationUtils {
         if (Math.abs(delta) <= 0.01 || iterations >= 1000) {
           done = true;
           list.add(pair);
-          // System.err.println("done, mid: " + mid + ", delta: " + delta + ", iterations: " + iterations);
+          // logger.info("done, mid: " + mid + ", delta: " + delta + ", iterations:
+          // " + iterations);
         } else {
-          // lSystem.err.println("iteration: " + iterations + ", delta: " + delta + ", lo: " + lo + ", hi: " + hi);
+          // logger.error("iteration: " + iterations + ", delta: " + delta + ", lo:
+          // " + lo + ", hi: " + hi);
           if (computedDistance < distanceMeters) {
             lo = mid;
           } else {
@@ -314,7 +416,8 @@ public class LocationUtils {
       ddmm = ddmm.trim();
     }
 
-    // it gets worse: 37.69250150N or -121.78913700W, but not 47-32.23N or 122-14.33W
+    // it gets worse: 37.69250150N or -121.78913700W, but not 47-32.23N or
+    // 122-14.33W
     var lastChar = ddmm.charAt(ddmm.length() - 1);
     if (REDUNDANT_LAST_CHAR_SET.contains(lastChar) && ((ddmm.startsWith("-")) || (ddmm.indexOf("-") == -1))) {
       ddmm = ddmm.substring(0, ddmm.length() - 1);
