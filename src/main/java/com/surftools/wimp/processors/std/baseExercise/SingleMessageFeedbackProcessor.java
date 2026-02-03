@@ -171,7 +171,9 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
     var explanations = sts.getExplanations();
     var feedback = "";
-    getCounter("Feedback Count").increment(explanations.size());
+    var count = explanations.size();
+    var label = count >= 10 ? "10 or more" : String.valueOf(count);
+    getCounter("Feedback Count").increment(label);
     if (explanations.size() == 0) {
       ++ppMessageCorrectCount;
       feedback = "Perfect Message!";

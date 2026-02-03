@@ -96,7 +96,7 @@ public abstract class AbstractBaseParser implements IParser {
     return new RejectionMessage(message, reason, context);
   }
 
-  public String getValueFromMime(String[] mimeLines, String key) {
+  public static String getValueFromMime(String[] mimeLines, String key) {
     for (String line : mimeLines) {
       if (line.startsWith(key)) {
         var value = line.substring(key.length());
@@ -394,5 +394,27 @@ public abstract class AbstractBaseParser implements IParser {
     }
 
     return version;
+  }
+
+  public static String getExpressVersion(ExportedMessage message, String key) {
+    var expressVersion = getValueFromMime(message.getMimeLines(), key);
+    if (expressVersion == null || expressVersion.length() == 0) {
+      var newLines = message.mime.split("=0A");
+      for (var newLine : newLines) {
+        newLine = newLine.replace("=\n", "");
+        if (newLine.contains(key)) {
+          var newFields = newLine.split("[:=]");
+          if (newFields.length >= 2) {
+            expressVersion = newFields[newFields.length - 1].trim();
+            break;
+          }
+        }
+      }
+    }
+    expressVersion = expressVersion.replace("=20", "");
+    expressVersion = expressVersion.replace(":", "");
+    expressVersion = (expressVersion != null && expressVersion.length() > 0) ? expressVersion : "(unknown)";
+
+    return expressVersion;
   }
 }

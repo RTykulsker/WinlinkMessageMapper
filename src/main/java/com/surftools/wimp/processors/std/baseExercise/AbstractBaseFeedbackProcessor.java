@@ -338,4 +338,5 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   protected static String s(boolean b) {
     return String.valueOf(b);
   }
+
 }

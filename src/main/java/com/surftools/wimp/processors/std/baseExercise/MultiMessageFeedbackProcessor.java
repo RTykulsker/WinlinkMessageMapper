@@ -259,7 +259,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     if (nExplanations == 0) {
       ++ppParticipantCorrectCount;
     }
-    getCounter("Feedback Count").increment(nExplanations);
+    var label = nExplanations >= 10 ? "10 or more" : String.valueOf(nExplanations);
+    getCounter("Feedback Count").increment(label);
 
     summaryMap.put(sender, iSummary);
   }
