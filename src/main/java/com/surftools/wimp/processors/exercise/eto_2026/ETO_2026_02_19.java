@@ -212,7 +212,8 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
 
   @Override
   public void postProcess() {
-    getCounter(SENDERS_EXPRESS_VERSION_KEY).squeeze(10, SENDERS_EXPRESS_VERSION_KEY);
+    counterMap.put("WX Office", getCounter("WX Office").squeeze(10, "(other"));
+    counterMap.put(SENDERS_EXPRESS_VERSION_KEY, getCounter(SENDERS_EXPRESS_VERSION_KEY).squeeze(10, "(other)"));
     super.postProcess();
   }
 }

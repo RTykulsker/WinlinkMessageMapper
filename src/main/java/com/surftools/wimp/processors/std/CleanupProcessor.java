@@ -30,13 +30,10 @@ package com.surftools.wimp.processors.std;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.surftools.utils.FileUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
@@ -44,11 +41,9 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class CleanupProcessor extends AbstractBaseProcessor {
   private static final Logger logger = LoggerFactory.getLogger(CleanupProcessor.class);
-  private boolean isFinalizing = false;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    isFinalizing = cm.getAsBoolean(Key.ENABLE_FINALIZE);
   }
 
   @Override
@@ -128,19 +123,5 @@ public class CleanupProcessor extends AbstractBaseProcessor {
     } catch (Exception e) {
       logger.error("Exception copying file: " + logSource.toString() + ", " + e.getMessage());
     }
-
-    if (isFinalizing) {
-      var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
-      LocalDateTime now = LocalDateTime.now();
-      var timestamp = now.format(formatter);
-
-      var tempPath = Path.of(exercisesPathName, "FINAL-" + timestamp);
-      FileUtils.copyDirectory(exercisePath, tempPath);
-      var tempDir = tempPath.toFile();
-      var finalDir = Path.of(exercisePathName, "FINAL-" + timestamp).toFile();
-      tempDir.renameTo(finalDir);
-      logger.info("copied exercise dir to: " + finalDir.toString());
-    }
-
   } // end postProcess
 }
