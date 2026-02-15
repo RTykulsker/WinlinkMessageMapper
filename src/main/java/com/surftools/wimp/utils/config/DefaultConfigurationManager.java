@@ -131,4 +131,17 @@ public class DefaultConfigurationManager implements IWritableConfigurationManage
   public void putBoolean(IConfigurationKey key, Boolean value) {
     map.put(key, String.valueOf(value));
   }
+
+  @Override
+  public String toString() {
+    final var NL = "\n";
+    final var TAB = "\t";
+    var sb = new StringBuilder();
+    sb.append("Configuration: " + NL);
+    for (var key : map.keySet()) {
+      sb.append(TAB + "key: " + key + " -> " + "value: " + map.get(key) + NL);
+    }
+    sb.append(NL);
+    return sb.toString();
+  }
 }

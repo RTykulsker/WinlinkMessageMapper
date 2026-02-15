@@ -308,7 +308,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
     var input = makeDbInput(cm, mIdFeedbackMap.values());
     var dbResult = db.bulkInsert(input);
     if (dbResult.status() == ReturnStatus.ERROR) {
-      logger.error("### database update failed: " + dbResult.content());
+      logger.warn("### database update failed: " + dbResult.content());
     }
   }
 

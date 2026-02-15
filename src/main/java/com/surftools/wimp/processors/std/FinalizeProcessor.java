@@ -96,6 +96,10 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
     doSnapshot = initialize_snapshot();
 
     isFinalizing = doPublish || doArchive || doEmail || doSnapshot;
+    if (!isFinalizing) {
+      logger.warn("#### Finalization not enabled because no sub-elements enabled.");
+      return;
+    }
   }
 
   @Override
