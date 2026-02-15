@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -48,9 +49,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.FileUtils;
+import com.surftools.utils.UtcDateTime;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
+import com.surftools.wimp.service.outboundMessage.AbstractBaseOutboundMessageEngine;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -71,14 +74,20 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
       String body, Session session) {
   };
 
+  static record WinlinkContext(String subject, String sender, String source, String to, String body) {
+  };
+
   private String emailPassword;
   private EmailContext emailContext;
+  private WinlinkContext winlinkContext;
   private List<String> archiveRootNamesList = new ArrayList<>();
   private List<String> publicationRootNamesList = new ArrayList<>();
 
   private boolean doPublish = false;
   private boolean doArchive = false;
   private boolean doEmail = false;
+  private boolean doEmailViaInternet = false;
+  private boolean doEmailViaWinlink = false;
   private boolean doSnapshot = false;
   private boolean isFinalizing = false;
 
@@ -114,8 +123,8 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
     }
 
     do_publish();
+    do_email(); // move up email, so that email_via_winlink file gets archived
     do_archive();
-    do_email();
     do_snapshot();
   } // end postProcess
 
@@ -191,9 +200,15 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
   }
 
   private boolean initialize_email() {
-    var isEnabledViaConfig = cm.getAsBoolean(Key.ENABLE_FINALIZE_EMAIL);
+    doEmailViaInternet = initialize_email_via_internet();
+    doEmailViaWinlink = initialize_email_via_winlink();
+    return doEmailViaInternet || doEmailViaWinlink;
+  }
+
+  private boolean initialize_email_via_internet() {
+    var isEnabledViaConfig = cm.getAsBoolean(Key.ENABLE_FINALIZE_EMAIL_INTERNET);
     if (!isEnabledViaConfig) {
-      logger.warn("### email finalizing not enabled via configuration");
+      logger.warn("### email via Internet finalizing not enabled via configuration");
       return false;
     }
 
@@ -268,10 +283,43 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
 
     emailContext = new EmailContext(from, recipientAddresses, passwordFileName, subject, body, session);
 
-    logger.info("Email notification from: " + from);
+    logger.info("Email notification from: " + emailContext.from());
     logger.info("Email notification to: " + toListString);
-    logger.info("Email notification subject: " + subject);
-    logger.info("Email notification body: " + body);
+    logger.info("Email notification subject: " + emailContext.subject());
+    logger.info("Email notification body: " + emailContext.body());
+
+    return true;
+  }
+
+  private boolean initialize_email_via_winlink() {
+    var isEnabledViaConfig = cm.getAsBoolean(Key.ENABLE_FINALIZE_EMAIL_WINLINK);
+    if (!isEnabledViaConfig) {
+      logger.warn("### email via Winlink finalizing not enabled via configuration");
+      return false;
+    }
+
+    var toListString = cm.getAsString(Key.EMAIL_NOTIFICATION_TO);
+    if (toListString == null || toListString.isBlank()) {
+      logger.info("NO winlink notifications, because to is null");
+      return false;
+    }
+
+    var source = cm.getAsString(Key.WINLINK_NOTIFICATION_SOURCE, "ETO-FEEDBACK");
+    var sender = cm.getAsString(Key.WINLINK_NOTIFICATION_SENDER, "ETO-FEEDBACK");
+
+    var subject = cm.getAsString(Key.EMAIL_NOTIFICATION_SUBJECT, "ETO: WLT processings is complete for #DATE#");
+    subject = subject.replaceAll("#DATE#", dateString);
+
+    var body = cm.getAsString(Key.EMAIL_NOTIFICATION_BODY, "Ready for you to send groups.io message to all");
+    body = body.replaceAll("#DATE#", dateString);
+
+    winlinkContext = new WinlinkContext(subject, sender, source, toListString, body);
+
+    logger.info("Winlink notification source: " + winlinkContext.source());
+    logger.info("Winlink notification sender: " + winlinkContext.sender());
+    logger.info("Winlink notification to: " + winlinkContext.to());
+    logger.info("Winlink notification subject: " + winlinkContext.subject());
+    logger.info("Winlink notification body: " + winlinkContext.body());
 
     return true;
   }
@@ -333,25 +381,51 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
       return;
     }
 
-    try {
-      // var message = new MimeMessage(emailContext.session);
-      // message.setFrom(new InternetAddress(emailContext.from));
-      // message.setRecipients(Message.RecipientType.TO, emailContext.recipientAddresses);
-      // message.setSubject(emailContext.subject);
-      // message.setText(emailContext.body);
-      // Transport.send(message);
+    if (doEmailViaInternet && emailContext != null) {
+      try {
+        var emailMessage = new MimeMessage(emailContext.session);
+        emailMessage.setFrom(new InternetAddress(emailContext.from));
+        emailMessage.setRecipients(Message.RecipientType.TO, emailContext.recipientAddresses);
+        emailMessage.setSubject(emailContext.subject);
+        emailMessage.setText(emailContext.body);
 
-      var emailMessage = new MimeMessage(emailContext.session);
-      emailMessage.setFrom(new InternetAddress(emailContext.from));
-      emailMessage.setRecipients(Message.RecipientType.TO, emailContext.recipientAddresses);
-      emailMessage.setSubject(emailContext.subject);
-      emailMessage.setText(emailContext.body);
+        Transport.send(emailMessage);
 
-      Transport.send(emailMessage);
+        logger.info("email sent via Internet");
+      } catch (Exception e) {
+        logger.error("### Exception sending email notification message: " + e.getMessage());
+      }
+    }
 
-      logger.info("email sent");
-    } catch (Exception e) {
-      logger.error("### Exception sending email notification message: " + e.getMessage());
+    if (doEmailViaWinlink && winlinkContext != null) {
+      var now = LocalDateTime.now();
+      var body = winlinkContext.body();
+      body = body.replaceAll("<", "&lt;");
+      body = body.replaceAll("<=", "&lt;=3D");
+      body = body.replaceAll(">", "&gt;");
+      body = body.replaceAll(">=", "&gt;=3D");
+
+      var toArray = winlinkContext.to.split(",");
+      var toList = Arrays.asList(toArray);
+      var toString = String.join(",\n ", toList);
+      var text = WINLINK_TEMPLATE;
+      text = text.replace("#MESSAGE_ID#", AbstractBaseOutboundMessageEngine.generateMid("finalizer"));
+      text = text.replaceAll("#SUBJECT#", winlinkContext.subject());
+      text = text.replaceAll("#SENDER#", winlinkContext.sender());
+      text = text.replaceAll("#SOURCE#", winlinkContext.source());
+      text = text.replaceAll("#TO#", toString);
+      text = text.replaceAll("#BODY#", body);
+      text = text.replaceAll("#MESSAGE_TIME#", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm").format(now));
+      text = text
+          .replaceAll("#MIME_TIME#",
+              DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss +0000").format(UtcDateTime.ofNow()));
+      try {
+        var path = Path.of(winlinkPathName, "FINAL_NOTIFICATIONS.xml");
+        Files.writeString(path, text);
+        logger.info("wrote Winlink notification file to " + path.toString());
+      } catch (Exception e) {
+        logger.error("### Exception writing winlink notification message: " + e.getMessage());
+      }
     }
   }
 
@@ -372,5 +446,40 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
     tempDir.renameTo(finalDir);
     logger.info("snapshot copied exercise dir to: " + finalDir.toString());
   }
+
+  public static final String WINLINK_TEMPLATE = """
+      <?xml version="1.0"?>
+      <Winlink_Express_message_export>
+        <export_parameters>
+        </export_parameters>
+        <message_list>
+          <message>
+            <id>#MESSAGE_ID#</id>
+            <foldertype>Fixed</foldertype>
+            <folder>Outbox</folder>
+            <subject>#SUBJECT#</subject>
+            <time>#MESSAGE_TIME#</time>
+            <sender>ETO-FEEDBACK</sender>
+            <mime>Date: #MIME_TIME#
+      From: #SENDER#@winlink.org
+      Reply-To: #SENDER#@winlink.org
+      Subject: #SUBJECT#
+      To: #TO#
+      Message-ID: #MESSAGE_ID#
+      X-Source: #SOURCE#
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed; boundary="boundarybEDjmg=="
+
+      --boundarybEDjmg==
+      Content-Type: text/plain; charset="iso-8859-1"
+      Content-Transfer-Encoding: quoted-printable
+
+      #BODY#
+      --boundarybEDjmg==--</mime>
+          </message>
+        </message_list>
+      </Winlink_Express_message_export>
+
+            """;
 
 }

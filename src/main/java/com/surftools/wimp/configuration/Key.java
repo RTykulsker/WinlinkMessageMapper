@@ -57,11 +57,14 @@ public enum Key implements IConfigurationKey {
   ENABLE_FINALIZE("enable.finalize"), // set to true to enable, published, archive, snapshot to cloud, sends email,
   // set on command line
   ENABLE_FINALIZE_PUBLISHED("enable.finalize.published"), // transfer only published folder to cloud
-  ENABLE_FINALIZE_ARCHIVE("enable.finalize.archive"), // transfer all folders (input, output, published, winlink) to
-  // cloud
-  ENABLE_FINALIZE_EMAIL("enable.finalize.email"), // send email to interested parties
+  ENABLE_FINALIZE_ARCHIVE("enable.finalize.archive"), // transfer all folders to cloud
+  ENABLE_FINALIZE_EMAIL_INTERNET("enable.finalize.email.internet"), // send email to interested parties via Internet
+  ENABLE_FINALIZE_EMAIL_WINLINK("enable.finalize.email.winlink"), // send email to interested parties via Winlink
   ENABLE_FINALIZE_SNAPSHOT("enable.finalize.snapshot"), // create a local copy final-yyyy-mm-dd-hh-mm-ss of entire
   // exercise
+
+  WINLINK_NOTIFICATION_SOURCE("winlink.notification.source"), // mbo address
+  WINLINK_NOTIFICATION_SENDER("winlink.notification..sender"), // from address
 
   ACKNOWLEDGEMENT_SPECIFICATION("acknowledgement.specification"), // what to acknowledge, expected vs unexpectd
   ACKNOWLEDGEMENT_EXPECTED("acknowledgement.expected"), // content for expected messages
