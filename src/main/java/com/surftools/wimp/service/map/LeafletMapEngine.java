@@ -111,8 +111,8 @@ public class LeafletMapEngine extends MapService {
     var markers = sb.toString();
 
     /**
-     * the fast template is supposed to be faster for large (1500 markers than the slow template. It is faster on one
-     * machine/browser, but not another
+     * the fast template is supposed to be faster for large (1500 markers than the
+     * slow template. It is faster on one machine/browser, but not another
      */
     var mapTemplateMethod = cm.getAsString(Key.MAP_TEMPLATE_METHOD, "fast");
     var doFast = mapTemplateMethod.toLowerCase().equals("fast");
@@ -340,6 +340,32 @@ public class LeafletMapEngine extends MapService {
               attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
             });
 
+          const openTopo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{
+              maxZoom: 17,
+              attribution: "© OpenTopoMap (CC-BY-SA)"
+          });
+
+          const cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",{
+            maxZoom: 20,
+            attribution: "© CARTO © OpenStreetMap contributors"
+          });
+
+
+          const cartoDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",{
+            maxZoom: 20,
+            attribution: "© CARTO © OpenStreetMap contributors"
+          });
+
+          const stamenTerrain = L.tileLayer("https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png",{
+            maxZoom: 18,
+            attribution: "Map tiles © Stamen; Data © OpenStreetMap"
+          });
+
+          const usgsImagery = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}",{
+            maxZoom: 20,
+            attribution: "USGS NAIP Imagery"
+          });
+
           osm.addTo(map);
 
           // ------------------------------------------------------------
@@ -347,10 +373,15 @@ public class LeafletMapEngine extends MapService {
           // ------------------------------------------------------------
           const baseMaps = {
             "OpenStreetMap": osm,
-            "USGS Topo": usgs
+            "USGS Topo": usgs,
+            "OpenTopoMap": openTopo,
+            "Carto Light": cartoLight,
+            "Carto Dark": cartoDark,
+            "Stamen Terrain": stamenTerrain,
+            "USGS Imagery": usgsImagery
           };
 
-          L.control.layers(baseMaps, null, { collapsed: true }).addTo(map);
+          L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
 
           // ------------------------------------------------------------
           // CSS-based hex marker
@@ -701,12 +732,37 @@ public class LeafletMapEngine extends MapService {
             { maxZoom: 20, attribution: "USGS The National Map" }
           );
 
-          osm.addTo(map);
+          const openTopo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{
+              maxZoom: 17,
+              attribution: "© OpenTopoMap (CC-BY-SA)"
+          });
+
+          const cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",{
+            maxZoom: 20,
+            attribution: "© CARTO © OpenStreetMap contributors"
+          });
+
+
+          const cartoDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",{
+            maxZoom: 20,
+            attribution: "© CARTO © OpenStreetMap contributors"
+          });
+
+          const usgsImagery = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}",{
+            maxZoom: 20,
+            attribution: "USGS NAIP Imagery"
+          });
+
+                    osm.addTo(map);
 
           L.control.layers(
             {
               "OpenStreetMap": osm,
-              "USGS Topo": usgs
+              "USGS Topo": usgs,
+              "OpenTopoMap": openTopo,
+              "Carto Light": cartoLight,
+              "Carto Dark": cartoDark,
+              "USGS Imagery": usgsImagery
             },
             null,
             { collapsed: true }
@@ -902,7 +958,7 @@ public class LeafletMapEngine extends MapService {
             onAdd: function () {
               const container = L.DomUtil.create("div", "search-control");
 
-          // magnifying glass icon
+      		// magnifying glass icon
       		const icon = L.DomUtil.create("div", "search-icon", container);
       		icon.innerHTML = "🔍";
 
