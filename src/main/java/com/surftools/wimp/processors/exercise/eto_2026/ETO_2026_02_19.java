@@ -40,7 +40,6 @@ import com.surftools.utils.location.MgrsUtils;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.parser.AbstractBaseParser;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -52,8 +51,6 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  */
 public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2026_02_19.class);
-
-  private static final String SENDERS_EXPRESS_VERSION_KEY = "Senders Express Version";
 
   final String[] WX_OFFICES = new String[] { "ABQ", "ABR", "AFC", "AFG", "AJK", "AKQ", "ALY", "AMA", "APX", "ARX",
       "BGM", "BIS", "BMX", "BOI", "BOU", "BOX", "BRO", "BTV", "BUF", "BYZ", "CAE", "CAR", "CHS", "CLE", "CRP", "CTP",
@@ -205,15 +202,12 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
           continue;
         }
       } // end loop over lines
-      var sendersExpressVersion = AbstractBaseParser.getExpressVersion(m, SENDERS_EXPRESS_VERSION_KEY);
-      getCounter(SENDERS_EXPRESS_VERSION_KEY).increment(sendersExpressVersion);
     } // end if message content present
   }
 
   @Override
   public void postProcess() {
     counterMap.put("WX Office", getCounter("WX Office").squeeze(10, "(other"));
-    counterMap.put(SENDERS_EXPRESS_VERSION_KEY, getCounter(SENDERS_EXPRESS_VERSION_KEY).squeeze(10, "(other)"));
     super.postProcess();
   }
 }

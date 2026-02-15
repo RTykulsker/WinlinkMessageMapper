@@ -51,6 +51,7 @@ import com.surftools.wimp.feedback.FeedbackMessage;
 import com.surftools.wimp.feedback.FeedbackResult;
 import com.surftools.wimp.feedback.StandardSummary;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.parser.AbstractBaseParser;
 import com.surftools.wimp.persistence.PersistenceManager;
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
 import com.surftools.wimp.persistence.dto.Event;
@@ -72,6 +73,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * simplicity
  */
 public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbackProcessor {
+
+  private static final String SENDERS_EXPRESS_VERSION_KEY = "Senders Express Version";
 
   protected boolean doStsFieldValidation = false;
 
@@ -169,6 +172,9 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
       sts.test("LAT/LON should be provided", true, null);
     }
 
+    var sendersExpressVersion = AbstractBaseParser.getExpressVersion(message, SENDERS_EXPRESS_VERSION_KEY);
+    getCounter(SENDERS_EXPRESS_VERSION_KEY).increment(sendersExpressVersion);
+
     var explanations = sts.getExplanations();
     var feedback = "";
     var count = explanations.size();
@@ -246,6 +252,8 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
         mIdFeedbackMap.put(messageId, newFeedbackMessage);
       }
     }
+
+    counterMap.put(SENDERS_EXPRESS_VERSION_KEY, getCounter(SENDERS_EXPRESS_VERSION_KEY).squeeze(10, "(other)"));
 
     // feedback to folks who only send unexpected messages
     // we already have a separate acknowledgement outbound message, so we just need feedback

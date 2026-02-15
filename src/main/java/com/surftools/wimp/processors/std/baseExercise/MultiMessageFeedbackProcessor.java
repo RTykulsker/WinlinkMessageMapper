@@ -52,6 +52,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.feedback.StandardSummary;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.parser.AbstractBaseParser;
 import com.surftools.wimp.persistence.PersistenceManager;
 import com.surftools.wimp.persistence.dto.BulkInsertEntry;
 import com.surftools.wimp.persistence.dto.Event;
@@ -75,6 +76,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
  * support multiple message types
  */
 public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedbackProcessor {
+  private static final String SENDERS_EXPRESS_VERSION_KEY = "Senders Express Version";
 
   protected Set<MessageType> acceptableMessageTypesSet = new LinkedHashSet<>(); // order matters
 
@@ -318,6 +320,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
   @Override
   protected void endCommonProcessing(ExportedMessage message) {
     super.endCommonProcessing(message);
+    var sendersExpressVersion = AbstractBaseParser.getExpressVersion(message, SENDERS_EXPRESS_VERSION_KEY);
+    getCounter(SENDERS_EXPRESS_VERSION_KEY).increment(sendersExpressVersion);
   }
 
   /**
@@ -359,6 +363,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     }
 
     logger.info(sb.toString());
+
+    counterMap.put(SENDERS_EXPRESS_VERSION_KEY, getCounter(SENDERS_EXPRESS_VERSION_KEY).squeeze(10, "(other)"));
 
     if (badLocationSenders.size() > 0) {
       logger
