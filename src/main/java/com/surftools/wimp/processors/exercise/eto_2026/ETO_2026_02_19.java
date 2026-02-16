@@ -67,8 +67,81 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     super.initialize(cm, mm, logger);
     messageType = MessageType.PLAIN;
-    doStsFieldValidation = false;
-    var extraOutboundMessageText = "";
+
+    var extraOutboundMessageText = """
+
+        -----------------------------------------------------------------------------------------------------
+
+        ETO Exercise Instructions for Thursday, 2026-02-26
+
+        Task: Complete an ICS-205 Incident Radio Communications Plan Message
+
+        Exercise window: Sat 2026-02-21 00:00 UTC - Fri 2026-02-27 08:00 UTC
+
+        Use the following values when completing the form:
+            Setup: agency or group name: EmComm Training Organization
+            Incident name: ETO Weekly Practice
+            Date/Time: (click in box and accept date/time)
+            Operational Period Date From: 2026-02-21
+            Operational Period Date To: 2026-02-27
+            Operational Period Time From: 00:00 UTC
+            Operational Period Time To: 08:00 UTC
+            Basic Radio Channel Use:
+                line 1
+                    Ch #: 1
+                    Function: Coordination
+                    Channel Name: Repeater
+                    Assignment: amateur
+                    RX Freq: 444.250
+                    RX N or W: W
+                    RX Tone:
+                    Tx Freq: 449.250
+                    TX N or W: W
+                    TX Tone: 210.7
+                    Mode: A
+                    Remarks: Primary repeater
+                line 2
+                    Ch #: 2
+                    Function: Tactical
+                    Channel Name: Simplex
+                    Assignment: amateur
+                    RX Freq: 146.430
+                    RX N or W: N
+                    RX Tone:
+                    Tx Freq: 146.430
+                    TX N or W: N
+                    TX Tone:
+                    Mode: A
+                    Remarks: Primary simplex
+                line 3
+                    Ch #: 3
+                    Function: Information
+                    Channel Name: GMRS 11
+                    Assignment: GMRS
+                    RX Freq: 467.6375
+                    RX N or W: N
+                    RX Tone:
+                    Tx Freq: 467.6375
+                    TX N or W: N
+                    TX Tone:
+                    Mode: A
+                    Remarks: Do not Transmit without GMRS license!
+            Special Instructions: Exercise Id: 822-151-4886
+            Approved by: Jackson Hale
+            Approved Date/Time: (click in box and accept date/time)
+            IAP Page: 6
+            Attach CSV: (No)
+
+        Send the message via the Session type of your choice to ETO-PRACTICE.
+
+        Refer to https://emcomm-training.org/Winlink_Thursdays.html for further instructions
+        about the weekly practice exercises and/or monthly training exercises.
+
+
+                        """;
+
+    outboundMessageExtraContent = OB_DISCLAIMER + extraOutboundMessageText;
+
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
   }
 
