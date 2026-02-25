@@ -60,7 +60,7 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
       "LZK", "MAF", "MEG", "MFL", "MFR", "MHX", "MKX", "MLB", "MOB", "MPX", "MQT", "MRX", "MSO", "MTR", "OAX", "OHX",
       "OKX", "OTX", "OUN", "PAH", "PBZ", "PDT", "PHI", "PIH", "PPG", "PQR", "PSR", "PUB", "RAH", "REV", "RIW", "RLX",
       "RNK", "SEW", "SGF", "SGX", "SHV", "SJT", "SJU", "SLC", "STO", "TAE", "TBW", "TFX", "TOP", "TSA", "TWC", "UNR",
-      "VEF", "CAN", "DX" };
+      "VEF", "CAN", "DX", "NA" };
   private final Set<String> WX_OFFICE_SET = new HashSet<>(Arrays.asList(WX_OFFICES));
 
   @Override
@@ -153,33 +153,12 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
     } else {
       count(sts.test("Message content present", true));
 
-      var firstLine = lines[0];
-      if (firstLine != null && !firstLine.isBlank()) {
-        count(sts.test("First line should be present", true));
-        count(sts.test("First line should be #EV", "Original Request Strip", firstLine));
-      } else {
-        count(sts.test("First line should be present", true));
-      }
-
       var list = Arrays.asList(lines);
       var pred = list.contains("Original Request Strip");
       count(sts.test("Message content should contain \"Original Request Strip\"", pred));
 
       pred = list.contains("Response Strip:");
       count(sts.test("Message content should contain \"Response Strip:\"", pred));
-
-      var lastLine = lines[lines.length - 1];
-      if (lastLine != null && !lastLine.isBlank()) {
-        count(sts.test("Last line should be present", true));
-        count(sts
-            .test("Last line should be #EV",
-                "Senders Template Version: Request for Information Strip Reader and Response Creator v 1.4", lastLine));
-        var fields = lastLine.split(" ");
-        var lastField = fields[fields.length - 1];
-        getCounter("version").increment(lastField);
-      } else {
-        count(sts.test("Last line should be present", true));
-      }
 
       var src = List
           .of( //
@@ -197,72 +176,95 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
 
       var seenResponse = false;
       var seenBlank = false;
+      var processedStrip = false;
       for (var line : lines) {
-        if (seenBlank && seenResponse) {
+        if (line.contains("Senders Template Version: Request for Information Strip Reader")) {
+          var fields = line.split(" ");
+          var lastField = fields[fields.length - 1];
+          getCounter("version").increment(lastField);
+        }
+
+        if (seenBlank && seenResponse && !processedStrip) {
           var fields = line.split("/");
+          getCounter("Number of fields in response").increment(fields.length);
           count(sts
               .test("Number of fields in response should be #EV", String.valueOf(25), String.valueOf(fields.length)));
-          count(sts.test("Response field #1 should be #EV", "ETO", fields[0]));
-          count(sts.test("Response field #2 should be <YOURCALL>", fields[1].equals(m.from)));
-          count(sts.testIfPresent("Response field #3 should be present", fields[2]));
-          count(sts.testIfPresent("Response field #4 should be present", fields[3]));
-          count(sts.testIfPresent("Response field #5 should be present", fields[4]));
 
-          count(sts.testIfPresent("Response field #6 should be present", fields[5]));
+          if (fields.length <= 20) {
+            getCounter("Insufficient fields in strip").increment(true);
+            return;
+          } else {
+            getCounter("Insufficient fields in strip").increment(false);
+          }
+
+          count(sts.test("Strip Answer #1 should be #EV", "ETO", fields[0]));
+          count(sts.test("Strip Answer #2 should be <YOURCALL>", fields[1].equals(m.from)));
+          count(sts.testIfPresent("Strip Answer #3 (Skywarn ID) should be present", fields[2]));
+          count(sts.testIfPresent("Strip Answer #4 (City) should be present", fields[3]));
+          count(sts.testIfPresent("Strip Answer #5 (State) should be present", fields[4]));
+
+          count(sts.testIfPresent("Strip Answer #6 (MGRS) should be present", fields[5]));
           var mgrs = fields[5];
           final var nMgrsChars = 9;
           count(sts
-              .test("Response field #6 should have #EV characters", String.valueOf(nMgrsChars),
+              .test("Strip Answer #6 (MGRS) should have #EV characters", String.valueOf(nMgrsChars),
                   String.valueOf(mgrs.length())));
           try {
-            count(sts.test("Response field #6 should be a valid MGRS location", true));
+            count(sts.test("Strip Answer #6 (MGRS) should be a valid MGRS location", true));
             var mgrsLoc = MgrsUtils.mgrsToLatLongPair(mgrs);
             var distanceMiles = Math.round(LocationUtils.computeDistanceMiles(m.mapLocation, mgrsLoc));
-            final var maxDistanceMiles = 2;
-            pred = distanceMiles <= maxDistanceMiles;
+            final var maxDistanceMiles = 10;
+            var msgMGRS = MgrsUtils.latLongPairToMgrs(m.mapLocation);
+            pred = (!mgrs.equals(msgMGRS)) || (distanceMiles <= maxDistanceMiles);
             var extraText = "";
             if (!pred) {
-              var msgMGRS = MgrsUtils.latLongPairToMgrs(m.mapLocation, 2);
-              extraText = "(msgLL: " + m.mapLocation + ", msgMgrs: " + msgMGRS + ", stripLL: " + mgrsLoc
-                  + ", stripMGRS:" + mgrs + ")";
+
+              extraText = "(distMi: " + distanceMiles + ", msgLL: " + m.mapLocation + ", msgMgrs: " + msgMGRS
+                  + ", stripLL: " + mgrsLoc + ", stripMGRS:" + mgrs + ")";
               logger.info(">>> call: " + m.from + ", " + extraText);
             }
             count(sts
-                .test("Response field #6 (MGRS) should be within " + maxDistanceMiles //
+                .test("Strip Answer #6 (MGRS) should be within " + maxDistanceMiles //
                     + " miles from message location", pred, String.valueOf(distanceMiles) + " miles " + extraText));
 
             getCounter("mgrsDistanceFromMsgLocation").increment(distanceMiles);
           } catch (Exception e) {
-            count(sts.test("Response field #6 should be a valid MGRS location", false));
+            count(sts.test("Strip Answer #6 (MGRS) should be a valid MGRS location", false));
           }
 
-          count(sts.testIfPresent("Response field #7 should be present", fields[6]));
+          count(sts.testIfPresent("Strip Answer #7 (NWS CWA) should be present", fields[6]));
           var office = fields[6];
           if (office != null) {
             office = office.trim();
             pred = WX_OFFICE_SET.contains(office);
+            count(sts.test("Strip Answer #7 (NWS CWA) should be in list", pred, office));
             getCounter("WX Office").increment(office);
           }
 
-          count(sts.testIfEmpty("Response field #8 should be present", fields[7].trim()));
-          count(sts.testIfPresent("Response field #9 should be present", fields[8]));
-          count(sts.testIfEmpty("Response field #10 should be present", fields[9].trim()));
-          count(sts.testIfPresent("Response field #11 should be present", fields[10]));
-          count(sts.testIfPresent("Response field #12 should be present", fields[11]));
-          count(sts.testIfPresent("Response field #13 should be present", fields[12]));
-          count(sts.testIfEmpty("Response field #14 should be present", fields[13].trim()));
-          count(sts.testIfPresent("Response field #15 should be present", fields[14]));
-          count(sts.testIfEmpty("Response field #16 should be present", fields[15].trim()));
-          count(sts.testIfPresent("Response field #17 should be present", fields[16]));
-          count(sts.testIfEmpty("Response field #18 should be present", fields[17].trim()));
-          count(sts.testIfPresent("Response field #19 should be present", fields[18]));
-          count(sts.testIfPresent("Response field #20 should be present", fields[19]));
-          count(sts.testIfEmpty("Response field #21 should be present", fields[20].trim()));
-          count(sts.testIfPresent("Response field #22 should be present", fields[21]));
-          count(sts.testIfPresent("Response field #23 should be present", fields[22]));
-          count(sts.testIfEmpty("Response field #24 should be present", fields[23].trim()));
-          count(sts.testIfPresent("Response field #25 should be present", fields[24]));
-          break;
+          count(sts.testIfEmpty("Strip Answer #8 should be empty", fields[7].trim()));
+          count(sts.testIfPresent("Strip Answer #9 (Observation Time) should be present", fields[8]));
+          count(sts.testIfEmpty("Strip Answer #10 should be empty", fields[9].trim()));
+          count(sts.testIfPresent("Strip Answer #11 (Wind Dir) should be present", fields[10]));
+          count(sts.testIfPresent("Strip Answer #12 (Avg Speed) should be present", fields[11]));
+          count(sts.testIfPresent("Strip Answer #13 (Gust Speed) should be present", fields[12]));
+          count(sts.testIfEmpty("Strip Answer #14 should be empty", fields[13].trim()));
+          count(sts.testIfPresent("Strip Answer #15 (Clouds) should be present", fields[14]));
+          count(sts.testIfEmpty("Strip Answer #16 should be empty", fields[15].trim()));
+          count(sts.testIfPresent("Strip Answer #17 (Temp) should be present", fields[16]));
+          count(sts.testIfEmpty("Strip Answer #18 should be empty", fields[17].trim()));
+          count(sts.testIfPresent("Strip Answer #19 (Baro) should be present", fields[18]));
+          count(sts.testIfPresent("Strip Answer #20 (Baro Trend) should be present", fields[19]));
+          count(sts.testIfEmpty("Strip Answer #21 should be empty", fields[20].trim()));
+          count(sts.testIfPresent("Strip Answer #22 (Precip Type) should be present", fields[21]));
+          count(sts.testIfPresent("Strip Answer #23 (Current Precip) should be present", fields[22]));
+          count(sts.testIfEmpty("Strip Answer #24 should be empty", fields[23].trim()));
+          if (fields.length >= 25) {
+            count(sts.testIfPresent("Strip Answer #25 (Comments,Damage) should be present", fields[24]));
+          } else {
+            count(sts.testIfPresent("Strip Answer #25 (Comments,Damage) should be present", ""));
+          }
+          processedStrip = true;
+          continue;
         }
 
         if (seenResponse && !seenBlank) {
@@ -274,13 +276,14 @@ public class ETO_2026_02_19 extends SingleMessageFeedbackProcessor {
           seenResponse = true;
           continue;
         }
+
       } // end loop over lines
     } // end if message content present
   }
 
   @Override
   public void postProcess() {
-    counterMap.put("WX Office", getCounter("WX Office").squeeze(10, "(other"));
+    counterMap.put("WX Office", getCounter("WX Office").squeeze(10, "(other)"));
     super.postProcess();
   }
 }

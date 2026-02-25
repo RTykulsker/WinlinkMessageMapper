@@ -97,6 +97,7 @@ public enum MessageType {
   WA_FIELD_SITUATION("RMS_Express_Form_WA Field Situation Report viewer.xml"), //
 
   WELFARE_BULLETIN_BOARD("RMS_Express_Form_Welfare Bulletin Board viewer.xml"), //
+  BULLETIN("RMS_Express_Form_Bulletin Viewer.xml;"), //
 
   EYEWARN("RMS_Express_Form_Eyewarn.xml"), // custom form from SnoVArc
   EYEWARN_DETAIL(), // generated details

@@ -50,22 +50,22 @@ public class ETO_2026_03_19 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2026_03_19.class);
 
   private static final String referenceMessage = """
-      Name,Address,Notes,
-      FEMA REGION 01,ETO-01,ETO-01 Exercise Clearing House,
-      FEMA_REGION 02,ETO-02,ETO-02 Exercise Clearing House,
-      FEMA_REGION 03,ETO-03,ETO-03 Exercise Clearing House,
-      FEMA_REGION 04,ETO-04,ETO-04 Exercise Clearing House,
-      FEMA_REGION 05,ETO-05,ETO-05 Exercise Clearing House,
-      FEMA_REGION 06,ETO-06,ETO-06 Exercise Clearing House,
-      FEMA_REGION 07,ETO-07,ETO-07 Exercise Clearing House,
-      FEMA_REGION 08,ETO-08,ETO-08 Exercise Clearing House,
-      FEMA_REGION 09,ETO-09,ETO-09 Exercise Clearing House,
-      FEMA_REGION 10,ETO-10,ETO-10 Exercise Clearing House,
-      CANADIAN_PROVINCES,ETO-CAN,ETO-CAN Exercise Clearing House,
-      OTHER COUNTRIES,ETO-DX,ETO-DX Exercise Clearing House,
-      Practice Ex To Entry,ETO-PRACTICE,To Field for Practice,
-      Training Ex To Entry,ETO-BK,ETO-BK CC Field for Training,
-                              """;
+      Name	Address	Notes
+      CANADIAN_PROVINCES	ETO-CAN@winlink.org	ETO-CAN Exercise Clearing House
+      FEMA_REGION_01	ETO-01@winlink.org	ETO-01 Exercise Clearing House
+      FEMA_REGION_02	ETO-02@winlink.org	ETO-02 Exercise Clearing House
+      FEMA_REGION_03	ETO-03@winlink.org	ETO-03 Exercise Clearing House
+      FEMA_REGION_04	ETO-04@winlink.org	ETO-04 Exercise Clearing House
+      FEMA_REGION_05	ETO-05@winlink.org	ETO-05 Exercise Clearing House
+      FEMA_REGION_06	ETO-06@winlink.org	ETO-06 Exercise Clearing House
+      FEMA_REGION_07	ETO-07@winlink.org	ETO-07 Exercise Clearing House
+      FEMA_REGION_08	ETO-08@winlink.org	ETO-08 Exercise Clearing House
+      FEMA_REGION_09	ETO-09@winlink.org	ETO-09 Exercise Clearing House
+      FEMA_REGION_10	ETO-10@winlink.org	ETO-10 Exercise Clearing House
+      OTHER_COUNTRIES	ETO-DX@winlink.org	ETO-DX Exercise Clearing House
+      PRACTICE_EX_TO_ENTRY	ETO-PRACTICE@winlink.org	To Field for Practice
+      TRAINING_EX_CC_ENTRY	ETO-BK@winlink.org	ETO-BK CC Field for Training
+                                          """;
 
   private static List<String> refLines;
 
@@ -101,6 +101,32 @@ public class ETO_2026_03_19 extends SingleMessageFeedbackProcessor {
 
     count(sts.testIfPresent("Approved by should be present", m.approvedBy));
     count(sts.test("Position/Title should match call sign", m.position.equals(m.from)));
+
+    var nAttachments = exportedMessage.attachments.size();
+    count(sts.test("Number of attachments should be #EV", String.valueOf(3), String.valueOf(nAttachments)));
+    if (nAttachments == 3) {
+      var standardAttachmentNames = List.of("RMS_Express_Form_ICS213_Initial_Viewer.xml", "FormData.txt");
+      for (var attachmentKey : exportedMessage.attachments.keySet()) {
+        if (standardAttachmentNames.contains(attachmentKey)) {
+          continue;
+        }
+        var attachmentContent = new String(exportedMessage.attachments.get(attachmentKey));
+        var attachmentLines = Arrays.asList(attachmentContent.split("\n"));
+        count(sts
+            .test("Attachments lines should be #EV", String.valueOf(refLines.size()),
+                String.valueOf(attachmentLines.size())));
+        for (var i = 0; i < refLines.size(); ++i) {
+          var lineNo = i + 1;
+          var refLine = refLines.get(i);
+          if (attachmentLines.size() >= i) {
+            var attachLine = attachmentLines.get(i);
+            count(sts.test_2line("Attachment line: " + lineNo + " should be #EV", refLine, attachLine));
+          } else {
+            count(sts.test("Attachment line" + lineNo + " should be #EV", refLine, "(empty"));
+          }
+        }
+      }
+    }
   }
 
   @Override

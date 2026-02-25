@@ -160,6 +160,8 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
   @Override
   protected void endCommonProcessing(ExportedMessage message) {
+    super.endCommonProcessing(message);
+
     if (feedbackLocation == null || feedbackLocation.equals(LatLongPair.ZERO_ZERO)) {
       feedbackLocation = LatLongPair.ZERO_ZERO;
       badLocationMessageIds.add(message.messageId);
