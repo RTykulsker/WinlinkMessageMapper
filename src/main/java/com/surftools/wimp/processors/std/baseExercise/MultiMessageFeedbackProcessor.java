@@ -162,8 +162,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     @Override
     public int compareTo(IWritableTable o) {
-      var other = (ExportedMessage) o;
-      return this.compareTo(other);
+      var other = (PerfectMessage) o;
+      return this.m.compareTo(other.m);
     }
 
     @Override
@@ -269,14 +269,14 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
   @Override
   protected void beginCommonProcessing(ExportedMessage message) {
+    var explanationPrefix = "(" + message.getMessageType().toString() + ") (" + message.messageId + "): ";
+    sts.setExplanationPrefix(explanationPrefix);
+
     super.beginCommonProcessing(message);
 
     ++ppMessageCount;
 
     iSummary = summaryMap.get(sender);
-
-    var explanationPrefix = "(" + message.getMessageType().toString() + ") (" + message.messageId + "): ";
-    sts.setExplanationPrefix(explanationPrefix);
 
     // first-in or last-in for to and location
     if (doFirstIn) {

@@ -41,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.ContentParser;
-import com.surftools.utils.ContentParser.ParseResult;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.BulletinMessage;
@@ -91,7 +90,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     public String allGroups;
 
     public String dyfiIsExercise;
-    public String dyfiGroups;
+    public String dyfiGroup;
 
     public String ciIsExercise;
     public String ciGroups;
@@ -101,17 +100,19 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     public String ciInFloodZone;
 
     public String welfareIsExercise;
-    public String welfareGroups;
     public String welfareType;
     public String welfareStatus;
     public String welfareMyStatus;
     public String welfareMessageText;
 
-    // TODO add BulletinMessage fields here
+    public String ics213_school1_risk;
+    public String ics213_school2_risk;
 
-    public String ics213IsExercise;
-    public String ics213Groups;
-    public String ics213Resources;
+    public String bulletinFor;
+    public String bulletinFrom;
+    public String bulletinPrecedence;
+    public String bulletinSubject;
+    public String bulletinIsExercise;
 
     public String coIsExercise;
     public String coGroups;
@@ -132,19 +133,21 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       list.addAll(Arrays.asList(super.getHeaders()));
       list
           .addAll(Arrays
-              .asList(new String[] { "DYFI", "Check In", "Welfare", "Ics213", "Check Out", "Ics214", "Pegelstand", //
+              .asList(new String[] { "DYFI", "Check In", "Welfare", "Ics213", "Bulletin", "Check Out", "Ics214", //
                   "# Messages", "Feedback Band", //
 
                   "All Groups",
 
-                  "DYFI IsExercise", "DYFI Groups", //
+                  "DYFI IsExercise", "DYFI Group", //
 
                   "Check-In IsExercise", "Check-In Groups", "Operational Capabilities", "Deployment Posture",
                   "In Tsunami Zone", "In Flood Zone", //
 
-                  "Welfare IsExercise", "Welfare Groups", "Type", "Status", "My Status", "Message",
+                  "Welfare IsExercise", "Welfare Type", "Welfare Status", "My Status", "Welfare Message",
 
-                  "ICS-213 IsExercise", "ICS-Groups", "ICS Resources", //
+                  "ICS-213 School 1 Risk", "ICS School 2 Risk", //
+
+                  "Bulletin For", "Bulletin From", "Bulletin Precedence", "Bulletin Subject", "Bulletin Is Exercise", //
 
                   "Check-Out IsExercise", "Check-Out Groups", "Most Important Thing Learned", //
 
@@ -161,20 +164,23 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       list
           .addAll(Arrays
               .asList(new String[] { mId(dyfiMessage), mId(checkInMessage), //
-                  mId(welfareMessage), mId(ics213Message), mId(checkOutMessage), mId(ics214Message),
-                  mId(bulletinMessage), //
+                  mId(welfareMessage), mId(ics213Message), mId(bulletinMessage), mId(checkOutMessage),
+                  mId(ics214Message),
+
                   s(messageCount), s(feedbackBand), //
 
                   allGroups,
 
-                  dyfiIsExercise, dyfiGroups, //
+                  dyfiIsExercise, dyfiGroup, //
 
                   ciIsExercise, ciGroups, ciOperationalCapabilities, ciDeploymentPosture, ciInTsunamiZone,
                   ciInFloodZone, //
 
-                  welfareIsExercise, welfareGroups, welfareType, welfareStatus, welfareMyStatus, welfareMessageText, //
+                  welfareIsExercise, welfareType, welfareStatus, welfareMyStatus, welfareMessageText, //
 
-                  ics213IsExercise, ics213Groups, ics213Resources, //
+                  ics213_school1_risk, ics213_school2_risk, //
+
+                  bulletinFor, bulletinFrom, bulletinPrecedence, bulletinSubject, bulletinIsExercise, //
 
                   coIsExercise, coGroups, coMostImportantThing, //
 
@@ -203,6 +209,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM must instantiate a derived Summary object
     iSummary = summaryMap.getOrDefault(sender, new Summary(sender));
+    iSummary.messageIds = "";
     summaryMap.put(sender, iSummary);
 
     senderGroupSet.clear();
@@ -229,7 +236,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     } else if (type == MessageType.ICS_214) {
       handle_Ics214Message(summary, (Ics214Message) message);
     } else if (type == MessageType.BULLETIN) {
-      handleBulletinMessage(summary, (BulletinMessage) message);
+      handle_BulletinMessage(summary, (BulletinMessage) message);
     }
 
     summaryMap.put(sender, iSummary);
@@ -245,6 +252,9 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     count(sts
         .test("DYFI Form Latitude and Longitude must be valid", m.formLocation.isValid(), m.formLocation.toString()));
 
+    count(sts.test("DYFI Did you feel it? should be Yes", m.isFelt));
+    getCounter("DYFI response").increment(m.experienceResponse);
+
     try {
       var intensity = Integer.parseInt(m.intensity);
       count(sts.test("DYFI Intensity must be >= 7", intensity >= 7, m.intensity));
@@ -253,27 +263,17 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     }
 
     var comments = m.comments;
+    count(sts.testIfPresent("DYFI Comments should be present", comments));
     if (!isNull(comments)) {
-      var cp = new ContentParser(comments);
-      var pr = new ParseResult(null, null, null);
-
-      pr = cp.isExerciseFirstWord("Comments", "EXERCISE");
-      if (pr.error() == null) {
-        count(sts.test("Comments first word is EXERCISE", true, (String) pr.context()));
-      } else {
-        count(sts.test("Comments first word is EXERCISE", false, (String) pr.context()));
+      var fields = comments.split(",");
+      if (fields.length >= 1) {
+        var isExercise = fields[0];
+        count(sts.test("DYFI 1st Comment fields should be #EV", "Exercise", isExercise));
       }
-      summary.dyfiIsExercise = pr.value();
 
-      // comma-delimited, starting on 2nd word, stopping on first word that starts with digit
-      pr = cp.getDYFIGroupAffiliation(",", 2, "\\d+.");
-      if (pr.error() == null) {
-        @SuppressWarnings("unchecked")
-        var groupSet = (Set<String>) pr.context();
-        groupSet.stream().forEach(gn -> accumulateGroupName("DYFI", gn));
-        summary.dyfiGroups = pr.value();
-      } else {
-        summary.dyfiGroups = "";
+      if (fields.length >= 2) {
+        summary.dyfiGroup = fields[1];
+        getCounter("DYFI Group").increment(summary.dyfiGroup);
       }
     }
 
@@ -282,6 +282,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.dyfiMessage = m;
+    summary.messageIds += "dyfi: " + m.messageId;
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -301,7 +302,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       var groupSet = stringToSet(summary.ciGroups, ",");
       groupSet.stream().forEach(gn -> accumulateGroupName("Check In", gn));
       summary.ciOperationalCapabilities = getCommentLineValues(cp, "Operational Capabilities: ");
-      summary.ciDeploymentPosture = getCommentLineValues(cp, "Deployment POSTURE: ");
+      summary.ciDeploymentPosture = getCommentLineValues(cp, "Deployment Posture: ");
 
       var inZoneString = getCommentLineValues(cp, "Station in Tsunami Zone: ").toUpperCase();
       summary.ciInTsunamiZone = inZoneString.startsWith("YES") ? "YES"
@@ -334,11 +335,12 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     summary.checkInMessage = m;
     ++summary.messageCount;
+    summary.messageIds += "\ncheck in: " + m.messageId;
     isPerfectMessage(m);
   }
 
   private void handle_WelfareMessage(Summary summary, WelfareBulletinBoardMessage m) {
-    sts.setExplanationPrefix("(welfare) ");
+    sts.setExplanationPrefix("(welfare_bulletin_board) ");
     accumulateAddresses("Welfare addresses", m);
 
     var comments = m.getDataAsString(DataType.FORM_MESSAGE);
@@ -346,16 +348,16 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       var cp = new ContentParser(comments);
       var pr = cp.isExerciseFirstWord("Comments", "EXERCISE");
       if (pr.error() == null) {
-        count(sts.test("Comments first word is EXERCISE", true, (String) pr.context()));
+        count(sts.test("Welfare Comments first word is EXERCISE", true, (String) pr.context()));
       } else {
-        count(sts.test("Comments first word is EXERCISE", false, (String) pr.context()));
+        count(sts.test("Welfare Comments first word is EXERCISE", false, (String) pr.context()));
       }
       summary.welfareIsExercise = pr.value();
 
       count(sts.test("Welfare Comments provided", true));
+      summary.welfareMessageText = m.getDataAsString(DataType.FORM_MESSAGE);
     } else {
       summary.welfareIsExercise = "(null)";
-      summary.welfareGroups = "";
       summary.welfareMessageText = "";
       count(sts.test("Welfare Comments provided", false));
     }
@@ -374,6 +376,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.welfareMessage = m;
+    summary.messageIds += "\nwelfare: " + m.messageId;
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -382,35 +385,36 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(ics_213) ");
     accumulateAddresses("ICS-213 addresses", m);
 
-    count(sts.test("ICS-213 Subject should be #EV", "TSUNAMI DISASTER RESOURCES", m.formSubject));
+    count(sts.test("ICS_213 Incident Name should be #EV", "TSUNAMI", m.incidentName));
+    count(sts.test("ICS-213 Form To should be #EV", "TSUNAMI;ETO-DRILL", m.formTo));
+
+    var ev = "Flood Zone Risk for Schools in";
+    count(sts.testStartsWith("ICS-213 Subject should start with #EV", ev, m.formSubject));
 
     var comments = m.formMessage;
     if (!isNull(comments)) {
       var cp = new ContentParser(comments);
       var lines = cp.getLines();
+      count(sts.test("ICS-213 messsage lines should be #EV", "2", String.valueOf(lines.length)));
 
-      summary.ics213IsExercise = (lines.length >= 1 && lines[0].equalsIgnoreCase("EXERCISE")) ? "YES" : "NO";
+      if (lines.length >= 1) {
+        var line1 = lines[0];
+        var fields = line1.split(",");
+        summary.ics213_school1_risk = fields[fields.length - 1];
+        getCounter("ICS-213 School Risk").increment(summary.ics213_school1_risk.toLowerCase());
+      }
 
-      summary.ics213Groups = lines.length >= 2 ? lines[1] : "";
-      var groupSet = stringToSet(summary.ics213Groups, ",");
-      groupSet.stream().forEach(gn -> accumulateGroupName("ICS-213", gn));
-
-      summary.ics213Resources = "";
-      if (lines.length >= 3 && lines[2].toUpperCase().startsWith("Here are three resources".toUpperCase())) {
-        var sb = new StringBuilder();
-        for (int i = 3; i < lines.length; ++i) {
-          var line = lines[i];
-          sb.append(line + "\n");
-          getCounter("ICS-213 Resources").increment(line.strip());
-        }
-        summary.ics213Resources = sb.toString().strip();
+      if (lines.length >= 2) {
+        var line2 = lines[1];
+        var fields = line2.split(",");
+        summary.ics213_school2_risk = fields[fields.length - 1];
+        getCounter("ICS-213 School Risk").increment(summary.ics213_school2_risk.toLowerCase());
       }
 
       count(sts.test("ICS-213 Comments parsed", true));
     } else {
-      summary.ics213IsExercise = "(null)";
-      summary.ics213Groups = "";
-      summary.ics213Resources = "";
+      summary.ics213_school1_risk = "";
+      summary.ics213_school2_risk = "";
       count(sts.test("ICS-213 Comments parsed", false));
     }
 
@@ -418,6 +422,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.ics213Message = m;
+    summary.messageIds += "\nics_213: " + m.messageId;
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -438,21 +443,23 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       groupSet.stream().forEach(gn -> accumulateGroupName("Check Out", gn));
 
       summary.coMostImportantThing = "";
-      if (lines.length >= 4
-          && lines[2].toUpperCase().startsWith("Most important thing I have learned in this exercise".toUpperCase())) {
+      if (lines.length >= 3) {
         var sb = new StringBuilder();
-        for (int i = 3; i < lines.length; ++i) {
-          var line = lines[i];
-          sb.append(line + "\n");
+        var fields = lines[2].split(":");
+        if (fields.length >= 2) {
+          for (var iField = 1; iField < fields.length; ++iField) {
+            sb.append(fields[iField].strip() + " ");
+          }
+          sb.append("\n");
+        } else {
+          sb.append(lines[2] + "\n");
         }
         summary.coMostImportantThing = sb.toString().strip();
         senderMostImportantThingMap.put(m.from, summary.coMostImportantThing);
       }
 
       count(sts.test("Check Out Comments parsed", true));
-    } else
-
-    {
+    } else {
       summary.coIsExercise = "(null)";
       summary.coGroups = "";
       summary.coMostImportantThing = "";
@@ -469,6 +476,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.checkOutMessage = m;
+    summary.messageIds += "\ncheck out: " + m.messageId;
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -489,17 +497,31 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.ics214Message = m;
+    summary.messageIds += "\nics 214: " + m.messageId;
     ++summary.messageCount;
     isPerfectMessage(m);
   }
 
-  private void handleBulletinMessage(Summary summary, BulletinMessage m) {
+  private void handle_BulletinMessage(Summary summary, BulletinMessage m) {
     sts.setExplanationPrefix("(bulletin) ");
     accumulateAddresses("bulletin addresses", m);
+
+    count(sts.test("Bulletin For should be #EV", "Tsunami Exercise Net", m.forNameGroup));
+    count(sts.test("Bulletin Form From should contain call sign", m.fromNameGroup.contains(m.from)));
+    count(sts.test("Bulletin Precedence should be #EV", "Routine", m.precedence));
+    getCounter("Bulletin Precedence").increment(m.precedence);
+    count(sts.testContains("Bulletin Subject should contain #EV", "TSUNAMI EXERCISE NET BULLETIN", m.formSubject));
+    count(sts.testStartsWith("Bulletin message should start with #EV", "THIS IS AN EXERCISE", m.bulletinText));
 
     // #MM update summary
     summary.bulletinMessage = m;
     ++summary.messageCount;
+    summary.bulletinFor = m.forNameGroup;
+    summary.bulletinFrom = m.fromNameGroup;
+    summary.bulletinPrecedence = m.precedence;
+    summary.bulletinSubject = m.formSubject;
+    summary.bulletinIsExercise = String.valueOf(m.bulletinText.toUpperCase().startsWith("THIS IS AN EXERCISE"));
+    summary.messageIds += "\nbulletin: " + m.messageId;
     isPerfectMessage(m);
   }
 

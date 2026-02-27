@@ -125,9 +125,14 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     var exerciseYearString = String.valueOf(exerciseYear);
 
     exercisesPathName = cm.getAsString(Key.PATH_EXERCISES);
-    exercisesPath = Path.of(exercisesPathName);
-    exercisePath = Path.of(exercisesPathName, exerciseYearString, dateString);
-    exercisePathName = exercisePath.toString();
+    if (exercisesPathName.startsWith("!!")) {
+      exercisePathName = exercisesPathName.substring(2);
+      exercisePath = Path.of(exercisePathName);
+    } else {
+      exercisesPath = Path.of(exercisesPathName);
+      exercisePath = Path.of(exercisesPathName, exerciseYearString, dateString);
+      exercisePathName = exercisePath.toString();
+    }
 
     // already created in the tool, so Winlink Express export can put to right place
     inputPath = Path.of(exercisePathName, "input");

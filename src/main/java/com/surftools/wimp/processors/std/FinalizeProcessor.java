@@ -361,6 +361,7 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
     }
 
     // var yearString = dateString.substring(0, 4);
+
     for (var archiveRootName : archiveRootNamesList) {
       var localPath = exercisePath;
       // NOTE WELL: no yearString here, it is already in paths.archive, etc.

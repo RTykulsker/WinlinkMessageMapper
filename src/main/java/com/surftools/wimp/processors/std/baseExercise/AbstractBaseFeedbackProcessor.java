@@ -158,9 +158,6 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
       }
     }
 
-  }
-
-  protected void endCommonProcessing(ExportedMessage message) {
     if (windowOpenDT != null && windowCloseDT != null) {
       sts.testOnOrAfter("Message should be posted on or after #EV", windowOpenDT, message.msgDateTime, DTF);
       sts.testOnOrBefore("Message should be posted on or before #EV", windowCloseDT, message.msgDateTime, DTF);
@@ -169,6 +166,9 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
       getCounter("Message sent days after window opens").increment(daysAfterOpen);
     }
 
+  }
+
+  protected void endCommonProcessing(ExportedMessage message) {
     sts.setExplanationPrefix("");
   }
 
