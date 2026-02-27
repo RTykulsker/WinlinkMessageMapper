@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.ContentParser;
+import com.surftools.utils.MultiDateTimeParser;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.BulletinMessage;
@@ -68,8 +69,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
   protected static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
 
-  protected static final DateTimeFormatter DYFI_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-  protected static final DateTimeFormatter DYFI_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+  protected static final DateTimeFormatter ICS_214_DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   /**
    * #MM just the necessary fields for a (multi-message) Summary
@@ -494,6 +494,51 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("ICS-214 Position").increment(m.selfResource.icsPosition());
     getCounter("ICS-214 Resources").increment(summary.ics214ResourceCount);
     getCounter("ICS-214 Activities").increment(summary.ics214ActivityCount);
+
+    var dtf = new MultiDateTimeParser(List.of("yyyy-MM-dd HH:mm"));
+    final var prefix = "ICS-214 Activity date/time should be on or ";
+    for (var activity : m.activities) {
+      var dtString = activity.dateTimeString();
+      try {
+        var dt = dtf.parse(dtString);
+        count(sts.testOnOrAfter(prefix + "after #EV", windowOpenDT, dt, ICS_214_DT_FORMATTER));
+        count(sts.testOnOrBefore(prefix + "before #EV", windowCloseDT, dt, ICS_214_DT_FORMATTER));
+      } catch (Exception e) {
+        logger.warn("### could not parse activity date/time: " + dtString + " for call: " + m.from);
+      }
+    }
+
+    var activitiesList = m.activities.stream().map(a -> a.activities()).toList();
+    var activitiesString = String.join(",", activitiesList).toUpperCase();
+    if (summary.dyfiMessage != null) {
+      var hasDYFI = activitiesString.contains("DYFI");
+      getCounter("ICS-214 activities has DYFI").increment(hasDYFI);
+    }
+
+    if (summary.checkInMessage != null) {
+      var hasCheckIn = activitiesString.contains("CHECK IN") || activitiesString.contains("CHECK-IN");
+      getCounter("ICS-214 activities has Check-In").increment(hasCheckIn);
+    }
+
+    if (summary.welfareMessage != null) {
+      var hasWelfare = activitiesString.contains("WELFARE");
+      getCounter("ICS-214 activities has Welfare").increment(hasWelfare);
+    }
+
+    if (summary.ics213Message != null) {
+      var hasIcs213 = activitiesString.contains("ICS 213") || activitiesString.contains("ICS-213");
+      getCounter("ICS-214 activities has ICS-213").increment(hasIcs213);
+    }
+
+    if (summary.bulletinMessage != null) {
+      var hasBulletin = activitiesString.contains("BULLETIN");
+      getCounter("ICS-214 activities has Bulletin").increment(hasBulletin);
+    }
+
+    if (summary.checkOutMessage != null) {
+      var hasCheckOut = activitiesString.contains("CHECK OUT") || activitiesString.contains("CHECK-OUT");
+      getCounter("ICS-214 activities has Check-Out").increment(hasCheckOut);
+    }
 
     // #MM update summary
     summary.ics214Message = m;
