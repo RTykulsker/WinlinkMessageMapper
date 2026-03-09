@@ -31,17 +31,24 @@ import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.utils.ContentParser;
 import com.surftools.utils.MultiDateTimeParser;
+import com.surftools.utils.RenewableBag;
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.BulletinMessage;
@@ -54,6 +61,11 @@ import com.surftools.wimp.message.Ics214Message;
 import com.surftools.wimp.message.WelfareBulletinBoardMessage;
 import com.surftools.wimp.message.WelfareBulletinBoardMessage.DataType;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
+import com.surftools.wimp.service.map.IMapService;
+import com.surftools.wimp.service.map.MapContext;
+import com.surftools.wimp.service.map.MapEntry;
+import com.surftools.wimp.service.map.MapLayer;
+import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -601,6 +613,268 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("ICS-214 Position").write(Path.of(outputPathName, "ics213Resources.csv"));
 
     writeTable("perfectMessages.csv", perfectMessages);
+
+    @SuppressWarnings("unchecked")
+    var summaries = new ArrayList<Summary>((Collection<Summary>) (Object) summaryMap.values());
+    makeMaps(summaries);
+
+  }
+
+  private void makeMaps(List<Summary> summaries) {
+    makeMessageCountMap(summaries);
+    makeDyfiGroupCountMap(summaries);
+
+    makeTrinaryMap(summaries, (s -> s.dyfiMessage == null), // Predicate<Summary> isUnknownPredicate, //
+        (s -> !s.dyfiMessage.isRealEvent), // Predicate<Summary> isGoodPredicate, //
+        null, // Function<Summary, String> popupFunction, //
+        null, // List<String> legendNames, //
+        true, // boolean doUnknownStatus, //
+        "DYFI Is Exercise", // String legendName, //
+        "DYFI Is Exercise", // String attributeName, //
+        "DYFI-IsExercise" // String fileName) {
+    );
+
+    makeTrinaryMap(summaries, (s -> s.dyfiMessage == null), // Predicate<Summary> isUnknownPredicate, //
+        (s -> !s.dyfiMessage.isFelt), // Predicate<Summary> isGoodPredicate, //
+        null, // Function<Summary, String> popupFunction, //
+        null, // List<String> legendNames, //
+        true, // boolean doUnknownStatus, //
+        "DYFI Is Felt", // String legendName, //
+        "DYFI Is Felt", // String attributeName, //
+        "DYFI-IsFelt" // String fileName) {
+    );
+
+    makeTrinaryMap(summaries, (s -> s.dyfiMessage == null), // Predicate<Summary> isUnknownPredicate, //
+        (s -> s.dyfiMessage.intensity != null && Integer.valueOf(s.dyfiMessage.intensity) >= 5), //
+        (s -> "intensity: " + s.dyfiMessage.intensity), // Function<Summary, String> popupFunction, //
+        null, // List<String> legendNames, //
+        true, // boolean doUnknownStatus, //
+        "DYFI Intensity >= 5", // String legendName, //
+        "DYFI Intensity >= 5", // String attributeName, //
+        "DYFI-IntensityIsEnough" // String fileName) {
+    );
+
+    makeTrinaryMap(summaries, (s -> s.checkInMessage == null), // Predicate<Summary> isUnknownPredicate, //
+        (s -> s.ciInTsunamiZone.toUpperCase().equals("NO")), //
+        null, // Function<Summary, String> popupFunction, //
+        List.of("Out of Zone", "Unknown", "In Zone"), // List<String> legendNames, //
+        true, // boolean doUnknownStatus, //
+        "In Tsunami Zone", // String legendName, //
+        "", // String attributeName, //
+        "InTsunamiZone" // String fileName) {
+    );
+
+    makeTrinaryMap(summaries, (s -> s.checkInMessage == null), // Predicate<Summary> isUnknownPredicate, //
+        (s -> s.ciInFloodZone.toUpperCase().equals("NO")), //
+        null, // Function<Summary, String> popupFunction, //
+        List.of("Out of Zone", "Unknown", "In Zone"), // List<String> legendNames, //
+        true, // boolean doUnknownStatus, //
+        "In Flood Zone", // String legendName, //
+        "", // String attributeName, //
+        "InFloodZone" // String fileName) {
+    );
+  }
+
+  private void makeMessageCountMap(List<Summary> summaries) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+    var nLayers = 7;
+    var myGradientMap = new MapService(cm, mm).makeGradientMap(0, 120, nLayers);
+
+    var messageCountMap = new HashMap<Integer, Integer>();
+    for (var summary : summaries) {
+      var key = summary.messageCount;
+      var value = messageCountMap.getOrDefault(key, Integer.valueOf(0));
+      ++value;
+      messageCountMap.put(key, value);
+    }
+
+    var mapEntries = new ArrayList<MapEntry>(summaries.size());
+    final var lastColorMapIndex = myGradientMap.size() - 1;
+    final var lastColor = gradientMap.get(lastColorMapIndex);
+    for (var s : summaries) {
+      var count = s.messageCount;
+      var location = s.location;
+      var color = myGradientMap.getOrDefault(count, lastColor);
+      var prefix = "<b>" + s.from + "</b><hr>";
+      var content = prefix //
+          + "Message Count: " + count + "\n" //
+          + "Feedback Count: " + s.getFeedbackCountString() + "\n" //
+          + "Feedback: " + s.getFeedback();
+
+      var mapEntry = new MapEntry(s.from, s.to, location, content, color);
+      mapEntries.add(mapEntry);
+    }
+
+    var layers = new ArrayList<MapLayer>();
+    var countLayerNameMap = new HashMap<Integer, String>();
+    for (var i = 1; i <= nLayers; ++i) {
+      var value = String.valueOf(i);
+      var count = messageCountMap.getOrDefault(i, Integer.valueOf(0));
+      var layerName = "# messages: " + value + ", count: " + count;
+      countLayerNameMap.put(i, layerName);
+
+      var color = myGradientMap.get(i - 1);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var legendTitle = "TSUNAMI 2026 Message Counts (" + mapEntries.size() + " total)";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-MessageCount", // file name
+        dateString + " Message Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+  }
+
+  private void makeDyfiGroupCountMap(List<Summary> summaries) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+    var desiredLayers = 10;
+
+    var groupCallListMap = new HashMap<String, List<String>>();
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiGroup == null) {
+        continue;
+      }
+      var group = summary.dyfiGroup;
+      var list = groupCallListMap.getOrDefault(group, new ArrayList<String>());
+      var call = summary.from;
+      list.add(call);
+      groupCallListMap.put(group, list);
+    }
+
+    var groupSizeGroupListMap = new TreeMap<Integer, List<String>>();
+    var groups = new ArrayList<String>(groupCallListMap.keySet());
+    for (var group : groups) {
+      var callList = groupCallListMap.get(group);
+      var groupSize = callList.size();
+      var groupList = groupSizeGroupListMap.getOrDefault(groupSize, new ArrayList<String>());
+      groupList.add(group);
+      groupSizeGroupListMap.put(groupSize, groupList);
+    }
+
+    groups.clear();
+    for (var groupSize : groupSizeGroupListMap.descendingKeySet()) {
+      var groupList = groupSizeGroupListMap.get(groupSize);
+      groups.addAll(groupList);
+      if (groups.size() >= desiredLayers) {
+        break;
+      }
+    }
+
+    var rng = new Random(2025);
+    var colorBag = new RenewableBag<>(IMapService.etoColorMap.values(), rng);
+    var groupColorMap = new HashMap<String, String>();
+    for (var group : groups) {
+      var color = colorBag.next();
+      groupColorMap.put(group, color);
+    }
+
+    var mapEntries = new ArrayList<MapEntry>(summaries.size());
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiGroup == null) {
+        continue;
+      }
+      var group = summary.dyfiGroup;
+      var callList = groupCallListMap.get(group);
+      var location = summary.location;
+      var color = groupColorMap.get(group);
+      var prefix = "<b>" + summary.from + "</b><hr>";
+      var content = prefix //
+          + "Group Name: " + group + "\n" //
+          + "Group Size: " + callList.size() + "\n";
+      var mapEntry = new MapEntry(summary.from, null, location, content, color);
+      mapEntries.add(mapEntry);
+    }
+
+    var layers = new ArrayList<MapLayer>(groups.size());
+    for (var group : groups) {
+      var callList = groupCallListMap.get(group);
+      var count = callList.size();
+      var layerName = "group: " + group + ", size: " + count;
+      var color = groupColorMap.get(group);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var legendTitle = "TSUNAMI 2026 Group Counts (" + summaries.size() + " total)";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-GroupCounts", // file name
+        dateString + " Group Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+  }
+
+  private enum MapStatus {
+    Green, Yellow, Red
+  }
+
+  private void makeTrinaryMap(List<Summary> summaries, //
+      Predicate<Summary> isUnknownPredicate, //
+      Predicate<Summary> isGoodPredicate, //
+      Function<Summary, String> popupFunction, //
+      List<String> legendNames, //
+      boolean doUnknownStatus, //
+      String legendName, //
+      String attributeName, //
+      String fileName) {
+
+    var mapService = new MapService(cm, mm);
+    var statusColorMap = Map
+        .of(MapStatus.Green, IMapService.rgbMap.get("green"), //
+            MapStatus.Yellow, IMapService.rgbMap.get("yellow"), //
+            MapStatus.Red, IMapService.rgbMap.get("red") //
+        );
+    var statusCountMap = new HashMap<MapStatus, Integer>();
+
+    var mapEntries = new ArrayList<MapEntry>();
+    for (var summary : summaries) {
+      MapStatus status = null;
+      if (isUnknownPredicate.test(summary)) {
+        status = MapStatus.Yellow;
+      } else if (isGoodPredicate.test(summary)) {
+        status = MapStatus.Green;
+      } else {
+        status = MapStatus.Red;
+      }
+      var color = statusColorMap.get(status);
+      var count = statusCountMap.getOrDefault(status, Integer.valueOf(0));
+      ++count;
+      statusCountMap.put(status, count);
+      var popupText = "<b>" + summary.from + "</b><hr>";
+      if (popupFunction != null) {
+        popupText = popupText + popupFunction.apply(summary);
+      }
+      mapEntries.add(new MapEntry(summary.from, null, summary.location, popupText, color));
+    }
+
+    if (legendNames == null) {
+      legendNames = List.of("Correct", "Unknown", "Incorrect");
+    }
+    var layers = new ArrayList<MapLayer>();
+    for (var status : MapStatus.values()) {
+      var count = statusCountMap.getOrDefault(status, Integer.valueOf(0));
+      var color = statusColorMap.get(status);
+      var ordinal = status.ordinal();
+      var prefix = legendNames.get(ordinal);
+      if (status == MapStatus.Yellow && !doUnknownStatus) {
+        continue;
+      }
+      layers.add(new MapLayer(prefix + " " + attributeName + " messages, count: " + count, color));
+    }
+    var legendTitle = "TSUNAMI 2026 " + legendName + " Counts (" + summaries.size() + " total)";
+
+    if (fileName == null || fileName.isBlank()) {
+      var fields = legendName.split(" ");
+      fields[0] = fields[0].toLowerCase();
+      fileName = String.join("", fields);
+    }
+    var context = new MapContext(outputPath, //
+        dateString + "-map-" + fileName, // file name
+        dateString + " " + legendName + "  correct", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
   }
 
   private void accumulateAddresses(String counterName, ExportedMessage message) {
