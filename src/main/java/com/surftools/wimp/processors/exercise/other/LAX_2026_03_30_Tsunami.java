@@ -101,7 +101,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     public String allGroups;
 
-    public String dyfiIsExercise;
+    public boolean dyfiIsExercise;
+    public boolean dyfiIsFelt;
     public String dyfiGroup;
 
     public String ciIsExercise;
@@ -150,7 +151,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
                   "All Groups",
 
-                  "DYFI IsExercise", "DYFI Group", //
+                  "DYFI IsExercise", "DYFI IsFelt", "DYFI Group", //
 
                   "Check-In IsExercise", "Check-In Groups", "Operational Capabilities", "Deployment Posture",
                   "In Tsunami Zone", "In Flood Zone", //
@@ -183,7 +184,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
                   allGroups,
 
-                  dyfiIsExercise, dyfiGroup, //
+                  String.valueOf(dyfiIsExercise), String.valueOf(dyfiIsFelt), dyfiGroup, //
 
                   ciIsExercise, ciGroups, ciOperationalCapabilities, ciDeploymentPosture, ciInTsunamiZone,
                   ciInFloodZone, //
@@ -293,6 +294,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("DYFI Form Version").increment(m.formVersion);
 
     // #MM update summary
+    summary.dyfiIsExercise = !m.isRealEvent;
+    summary.dyfiIsFelt = m.isFelt;
     summary.dyfiMessage = m;
     summary.messageIds += "dyfi: " + m.messageId;
     ++summary.messageCount;
@@ -621,109 +624,152 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
   }
 
   private void makeMaps(List<Summary> summaries) {
-    makeMessageCountMap(summaries);
     makeDyfiGroupCountMap(summaries);
 
-    makeTrinaryMap(summaries, (s -> s.dyfiMessage == null), // Predicate<Summary> isUnknownPredicate, //
-        (s -> !s.dyfiMessage.isRealEvent), // Predicate<Summary> isGoodPredicate, //
-        null, // Function<Summary, String> popupFunction, //
-        null, // List<String> legendNames, //
-        true, // boolean doUnknownStatus, //
-        "DYFI Is Exercise", // String legendName, //
-        "DYFI Is Exercise", // String attributeName, //
-        "DYFI-IsExercise" // String fileName) {
-    );
+    var mapService = new MapService(cm, mm);
+    final int nMessages = summaries.size();
+    Function<Summary, String> popup = (s -> "<b>" + s.from + "</b><hr>" //
+        + "Message Count: " + nMessages + "\n" //
+        + "Feedback Count: " + s.getFeedbackCountString() + "\n" //
+        + "Feedback: " + s.getFeedback());
+    final var gradientMap = mapService.makeGradientMap(120, 0, 6);
+    makeMakeViaLegends(summaries, "Feedback Counts", "feedbackCount", outputPath, List
+        .of(//
+            new Legend("value: 0", gradientMap.get(0), (s -> s.getFeedbackCount() == 0), popup), //
+            new Legend("value: 1", gradientMap.get(1), (s -> s.getFeedbackCount() == 1), popup), //
+            new Legend("value: 2", gradientMap.get(2), (s -> s.getFeedbackCount() == 2), popup), //
+            new Legend("value: 3", gradientMap.get(3), (s -> s.getFeedbackCount() == 3), popup), //
+            new Legend("value: 4", gradientMap.get(4), (s -> s.getFeedbackCount() == 4), popup), //
+            new Legend("value: 5 or more", gradientMap.get(5), (s -> s != null), popup)));
 
-    makeTrinaryMap(summaries, (s -> s.dyfiMessage == null), // Predicate<Summary> isUnknownPredicate, //
-        (s -> !s.dyfiMessage.isFelt), // Predicate<Summary> isGoodPredicate, //
-        null, // Function<Summary, String> popupFunction, //
-        null, // List<String> legendNames, //
-        true, // boolean doUnknownStatus, //
-        "DYFI Is Felt", // String legendName, //
-        "DYFI Is Felt", // String attributeName, //
-        "DYFI-IsFelt" // String fileName) {
-    );
+    final var green = IMapService.rgbMap.get("green");
+    final var yellow = IMapService.rgbMap.get("yellow");
+    final var red = IMapService.rgbMap.get("red");
+    final var gray = IMapService.rgbMap.get("grey");
+    final var black = IMapService.rgbMap.get("black");
 
-    makeTrinaryMap(summaries, (s -> s.dyfiMessage == null), // Predicate<Summary> isUnknownPredicate, //
-        (s -> s.dyfiMessage.intensity != null && Integer.valueOf(s.dyfiMessage.intensity) >= 5), //
-        (s -> "intensity: " + s.dyfiMessage.intensity), // Function<Summary, String> popupFunction, //
-        null, // List<String> legendNames, //
-        true, // boolean doUnknownStatus, //
-        "DYFI Intensity >= 5", // String legendName, //
-        "DYFI Intensity >= 5", // String attributeName, //
-        "DYFI-IntensityIsEnough" // String fileName) {
-    );
+    popup = (s -> "<b>" + s.from + "</b><hr>" //
+        + "My Status: " + s.welfareMyStatus + "\n" //
+        + "Message: " + s.welfareMessageText);
+    makeMakeViaLegends(summaries, "Welfare Status Counts", "WelfareStatus", outputPath, List
+        .of(//
+            new Legend("My Status: Safe", green, (s -> s.welfareMessage != null && s.welfareMyStatus.equals("SAFE")),
+                popup), //
+            new Legend("My Status: Evacuating", yellow,
+                (s -> s.welfareMessage != null && s.welfareMyStatus.equals("EVACUATING")), popup), //
+            new Legend("My Status: Need Help", red,
+                (s -> s.welfareMessage != null && s.welfareMyStatus.equals("NEED HELP")), popup), //
+            new Legend("My Status: Unknown", gray,
+                (s -> s.welfareMessage != null && s.welfareMyStatus.equals("UNKNOWN")), popup), //
+            new Legend("My Status: No Welfare Message", black, (s -> s.welfareMessage == null), popup)));
 
-    makeTrinaryMap(summaries, (s -> s.checkInMessage == null), // Predicate<Summary> isUnknownPredicate, //
-        (s -> s.ciInTsunamiZone.toUpperCase().equals("NO")), //
-        null, // Function<Summary, String> popupFunction, //
-        List.of("Out of Zone", "Unknown", "In Zone"), // List<String> legendNames, //
-        true, // boolean doUnknownStatus, //
-        "In Tsunami Zone", // String legendName, //
-        "", // String attributeName, //
-        "InTsunamiZone" // String fileName) {
-    );
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Is Exercise: " + s.dyfiIsExercise);
+    makeMakeViaLegends(summaries, "DYFI Is Exercise Counts", "DYFI_IsExercise", outputPath, List
+        .of(//
+            new Legend("Is Exercise", green, (s -> s.dyfiMessage != null && s.dyfiIsExercise), popup), //
+            new Legend("Real Event", red, (s -> s.dyfiMessage != null && !s.dyfiIsExercise), popup), //
+            new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
 
-    makeTrinaryMap(summaries, (s -> s.checkInMessage == null), // Predicate<Summary> isUnknownPredicate, //
-        (s -> s.ciInFloodZone.toUpperCase().equals("NO")), //
-        null, // Function<Summary, String> popupFunction, //
-        List.of("Out of Zone", "Unknown", "In Zone"), // List<String> legendNames, //
-        true, // boolean doUnknownStatus, //
-        "In Flood Zone", // String legendName, //
-        "", // String attributeName, //
-        "InFloodZone" // String fileName) {
-    );
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Is Felt: " + s.dyfiIsFelt);
+    makeMakeViaLegends(summaries, "DYFI Is Felt Counts", "DYFI_IsFelt", outputPath, List
+        .of(//
+            new Legend("Is Felt", green, (s -> s.dyfiMessage != null && s.dyfiIsFelt), popup), //
+            new Legend("Not Felt", red, (s -> s.dyfiMessage != null && !s.dyfiIsFelt), popup), //
+            new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Intensity: "
+        + ((s.dyfiMessage.intensity == null) ? "unknown" : s.dyfiMessage.intensity));
+    makeMakeViaLegends(summaries, "DYFI Intensity >= 5 Counts", "DYFI_IntensityIsEnough", outputPath, List
+        .of(//
+            new Legend("Intensity >= 5", green,
+                (s -> s.dyfiMessage != null && s.dyfiMessage.intensity != null
+                    && Integer.valueOf(s.dyfiMessage.intensity) >= 5),
+                popup), //
+            new Legend("Intensity unknown", yellow, (s -> s.dyfiMessage != null && s.dyfiMessage.intensity == null),
+                popup), //
+            new Legend("Intensity < 5", red,
+                (s -> s.dyfiMessage != null && s.dyfiMessage.intensity != null
+                    && Integer.valueOf(s.dyfiMessage.intensity) < 5),
+                popup), //
+            new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "In Tsunami Zone: "
+        + ((s.ciInTsunamiZone == null) ? "unknown" : s.ciInTsunamiZone));
+    makeMakeViaLegends(summaries, "In Tsunami Zone Counts", "InTsunamiZone", outputPath, List
+        .of(//
+            new Legend("Out of Zone", green,
+                (s -> s.checkInMessage != null && s.ciInTsunamiZone != null
+                    && s.ciInTsunamiZone.toUpperCase().equals("NO")),
+                popup), //
+            new Legend("Unknown", yellow,
+                (s -> s.ciInTsunamiZone != null && !s.ciInTsunamiZone.toUpperCase().equals("YES")
+                    && !s.ciInTsunamiZone.equals("NO")),
+                popup), //
+            new Legend("In Zone", red,
+                (s -> s.checkInMessage != null && s.ciInTsunamiZone != null
+                    && !s.ciInTsunamiZone.toUpperCase().equals("NO")),
+                popup), //
+            new Legend("No Check In Message", black, (s -> s.checkInMessage == null), popup)));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "In Flood Zone: "
+        + ((s.ciInFloodZone == null) ? "unknown" : s.ciInFloodZone));
+    makeMakeViaLegends(summaries, "In Flood Zone Counts", "InFloodZone", outputPath, List
+        .of(//
+            new Legend("Out of Zone", green,
+                (s -> s.checkInMessage != null && s.ciInFloodZone != null
+                    && s.ciInFloodZone.toUpperCase().equals("NO")),
+                popup), //
+            new Legend("Unknown", yellow,
+                (s -> s.ciInFloodZone != null && !s.ciInFloodZone.toUpperCase().equals("YES")
+                    && !s.ciInFloodZone.equals("NO")),
+                popup), //
+            new Legend("In Zone", red,
+                (s -> s.checkInMessage != null && s.ciInFloodZone != null
+                    && !s.ciInFloodZone.toUpperCase().equals("NO")),
+                popup), //
+            new Legend("No Check In Message", black, (s -> s.checkInMessage == null), popup)));
   }
 
-  private void makeMessageCountMap(List<Summary> summaries) {
-    var dateString = cm.getAsString(Key.EXERCISE_DATE);
-    var mapService = new MapService(cm, mm);
-    var nLayers = 7;
-    var myGradientMap = new MapService(cm, mm).makeGradientMap(0, 120, nLayers);
+  record Legend(String label, String color, Predicate<Summary> predicate, Function<Summary, String> popupGenerator) {
+  };
 
-    var messageCountMap = new HashMap<Integer, Integer>();
-    for (var summary : summaries) {
-      var key = summary.messageCount;
-      var value = messageCountMap.getOrDefault(key, Integer.valueOf(0));
-      ++value;
-      messageCountMap.put(key, value);
-    }
+  private void makeMakeViaLegends(List<Summary> summaries, String legendTitle, String fileName, Path path,
+      List<Legend> legends) {
+    var colorCountMap = new HashMap<String, Integer>();
 
     var mapEntries = new ArrayList<MapEntry>(summaries.size());
-    final var lastColorMapIndex = myGradientMap.size() - 1;
-    final var lastColor = gradientMap.get(lastColorMapIndex);
     for (var s : summaries) {
-      var count = s.messageCount;
-      var location = s.location;
-      var color = myGradientMap.getOrDefault(count, lastColor);
-      var prefix = "<b>" + s.from + "</b><hr>";
-      var content = prefix //
-          + "Message Count: " + count + "\n" //
-          + "Feedback Count: " + s.getFeedbackCountString() + "\n" //
-          + "Feedback: " + s.getFeedback();
-
-      var mapEntry = new MapEntry(s.from, s.to, location, content, color);
-      mapEntries.add(mapEntry);
-    }
+      var found = false;
+      for (var legend : legends) {
+        if (legend.predicate.test(s)) {
+          var count = colorCountMap.getOrDefault(legend.color, Integer.valueOf(0));
+          ++count;
+          colorCountMap.put(legend.color, count);
+          var mapEntry = new MapEntry(s.from, s.to, s.location, legend.popupGenerator.apply(s), legend.color);
+          mapEntries.add(mapEntry);
+          found = true;
+          break;
+        } // endif predicate matches
+      } // end loop over legend entries
+      if (!found) {
+        logger.debug("not found");
+      }
+    } // end loop of mapEntries
 
     var layers = new ArrayList<MapLayer>();
-    var countLayerNameMap = new HashMap<Integer, String>();
-    for (var i = 1; i <= nLayers; ++i) {
-      var value = String.valueOf(i);
-      var count = messageCountMap.getOrDefault(i, Integer.valueOf(0));
-      var layerName = "# messages: " + value + ", count: " + count;
-      countLayerNameMap.put(i, layerName);
-
-      var color = myGradientMap.get(i - 1);
-      var layer = new MapLayer(layerName, color);
-      layers.add(layer);
+    for (var legend : legends) {
+      var color = legend.color;
+      var label = legend.label;
+      var count = colorCountMap.getOrDefault(color, Integer.valueOf(0));
+      layers.add(new MapLayer(label + ", count: " + count, color));
     }
 
-    var legendTitle = "TSUNAMI 2026 Message Counts (" + mapEntries.size() + " total)";
-    var context = new MapContext(outputPath, //
-        dateString + "-map-MessageCount", // file name
-        dateString + " Message Counts", // map title
+    legendTitle = "Tsunami 2026 " + legendTitle + " (" + summaries.size() + " total)";
+    var context = new MapContext(path, //
+        dateString + "-map-" + fileName, // file name
+        dateString + legendTitle, // map title
         null, legendTitle, layers, mapEntries);
+    var mapService = new MapService(cm, mm);
     mapService.makeMap(context);
   }
 
@@ -800,79 +846,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     var legendTitle = "TSUNAMI 2026 Group Counts (" + summaries.size() + " total)";
     var context = new MapContext(outputPath, //
-        dateString + "-map-GroupCounts", // file name
+        dateString + "-map-DYFI GroupCounts", // file name
         dateString + " Group Counts", // map title
-        null, legendTitle, layers, mapEntries);
-    mapService.makeMap(context);
-  }
-
-  private enum MapStatus {
-    Green, Yellow, Red
-  }
-
-  private void makeTrinaryMap(List<Summary> summaries, //
-      Predicate<Summary> isUnknownPredicate, //
-      Predicate<Summary> isGoodPredicate, //
-      Function<Summary, String> popupFunction, //
-      List<String> legendNames, //
-      boolean doUnknownStatus, //
-      String legendName, //
-      String attributeName, //
-      String fileName) {
-
-    var mapService = new MapService(cm, mm);
-    var statusColorMap = Map
-        .of(MapStatus.Green, IMapService.rgbMap.get("green"), //
-            MapStatus.Yellow, IMapService.rgbMap.get("yellow"), //
-            MapStatus.Red, IMapService.rgbMap.get("red") //
-        );
-    var statusCountMap = new HashMap<MapStatus, Integer>();
-
-    var mapEntries = new ArrayList<MapEntry>();
-    for (var summary : summaries) {
-      MapStatus status = null;
-      if (isUnknownPredicate.test(summary)) {
-        status = MapStatus.Yellow;
-      } else if (isGoodPredicate.test(summary)) {
-        status = MapStatus.Green;
-      } else {
-        status = MapStatus.Red;
-      }
-      var color = statusColorMap.get(status);
-      var count = statusCountMap.getOrDefault(status, Integer.valueOf(0));
-      ++count;
-      statusCountMap.put(status, count);
-      var popupText = "<b>" + summary.from + "</b><hr>";
-      if (popupFunction != null) {
-        popupText = popupText + popupFunction.apply(summary);
-      }
-      mapEntries.add(new MapEntry(summary.from, null, summary.location, popupText, color));
-    }
-
-    if (legendNames == null) {
-      legendNames = List.of("Correct", "Unknown", "Incorrect");
-    }
-    var layers = new ArrayList<MapLayer>();
-    for (var status : MapStatus.values()) {
-      var count = statusCountMap.getOrDefault(status, Integer.valueOf(0));
-      var color = statusColorMap.get(status);
-      var ordinal = status.ordinal();
-      var prefix = legendNames.get(ordinal);
-      if (status == MapStatus.Yellow && !doUnknownStatus) {
-        continue;
-      }
-      layers.add(new MapLayer(prefix + " " + attributeName + " messages, count: " + count, color));
-    }
-    var legendTitle = "TSUNAMI 2026 " + legendName + " Counts (" + summaries.size() + " total)";
-
-    if (fileName == null || fileName.isBlank()) {
-      var fields = legendName.split(" ");
-      fields[0] = fields[0].toLowerCase();
-      fileName = String.join("", fields);
-    }
-    var context = new MapContext(outputPath, //
-        dateString + "-map-" + fileName, // file name
-        dateString + " " + legendName + "  correct", // map title
         null, legendTitle, layers, mapEntries);
     mapService.makeMap(context);
   }

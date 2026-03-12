@@ -107,6 +107,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
       return list.toArray(new String[list.size()]);
     }
 
+    public int getFeedbackCount() {
+      return Integer.valueOf(getFeedbackCountString());
+    }
+
     public String getFeedbackCountString() {
       var feedbackCount = "0";
 
