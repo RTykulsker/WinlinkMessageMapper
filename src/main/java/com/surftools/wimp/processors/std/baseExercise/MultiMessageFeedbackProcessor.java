@@ -414,7 +414,10 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
         var outboundMessage = new OutboundMessage(outboundMessageSender, summary.from,
             makeOutboundMessageSubject(summary), outboundMessageFeedback,
             AbstractBaseOutboundMessageEngine.generateMid(outboundMessageFeedback));
-        outboundMessageList.add(outboundMessage);
+        var isAccepted = isOutboundMessageAccepted(summary, outboundMessage);
+        if (isAccepted) {
+          outboundMessageList.add(outboundMessage);
+        }
       }
 
       var service = new OutboundMessageService(cm, mm, outboundMessageExtraContent);
@@ -440,6 +443,20 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     if (dbResult.status() == ReturnStatus.ERROR) {
       logger.error("### database update failed: " + dbResult.content());
     }
+  }
+
+  /**
+   * override to prevent outbound message from being sent,
+   *
+   * for example, if interested in intermediate results, don't send outbound message if no new message has arrived.
+   * You've got to figure out if it is "new"
+   *
+   * @param baseSummary
+   * @param outboundMessage
+   * @return
+   */
+  protected boolean isOutboundMessageAccepted(BaseSummary baseSummary, OutboundMessage outboundMessage) {
+    return true;
   }
 
   private void makeFeedbackMap() {

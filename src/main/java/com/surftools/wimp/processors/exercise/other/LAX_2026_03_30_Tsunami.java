@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,10 @@ import com.surftools.wimp.service.map.MapContext;
 import com.surftools.wimp.service.map.MapEntry;
 import com.surftools.wimp.service.map.MapLayer;
 import com.surftools.wimp.service.map.MapService;
+import com.surftools.wimp.service.messageHistory.IMessageHistoryService;
+import com.surftools.wimp.service.messageHistory.MessageHistoryKey;
+import com.surftools.wimp.service.messageHistory.MessageHistoryService;
+import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -206,6 +211,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
   final static LinkedHashSet<String> senderGroupSet = new LinkedHashSet<>();
   final static Map<String, String> senderMostImportantThingMap = new HashMap<>();
 
+  private IMessageHistoryService messageHistoryService;
+
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
     // #MM must define acceptableMessages
@@ -214,6 +221,9 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
 
     allowPerfectMessageReporting = true;
+
+    messageHistoryService = new MessageHistoryService(cm);
+    messageHistoryService.initialize();
   }
 
   @Override
@@ -317,7 +327,12 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       var groupSet = stringToSet(summary.ciGroups, ",");
       groupSet.stream().forEach(gn -> accumulateGroupName("Check In", gn));
       summary.ciOperationalCapabilities = getCommentLineValues(cp, "Operational Capabilities: ");
+      var capabilities = summary.ciOperationalCapabilities.split(",");
+      for (var capability : capabilities) {
+        getCounter("Check In Capabilities").increment(capability.toUpperCase());
+      }
       summary.ciDeploymentPosture = getCommentLineValues(cp, "Deployment Posture: ");
+      getCounter("Check In Deployment Posture").increment(summary.ciDeploymentPosture);
 
       var inZoneString = getCommentLineValues(cp, "Station in Tsunami Zone: ").toUpperCase();
       summary.ciInTsunamiZone = inZoneString.startsWith("YES") ? "YES"
@@ -607,6 +622,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
   @Override
   public void postProcess() {
+    getCounter("Check In Capabilities").squeeze(10, "other");
+
     super.postProcess();// #MM
 
     getCounter("Summary Group Affiliation").write(Path.of(outputPathName, "groupCounts.csv"));
@@ -614,12 +631,70 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("ICS-213 Resources").write(Path.of(outputPathName, "ics213Resources.csv"));
     writeTable("mostImportantThingLearned.csv", senderMostImportantThingMap);
     getCounter("ICS-214 Position").write(Path.of(outputPathName, "ics213Resources.csv"));
+    getCounter("Check In Capabilities").write(Path.of(outputPathName, "checkInCapabilities.csv"));
 
     writeTable("perfectMessages.csv", perfectMessages);
 
     @SuppressWarnings("unchecked")
     var summaries = new ArrayList<Summary>((Collection<Summary>) (Object) summaryMap.values());
     makeMaps(summaries);
+
+    messageHistoryService.store();
+  }
+
+  @Override
+  protected boolean isOutboundMessageAccepted(BaseSummary baseSummary, OutboundMessage outboundMessage) {
+    var summary = (Summary) baseSummary;
+    var typeMidMap = new LinkedHashMap<MessageType, ExportedMessage>();
+    typeMidMap.put(MessageType.DYFI, summary.dyfiMessage);
+    typeMidMap.put(MessageType.CHECK_IN, summary.checkInMessage);
+    typeMidMap.put(MessageType.ICS_213, summary.ics213Message);
+    typeMidMap.put(MessageType.WELFARE_BULLETIN_BOARD, summary.welfareMessage);
+    typeMidMap.put(MessageType.BULLETIN, summary.bulletinMessage);
+    typeMidMap.put(MessageType.CHECK_OUT, summary.checkOutMessage);
+    typeMidMap.put(MessageType.ICS_214, summary.ics214Message);
+
+    // TODO into configuration if we ever decide to go into production with this
+    var doIntermediateResults = false;
+
+    /*
+     * if we are doing intermediate results, then we only want to accept the message if there is at least one new
+     * messageId
+     */
+    if (doIntermediateResults) {
+      boolean anyNew = false;
+
+      for (var messageType : typeMidMap.keySet()) {
+        var exportedMessage = typeMidMap.get(messageType);
+        if (exportedMessage != null) {
+          var call = summary.from;
+          var mId = exportedMessage.messageId;
+          var messageHistoryKey = new MessageHistoryKey(call, mId, messageType);
+          var entry = messageHistoryService.get(messageHistoryKey);
+          if (entry == null) {
+            anyNew = true;
+            logger.info("new messageHistory for: " + messageHistoryKey);
+            messageHistoryService.add(messageHistoryKey);
+          } else {
+            // call,mId,type already exist
+            ;
+          }
+        } else {
+          // no message of this type received
+          continue;
+        }
+      }
+
+      if (anyNew) {
+        logger.info("accepting outbound message for: " + summary.from + " because at least one new message");
+        return true;
+      } else {
+        logger.info("rejecting outbound message for: " + summary.from + " because no new messages");
+        return false;
+      }
+    } else {
+      return true; // always accept
+    }
 
   }
 
