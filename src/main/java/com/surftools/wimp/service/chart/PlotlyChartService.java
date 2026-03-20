@@ -176,6 +176,9 @@ public class PlotlyChartService extends AbstractBaseChartService {
       }
 
       var keyCount = counter.getKeyCount();
+      if (keyCount == 0) {
+        continue;
+      }
       if (!config.doSingleItemCharts() && keyCount == 1) {
         logger.debug("skipping counter: " + counterLabel + ", only one value");
         continue;

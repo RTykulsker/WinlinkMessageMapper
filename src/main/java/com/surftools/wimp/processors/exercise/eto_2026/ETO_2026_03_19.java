@@ -74,7 +74,19 @@ public class ETO_2026_03_19 extends SingleMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
     messageType = MessageType.ICS_213;
     doStsFieldValidation = false;
-    var extraOutboundMessageText = "";
+    var extraOutboundMessageText = """
+
+        -----------------------------------------------------------------------------
+
+        ETO is working with several other teams to raise awareness about flooding and tsunami risks
+        as part of a joint Tsunami 2026 Exercise!
+
+        This exercise is currently running through March 30 for Full and authoritative instructions
+        can be found at https://www.laxnortheast.org/exercises/tsunami.
+
+        ETO-specific guidance can be found at https://emcomm-training.org/Non-ETO_Exercises.html
+
+        """;
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
 
     refLines = Arrays.asList(referenceMessage.split("\n"));

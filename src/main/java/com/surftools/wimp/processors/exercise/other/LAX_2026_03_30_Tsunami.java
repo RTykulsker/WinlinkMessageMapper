@@ -145,6 +145,42 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       this.explanations = new ArrayList<String>();
     }
 
+    public String getMessageSummary() {
+      if (messageCount == 7) {
+        return "<b>" + from + "</b><hr>\n" + "All messages received!";
+      } else {
+        var messages = new ArrayList<ExportedMessage>();
+        messages.add(dyfiMessage);
+        messages.add(checkInMessage);
+        messages.add(welfareMessage);
+        messages.add(ics213Message);
+        messages.add(bulletinMessage);
+        messages.add(checkOutMessage);
+        messages.add(ics214Message);
+
+        final var labels = List.of("dyfi", "check_in", "welfare", "ics213", "bulletin", "check_out", "ics214");
+
+        var rList = new ArrayList<String>();
+        var mList = new ArrayList<String>();
+        for (var i = 0; i < messages.size(); ++i) {
+          var message = messages.get(i);
+          var label = labels.get(i);
+          if (message == null) {
+            mList.add(label);
+          } else {
+            rList.add(label);
+          }
+        }
+
+        var sb = new StringBuilder();
+        sb.append("<b>" + from + "</b><hr>\n");
+        sb.append("received: " + String.join(",", rList) + "\n");
+        sb.append("missing:  " + String.join(",", mList));
+        var ret = sb.toString();
+        return ret;
+      }
+    }
+
     @Override
     public String[] getHeaders() {
       var list = new ArrayList<String>();
@@ -280,9 +316,9 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     try {
       var intensity = Integer.parseInt(m.intensity);
-      count(sts.test("DYFI Intensity must be >= 7", intensity >= 7, m.intensity));
+      count(sts.test("DYFI Intensity must be >= 5", intensity >= 5, m.intensity));
     } catch (Exception e) {
-      count(sts.test("DYFI Intensity must be >= 7", false, m.intensity));
+      count(sts.test("DYFI Intensity must be >= 5", false, m.intensity));
     }
 
     var comments = m.comments;
@@ -332,7 +368,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
         getCounter("Check In Capabilities").increment(capability.toUpperCase());
       }
       summary.ciDeploymentPosture = getCommentLineValues(cp, "Deployment Posture: ");
-      getCounter("Check In Deployment Posture").increment(summary.ciDeploymentPosture);
+      getCounter("Check In Deployment Posture").increment(summary.ciDeploymentPosture.toUpperCase());
 
       var inZoneString = getCommentLineValues(cp, "Station in Tsunami Zone: ").toUpperCase();
       summary.ciInTsunamiZone = inZoneString.startsWith("YES") ? "YES"
@@ -693,7 +729,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
         return false;
       }
     } else {
-      return true; // always accept
+      // always accept
+      return true;
     }
 
   }
@@ -702,12 +739,11 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     makeDyfiGroupCountMap(summaries);
 
     var mapService = new MapService(cm, mm);
-    final int nMessages = summaries.size();
     Function<Summary, String> popup = (s -> "<b>" + s.from + "</b><hr>" //
-        + "Message Count: " + nMessages + "\n" //
+        + "Message Count: " + s.messageCount + "\n" //
         + "Feedback Count: " + s.getFeedbackCountString() + "\n" //
         + "Feedback: " + s.getFeedback());
-    final var gradientMap = mapService.makeGradientMap(120, 0, 6);
+    var gradientMap = mapService.makeGradientMap(120, 0, 6);
     makeMakeViaLegends(summaries, "Feedback Counts", "feedbackCount", outputPath, List
         .of(//
             new Legend("value: 0", gradientMap.get(0), (s -> s.getFeedbackCount() == 0), popup), //
@@ -717,15 +753,29 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
             new Legend("value: 4", gradientMap.get(4), (s -> s.getFeedbackCount() == 4), popup), //
             new Legend("value: 5 or more", gradientMap.get(5), (s -> s != null), popup)));
 
+    popup = (s -> s.getMessageSummary());
+    gradientMap = mapService.makeGradientMap(120, 0, 7);
+    makeMakeViaLegends(summaries, "Message Counts", "messageCount", outputPath, List
+        .of(//
+            new Legend("messages: 7", gradientMap.get(0), (s -> s.messageCount == 7), popup), //
+            new Legend("messages: 6", gradientMap.get(1), (s -> s.messageCount == 6), popup), //
+            new Legend("messages: 5", gradientMap.get(2), (s -> s.messageCount == 5), popup), //
+            new Legend("messages: 4", gradientMap.get(3), (s -> s.messageCount == 4), popup), //
+            new Legend("messages: 3", gradientMap.get(4), (s -> s.messageCount == 3), popup), //
+            new Legend("messages: 2", gradientMap.get(5), (s -> s.messageCount == 2), popup), //
+            new Legend("messages: 1", gradientMap.get(6), (s -> s.messageCount == 1), popup) //
+        ));
+
     final var green = IMapService.rgbMap.get("green");
     final var yellow = IMapService.rgbMap.get("yellow");
     final var red = IMapService.rgbMap.get("red");
     final var gray = IMapService.rgbMap.get("grey");
     final var black = IMapService.rgbMap.get("black");
 
-    popup = (s -> "<b>" + s.from + "</b><hr>" //
-        + "My Status: " + s.welfareMyStatus + "\n" //
-        + "Message: " + s.welfareMessageText);
+    popup = (s -> "<b>" + s.from + "</b><hr>" + //
+        ((s.welfareMessage == null) ? "no Welfare message " : //
+            "My Status: " + s.welfareMyStatus + "\n" //
+                + "Message: " + s.welfareMessageText));
     makeMakeViaLegends(summaries, "Welfare Status Counts", "WelfareStatus", outputPath, List
         .of(//
             new Legend("My Status: Safe", green, (s -> s.welfareMessage != null && s.welfareMyStatus.equals("SAFE")),
@@ -738,22 +788,24 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
                 (s -> s.welfareMessage != null && s.welfareMyStatus.equals("UNKNOWN")), popup), //
             new Legend("My Status: No Welfare Message", black, (s -> s.welfareMessage == null), popup)));
 
-    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Is Exercise: " + s.dyfiIsExercise);
+    popup = (s -> "<b>" + s.from + "</b><hr>"
+        + ((s.dyfiMessage == null) ? "no DYFI message" : "DYFI Is Exercise: " + s.dyfiIsExercise));
     makeMakeViaLegends(summaries, "DYFI Is Exercise Counts", "DYFI_IsExercise", outputPath, List
         .of(//
             new Legend("Is Exercise", green, (s -> s.dyfiMessage != null && s.dyfiIsExercise), popup), //
             new Legend("Real Event", red, (s -> s.dyfiMessage != null && !s.dyfiIsExercise), popup), //
             new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
 
-    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Is Felt: " + s.dyfiIsFelt);
+    popup = (s -> "<b>" + s.from + "</b><hr>"
+        + ((s.dyfiMessage == null) ? "no DYFI message" : "DYFI Is Felt: " + s.dyfiIsFelt));
     makeMakeViaLegends(summaries, "DYFI Is Felt Counts", "DYFI_IsFelt", outputPath, List
         .of(//
             new Legend("Is Felt", green, (s -> s.dyfiMessage != null && s.dyfiIsFelt), popup), //
             new Legend("Not Felt", red, (s -> s.dyfiMessage != null && !s.dyfiIsFelt), popup), //
             new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
 
-    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Intensity: "
-        + ((s.dyfiMessage.intensity == null) ? "unknown" : s.dyfiMessage.intensity));
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Intensity: " + ((s.dyfiMessage == null) ? "no DYFI message"
+        : ((s.dyfiMessage.intensity == null) ? "unknown" : s.dyfiMessage.intensity)));
     makeMakeViaLegends(summaries, "DYFI Intensity >= 5 Counts", "DYFI_IntensityIsEnough", outputPath, List
         .of(//
             new Legend("Intensity >= 5", green,
@@ -769,7 +821,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
             new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
 
     popup = (s -> "<b>" + s.from + "</b><hr>" + "In Tsunami Zone: "
-        + ((s.ciInTsunamiZone == null) ? "unknown" : s.ciInTsunamiZone));
+        + ((s.ciInTsunamiZone == null) ? "no Check-In message" : s.ciInTsunamiZone));
     makeMakeViaLegends(summaries, "In Tsunami Zone Counts", "InTsunamiZone", outputPath, List
         .of(//
             new Legend("Out of Zone", green,
@@ -787,7 +839,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
             new Legend("No Check In Message", black, (s -> s.checkInMessage == null), popup)));
 
     popup = (s -> "<b>" + s.from + "</b><hr>" + "In Flood Zone: "
-        + ((s.ciInFloodZone == null) ? "unknown" : s.ciInFloodZone));
+        + ((s.ciInFloodZone == null) ? "no Check-In message" : s.ciInFloodZone));
     makeMakeViaLegends(summaries, "In Flood Zone Counts", "InFloodZone", outputPath, List
         .of(//
             new Legend("Out of Zone", green,
@@ -852,6 +904,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     var dateString = cm.getAsString(Key.EXERCISE_DATE);
     var mapService = new MapService(cm, mm);
     var desiredLayers = 10;
+    var minimumGroupSize = 2;
 
     var groupCallListMap = new HashMap<String, List<String>>();
     for (var summary : summaries) {
@@ -859,6 +912,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
         continue;
       }
       var group = summary.dyfiGroup;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
       var list = groupCallListMap.getOrDefault(group, new ArrayList<String>());
       var call = summary.from;
       list.add(call);
@@ -870,6 +924,9 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     for (var group : groups) {
       var callList = groupCallListMap.get(group);
       var groupSize = callList.size();
+      if (groupSize < minimumGroupSize) {
+        continue;
+      }
       var groupList = groupSizeGroupListMap.getOrDefault(groupSize, new ArrayList<String>());
       groupList.add(group);
       groupSizeGroupListMap.put(groupSize, groupList);
@@ -898,7 +955,11 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
         continue;
       }
       var group = summary.dyfiGroup;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
       var callList = groupCallListMap.get(group);
+      if (callList == null || callList.size() < minimumGroupSize) {
+        continue;
+      }
       var location = summary.location;
       var color = groupColorMap.get(group);
       var prefix = "<b>" + summary.from + "</b><hr>";
@@ -912,6 +973,9 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     var layers = new ArrayList<MapLayer>(groups.size());
     for (var group : groups) {
       var callList = groupCallListMap.get(group);
+      if (callList == null) {
+        continue;
+      }
       var count = callList.size();
       var layerName = "group: " + group + ", size: " + count;
       var color = groupColorMap.get(group);
@@ -919,7 +983,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       layers.add(layer);
     }
 
-    var legendTitle = "TSUNAMI 2026 Group Counts (" + summaries.size() + " total)";
+    var legendTitle = "DYFI Group Counts (" + mapEntries.size() + " messages, min group size: " + minimumGroupSize
+        + ")";
     var context = new MapContext(outputPath, //
         dateString + "-map-DYFI GroupCounts", // file name
         dateString + " Group Counts", // map title
