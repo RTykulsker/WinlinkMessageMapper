@@ -130,7 +130,7 @@ public class ETO_2026_03_19 extends SingleMessageFeedbackProcessor {
         for (var i = 0; i < refLines.size(); ++i) {
           var lineNo = i + 1;
           var refLine = refLines.get(i);
-          if (attachmentLines.size() >= i) {
+          if (attachmentLines.size() > i) {
             var attachLine = attachmentLines.get(i);
             count(sts.test_2line("Attachment line: " + lineNo + " should be #EV", refLine, attachLine));
           } else {

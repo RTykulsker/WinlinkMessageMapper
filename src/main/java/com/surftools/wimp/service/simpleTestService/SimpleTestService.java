@@ -206,6 +206,15 @@ public class SimpleTestService implements IService {
     }
   }
 
+  public TestResult testGreaterOrEqualTo(String label, int expectedValue, int value) {
+    try {
+      var predicate = value >= expectedValue;
+      return test(label, predicate, String.valueOf(value));
+    } catch (Exception e) {
+      return test(label, false, String.valueOf(value));
+    }
+  }
+
   public TestResult testStartsWith(String rawLabel, String expectedValue, String value) {
     if (rawLabel == null) {
       throw new IllegalArgumentException("null label");

@@ -139,6 +139,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     public String ics214Position;
     public String ics214ResourceCount;
     public String ics214ActivityCount;
+    public String isIcs214A = "";
 
     public Summary(String from) {
       this.from = from;
@@ -205,7 +206,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
                   "Check-Out IsExercise", "Check-Out Groups", "Most Important Thing Learned", //
 
-                  "ICS-214 Position", "ICS-214 Resource Count", "ICS-214 Activity Count"
+                  "ICS-214 Position", "ICS-214 Resource Count", "ICS-214 Activity Count", "IsICS-214A"
 
               }));
       return list.toArray(new String[0]);
@@ -238,7 +239,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
                   coIsExercise, coGroups, coMostImportantThing, //
 
-                  ics214Position, ics214ResourceCount, ics214ActivityCount }));
+                  ics214Position, ics214ResourceCount, ics214ActivityCount, String.valueOf(isIcs214A) }));
 
       return list.toArray(new String[0]);
     };
@@ -293,6 +294,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     } else if (type == MessageType.CHECK_OUT) {
       handle_CheckOutMessage(summary, (CheckOutMessage) message);
     } else if (type == MessageType.ICS_214) {
+      handle_Ics214Message(summary, (Ics214Message) message);
+    } else if (type == MessageType.ICS_214A) {
       handle_Ics214Message(summary, (Ics214Message) message);
     } else if (type == MessageType.BULLETIN) {
       handle_BulletinMessage(summary, (BulletinMessage) message);
@@ -607,10 +610,20 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     }
 
     // #MM update summary
-    summary.ics214Message = m;
-    summary.messageIds += "\nics 214: " + m.messageId;
-    ++summary.messageCount;
-    isPerfectMessage(m);
+    // we asked some folks who sent ics-214a to resend ics-214.
+    // we therefore process ics-214 before ics-214a.
+    // if we have a 214, we'll ignore a 214a
+    // we want the latest
+    if (summary.ics214Message == null) {
+      summary.ics214Message = m;
+      summary.messageIds += "\nics 214: " + m.messageId;
+      ++summary.messageCount;
+      isPerfectMessage(m);
+
+      var isIcs214A = m.getMessageType() == MessageType.ICS_214A;
+      summary.isIcs214A = String.valueOf(isIcs214A);
+      getCounter("Is Ics-214A").increment(isIcs214A);
+    }
   }
 
   private void handle_BulletinMessage(Summary summary, BulletinMessage m) {
@@ -769,6 +782,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     final var green = IMapService.rgbMap.get("green");
     final var yellow = IMapService.rgbMap.get("yellow");
     final var red = IMapService.rgbMap.get("red");
+    final var blue = IMapService.rgbMap.get("blue");
     final var gray = IMapService.rgbMap.get("grey");
     final var black = IMapService.rgbMap.get("black");
 
@@ -855,6 +869,14 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
                     && !s.ciInFloodZone.toUpperCase().equals("NO")),
                 popup), //
             new Legend("No Check In Message", black, (s -> s.checkInMessage == null), popup)));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>"
+        + ((s.ics214Message == null) ? "no ICS-214 message" : "Is ICS-214-A: " + s.isIcs214A));
+    makeMakeViaLegends(summaries, "Is ICS-214-A", "IsIcs214A", outputPath, List
+        .of(//
+            new Legend("ICS-214-A", green, (s -> s.ics214Message != null && s.isIcs214A.equals("true")), popup), //
+            new Legend("ICS-214", blue, (s -> s.ics214Message != null && s.isIcs214A.equals("false")), popup), //
+            new Legend("No ICS-214 Message", black, (s -> s.ics214Message == null), popup)));
   }
 
   record Legend(String label, String color, Predicate<Summary> predicate, Function<Summary, String> popupGenerator) {
