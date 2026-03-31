@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -257,8 +258,20 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     super.initialize(cm, mm, logger);
 
-    allowPerfectMessageReporting = true;
+    allowPerfectMessageReporting = false;
 
+    var extraOutboundMessageText = """
+
+        -----------------------------------------------------------------------------
+
+        Thank you for your participation. The final results will shortly be posted at
+        https://emcomm-training.org/Non-ETO_Exercises.html
+
+        We invite you to continue to participate in our regular weekly exercises.
+        See our site at: https://emcomm-training.org/Winlink_Thursdays.html
+
+        """;
+    outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
     messageHistoryService = new MessageHistoryService(cm);
     messageHistoryService.initialize();
   }
@@ -315,11 +328,11 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
         .test("DYFI Form Latitude and Longitude must be valid", m.formLocation.isValid(), m.formLocation.toString()));
 
     count(sts.test("DYFI Did you feel it? should be Yes", m.isFelt));
-    getCounter("DYFI response").increment(m.experienceResponse);
 
     try {
       var intensity = Integer.parseInt(m.intensity);
       count(sts.test("DYFI Intensity must be >= 5", intensity >= 5, m.intensity));
+      getCounter("DYFI Intensity").increment(m.intensity);
     } catch (Exception e) {
       count(sts.test("DYFI Intensity must be >= 5", false, m.intensity));
     }
@@ -334,8 +347,17 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       }
 
       if (fields.length >= 2) {
-        summary.dyfiGroup = fields[1];
-        getCounter("DYFI Group").increment(summary.dyfiGroup);
+        var blacklistedGroups = Set.of("2M", "40M", "TELNET");
+        var dyfiGroup = fields[1].toUpperCase().strip();
+        if (dyfiGroup.equals("(GROUP) PRARES")) {
+          dyfiGroup = "PRARES";
+        }
+        if (!blacklistedGroups.contains(dyfiGroup)) {
+          summary.dyfiGroup = dyfiGroup;
+          getCounter("DYFI Group").increment(summary.dyfiGroup);
+        } else {
+          logger.debug("ignoring DYFI group: " + dyfiGroup + " for call: " + m.from);
+        }
       }
     }
 
@@ -343,6 +365,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("DYFI Form Version").increment(m.formVersion);
 
     // #MM update summary
+    getCounter("Message Type").increment("DYFI");
     summary.dyfiIsExercise = !m.isRealEvent;
     summary.dyfiIsFelt = m.isFelt;
     summary.dyfiMessage = m;
@@ -354,6 +377,10 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
   private void handle_CheckInMessage(Summary summary, CheckInMessage m) {
     sts.setExplanationPrefix("(check_in) ");
     accumulateAddresses("Check In addresses", m);
+
+    getCounter("Check In Service").increment(m.service);
+    getCounter("Check In Band").increment(m.band);
+    getCounter("Check In Mode").increment(m.mode);
 
     var comments = m.comments;
     if (!isNull(comments)) {
@@ -402,6 +429,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Check In -- In Area Prone to Flooding").increment(summary.ciInFloodZone);
 
     // #MM update summary
+    getCounter("Message Type").increment("Check In");
     summary.checkInMessage = m;
     ++summary.messageCount;
     summary.messageIds += "\ncheck in: " + m.messageId;
@@ -423,7 +451,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
       }
       summary.welfareIsExercise = pr.value();
 
-      count(sts.test("Welfare Comments provided", true));
+      count(sts.test("Welfare Comments should be provided", true));
       summary.welfareMessageText = m.getDataAsString(DataType.FORM_MESSAGE);
     } else {
       summary.welfareIsExercise = "(null)";
@@ -444,6 +472,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Welfare My Status").increment(summary.welfareMyStatus);
 
     // #MM update summary
+    getCounter("Message Type").increment("Welfare");
     summary.welfareMessage = m;
     summary.messageIds += "\nwelfare: " + m.messageId;
     ++summary.messageCount;
@@ -454,10 +483,10 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(ics_213) ");
     accumulateAddresses("ICS-213 addresses", m);
 
-    count(sts.test("ICS_213 Incident Name should be #EV", "TSUNAMI", m.incidentName));
+    count(sts.test("ICS-213 Incident Name should be #EV", "TSUNAMI", m.incidentName));
     count(sts.test("ICS-213 Form To should be #EV", "TSUNAMI;ETO-DRILL", m.formTo));
 
-    var ev = "Flood Zone Risk for Schools in";
+    var ev = "Flood Zone Risk";
     count(sts.testStartsWith("ICS-213 Subject should start with #EV", ev, m.formSubject));
 
     var comments = m.formMessage;
@@ -490,6 +519,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("ICS-213 Data Source").increment(m.dataSource);
 
     // #MM update summary
+    getCounter("Message Type").increment("ICS-213");
     summary.ics213Message = m;
     summary.messageIds += "\nics_213: " + m.messageId;
     ++summary.messageCount;
@@ -499,6 +529,10 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
   private void handle_CheckOutMessage(Summary summary, CheckOutMessage m) {
     sts.setExplanationPrefix("(check_out) ");
     accumulateAddresses("Check Out addresses", m);
+
+    getCounter("Check Out Service").increment(m.service);
+    getCounter("Check Out Band").increment(m.band);
+    getCounter("Check Out Mode").increment(m.mode);
 
     var comments = m.comments;
     if (!isNull(comments)) {
@@ -544,6 +578,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Check Out Data Source").increment(m.dataSource);
 
     // #MM update summary
+    getCounter("Message Type").increment("Check Out");
     summary.checkOutMessage = m;
     summary.messageIds += "\ncheck out: " + m.messageId;
     ++summary.messageCount;
@@ -610,6 +645,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     }
 
     // #MM update summary
+    getCounter("Message Type").increment("ICS-214");
+
     // we asked some folks who sent ics-214a to resend ics-214.
     // we therefore process ics-214 before ics-214a.
     // if we have a 214, we'll ignore a 214a
@@ -638,6 +675,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     count(sts.testStartsWith("Bulletin message should start with #EV", "THIS IS AN EXERCISE", m.bulletinText));
 
     // #MM update summary
+    getCounter("Message Type").increment("Bulletin");
     summary.bulletinMessage = m;
     ++summary.messageCount;
     summary.bulletinFor = m.forNameGroup;
@@ -750,6 +788,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
   private void makeMaps(List<Summary> summaries) {
     makeDyfiGroupCountMap(summaries);
+    makeSqueezedDyfiGroupCountMap(summaries);
 
     var mapService = new MapService(cm, mm);
     Function<Summary, String> popup = (s -> "<b>" + s.from + "</b><hr>" //
@@ -874,8 +913,8 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
         + ((s.ics214Message == null) ? "no ICS-214 message" : "Is ICS-214-A: " + s.isIcs214A));
     makeMakeViaLegends(summaries, "Is ICS-214-A", "IsIcs214A", outputPath, List
         .of(//
-            new Legend("ICS-214-A", green, (s -> s.ics214Message != null && s.isIcs214A.equals("true")), popup), //
-            new Legend("ICS-214", blue, (s -> s.ics214Message != null && s.isIcs214A.equals("false")), popup), //
+            new Legend("ICS-214-A", blue, (s -> s.ics214Message != null && s.isIcs214A.equals("true")), popup), //
+            new Legend("ICS-214", yellow, (s -> s.ics214Message != null && s.isIcs214A.equals("false")), popup), //
             new Legend("No ICS-214 Message", black, (s -> s.ics214Message == null), popup)));
   }
 
@@ -1014,6 +1053,117 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     mapService.makeMap(context);
   }
 
+  /**
+   * any group smaller than minGroupSize gets lumped into Other
+   *
+   * @param summaries
+   */
+  private void makeSqueezedDyfiGroupCountMap(List<Summary> summaries) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+    var desiredLayers = 10;
+    var minimumGroupSize = 2;
+
+    var groupCallListMap = new HashMap<String, List<String>>();
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiGroup == null) {
+        continue;
+      }
+      var group = summary.dyfiGroup;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
+      var list = groupCallListMap.getOrDefault(group, new ArrayList<String>());
+      var call = summary.from;
+      list.add(call);
+      groupCallListMap.put(group, list);
+    }
+
+    final var otherGroup = "other";
+    if (groupCallListMap.containsKey(otherGroup)) {
+      throw new RuntimeException("Need a new squeezed name");
+    }
+
+    var squeezedCallList = new ArrayList<String>();
+    var groupSizeGroupListMap = new TreeMap<Integer, List<String>>();
+    var groups = new ArrayList<String>(groupCallListMap.keySet());
+    for (var group : groups) {
+      var callList = groupCallListMap.get(group);
+      var groupSize = callList.size();
+      if (groupSize < minimumGroupSize) {
+        squeezedCallList.addAll(callList);
+        groupCallListMap.remove(group);
+        continue;
+      }
+      var groupList = groupSizeGroupListMap.getOrDefault(groupSize, new ArrayList<String>());
+      groupList.add(group);
+      groupSizeGroupListMap.put(groupSize, groupList);
+    }
+    groupCallListMap.put(otherGroup, squeezedCallList);
+    groupSizeGroupListMap.put(squeezedCallList.size(), squeezedCallList);
+
+    groups.clear();
+    for (var groupSize : groupSizeGroupListMap.descendingKeySet()) {
+      var groupList = groupSizeGroupListMap.get(groupSize);
+      groups.addAll(groupList);
+      if (groups.size() >= desiredLayers) {
+        break;
+      }
+    }
+
+    var rng = new Random(2025);
+    var colorBag = new RenewableBag<>(IMapService.etoColorMap.values(), rng);
+    var groupColorMap = new HashMap<String, String>();
+    for (var group : groupCallListMap.keySet()) {
+      var color = colorBag.next();
+      groupColorMap.put(group, color);
+    }
+
+    var mapEntries = new ArrayList<MapEntry>(summaries.size());
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiGroup == null) {
+        continue;
+      }
+      var group = summary.dyfiGroup;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
+      var callList = groupCallListMap.get(group);
+      var groupForColor = group;
+      if (callList == null || callList.size() < minimumGroupSize) {
+        groupForColor = otherGroup;
+      }
+
+      var location = summary.location;
+      var color = groupColorMap.get(groupForColor);
+      var prefix = "<b>" + summary.from + "</b><hr>";
+
+      var groupSize = callList == null ? 1 : callList.size();
+      var content = prefix //
+          + "Group Name: " + group + "\n" //
+          + "Group Size: " + groupSize + "\n";
+      var mapEntry = new MapEntry(summary.from, null, location, content, color);
+      mapEntries.add(mapEntry);
+    }
+
+    var xgroups = new ArrayList<String>(
+        groupCallListMap.keySet().stream().filter(g -> groupCallListMap.get(g) != null).toList());
+    Collections.sort(xgroups, (g1, g2) -> groupCallListMap.get(g2).size() - groupCallListMap.get(g1).size());
+    var layers = new ArrayList<MapLayer>(groups.size());
+    for (var group : xgroups) {
+      var callList = groupCallListMap.get(group);
+      var count = callList.size();
+      var layerName = "group: " + group + ", size: " + count;
+      var color = groupColorMap.get(group);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var legendTitle = "DYFI Group Counts (" + mapEntries.size() + " messages, min group size: " + minimumGroupSize
+        + ")";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-DYFI Squeezed GroupCounts", // file name
+        dateString + " Group Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+  }
+
   private void accumulateAddresses(String counterName, ExportedMessage message) {
     var counter = getCounter(counterName);
 
@@ -1067,7 +1217,12 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     for (var line : cp.getLines()) {
       var anwLine = sts.toAlphaNumericWords(line).toLowerCase();
       if (anwLine.startsWith(anwKey)) {
-        return line.substring(key.length()).strip();
+        try {
+          var ret = line.substring(key.length()).strip();
+          return ret;
+        } catch (Exception e) {
+          return "";
+        }
       }
     }
     return "";

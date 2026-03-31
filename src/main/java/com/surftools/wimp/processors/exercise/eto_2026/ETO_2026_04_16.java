@@ -28,7 +28,6 @@ SOFTWARE.
 package com.surftools.wimp.processors.exercise.eto_2026;
 
 import java.util.Arrays;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,21 +137,30 @@ public class ETO_2026_04_16 extends SingleMessageFeedbackProcessor {
     } else {
       count(sts.test("Message content present", true));
       var list = Arrays.asList(lines);
-      var exeListSize = list.stream().filter(l -> l.toUpperCase().contains(".EXE")).toList().size();
-      count(sts.testGreaterOrEqualTo("Number of lines with .exe should be at least 2", 2, exeListSize));
-      getCounter("lines with Winlink.exe").increment(exeListSize);
-
-      final Set<String> forbiddenPidSet = Set.of("12636", "8200", "14644", "13512", "25008");
-      for (var line : lines) {
-        if (!line.toUpperCase().contains(".EXE")) {
-          continue;
-        }
-        var fields = line.split("\\s+");
-        var lastFieldIndex = fields.length - 1;
-        var pidString = fields[lastFieldIndex].trim();
-        var pred = !forbiddenPidSet.contains(pidString);
-        count(sts.test("ProcessId *MIGHT BE* copied from instructions", pred, pidString));
+      if (list.size() >= 1) {
+        var line1 = list.get(0).strip();
+        count(sts.test("Line 1 should be #EV", "Test Installed", line1));
       }
+      if (list.size() > 1) {
+        var dirCount = 0;
+        for (var i = 0; i < list.size(); ++i) {
+          if (i == 0) {
+            continue;
+          }
+          var line = list.get(i).strip();
+          var lineNumber = i + 1;
+          sts.setExplanationPrefix("line number: " + lineNumber + ": ");
+          count(sts.test("Line should contain #<DIR>", line.contains("<DIR>")));
+          var fields = line.split("<DIR>");
+          if (fields.length >= 2) {
+            var dirName = fields[1].trim();
+            getCounter("RMS directory name").increment(dirName);
+            ++dirCount;
+          }
+          logger.info("fields: " + String.join(",", fields));
+        } // end loop over DIR lines
+        getCounter("RMS directory count").increment(dirCount);
+      } // end if more than 1 line of message
     } // end if message content present
   }
 }
