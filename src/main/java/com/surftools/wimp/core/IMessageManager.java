@@ -36,6 +36,8 @@ import com.surftools.wimp.message.ExportedMessage;
 
 public interface IMessageManager {
 
+  String LAST_WORD = "LAST_WORD";
+
   /**
    * retrieve arbitrary inter-process data
    *

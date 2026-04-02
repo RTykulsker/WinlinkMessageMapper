@@ -55,6 +55,10 @@ public class StandardSummary implements IWritableTable {
     this.messageId = messageId;
   }
 
+  public int getFeedbackCount() {
+    return (feedbackCount == null) ? 0 : Integer.valueOf(feedbackCount);
+  }
+
   @Override
   public int compareTo(IWritableTable o) {
     var other = (StandardSummary) o;

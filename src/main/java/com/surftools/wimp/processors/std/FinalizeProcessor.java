@@ -401,6 +401,12 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
     if (doEmailViaWinlink && winlinkContext != null) {
       var now = LocalDateTime.now();
       var body = winlinkContext.body();
+
+      var lastWord = (String) mm.getContextObject(IMessageManager.LAST_WORD);
+      if (lastWord != null && !lastWord.strip().isEmpty()) {
+        body += "\n" + lastWord;
+      }
+
       body = body.replaceAll("<", "&lt;");
       body = body.replaceAll("<=", "&lt;=3D");
       body = body.replaceAll(">", "&gt;");

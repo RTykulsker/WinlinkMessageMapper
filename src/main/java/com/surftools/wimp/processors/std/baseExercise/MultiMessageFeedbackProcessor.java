@@ -443,6 +443,32 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     if (dbResult.status() == ReturnStatus.ERROR) {
       logger.error("### database update failed: " + dbResult.content());
     }
+
+    doLastWord(standardSummaries);
+  }
+
+  private void doLastWord(List<StandardSummary> standardSummaries) {
+    var originalMessages = mm.getOriginalMessages();
+    var originalSenderSize = new HashSet<String>(originalMessages.stream().map(s -> s.from).toList()).size();
+    var totalFeedbackCount = standardSummaries.stream().mapToInt(StandardSummary::getFeedbackCount).sum();
+    var avgFeedbackCount = (double) totalFeedbackCount / standardSummaries.size();
+    var exerciseDate = cm.getAsString(Key.EXERCISE_DATE);
+
+    var lines = new ArrayList<String>();
+    lines.add("Exercise date: " + exerciseDate);
+    lines
+        .add("Exercise message types: "
+            + String.join(",", acceptableMessageTypesSet.stream().map(t -> t.toString()).toList()));
+    lines.add(" ");
+    lines.add("Total messages received: " + originalMessages.size());
+    lines.add("Total participants: " + originalSenderSize);
+    lines.add("On-type participants: " + standardSummaries.size());
+    lines.add("Average feedback: " + String.format("%.02f", avgFeedbackCount));
+    var lastWord = "\n" + String.join("\n", lines);
+
+    WriteProcessor.writeString(lastWord, Path.of(outputPathName, exerciseDate + "-lastWord.txt"));
+    logger.info("adding lastWord: \n" + lastWord);
+    mm.putContextObject(IMessageManager.LAST_WORD, lastWord);
   }
 
   /**
