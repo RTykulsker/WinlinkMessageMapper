@@ -313,7 +313,7 @@ public abstract class AbstractBaseParser implements IParser {
     }
 
     if (s != null) {
-      s = s.trim();
+      s = s.strip();
     } else {
       s = "";
     }

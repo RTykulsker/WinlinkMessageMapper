@@ -40,6 +40,7 @@ public enum Key implements IConfigurationKey {
   PATH_EXERCISES("path.exercises"), // dir where we find input/ exported messages and will create output/ and published/
   PATH_PUBLICATION("path.publication"), // path to remote folder for publishing results
   PATH_ARCHIVE("path.archive"), // path to remote folder for archiving entire exercise
+  PATH_REFERENCE("path.reference"), // path to reference, where instructions are
   NEW_DATABASE_PATH("newDatabasePath"), // path to input database summary files
   LOG_PATH("log.path"), // where log files are placed
 
