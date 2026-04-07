@@ -75,6 +75,5 @@ public class ETO_2026_05_21 extends SingleMessageFeedbackProcessor {
     }
 
     count(sts.test("Comments should be #EV", "Exercise, exercise", m.comments));
-
   }
 }
