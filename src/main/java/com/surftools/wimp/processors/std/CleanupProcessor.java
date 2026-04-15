@@ -30,6 +30,8 @@ package com.surftools.wimp.processors.std;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,9 @@ public class CleanupProcessor extends AbstractBaseProcessor {
 
   @Override
   public void postProcess() {
+    final var excludedList = List.of("lastWord.txt", "participantHistory.csv", "participantSummary.csv");
+    final var excludedSet = new HashSet<String>(excludedList.stream().map(s -> dateString + "-" + s).toList());
+
     // move files out of output and into published
     var outputDir = new File(outputPath.toString());
     var outputFiles = outputDir.listFiles();
@@ -81,7 +86,7 @@ public class CleanupProcessor extends AbstractBaseProcessor {
         continue;
       }
 
-      if (fileName.startsWith(dateString)) {
+      if (fileName.startsWith(dateString) && !excludedSet.contains(fileName)) {
         try {
           Files.move(file.toPath(), Path.of(publishedPathName, fileName));
           logger.info("moved: " + fileName + " to: " + publishedPathName);

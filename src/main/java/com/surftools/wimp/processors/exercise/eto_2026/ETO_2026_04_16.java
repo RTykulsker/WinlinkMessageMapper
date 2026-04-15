@@ -66,7 +66,7 @@ public class ETO_2026_04_16 extends SingleMessageFeedbackProcessor {
       var list = Arrays.asList(lines);
       if (list.size() >= 1) {
         var line1 = list.get(0).strip();
-        count(sts.test("Line 1 should be #EV", "Test Installed", line1));
+        count(sts.testStartsWith("Line 1 should start with #EV", "Test Install", line1));
       }
       if (list.size() > 1) {
         var dirCount = 0;
@@ -75,18 +75,16 @@ public class ETO_2026_04_16 extends SingleMessageFeedbackProcessor {
             continue;
           }
           var line = list.get(i).strip();
-          var lineNumber = i + 1;
-          sts.setExplanationPrefix("line number: " + lineNumber + ": ");
-          count(sts.test("Line should contain #<DIR>", line.contains("<DIR>")));
-          var fields = line.split("<DIR>");
-          if (fields.length >= 2) {
-            var dirName = fields[1].trim();
-            getCounter("RMS directory name").increment(dirName);
-            ++dirCount;
-          }
-          logger.info("fields: " + String.join(",", fields));
+          if (line.contains("<DIR>")) {
+            var fields = line.split("<DIR>");
+            if (fields.length >= 2) {
+              var dirName = fields[1].trim();
+              getCounter("RMS directory name").increment(dirName);
+              ++dirCount;
+            } // endif 2 or more fields
+          } // end if line contains <DIR>
         } // end loop over DIR lines
-        getCounter("RMS directory count").increment(dirCount);
+        getCounter("RMS Directory Count (Express installs)").increment(dirCount);
       } // end if more than 1 line of message
     } // end if message content present
   }
