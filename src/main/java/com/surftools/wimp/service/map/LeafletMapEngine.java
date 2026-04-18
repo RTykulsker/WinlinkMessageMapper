@@ -330,7 +330,7 @@ public class LeafletMapEngine extends MapService {
           // ------------------------------------------------------------
           // BASEMAPS
           // ------------------------------------------------------------
-          const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
               maxZoom: 19,
               attribution: 'Map Tiles from <a href="http://openstreetmap.org/copyright">OpenStreetMap</a>'
             });
@@ -722,7 +722,7 @@ public class LeafletMapEngine extends MapService {
           // ------------------------------------------------------------
           // BASEMAPS (ONLY OSM + USGS)
           // ------------------------------------------------------------
-          const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
             attribution: "© OpenStreetMap contributors"
           });
@@ -753,7 +753,7 @@ public class LeafletMapEngine extends MapService {
             attribution: "USGS NAIP Imagery"
           });
 
-                    osm.addTo(map);
+          usgs.addTo(map);
 
           L.control.layers(
             {
