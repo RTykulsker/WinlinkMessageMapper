@@ -59,8 +59,8 @@ public class ETO_2026_05_21 extends SingleMessageFeedbackProcessor {
   protected void specificProcessing(ExportedMessage message) {
     var m = (CustomizableFormMessage) message;
     count(sts.test("Organization name should be #EV", "EmComm Training Organization", m.organization));
-    count(sts.test("Incident Name should be #EV", "Customizable Informatioon Form Exercise", m.incidentName));
-    count(sts.test("Incident Name should be #EV", "Alternative/Non-emergency Phone Numbers", m.description));
+    count(sts.test("Event or Use Name should be #EV", "Customizable Information Form Exercise", m.incidentName));
+    count(sts.test("Description or Form Info should be #EV", "Alternative/Non-emergency Phone Numbers", m.description));
     count(sts.testIfPresent("Form Date/Time should be present", m.formDateTimeString));
 
     count(sts.test("1st column name should be #EV", "Agency", m.columnAName));
