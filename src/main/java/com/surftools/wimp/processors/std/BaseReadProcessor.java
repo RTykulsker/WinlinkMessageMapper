@@ -50,6 +50,7 @@ import org.w3c.dom.NodeList;
 
 import com.surftools.utils.location.LatLongPair;
 import com.surftools.wimp.configuration.Key;
+import com.surftools.wimp.core.IExportedMessageEditor;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.RejectType;
 import com.surftools.wimp.message.ExportedMessage;
@@ -59,7 +60,7 @@ import com.surftools.wimp.parser.CharacterAssassinator;
 import com.surftools.wimp.processors.std.baseExercise.AbstractBaseProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
-public abstract class BaseReadProcessor extends AbstractBaseProcessor {
+public abstract class BaseReadProcessor extends AbstractBaseProcessor implements IExportedMessageEditor {
   protected DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 
   private Set<String> expectedDestinations = new LinkedHashSet<>();
@@ -70,6 +71,8 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
   private int readFilterExcludeCount = 0;
   private Set<String> includeSenderSet;
   private Set<String> excludeSenderSet;
+
+  protected static IExportedMessageEditor editor;
 
   private static final List<String> DELETE_LIST = Arrays.asList(new String[] { "&#21" });
 
@@ -103,6 +106,8 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
 
       logger.info("Secondary Destinations: " + secondaryDestinations.toString());
     }
+
+    editor = this;
   }
 
   @Override
@@ -247,6 +252,8 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     message = new ExportedMessage(messageId, sender, source, recipient, toList, ccList, subject, //
         localDateTime, locationResult.location, locationResult.source, //
         mime, plainContent, attachments, isP2p, fileName, lines);
+
+    message = editor.edit(message);
 
     return message;
   }
@@ -463,6 +470,15 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor {
     // last ditch
     return addresses.get(0);
 
+  }
+
+  /**
+   * set the editor to override default behavior of no editing
+   *
+   * @param editor
+   */
+  public static void setExportedMessageEditor(IExportedMessageEditor _editor) {
+    editor = _editor;
   }
 
   @Override

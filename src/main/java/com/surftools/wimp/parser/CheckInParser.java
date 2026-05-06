@@ -166,13 +166,13 @@ public class CheckInParser extends AbstractBaseParser {
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
-              comments, version, DATA_SOURCE_FORM_DATA);
+              comments, version, DATA_SOURCE_RMS_VIEWER);
         } else {
           m = new CheckOutMessage(message, organization, //
               formDateTime, contactName, initialOperators, //
               status, service, band, mode, //
               locationString, formLocation, mgrs, gridSquare, //
-              comments, version, DATA_SOURCE_FORM_DATA);
+              comments, version, DATA_SOURCE_RMS_VIEWER);
         }
 
         return m;

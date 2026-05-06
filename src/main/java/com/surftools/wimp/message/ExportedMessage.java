@@ -29,6 +29,7 @@ package com.surftools.wimp.message;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,6 +74,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
   public final boolean isP2p;
   public final String fileName;
   public final List<String> lines;
+  public final Map<String, String> extraData;
 
   @Override
   public int hashCode() {
@@ -131,6 +133,7 @@ public class ExportedMessage implements IMessage, IWritableTable {
     this.isP2p = isP2p;
     this.fileName = fileName;
     this.lines = lines;
+    this.extraData = new HashMap<>();
   }
 
   public void setSortDateTime(LocalDateTime dateTime) {
@@ -163,6 +166,8 @@ public class ExportedMessage implements IMessage, IWritableTable {
     this.isP2p = exportedMessage.isP2p;
     this.fileName = exportedMessage.fileName;
     this.lines = exportedMessage.lines;
+    this.extraData = new HashMap<>();
+    this.extraData.putAll(exportedMessage.extraData);
   }
 
   @Override
