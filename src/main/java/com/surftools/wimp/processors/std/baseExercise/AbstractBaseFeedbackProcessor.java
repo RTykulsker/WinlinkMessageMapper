@@ -50,8 +50,10 @@ import org.slf4j.Logger;
 import com.surftools.utils.counter.Counter;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor.BaseSummary;
 import com.surftools.wimp.service.map.MapContext;
 import com.surftools.wimp.service.map.MapEntry;
@@ -88,6 +90,8 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
 
   protected final int FEEDBACK_MAP_N_LAYERS = 6;
   protected Map<Integer, String> gradientMap;
+
+  private List<IWritableTable> sourceSenderEntries = new ArrayList<>();
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
@@ -169,6 +173,8 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
       getCounter("Message sent days after window opens").increment(daysAfterOpen);
     }
 
+    getCounter("Message Sender == Message Source").increment(message.source.equals(message.from));
+    sourceSenderEntries.add(SourceSenderEntry.newEntry(message));
   }
 
   protected void endCommonProcessing(ExportedMessage message) {
@@ -221,7 +227,7 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
 
   @Override
   public void postProcess() {
-
+    WriteProcessor.writeTable(sourceSenderEntries, Path.of(outputPathName, "sourceSenderEntries.csv"));
   }
 
   protected void makeFeedbackMap(Map<Integer, Integer> truncatedCountMap, List<MapEntry> mapEntries) {
@@ -365,6 +371,36 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
 
   protected static String s(boolean b) {
     return String.valueOf(b);
+  }
+
+  public record SourceSenderEntry(String source, String sender, String messageId, String isMatch)
+      implements IWritableTable {
+
+    static public SourceSenderEntry newEntry(ExportedMessage m) {
+      return new SourceSenderEntry(m.source, m.from, m.messageId, String.valueOf(m.source.equals(m.from)));
+    }
+
+    @Override
+    public int compareTo(IWritableTable other) {
+      var o = (SourceSenderEntry) other;
+      var cmp = isMatch.compareTo(o.isMatch);
+      if (cmp != 0) {
+        return cmp;
+      }
+
+      return sender.compareTo(o.sender);
+    }
+
+    @Override
+    public String[] getHeaders() {
+      return new String[] { "Source", "Sender", "MessageId", "IsMatch" };
+    }
+
+    @Override
+    public String[] getValues() {
+      return new String[] { source, sender, messageId, isMatch };
+    }
+
   }
 
 }

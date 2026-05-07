@@ -345,6 +345,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
   @Override
   public void postProcess() {
+    super.postProcess();
 
     var sb = new StringBuilder();
     sb.append("\n\n" + cm.getAsString(Key.EXERCISE_DESCRIPTION) + " aggregate results\n");

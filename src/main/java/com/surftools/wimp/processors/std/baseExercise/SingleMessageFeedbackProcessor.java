@@ -209,6 +209,7 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
   @Override
   public void postProcess() {
+    super.postProcess();
 
     beforePostProcessing(messageType);
 
