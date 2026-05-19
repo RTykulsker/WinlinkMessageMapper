@@ -321,6 +321,16 @@ public abstract class AbstractBaseParser implements IParser {
     return s;
   }
 
+  public int getIntFromXml(String tagName) {
+    var value = getStringFromXml(tagName);
+    try {
+      int i = Integer.valueOf(value);
+      return i;
+    } catch (Exception e) {
+      return -1;
+    }
+  }
+
   /**
    * get first line from a multi-line string
    *

@@ -99,6 +99,7 @@ public enum MessageType {
   WELFARE_BULLETIN_BOARD("RMS_Express_Form_Welfare Bulletin Board viewer.xml"), //
   BULLETIN("RMS_Express_Form_Bulletin Viewer.xml"), //
   CUSTOMIZABLE_FORM("RMS_Express_Form_Customizable Form Viewer.xml"), //
+  BLOOD_AVAILABILITY("RMS_Express_Form_Blood Availability viewer.xml"), //
 
   EYEWARN("RMS_Express_Form_Eyewarn.xml"), // custom form from SnoVArc
   EYEWARN_DETAIL(), // generated details

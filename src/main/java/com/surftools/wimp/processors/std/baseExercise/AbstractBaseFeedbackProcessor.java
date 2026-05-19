@@ -79,6 +79,8 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   protected Set<MessageType> messageTypesRequiringSecondaryAddress = new HashSet<>();
   protected Set<String> secondaryDestinations = new LinkedHashSet<>();
   protected Set<String> unexpectedDestinations = new LinkedHashSet<>();
+  protected Set<String> expectedDestinations = new LinkedHashSet<>();
+  protected String expectedDestinationsString;
 
   public int ppMessageCount = 0;
   public int ppParticipantCount = 0;
@@ -124,6 +126,14 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
       }
     }
 
+    expectedDestinationsString = cm.getAsString(Key.EXPECTED_DESTINATIONS);
+    if (expectedDestinationsString != null) {
+      var fields = expectedDestinationsString.split(",");
+      for (var field : fields) {
+        expectedDestinations.add(field.toUpperCase().trim());
+      }
+    }
+
     gradientMap = new MapService(cm, mm).makeGradientMap(120, 0, FEEDBACK_MAP_N_LAYERS);
   }
 
@@ -163,6 +173,17 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
       for (var ev : unexpectedDestinations) {
         count(sts.test("To and/or CC addresses should NOT contain " + ev, !addressList.contains(ev)));
       }
+    }
+
+    if (expectedDestinations.size() > 0) {
+      var isContained = false;
+      for (var ev : expectedDestinations) {
+        if (addressList.contains(ev)) {
+          isContained = true;
+          break;
+        }
+      }
+      count(sts.test("To and/or CC addresses should contain one of: " + expectedDestinationsString, isContained));
     }
 
     if (windowOpenDT != null && windowCloseDT != null) {
