@@ -28,6 +28,7 @@ SOFTWARE.
 package com.surftools.wimp.message;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -37,9 +38,36 @@ import com.surftools.wimp.core.MessageType;
 
 public class Hics259Message extends ExportedMessage {
 
-  public static final List<String> CASUALTY_KEYS = List
-      .of("Patients seen", "Waiting to be seen", "Admitted", "Critical care bed", "Medical/surgical bed",
-          "Pediatric Bed", "Discharged", "Transferred", "Expired");
+  public enum CasualtyType {
+    PATIENTS_SEEN("Patients seen"), //
+    WAITING_TO_BE_SEEN("Waiting to be seen"), //
+    ADMITTED("Admitted"), //
+    CRITICAL_CARE_BED("Critical care bed"), //
+    MEDICAL_SURGICAL_BED("Medical/surgical bed"), //
+    PEDIATRIC_BED("Pediatric bed"), //
+    DISCHARGED("Discharged"), //
+    TRANSFERRED("Transferred"), //
+    EXPIRED("Expired");
+
+    CasualtyType(String label) {
+      this.label = label;
+    }
+
+    private String label;
+
+    @Override
+    public String toString() {
+      return label;
+    }
+
+    public static List<String> toList() {
+      var enumList = Arrays.asList(values());
+      var stringList = enumList.stream().map(s -> s.toString()).toList();
+      return stringList;
+    }
+  }
+
+  public static final List<String> CASUALTY_KEYS = CasualtyType.toList();
 
   public record CasualtyEntry(String adultCount, String childCount, String comment) {
   };

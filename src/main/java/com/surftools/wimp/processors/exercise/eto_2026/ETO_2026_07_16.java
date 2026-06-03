@@ -37,11 +37,14 @@ import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Hics259Message;
 import com.surftools.wimp.message.Hics259Message.CasualtyEntry;
+import com.surftools.wimp.message.Hics259Message.CasualtyType;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
  * HICS 259 Hospital Casualty Report
+ *
+ * see: https://docs.google.com/document/d/1P5llM757bcsw5nF7_uPHyPjLVeq5ejoZ8-GPq3Cvbhs/edit?tab=t.0
  *
  * @author bobt
  *
@@ -49,7 +52,7 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2026_07_16 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2026_07_16.class);
 
-  public Map<String, CasualtyEntry> casualtyMap;
+  public Map<CasualtyType, CasualtyEntry> casualtyMap;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -62,18 +65,18 @@ public class ETO_2026_07_16 extends SingleMessageFeedbackProcessor {
 
     casualtyMap = Map
         .of( //
-            Hics259Message.CASUALTY_KEYS.get(0),
-            new CasualtyEntry("32", "9",
+            Hics259Message.CasualtyType.PATIENTS_SEEN,
+            new CasualtyEntry("35", "11",
                 "Emergency Room is at capacity. Less critical patients are being placed in the hallways."), //
-            Hics259Message.CASUALTY_KEYS.get(1), new CasualtyEntry("14", "4", ""), //
-            Hics259Message.CASUALTY_KEYS.get(2), new CasualtyEntry("22", "2", ""), //
-            Hics259Message.CASUALTY_KEYS.get(3), new CasualtyEntry("18", "0", ""), //
-            Hics259Message.CASUALTY_KEYS.get(4), new CasualtyEntry("4", "0", ""), //
-            Hics259Message.CASUALTY_KEYS.get(5), new CasualtyEntry("0", "2", ""), //
-            Hics259Message.CASUALTY_KEYS.get(6), new CasualtyEntry("7", "1", ""), //
-            Hics259Message.CASUALTY_KEYS.get(7),
+            Hics259Message.CasualtyType.WAITING_TO_BE_SEEN, new CasualtyEntry("12", "2", ""), //
+            Hics259Message.CasualtyType.ADMITTED, new CasualtyEntry("19", "2", ""), //
+            Hics259Message.CasualtyType.CRITICAL_CARE_BED, new CasualtyEntry("18", "0", ""), //
+            Hics259Message.CasualtyType.MEDICAL_SURGICAL_BED, new CasualtyEntry("4", "0", ""), //
+            Hics259Message.CasualtyType.PEDIATRIC_BED, new CasualtyEntry("0", "2", ""), //
+            Hics259Message.CasualtyType.DISCHARGED, new CasualtyEntry("10", "9", ""), //
+            Hics259Message.CasualtyType.TRANSFERRED,
             new CasualtyEntry("3", "0", "Adults to University Medical Center. More transfers are needed."), //
-            Hics259Message.CASUALTY_KEYS.get(8), new CasualtyEntry("1", "0", "") //
+            Hics259Message.CasualtyType.EXPIRED, new CasualtyEntry("3", "0", "") //
         );
   }
 
@@ -81,7 +84,7 @@ public class ETO_2026_07_16 extends SingleMessageFeedbackProcessor {
   protected void specificProcessing(ExportedMessage message) {
     Hics259Message m = (Hics259Message) message;
 
-    count(sts.test_2line("Incident Name should be #EV", "HEATWAVE ADAM", m.incidentName));
+    count(sts.test_2line("Incident Name should be #EV", "Medical Response and Surge Exercise", m.incidentName));
 
     // rely on gateways to filter to window
     count(sts.testIfPresent("Form Date should be present", m.formDate));
@@ -92,9 +95,10 @@ public class ETO_2026_07_16 extends SingleMessageFeedbackProcessor {
     count(sts.testIfPresent("Operational Time To should be present", m.opToTime));
 
     var lineNumber = 0;
-    for (var key : Hics259Message.CASUALTY_KEYS) {
+    for (var type : Hics259Message.CasualtyType.values()) {
       ++lineNumber;
-      var exp = casualtyMap.get(key);
+      var exp = casualtyMap.get(type);
+      var key = type.toString();
       var act = m.casualtyMap.get(key);
       count(sts.test("Line " + lineNumber + ": Adult " + key + " should be #EV", exp.adultCount(), act.adultCount()));
       count(sts.test("Line " + lineNumber + ": Child " + key + " should be #EV", exp.childCount(), act.childCount()));
@@ -107,7 +111,7 @@ public class ETO_2026_07_16 extends SingleMessageFeedbackProcessor {
       }
     }
 
-    count(sts.testStartsWith("Prepared by should start with #EV", "Gloria Samstone", m.patientTrackingManager));
-    count(sts.test_2line("Facility should be #EV", "Smith County Hospital", m.facilityName));
+    count(sts.testStartsWith("Prepared by should start with #EV", "Julia Winter", m.patientTrackingManager));
+    count(sts.test_2line("Facility should be #EV", "Jackson Memorial Hospital", m.facilityName));
   }
 }
