@@ -73,19 +73,19 @@ public class ETO_2026_08_20 extends SingleMessageFeedbackProcessor implements IE
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var m = (CheckInMessage) message;
-    count(sts.test("Organization name should be #EV", "ANYTOWN Recreation Centre", m.organization));
+    count(sts.test("Organization name should be #EV", "ANYTOWN Recreation Center", m.organization));
 
     /**
      * public final String initialOperators;
      *
      */
     var addresses = m.toList + "," + m.ccList;
-    count(sts.test("To address should be contain ANYTOWNEOC", addresses.contains("ANYTOWNEOC")));
+    count(sts.test("To address should not contain ANYTOWNEOC", !addresses.contains("ANYTOWNEOC")));
     count(sts.test("Comments should be #EV", "Request relief in four hours", m.comments));
 
     var originalSender = m.extraData.getOrDefault(ORIGINAL_SENDER, m.from);
-    var tactialPrefix = "ANYTOWN-SHELTER-";
-    count(sts.test("Sender (Tactical Address) should start with #EV", tactialPrefix, originalSender));
+    var tactialPrefix = "RCSHELTER-";
+    count(sts.testStartsWith("Sender (Tactical Address) should start with #EV", tactialPrefix, originalSender));
     count(sts
         .test("Sender (Tactical Address) should *NOT* be Source (Winlink License Holder)",
             !originalSender.equals(m.source), "sender: " + originalSender + ", source: " + m.source));
@@ -98,6 +98,8 @@ public class ETO_2026_08_20 extends SingleMessageFeedbackProcessor implements IE
     getCounter("service").increment(m.service);
     getCounter("band").increment(m.band);
     getCounter("mode").increment(m.mode);
+
+    count(sts.test("Location should should be #EV", "Recreation Center, 200 Main Street, Anytown", m.locationString));
   }
 
   @Override

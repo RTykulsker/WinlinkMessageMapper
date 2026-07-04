@@ -306,7 +306,11 @@ public abstract class SingleMessageFeedbackProcessor extends AbstractBaseFeedbac
 
     // maps
     makeFeedbackMap();
-    makeClearinghouseMap();
+
+    // make clearinghouse maps, sometimes
+    if (!List.of("2026-06-28").contains(dateString)) {
+      makeClearinghouseMap();
+    }
 
     var standardSummaries = mIdFeedbackMap
         .values()
