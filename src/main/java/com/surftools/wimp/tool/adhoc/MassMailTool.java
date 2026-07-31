@@ -81,7 +81,8 @@ public class MassMailTool {
       var sender = cm.getAsString(Key.SENDER);
       var source = cm.getAsString(Key.SOURCE);
       var subject = cm.getAsString(Key.SUBJECT);
-      var extraText = cm.getAsString(Key.EXTRA_TEXT);
+      var extraText = cm.getAsString(Key.EXTRA_TEXT, "");
+      extraText = extraText.equals("\"\"") ? "" : extraText;
 
       logger.info("Sender: " + sender);
       logger.info("Source: " + source);
@@ -97,17 +98,14 @@ public class MassMailTool {
       logger.info("read " + addressLines.size() + " address lines from address file: " + addressPath.toString());
 
       var addresses = splitAddresses(addressLines);
-      logger
-          .info("read " + addresses.winlinkAddresses.size() + " winlink addresses from address file: "
-              + addressPath.toString());
-      logger
-          .info("read " + addresses.smtpAddresses.size() + " smtp addresses from address file: "
-              + addressPath.toString());
+      logger.info("read " + addresses.winlinkAddresses.size() + " winlink addresses from address file: "
+          + addressPath.toString());
+      logger.info(
+          "read " + addresses.smtpAddresses.size() + " smtp addresses from address file: " + addressPath.toString());
 
       var sb = new StringBuilder();
-      sb
-          .append(
-              merge(messageContext, messageText, addresses.winlinkAddresses, maxWinlinkAddressesPerMessage, "Winlink"));
+      sb.append(
+          merge(messageContext, messageText, addresses.winlinkAddresses, maxWinlinkAddressesPerMessage, "Winlink"));
       sb.append(merge(messageContext, messageText, addresses.smtpAddresses, maxSmtpAddressesPerMessage, "SMTP"));
 
       var content = merge(sb.toString());
