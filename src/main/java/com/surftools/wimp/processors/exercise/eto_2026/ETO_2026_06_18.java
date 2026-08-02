@@ -175,6 +175,7 @@ public class ETO_2026_06_18 extends SingleMessageFeedbackProcessor {
     // mapMaps(fdMap.values());
   }
 
+  @SuppressWarnings("unused")
   private void mapMaps(Collection<FieldDayEntry> values) {
     Function<FieldDayEntry, String> getClubName = (s) -> s.clubName;
     Function<FieldDayEntry, String> getLocation = s -> s.fdLocation;

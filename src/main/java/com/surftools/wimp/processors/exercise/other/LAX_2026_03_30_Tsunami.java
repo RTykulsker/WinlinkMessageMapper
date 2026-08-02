@@ -282,7 +282,6 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
 
     // #MM must instantiate a derived Summary object
     iSummary = summaryMap.getOrDefault(sender, new Summary(sender));
-    iSummary.messageIds = "";
     summaryMap.put(sender, iSummary);
 
     senderGroupSet.clear();
@@ -369,7 +368,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     summary.dyfiIsExercise = !m.isRealEvent;
     summary.dyfiIsFelt = m.isFelt;
     summary.dyfiMessage = m;
-    summary.messageIds += "dyfi: " + m.messageId;
+    summary.messageIds.add("dyfi: " + m.messageId);
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -432,7 +431,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     getCounter("Message Type").increment("Check In");
     summary.checkInMessage = m;
     ++summary.messageCount;
-    summary.messageIds += "\ncheck in: " + m.messageId;
+    summary.messageIds.add("check in: " + m.messageId);
     isPerfectMessage(m);
   }
 
@@ -474,7 +473,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     getCounter("Message Type").increment("Welfare");
     summary.welfareMessage = m;
-    summary.messageIds += "\nwelfare: " + m.messageId;
+    summary.messageIds.add("welfare: " + m.messageId);
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -521,7 +520,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     getCounter("Message Type").increment("ICS-213");
     summary.ics213Message = m;
-    summary.messageIds += "\nics_213: " + m.messageId;
+    summary.messageIds.add("ics_213: " + m.messageId);
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -580,7 +579,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     // #MM update summary
     getCounter("Message Type").increment("Check Out");
     summary.checkOutMessage = m;
-    summary.messageIds += "\ncheck out: " + m.messageId;
+    summary.messageIds.add("check out: " + m.messageId);
     ++summary.messageCount;
     isPerfectMessage(m);
   }
@@ -653,7 +652,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     // we want the latest
     if (summary.ics214Message == null) {
       summary.ics214Message = m;
-      summary.messageIds += "\nics 214: " + m.messageId;
+      summary.messageIds.add("ics 214: " + m.messageId);
       ++summary.messageCount;
       isPerfectMessage(m);
 
@@ -683,7 +682,7 @@ public class LAX_2026_03_30_Tsunami extends MultiMessageFeedbackProcessor {
     summary.bulletinPrecedence = m.precedence;
     summary.bulletinSubject = m.formSubject;
     summary.bulletinIsExercise = String.valueOf(m.bulletinText.toUpperCase().startsWith("THIS IS AN EXERCISE"));
-    summary.messageIds += "\nbulletin: " + m.messageId;
+    summary.messageIds.add("bulletin: " + m.messageId);
     isPerfectMessage(m);
   }
 

@@ -88,7 +88,7 @@ public class StandardSummary implements IWritableTable {
   public static StandardSummary fromMultiMessageFeedback(BaseSummary s) {
     return new StandardSummary(s.from, s.to, //
         s.location, s.dateTime, //
-        s.getFeedbackCountString(), s.getFeedback(), s.messageIds);
+        s.getFeedbackCountString(), s.getFeedback(), String.join(",", s.messageIds));
   }
 
   public static StandardSummary fromSingleMessageFeedback(IWritableTable s) {

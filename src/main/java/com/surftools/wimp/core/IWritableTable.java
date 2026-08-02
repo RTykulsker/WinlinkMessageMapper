@@ -59,4 +59,14 @@ public interface IWritableTable extends Comparable<IWritableTable> {
     return String.valueOf(intValue);
   }
 
+  /**
+   * convenience method for use in getValues()
+   *
+   * @param booleanValue
+   * @return
+   */
+  default public String s(boolean booleanValue) {
+    return String.valueOf(booleanValue);
+  }
+
 }

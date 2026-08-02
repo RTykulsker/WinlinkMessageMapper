@@ -119,6 +119,20 @@ public class CleanupProcessor extends AbstractBaseProcessor {
       }
     }
 
+    // copy sqlite db file to output
+    var sqliteFileName = cm.getAsString(Key.PERSISTENCE_SQLITE_URL);
+    try {
+      var sqlitePath = Path.of(sqliteFileName);
+      var sqliteFile = sqlitePath.toFile();
+      if (sqliteFile.exists()) {
+        var sqliteDestination = Path.of(outputPathName, dateString + "-" + sqlitePath.getFileName());
+        Files.copy(sqlitePath, sqliteDestination);
+        logger.info("copied sqlite database to " + sqliteDestination.toString());
+      }
+    } catch (Exception e) {
+      logger.error("Exception copying sqlite file: " + sqliteFileName.toString() + ", " + e.getMessage());
+    }
+
     // link log file
     var logSource = Path.of(cm.getAsString(Key.LOG_PATH), "stdout.txt");
     var logTarget = Path.of(outputPathName, dateString + "-stdout.txt");

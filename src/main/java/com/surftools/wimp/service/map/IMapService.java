@@ -53,7 +53,8 @@ public interface IMapService {
           Map.entry("ETO-10", "#4363d8"), // //blue
           Map.entry("ETO-CAN", "#9a6324"), // brown
           Map.entry("ETO-DX", "#000000"), // black
-          Map.entry("unknown", "#7b7b7b")); // gray
+          Map.entry("unknown", "#7b7b7b"), // gray
+          Map.entry("ETO-DRILL", "#ffd326")); // gold
 
   public static final Map<String, String> rgbMap = Map
       .ofEntries( //

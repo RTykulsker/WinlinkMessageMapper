@@ -75,7 +75,6 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
     public Summary(String from) {
       this.from = from;
       this.explanations = new ArrayList<String>();
-      this.messageIds = "";
     }
 
     @Override
@@ -232,7 +231,7 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.positionMessage = m;
-    summary.messageIds = m.messageId;
+    summary.messageIds.add(m.messageId);
   }
 
   /**
@@ -277,7 +276,7 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
 
     // #MM update summary
     summary.catalogMessage = m;
-    summary.messageIds = summary.messageIds.length() > 0 ? summary.messageIds + "," + m.messageId : m.messageId;
+    summary.messageIds.add(m.messageId);
   }
 
   private void handle_QuickMessage(Summary summary, PlainMessage m) {
@@ -335,8 +334,7 @@ public class ETO_2026_01_15 extends MultiMessageFeedbackProcessor {
     summary.hasAttachedTextFile = hasAttachedTextFile;
     summary.actualNeighbors = actualNeighbors;
     summary.reportedNeighbors = reportedNeighbors;
-
-    summary.messageIds = summary.messageIds.length() > 0 ? summary.messageIds + "," + m.messageId : m.messageId;
+    summary.messageIds.add(m.messageId);
   }
 
   @Override

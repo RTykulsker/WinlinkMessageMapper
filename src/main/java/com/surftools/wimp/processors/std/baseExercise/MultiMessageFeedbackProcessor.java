@@ -92,7 +92,7 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
     public List<String> explanations; // doesn't get published, but interpreted
     public int perfectMessageCount;
     public static String perfectMessageText = "Perfect messages!";
-    public String messageIds;
+    public List<String> messageIds = new ArrayList<>();
 
     @Override
     public int compareTo(IWritableTable o) {
@@ -539,8 +539,8 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
         var location = s.location;
         var color = colorMap.get(clearinghouseName);
         var prefix = "<b>From: " + s.from + "<br>To: " + to + "</b><hr>";
-        var messageIds = s.messageIds;
-        var content = (messageIds == null) ? "" : "MessageIds: " + messageIds + "\n";
+        var messageIds = String.join("\n", s.messageIds);
+        var content = "MessageIds: " + messageIds + "\n";
         content = content + "Feedback Count: " + s.getFeedbackCountString() + "\n" + "Feedback: " + s.getFeedback();
         content = prefix + content;
         var mapEntry = new MapEntry(s.from, s.to, location, content, color);

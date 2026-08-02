@@ -2,7 +2,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2022, Robert Tykulsker
+Copyright (c) 2026, Robert Tykulsker
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,9 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2026;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,100 +37,312 @@ import org.slf4j.LoggerFactory;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.DyfiMessage;
-import com.surftools.wimp.message.DyfiMessage.DetailLevel;
 import com.surftools.wimp.message.ExportedMessage;
-import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
+import com.surftools.wimp.message.PlainMessage;
+import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
- * DYFI for Shakeout 2026
+ * Processor for 2026-10-15: Shakeout 2026 drill, organized by LAX Northeast
+ *
+ * One DYFI, two (or more) Plain, one with a quiz, one with a survey
  *
  * @author bobt
  *
  */
-public class ETO_2026_10_15 extends SingleMessageFeedbackProcessor {
-  private static Logger logger = LoggerFactory.getLogger(ETO_2026_10_15.class);
+public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
+  private static final Logger logger = LoggerFactory.getLogger(ETO_2026_10_15.class);
 
-  public static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
+  protected static final String REQUIRED_USGS_ADDRESS = "dyfi_reports_automated@usgs.gov";
 
-  protected static final DateTimeFormatter DYFI_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-  protected static final DateTimeFormatter DYFI_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+  /**
+   * #MM just the necessary fields for a (multi-message) Summary
+   */
+  private class Summary extends BaseSummary {
 
-  protected static final String EXPECTED_DATE = "10/15/2026";
-  protected static final String EXPECTED_TIME = "10:15";
+    public DyfiMessage dyfiMessage;
+    public PlainMessage quizMessage;
+    public PlainMessage surveyMessage;
 
-  protected Set<String> clearinghouseSet;
+    public List<String> plainMessageIds = new ArrayList<>();
+
+    public boolean dyfiIsExercise;
+    public boolean dyfiIsFelt;
+    public String dyfiResponse;
+    public String dyfiIntensity;
+    public boolean dyfiIntensityAbove5;
+
+    public int quizNCorrect;
+    public int quizNAnswered;
+    public String quizAnswers;
+
+    public List<String> surveyBasicItems = new ArrayList<>();
+    public List<String> surveyAdditionalItems = new ArrayList<>();
+    public int surveyNBasicItems;
+    public int surveyNAdditionalItems;
+
+    public Summary(String from) {
+      this.from = from;
+      this.explanations = new ArrayList<String>();
+    }
+
+    @Override
+    public String[] getHeaders() {
+      var list = new ArrayList<String>();
+      list.addAll(Arrays.asList(super.getHeaders()));
+      list
+          .addAll(Arrays
+              .asList(new String[] { //
+                  "DYFI", "Quiz", "Survey", "# Plain", //
+                  "MessageIds", "Plain MessageIds", //
+                  "DYFI IsExercise", "DYFI IsFelt", "DYFI Response", "DYFI Intensity", "DYFI Intensity > 5", //
+                  "Quiz #Correct", "Quiz #Correct", "Quiz Answers", //
+                  "Survey Basis Items", "Survey Additional Items", "Survey #Basic", "Survey #Additional" //
+              }));
+      return list.toArray(new String[0]);
+    }
+
+    @Override
+    public String[] getValues() {
+      var list = new ArrayList<>();
+      list.addAll(Arrays.asList(super.getValues()));
+      list
+          .addAll(Arrays
+              .asList(new String[] { //
+                  mId(dyfiMessage), mId(quizMessage), mId(surveyMessage), s(plainMessageIds.size()), //
+                  String.join(",", messageIds), String.join(",", plainMessageIds), //
+                  s(dyfiIsExercise), s(dyfiIsFelt), dyfiResponse, dyfiIntensity, s(dyfiIntensityAbove5), //
+                  s(quizNCorrect), s(quizNAnswered), quizAnswers, //
+                  String.join(",", surveyBasicItems), String.join(",", surveyAdditionalItems), s(surveyNBasicItems),
+                  s(surveyNAdditionalItems)//
+              }));
+
+      return list.toArray(new String[0]);
+    };
+  }
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
-    super.initialize(cm, mm, logger);
-    messageType = MessageType.DYFI;
-    DyfiMessage.setDetailLevel(DetailLevel.LOW);
+    // #MM must define acceptableMessages
+    acceptableMessageTypesSet.addAll(getExpectedMessageTypes());
 
-    var clearinghouseString = "ETO-01,ETO-02,ETO-03,ETO-04,ETO-05,ETO-06,ETO-07,ETO-08,ETO-09,ETO-10,ETO-CAN,ETO-DX,ETO-BK";
-    var clearinghouseList = new ArrayList<>(Arrays.asList(clearinghouseString.split(",")));
-    clearinghouseSet = new LinkedHashSet<>(clearinghouseList.stream().map(s -> s + "@WINLINK.ORG").toList());
+    super.initialize(cm, mm, logger);
+
+    allowPerfectMessageReporting = true;
+
+    var extraOutboundMessageText = """
+
+        -----------------------------------------------------------------------------
+
+        Thank you for your participation. The final results will shortly be posted at
+        https://emcomm-training.org/Non-ETO_Exercises.html
+
+        We invite you to continue to participate in our regular weekly exercises.
+        See our site at: https://emcomm-training.org/Winlink_Thursdays.html
+
+        """;
+    outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
+
+  }
+
+  @Override
+  protected void beforeProcessingForSender(String sender) {
+    super.beforeProcessingForSender(sender);
+
+    // #MM must instantiate a derived Summary object
+    iSummary = summaryMap.getOrDefault(sender, new Summary(sender));
+    summaryMap.put(sender, iSummary);
   }
 
   @Override
   protected void specificProcessing(ExportedMessage message) {
-    DyfiMessage m = (DyfiMessage) message;
+    var summary = (Summary) iSummary;
 
-    var addresses = (m.toList + "," + m.ccList).toUpperCase();
-    var hasUSGSAddress = addresses.contains(REQUIRED_USGS_ADDRESS.toUpperCase());
-    count(sts.test("To and/or CC addresses should contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
-    var hasShakeoutAddress = addresses.contains("SHAKEOUT@WINLINK.ORG");
-    getCounter("Has SHAKEOUT as addressee").increment(hasShakeoutAddress);
-    var hasDrillAddress = addresses.contains("ETO-DRILL@WINLINK.ORG");
-    getCounter("Has ETO-DRILL as addressee").increment(hasDrillAddress);
+    var type = message.getMessageType();
+    if (type == MessageType.DYFI) {
+      handle_DyFiMessage(summary, (DyfiMessage) message);
+    } else if (type == MessageType.PLAIN) {
+      handle_PlainMessage(summary, (PlainMessage) message);
+    }
 
-    var addressesSet = new LinkedHashSet<>(Arrays.asList(addresses.split(",")));
-    addressesSet.retainAll(clearinghouseSet);
-    var hasClearinghouseAddress = addressesSet.size() > 0;
-    getCounter("Has ETO clearinghouse as addressee").increment(hasClearinghouseAddress);
+    summaryMap.put(sender, iSummary);
+  }
 
-    count(sts.test("Event Type should be: EXERCISE", !m.isRealEvent));
-    count(sts.test("Exercise Id should be: #EV", "SHAKEOUT", m.exerciseId));
-    getCounter("ExerciseId").increment(m.exerciseId);
-    count(sts.test("Did You feel it should be: Yes", m.isFelt));
-    var response = m.response == null ? "Not specified" : m.response;
-    count(sts.test("How did you respond should be: Dropped and covered", "duck", response));
-    getCounter("Response").increment(response);
+  private void handle_PlainMessage(Summary summary, PlainMessage m) {
+    sts.setExplanationPrefix("(plain) ");
+    summary.plainMessageIds.add(m.messageId);
+    var attachmentCount = m.attachments.size();
+    count(sts.test("Plain attachment count should be #EV", "1", String.valueOf(attachmentCount)));
 
-    // date and time should be 10/15 and 10:15
-    count(sts.test("Date of Earthquake should be #EV", EXPECTED_DATE, m.formDateTime.format(DYFI_DATE_FORMATTER)));
-    count(sts.test("Time of Earthquake should be #EV", EXPECTED_TIME, m.formDateTime.format(DYFI_TIME_FORMATTER)));
+    for (var attachmentName : m.attachments.keySet()) {
+      var value = new String(m.attachments.get(attachmentName));
+      if (attachmentName.toUpperCase().contains("QUIZ ANSWERS")) {
+        handle_quiz(summary, m, attachmentName, value);
+      } else if (attachmentName.toUpperCase().contains("PREPAREDNESS SURVEY")) {
+        handle_survey(summary, m, attachmentName, value);
+      }
+    }
+  }
 
-    var intensityString = m.intensity;
-    getCounter("Intensity").increment(intensityString);
+  private void handle_quiz(Summary summary, PlainMessage m, String attachmentName, String value) {
+    sts.setExplanationPrefix("(quiz) ");
+    var listOfFields = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 1);
+    var fields = listOfFields.get(0);
+
+    // skip if we already have a quiz
+    if (summary.quizMessage != null) {
+      return;
+    }
+    summary.quizMessage = m;
+
+    /*
+     * 12 questions
+     *
+     * q and a start on zero-based field 7, column h
+     *
+     * 4 fields per: question, user_answer, correct answer, status
+     */
+
+    var nCorrect = 0;
+    var nAnswered = 0;
+    var answers = new ArrayList<String>();
+    var fIndex = 7;
+    for (var qIndex = 1; qIndex <= 12; ++qIndex) {
+      @SuppressWarnings("unused")
+      var question = fields[fIndex];
+      var userAnswer = fields[fIndex + 1];
+      var correctAnswer = fields[fIndex + 2];
+      var status = fields[fIndex + 3];
+
+      count(sts.test("Q" + String.format("%02d", qIndex) + " answer should be #EV", correctAnswer, userAnswer));
+      getCounter("Quiz Q" + String.format("%02d", qIndex)).increment(userAnswer);
+
+      answers.add(userAnswer);
+
+      if (status.equals("Correct")) {
+        ++nCorrect;
+      }
+
+      if (!userAnswer.equals("No answer")) {
+        ++nAnswered;
+      }
+
+      fIndex += 4;
+    }
+
+    getCounter("Message Type").increment("QUIZ");
+
+    summary.messageIds.add("quiz: " + m.messageId);
+    summary.quizNCorrect = nCorrect;
+    getCounter("Quiz #Correct").increment(nCorrect);
+    summary.quizNAnswered = nAnswered;
+    getCounter("Quiz #Answered").increment(nAnswered);
+    summary.quizAnswers = String.join(",", answers);
+  }
+
+  private void handle_survey(Summary summary, PlainMessage m, String attachmentName, String value) {
+    sts.setExplanationPrefix("(quiz) ");
+    var listOfFields = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 1);
+    var fields = listOfFields.get(0);
+
+    // skip if we already have a quiz
+    if (summary.surveyMessage != null) {
+      return;
+    }
+    summary.surveyMessage = m;
+
+    var basicList = List
+        .of("water/food", "cell-charger", "weather radio", "flashlight", "first aid", "whistle", "dust mask",
+            "sanitation", "wrench", "can opener", "maps");
+    var additionalList = List
+        .of("medications/glasses", "infant formual and diapers", "pet food", "family documents", "cash",
+            "reference material", "sleeping bags", "_clothing", "fire extinquisher", "clothing", "matches",
+            "feminine/hygiene", "mess kits", "paper and pencil", "books/games");
+
+    /*
+     * Basic fields start in column G or 6
+     */
+    for (var i = 0; i < basicList.size(); ++i) {
+      var itemName = basicList.get(i);
+      var fieldValue = fields[6 + i].equals("Yes");
+      getCounter("Survey basic " + itemName).increment(fieldValue);
+      if (fieldValue) {
+        summary.surveyBasicItems.add(itemName);
+      }
+    }
+
+    /*
+     * Additional fields start in column R or 17
+     */
+    for (var i = 0; i < additionalList.size(); ++i) {
+      var itemName = additionalList.get(i);
+      var fieldValue = fields[17 + i].equals("Yes");
+      getCounter("Survey additional " + itemName).increment(fieldValue);
+      if (fieldValue) {
+        summary.surveyAdditionalItems.add(itemName);
+      }
+    }
+
+    summary.messageIds.add("survey: " + m.messageId);
+    summary.surveyNAdditionalItems = summary.surveyAdditionalItems.size();
+    summary.surveyNBasicItems = summary.surveyBasicItems.size();
+    getCounter("Message Type").increment("SURVEY");
+  }
+
+  private void handle_DyFiMessage(Summary summary, DyfiMessage m) {
+    sts.setExplanationPrefix("(dyfi) ");
+
+    var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS.toUpperCase());
+    count(sts.test("DYFI To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
+    count(sts.test("DYFI Event Type must be: EXERCISE", !m.isRealEvent));
+    count(sts
+        .test("DYFI Form Latitude and Longitude must be valid", m.formLocation.isValid(), m.formLocation.toString()));
+    count(sts.test("DYFI Did you feel it? should be Yes", m.isFelt));
+    count(sts.test("DYFI Response should be #EV", "Dropped and Covered", m.response));
+
     try {
-      intensityString = intensityString == null || intensityString.isEmpty() ? "0" : intensityString;
-      var intensity = Integer.parseInt(intensityString);
-      count(sts.test("Intensity should be at least 5", intensity >= 5));
+      var intensity = Integer.parseInt(m.intensity);
+      count(sts.test("DYFI Intensity must be >= 5", intensity >= 5, m.intensity));
+      getCounter("DYFI Intensity").increment(m.intensity);
+      summary.dyfiIntensityAbove5 = intensity >= 5;
     } catch (Exception e) {
-      count(sts.test("Intensity should be at least 5", false));
-    }
-    getCounter("Version").increment(m.formVersion);
-
-    if (feedbackLocation == null) {
-      feedbackLocation = m.formLocation;
+      count(sts.test("DYFI Intensity must be >= 5", false, m.intensity));
+      summary.dyfiIntensityAbove5 = false;
     }
 
-    if (m.comments != null) {
-      var fields = m.comments.split(",");
-      if (fields.length >= 4) { // AFFILIATION, ORGANIZATION, MODE, BAND,COMMENTS
-        getCounter("Affiliation").increment(fields[0].toUpperCase().trim());
-        getCounter("Organization").increment(fields[1].toUpperCase().trim());
-        getCounter("Mode").increment(fields[2].toUpperCase().trim());
-        getCounter("Band").increment(fields[3].toUpperCase().trim());
-      } // endif fields.length >= 4
-    } // endif comments != null
+    getCounter("DYFI Form Version").increment(m.formVersion);
 
+    // #MM update summary
+    getCounter("Message Type").increment("DYFI");
+    summary.dyfiMessage = m;
+    summary.dyfiIsExercise = !m.isRealEvent;
+    summary.dyfiIsFelt = m.isFelt;
+    summary.dyfiIntensity = m.intensity;
+    summary.dyfiResponse = m.response;
+    summary.messageIds.add("dyfi: " + m.messageId);
+
+    isPerfectMessage(m);
+  }
+
+  @Override
+  protected void endProcessingForSender(String sender) {
+    sts.setExplanationPrefix("(summary) ");
+
+    var summary = (Summary) summaryMap.get(sender); // #MM
+
+    sts.testNotNull("DYFI message not received", summary.dyfiMessage);
+    sts.testNotNull("Quiz message not received", summary.quizMessage);
+    sts.testNotNull("SurveyMessage not received", summary.surveyMessage);
+
+    summaryMap.put(sender, summary); // #MM
   }
 
   @Override
   public void postProcess() {
-    super.postProcess();
-  }
+    super.postProcess();// #MM
 
+    writeTable("perfectMessages.csv", perfectMessages);
+
+  }
 }
