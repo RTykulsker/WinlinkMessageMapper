@@ -123,6 +123,18 @@ public class SimpleTestService implements IService {
    * @param value
    * @return
    */
+  public TestResult test(String rawLabel, int expectedValue, int value) {
+    return test(rawLabel, String.valueOf(expectedValue), String.valueOf(value));
+  }
+
+  /**
+   * our most common use case, case-independent, alphanumeric String comparison
+   *
+   * @param rawLabel
+   * @param expectedValue
+   * @param value
+   * @return
+   */
   public TestResult test(String rawLabel, String expectedValue, String value) {
     if (rawLabel == null) {
       throw new IllegalArgumentException("null label");

@@ -174,7 +174,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(plain) ");
     summary.plainMessageIds.add(m.messageId);
     var attachmentCount = m.attachments.size();
-    count(sts.test("Plain attachment count should be #EV", "1", String.valueOf(attachmentCount)));
+    count(sts.test("Plain attachment count should be #EV", 1, attachmentCount));
 
     for (var attachmentName : m.attachments.keySet()) {
       var value = new String(m.attachments.get(attachmentName));
@@ -186,10 +186,13 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     }
   }
 
+  private enum PlainType {
+    QUIZ, SURVEY
+  };
+
   private void handle_quiz(Summary summary, PlainMessage m, String attachmentName, String value) {
     sts.setExplanationPrefix("(quiz) ");
-    var listOfFields = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 1);
-    var fields = listOfFields.get(0);
+    var fields = getFields(value, PlainType.QUIZ);
 
     // skip if we already have a quiz
     if (summary.quizMessage != null) {
@@ -208,28 +211,31 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     var nCorrect = 0;
     var nAnswered = 0;
     var answers = new ArrayList<String>();
-    var fIndex = 7;
-    for (var qIndex = 1; qIndex <= 12; ++qIndex) {
-      @SuppressWarnings("unused")
-      var question = fields[fIndex];
-      var userAnswer = fields[fIndex + 1];
-      var correctAnswer = fields[fIndex + 2];
-      var status = fields[fIndex + 3];
 
-      count(sts.test("Q" + String.format("%02d", qIndex) + " answer should be #EV", correctAnswer, userAnswer));
-      getCounter("Quiz Q" + String.format("%02d", qIndex)).increment(userAnswer);
+    if (fields != null) {
+      var fIndex = 7;
+      for (var qIndex = 1; qIndex <= 12; ++qIndex) {
+        @SuppressWarnings("unused")
+        var question = fields[fIndex];
+        var userAnswer = fields[fIndex + 1];
+        var correctAnswer = fields[fIndex + 2];
+        var status = fields[fIndex + 3];
 
-      answers.add(userAnswer);
+        count(sts.test("Q" + String.format("%02d", qIndex) + " answer should be #EV", correctAnswer, userAnswer));
+        getCounter("Quiz Q" + String.format("%02d", qIndex)).increment(userAnswer);
 
-      if (status.equals("Correct")) {
-        ++nCorrect;
+        answers.add(userAnswer);
+
+        if (status.equals("Correct")) {
+          ++nCorrect;
+        }
+
+        if (!userAnswer.equals("No answer")) {
+          ++nAnswered;
+        }
+
+        fIndex += 4;
       }
-
-      if (!userAnswer.equals("No answer")) {
-        ++nAnswered;
-      }
-
-      fIndex += 4;
     }
 
     getCounter("Message Type").increment("QUIZ");
@@ -243,9 +249,8 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
   }
 
   private void handle_survey(Summary summary, PlainMessage m, String attachmentName, String value) {
-    sts.setExplanationPrefix("(quiz) ");
-    var listOfFields = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 1);
-    var fields = listOfFields.get(0);
+    sts.setExplanationPrefix("(survey) ");
+    var fields = getFields(value, PlainType.SURVEY);
 
     // skip if we already have a quiz
     if (summary.surveyMessage != null) {
@@ -253,35 +258,37 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     }
     summary.surveyMessage = m;
 
-    var basicList = List
+    final var basicList = List
         .of("water/food", "cell-charger", "weather radio", "flashlight", "first aid", "whistle", "dust mask",
             "sanitation", "wrench", "can opener", "maps");
-    var additionalList = List
+    final var additionalList = List
         .of("medications/glasses", "infant formual and diapers", "pet food", "family documents", "cash",
             "reference material", "sleeping bags", "_clothing", "fire extinquisher", "clothing", "matches",
             "feminine/hygiene", "mess kits", "paper and pencil", "books/games");
 
-    /*
-     * Basic fields start in column G or 6
-     */
-    for (var i = 0; i < basicList.size(); ++i) {
-      var itemName = basicList.get(i);
-      var fieldValue = fields[6 + i].equals("Yes");
-      getCounter("Survey basic " + itemName).increment(fieldValue);
-      if (fieldValue) {
-        summary.surveyBasicItems.add(itemName);
+    if (fields != null) {
+      /*
+       * Basic fields start in column G or 6
+       */
+      for (var i = 0; i < basicList.size(); ++i) {
+        var itemName = basicList.get(i);
+        var fieldValue = fields[6 + i].equals("Yes");
+        getCounter("Survey basic " + itemName).increment(fieldValue);
+        if (fieldValue) {
+          summary.surveyBasicItems.add(itemName);
+        }
       }
-    }
 
-    /*
-     * Additional fields start in column R or 17
-     */
-    for (var i = 0; i < additionalList.size(); ++i) {
-      var itemName = additionalList.get(i);
-      var fieldValue = fields[17 + i].equals("Yes");
-      getCounter("Survey additional " + itemName).increment(fieldValue);
-      if (fieldValue) {
-        summary.surveyAdditionalItems.add(itemName);
+      /*
+       * Additional fields start in column R or 17
+       */
+      for (var i = 0; i < additionalList.size(); ++i) {
+        var itemName = additionalList.get(i);
+        var fieldValue = fields[17 + i].equals("Yes");
+        getCounter("Survey additional " + itemName).increment(fieldValue);
+        if (fieldValue) {
+          summary.surveyAdditionalItems.add(itemName);
+        }
       }
     }
 
@@ -289,6 +296,43 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     summary.surveyNAdditionalItems = summary.surveyAdditionalItems.size();
     summary.surveyNBasicItems = summary.surveyBasicItems.size();
     getCounter("Message Type").increment("SURVEY");
+  }
+
+  /**
+   * check for
+   *
+   * @param value
+   * @param quiz
+   * @return
+   */
+  private String[] getFields(String value, PlainType plainType) {
+    final var quizHeaders = "Timestamp (UTC),Participant Callsign,Street Address,Latitude,Longitude,Score,Total Questions,Q1_Question,Q1_User_Answer,Q1_Correct_Answer,Q1_Status,Q2_Question,Q2_User_Answer,Q2_Correct_Answer,Q2_Status,Q3_Question,Q3_User_Answer,Q3_Correct_Answer,Q3_Status,Q4_Question,Q4_User_Answer,Q4_Correct_Answer,Q4_Status,Q5_Question,Q5_User_Answer,Q5_Correct_Answer,Q5_Status,Q6_Question,Q6_User_Answer,Q6_Correct_Answer,Q6_Status,Q7_Question,Q7_User_Answer,Q7_Correct_Answer,Q7_Status,Q8_Question,Q8_User_Answer,Q8_Correct_Answer,Q8_Status,Q9_Question,Q9_User_Answer,Q9_Correct_Answer,Q9_Status,Q10_Question,Q10_User_Answer,Q10_Correct_Answer,Q10_Status,Q11_Question,Q11_User_Answer,Q11_Correct_Answer,Q11_Status,Q12_Question,Q12_User_Answer,Q12_Correct_Answer,Q12_Status";
+    final var surveyHeaders = "Timestamp (UTC),Participant Callsign,Operator Last Name,Location / Street Address,Latitude,Longitude,Basic_water-food,Basic_cell-charger,Basic_weather-radio,Basic_flashlight,Basic_first-aid,Basic_whistle,Basic_dust-mask,Basic_sanitation,Basic_wrench,Basic_can-opener,Basic_maps,Add_medications,Add_infant,Add_pet,Add_documents,Add_cash,Add_reference,Add_sleeping-bag,Add_clothing,Add_fire-ext,Add_matches,Add_feminine,Add_mess-kit,Add_paper-pencil,Add_books-games,Basic_Items_Checked_Count,Additional_Items_Checked_Count,Total_Items_Checked";
+
+    var listOfFields = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 0);
+    count(sts.test("CVS file number of rows should be #EV", 2, listOfFields.size()));
+    if (listOfFields.size() == 2) {
+      var headers = listOfFields.get(0);
+      String[] refHeaders = null;
+      if (plainType == PlainType.QUIZ) {
+        refHeaders = quizHeaders.split(",");
+      } else {
+        refHeaders = surveyHeaders.split(",");
+      }
+
+      count(sts.test("CSV file number of columns should be #EV", refHeaders.length, headers.length));
+
+      var n = Math.min(headers.length, refHeaders.length);
+      for (var i = 0; i < n; ++i) {
+        sts.test("CSV header #" + i + ", should be #EV", refHeaders[i], headers[i]);
+      }
+
+      var fields = listOfFields.get(1);
+      return fields;
+    } else {
+      return null;
+    }
+
   }
 
   private void handle_DyFiMessage(Summary summary, DyfiMessage m) {
