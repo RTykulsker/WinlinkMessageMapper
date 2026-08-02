@@ -221,10 +221,11 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
           dupEntries.add(dupEntry);
         }
 
-        Collections.sort(tmpList); // ascending order based on sortDateTime
         var rule = typeRuleMap.getOrDefault(messageType, Integer.valueOf(1)); // by default, we only want last message;
-        if (rule > 0) {
+        if (rule >= 0) {
           Collections.reverse(tmpList);
+        } else {
+          Collections.sort(tmpList); // ascending order based on sortDateTime
         }
         var ruleLimit = Math.abs(rule);
 
