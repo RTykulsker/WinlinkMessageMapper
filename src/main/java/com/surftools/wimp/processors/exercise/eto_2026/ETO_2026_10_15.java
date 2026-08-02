@@ -30,6 +30,7 @@ package com.surftools.wimp.processors.exercise.eto_2026;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +130,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
 
     super.initialize(cm, mm, logger);
 
-    allowPerfectMessageReporting = true;
+    allowPerfectMessageReporting = false;
 
     var extraOutboundMessageText = """
 
@@ -299,7 +300,11 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     count(sts
         .test("DYFI Form Latitude and Longitude must be valid", m.formLocation.isValid(), m.formLocation.toString()));
     count(sts.test("DYFI Did you feel it? should be Yes", m.isFelt));
-    count(sts.test("DYFI Response should be #EV", "Dropped and Covered", m.response));
+
+    final var responseMap = Map
+        .of("", "Not specified", "no_action", "Took no action", "doorway", "Moved to doorway", "duck",
+            "Dropped and covered", "ran_outside", "Ran Outside", "other", "Other");
+    count(sts.test("DYFI Response should be #EV", responseMap.get("duck"), responseMap.get(m.response)));
 
     try {
       var intensity = Integer.parseInt(m.intensity);
