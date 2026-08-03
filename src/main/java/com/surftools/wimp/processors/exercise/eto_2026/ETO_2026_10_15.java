@@ -430,13 +430,18 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
         <!DOCTYPE html>
         <html>
         <head>
-          <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+          <script src="https://cdn.plot.ly/plotly-3.6.0.min.js" charset="utf-8"></script>
+          <style>
+            h1 { text-align: center; font-family: Arial, sans-serif; margin-top: 20px; margin-bottom: 30px; font-size: 32px; color: #333; }
+          </style>
         </head>
         <body>
 
-        <div id="basicPlot" style="width:700px;height:450px;"></div>
+        <h1>Shakeout 2026 Survey Results</h1>
+
+        <div id="basicPlot" style="width:800px;height:450px;"></div>
         <hr>
-        <div id="additionalPlot" style="width:700px;height:450px;margin-top:40px;"></div>
+        <div id="additionalPlot" style="width:800px;height:450px;margin-top:40px;"></div>
 
         <script>
         const basicData = [
@@ -447,56 +452,45 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
         #ADDITIONAL_DATA#
         ];
 
-        function renderHistogram(targetDiv, dataset, title, color) {
-          const names  = dataset.map(x => x.name);
-          const values = dataset.map(x => x.value);
+        function renderHistogram(targetDiv, data, title, barColor) {
+          const names  = data.map(d => d.name);
+          const values = data.map(d => d.value);
 
-          const trace = {
+          // --- Trace 1: actual bars ---
+          const bars = {
             x: values,
             y: names,
             type: "bar",
             orientation: "h",
-            marker: { color },
+            marker: { color: barColor },
+            text: values,
+            textposition: "outside",
+            showlegend: false,
+            textfont: { color: "black", size: 14 }
+          };
+
+          // --- Trace 2: transparent overlay for inside names ---
+          const insideNames = {
+            x: values.map(v => v / 2),   // midpoint of each bar
+            y: names,
+            type: "scatter",
+            mode: "text",
             text: names,
-            textposition: "inside",
-            insidetextanchor: "middle"
+            textposition: "middle center",
+            hoverinfo: "skip",
+            showlegend: false,
+            textfont: { color: "white", size: 14 }
           };
 
           const layout = {
-            title,
+            title: { text: title, font: { size: 28 } },
+            margin: { l: 20, r: 60, t: 60, b: 40 },
+            yaxis: { showticklabels: false, showgrid: false },
             xaxis: { title: "Count" },
-            yaxis: {
-              showticklabels: false,   // <-- remove names on y-axis
-              automargin: true
-            },
-            margin: {
-              l: 120,                  // room for custom vertical title
-              r: 20,
-              t: 60,
-              b: 60
-            },
-            bargap: 0.2,
-
-            // *** THIS is what makes the text bigger ***
-            uniformtext: {
-              mode: "show",
-              minsize: 24
-            },
-            annotations: [
-              {
-                xref: "paper",
-                yref: "paper",
-                x: -0.12,
-                y: 0.5,
-                text: "Item",
-                showarrow: false,
-                textangle: -90,
-                font: { size: 18 }
-              }
-            ]
+            barmode: "overlay"
           };
 
-          Plotly.newPlot(targetDiv, [trace], layout);
+          Plotly.newPlot(targetDiv, [bars, insideNames], layout);
         }
 
         renderHistogram("basicPlot", basicData, "Basic Data", "steelblue");
