@@ -31,8 +31,8 @@ import java.io.FileWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -46,7 +46,7 @@ import com.opencsv.CSVWriter;
 public class Counter implements ICounter, Comparable {
   protected Logger logger = LoggerFactory.getLogger(Counter.class);
 
-  protected Map<Comparable, Integer> map = new HashMap<>();
+  protected Map<Comparable, Integer> map = new LinkedHashMap<>();
   protected String name;
 
   public Counter() {
@@ -127,6 +127,11 @@ public class Counter implements ICounter, Comparable {
   }
 
   @Override
+  public Iterator<Entry<Comparable, Integer>> getAscendingEntryOrderIterator() {
+    return map.entrySet().iterator();
+  }
+
+  @Override
   public int getKeyCount() {
     return map.size();
   }
@@ -165,8 +170,9 @@ public class Counter implements ICounter, Comparable {
         newCounter.increment(entry.getKey(), entry.getValue());
       } else {
         newCounter.increment(label, entry.getValue());
-        logger.warn("### squeezing Counter: " + name + ",  key:" + entry.getKey() + ", count: " + entry.getValue()
-            + " to " + label);
+        logger
+            .warn("### squeezing Counter: " + name + ",  key:" + entry.getKey() + ", count: " + entry.getValue()
+                + " to " + label);
       } // endif count < maxEntries
     } // end loop over iterator
 

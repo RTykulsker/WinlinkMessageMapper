@@ -27,6 +27,7 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2026;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +43,7 @@ import com.surftools.wimp.message.DyfiMessage;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.ReadProcessor;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -284,6 +286,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
         if (fieldValue) {
           summary.surveyBasicItems.add(itemName);
         }
+        getCounter("Survey Basic Items").increment(itemName, fieldValue ? 1 : 0);
       }
 
       /*
@@ -296,6 +299,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
         if (fieldValue) {
           summary.surveyAdditionalItems.add(itemName);
         }
+        getCounter("Survey Additional Items").increment(itemName, fieldValue ? 1 : 0);
       }
     }
 
@@ -401,6 +405,111 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     writeTable("perfectMessages.csv", perfectMessages);
     writeTable("quizes.csv", quizes);
     writeTable("surveys.csv", surveys);
+
+    makeCharts();
+  }
+
+  private void makeCharts() {
+    var sb = new StringBuilder();
+    var iterator = getCounter("Survey Basic Items").getAscendingEntryOrderIterator();
+    while (iterator.hasNext()) {
+      var entry = iterator.next();
+      sb.append("{name: \"" + entry.getKey() + "\", value: " + entry.getValue() + "},\n");
+    }
+    var basicData = sb.toString();
+
+    sb = new StringBuilder();
+    iterator = getCounter("Survey Additional Items").getAscendingEntryOrderIterator();
+    while (iterator.hasNext()) {
+      var entry = iterator.next();
+      sb.append("{name: \"" + entry.getKey() + "\", value: " + entry.getValue() + "},\n");
+    }
+    var additionalData = sb.toString();
+
+    final var template = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        </head>
+        <body>
+
+        <div id="basicPlot" style="width:700px;height:450px;"></div>
+        <hr>
+        <div id="additionalPlot" style="width:700px;height:450px;margin-top:40px;"></div>
+
+        <script>
+        const basicData = [
+        #BASIC_DATA#
+        ];
+
+        const additionalData = [
+        #ADDITIONAL_DATA#
+        ];
+
+        function renderHistogram(targetDiv, dataset, title, color) {
+          const names  = dataset.map(x => x.name);
+          const values = dataset.map(x => x.value);
+
+          const trace = {
+            x: values,
+            y: names,
+            type: "bar",
+            orientation: "h",
+            marker: { color },
+            text: names,
+            textposition: "inside",
+            insidetextanchor: "middle"
+          };
+
+          const layout = {
+            title,
+            xaxis: { title: "Count" },
+            yaxis: {
+              showticklabels: false,   // <-- remove names on y-axis
+              automargin: true
+            },
+            margin: {
+              l: 120,                  // room for custom vertical title
+              r: 20,
+              t: 60,
+              b: 60
+            },
+            bargap: 0.2,
+
+            // *** THIS is what makes the text bigger ***
+            uniformtext: {
+              mode: "show",
+              minsize: 24
+            },
+            annotations: [
+              {
+                xref: "paper",
+                yref: "paper",
+                x: -0.12,
+                y: 0.5,
+                text: "Item",
+                showarrow: false,
+                textangle: -90,
+                font: { size: 18 }
+              }
+            ]
+          };
+
+          Plotly.newPlot(targetDiv, [trace], layout);
+        }
+
+        renderHistogram("basicPlot", basicData, "Basic Data", "steelblue");
+        renderHistogram("additionalPlot", additionalData, "Additional Data", "seagreen");
+        </script>
+        </body>
+        </html>
+                """;
+    var content = new String(template);
+    content = content.replace("#BASIC_DATA#", basicData);
+    content = content.replace("#ADDITIONAL_DATA#", additionalData);
+
+    WriteProcessor.writeString(content, Path.of(outputPathName, "survey-histograms.html"));
   }
 
   private record QuizEntry(String[] values) implements IWritableTable {

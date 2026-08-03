@@ -111,6 +111,13 @@ public interface ICounter<K extends Comparable<K>> {
    */
   public Iterator<Entry<K, Integer>> getAscendingKeyIterator();
 
+  /**
+   * return an iterator in ascending entry order
+   *
+   * @return
+   */
+  public Iterator<Entry<K, Integer>> getAscendingEntryOrderIterator();
+
   public Iterator<Entry<K, Integer>> getIterator(CounterType type);
 
   /**
