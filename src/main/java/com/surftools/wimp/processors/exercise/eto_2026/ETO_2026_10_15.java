@@ -107,7 +107,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
                   "MessageIds", "Plain MessageIds", //
                   "DYFI IsExercise", "DYFI IsFelt", "DYFI Response", "DYFI Intensity", "DYFI Intensity > 5", //
                   "Quiz #Correct", "Quiz #Correct", "Quiz Answers", //
-                  "Survey Basis Items", "Survey Additional Items", "Survey #Basic", "Survey #Additional" //
+                  "Survey Basic Items", "Survey Additional Items", "Survey #Basic", "Survey #Additional" //
               }));
       return list.toArray(new String[0]);
     }
@@ -187,9 +187,13 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     for (var attachmentName : m.attachments.keySet()) {
       var value = new String(m.attachments.get(attachmentName));
       if (attachmentName.toUpperCase().contains("QUIZ ANSWERS")) {
+        count(sts.test("Attachment Name valid", true, attachmentName));
         handle_quiz(summary, m, attachmentName, value);
       } else if (attachmentName.toUpperCase().contains("PREPAREDNESS SURVEY")) {
+        count(sts.test("Attachment Name valid", true, attachmentName));
         handle_survey(summary, m, attachmentName, value);
+      } else {
+        count(sts.test("Attachment Name valid", false, attachmentName));
       }
     }
   }
@@ -330,14 +334,19 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
         refHeaders = SURVEY_HEADERS.split(",");
       }
 
-      count(sts.test(name + " CSV file number of columns should be #EV", refHeaders.length, headers.length));
+      count(sts.test(name + " CSV file number of header columns should be #EV", refHeaders.length, headers.length));
 
       var n = Math.min(headers.length, refHeaders.length);
       for (var i = 0; i < n; ++i) {
-        sts.test(name + " CSV header #" + i + ", should be #EV", refHeaders[i], headers[i]);
+        sts.test(name + " CSV header #" + (i + 1) + ", should be #EV", refHeaders[i], headers[i]);
       }
 
       var fields = listOfFields.get(1);
+      count(sts.test(name + " CSV file number of data columns should be #EV", refHeaders.length, fields.length));
+
+      if (fields.length != refHeaders.length) {
+        fields = null;
+      }
       return fields;
     } else {
       return null;
