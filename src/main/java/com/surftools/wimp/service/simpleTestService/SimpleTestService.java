@@ -249,6 +249,28 @@ public class SimpleTestService implements IService {
     return internalTest(entry, predicate, wrap(value), null);
   }
 
+  public TestResult testEndsWith(String rawLabel, String expectedValue, String value) {
+    if (rawLabel == null) {
+      throw new IllegalArgumentException("null label");
+    }
+
+    var label = rawLabel.contains("#EV") && expectedValue != null //
+        ? rawLabel.replaceAll("#EV", expectedValue)
+        : rawLabel;
+
+    var entry = entryMap.get(label);
+    if (entry == null) {
+      ++addCount;
+      entry = new TestEntry(label, toAlphaNumericWords(expectedValue));
+      entryMap.put(label, entry);
+    }
+
+    expectedValue = entry.expectedValue;
+    var predicate = value != null && toAlphaNumericWords(value).endsWith(expectedValue);
+
+    return internalTest(entry, predicate, wrap(value), null);
+  }
+
   public TestResult testContains(String rawLabel, String expectedValue, String value) {
     if (rawLabel == null) {
       throw new IllegalArgumentException("null label");
