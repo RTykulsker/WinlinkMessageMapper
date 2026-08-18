@@ -99,7 +99,8 @@ public class ETO_2026_08_20 extends SingleMessageFeedbackProcessor implements IE
     getCounter("band").increment(m.band);
     getCounter("mode").increment(m.mode);
 
-    count(sts.test("Location should should be #EV", "Recreation Center, 200 Main Street, Anytown", m.locationString));
+    count(sts
+        .test_2line("Location should should be #EV", "Recreation Center, 200 Main Street, Anytown", m.locationString));
   }
 
   @Override

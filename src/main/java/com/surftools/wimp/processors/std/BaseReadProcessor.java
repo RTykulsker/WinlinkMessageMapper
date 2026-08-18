@@ -49,6 +49,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.surftools.utils.location.LatLongPair;
+import com.surftools.utils.location.LocationUtils;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IExportedMessageEditor;
 import com.surftools.wimp.core.IMessageManager;
@@ -324,7 +325,14 @@ public abstract class BaseReadProcessor extends AbstractBaseProcessor implements
                   }
 
                   break;
-                } // end if 4 fields in X-Location
+                } else if (fields.length == 2) {// end if 4 fields in X-Location
+                  var gridSquare = fields[1];
+                  gridSquare = (gridSquare.length() > 6) ? gridSquare.substring(0, 6) : gridSquare;
+                  if (LocationUtils.isValidMaidenhead(gridSquare)) {
+                    location = new LatLongPair(gridSquare);
+                    source = "GRID SQUARE";
+                  }
+                }
               } // end if X-Location line
             } // end loop over mimeLines
           } // end if mime != null

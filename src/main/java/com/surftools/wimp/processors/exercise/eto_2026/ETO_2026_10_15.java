@@ -402,7 +402,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
 
     sts.testNotNull("DYFI message not received", summary.dyfiMessage);
     sts.testNotNull("Quiz message not received", summary.quizMessage);
-    sts.testNotNull("SurveyMessage not received", summary.surveyMessage);
+    sts.testNotNull("Survey Message not received", summary.surveyMessage);
 
     summaryMap.put(sender, summary); // #MM
   }

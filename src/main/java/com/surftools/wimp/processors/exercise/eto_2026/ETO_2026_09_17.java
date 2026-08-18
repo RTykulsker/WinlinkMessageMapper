@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Ics213Message;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
+import com.surftools.wimp.service.image.ImageService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -55,7 +57,8 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
 
   private String[] referenceHeaders;
   private String referenceHeadersString;
-  private Map<String, String> referenceMap = new LinkedHashMap<>();
+  private Map<String, String[]> referenceMap = new LinkedHashMap<>();
+  private ImageService imageService;
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -67,16 +70,40 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
     var refCsvPath = Path.of(inputPathName, "reference.csv");
     try {
       var refList = ReadProcessor.readCsvFileIntoFieldsArray(refCsvPath, ',', false, 0);
-      referenceHeaders = refList.get(0);
+      referenceHeaders = trim(refList.get(0));
       referenceHeadersString = String.join(",", referenceHeaders);
       for (var i = 1; i < refList.size(); ++i) {
         var values = refList.get(i);
-        referenceMap.put(values[0], String.join(",", values));
+        var messageId = values[0];
+        referenceMap.put(messageId, values);
       }
       logger.info("read " + referenceMap.size() + " entries from reference file: " + refCsvPath.toString());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+
+    imageService = new ImageService(outputPathName);
+  }
+
+  /**
+   * remove empty/null element at end of array
+   *
+   * @param strings
+   * @return
+   */
+  private String[] trim(String[] strings) {
+    if (strings == null || strings.length == 0) {
+      return strings;
+    }
+
+    String last = strings[strings.length - 1];
+    if (last == null || last.trim().isEmpty()) {
+      String[] trimmed = new String[strings.length - 1];
+      System.arraycopy(strings, 0, trimmed, 0, strings.length - 1);
+      return trimmed;
+    }
+
+    return strings;
   }
 
   @Override
@@ -121,48 +148,85 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
     // attachments
     int nJpgs = 0;
     int nCsvs = 0;
+
+    var imageMap = imageService.getImageAttachments(m);
+    count(sts.test("Number of JPG attachments should be #EV", "1", String.valueOf(imageMap.size())));
+    for (var attachmentName : imageMap.keySet()) {
+      var nBytes = m.attachments.get(attachmentName).length;
+      count(
+          sts.test("JPG attachment size should be <= 50,000 bytes", (nBytes <= 1.05 * 50_000), String.valueOf(nBytes)));
+    }
+
     for (var attachmentName : m.attachments.keySet()) {
       var lcName = attachmentName.toLowerCase();
-
-      if (lcName.endsWith(".jpg") || lcName.endsWith(".jpeg")) {
-        ++nJpgs;
-        var nBytes = m.attachments.get(attachmentName).length;
-        count(sts
-            .test("JPG attachment size should be <= 50,000 bytes", (nBytes <= 1.05 * 50_000), String.valueOf(nBytes)));
-      }
 
       if (lcName.endsWith("csv")) {
         ++nCsvs;
         var value = new String(m.attachments.get(attachmentName));
-        var list = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 0);
+        var listOfValues = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 0);
 
-        var headers = list.get(0);
+        var headers = listOfValues.get(0);
         var headersString = String.join(",", headers);
         count(sts.test("CSV attachment headers should match #EV", referenceHeadersString, headersString));
 
-        var localMap = new HashMap<String, String>();
-        for (var i = 1; i < list.size(); ++i) {
-          var values = list.get(i);
+        var localMap = new HashMap<String, String[]>();
+        for (var i = 1; i < listOfValues.size(); ++i) {
+          var values = trim(listOfValues.get(i));
           var key = values[0];
-          localMap.put(key, String.join(",", values));
+          localMap.put(key, values);
         }
 
+        var csvRowNumber = 0;
         for (var key : referenceMap.keySet()) {
-          var refValues = referenceMap.get(key);
-          var values = localMap.get(key);
+          ++csvRowNumber;
+          var refValues = trim(referenceMap.get(key));
+          var values = trim(localMap.get(key));
 
-          if (values != null) {
-            count(sts.test("CSV line should match #EV", refValues, values));
-          } else {
-            count(sts.test("CSV line should match " + refValues, false, values));
+          count(sts
+              .test("CSV row " + csvRowNumber + " should have #EV columns", String.valueOf(refValues.length),
+                  String.valueOf(values.length)));
+
+          // range, bearing: ignore cuz all will be different
+          var ignoreColumns = Set.of(9, 10);
+          for (var iCol = 0; iCol < refValues.length; ++iCol) {
+            if (ignoreColumns.contains(iCol)) {
+              continue;
+            }
+
+            // latitude, longitude
+            if (iCol == 5 || iCol == 6) {
+              count(sts
+                  .testDouble("CSV cell " + toExcelCellName(csvRowNumber, iCol) + " should be #EV", refValues[iCol],
+                      values[iCol]));
+            } else {
+              count(sts
+                  .test("CSV cell " + toExcelCellName(csvRowNumber, iCol) + " should be #EV", refValues[iCol],
+                      values[iCol]));
+            }
           }
+
         } // end loop over keys in referenceMap
       } // end if CSV attachment
     } // end loop over attachments
 
-    count(sts.test("Number of JPG attachments should be #EV", "1", String.valueOf(nJpgs)));
     count(sts.test("Number of CSV attachments should be #EV", "1", String.valueOf(nCsvs)));
+  }
 
+  public String toExcelCellName(int row, int col) {
+    // Convert column number to Excel letters
+    StringBuilder colLetters = new StringBuilder();
+
+    int c = col;
+    while (c >= 0) {
+      int remainder = c % 26;
+      colLetters.insert(0, (char) ('A' + remainder));
+      c = (c / 26) - 1;
+    }
+
+    // Excel rows are 1-based
+    int excelRow = row + 1;
+
+    return colLetters.toString() + excelRow;
   }
 
 }
