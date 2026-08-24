@@ -222,13 +222,12 @@ public class DeduplicationProcessor extends AbstractBaseProcessor {
         }
 
         var rule = typeRuleMap.getOrDefault(messageType, Integer.valueOf(1)); // by default, we only want last message;
+        Collections.sort(tmpList); // ascending order based on sortDateTime
         if (rule >= 0) {
           Collections.reverse(tmpList);
-        } else {
-          Collections.sort(tmpList); // ascending order based on sortDateTime
         }
-        var ruleLimit = Math.abs(rule);
 
+        var ruleLimit = Math.abs(rule);
         var outputList = new ArrayList<ExportedMessage>(tmpList.size());
         // all messages for messageType or just/not enough messages? retain 'em all
         if (rule == 0 || tmpList.size() <= ruleLimit) {

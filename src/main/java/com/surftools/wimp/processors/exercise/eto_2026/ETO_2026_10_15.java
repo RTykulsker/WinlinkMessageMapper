@@ -82,6 +82,13 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     public String dyfiIntensity;
     public boolean dyfiIntensityAbove5;
 
+    public String dyfiRawComments;
+    public String dyfiAffiliation;
+    public String dyfiOrganization;
+    public String dyfiMode;
+    public String dyfiBand;
+    public String dyfiRemainingComments;
+
     public int quizNCorrect;
     public int quizNAnswered;
     public String quizAnswers;
@@ -106,6 +113,8 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
                   "DYFI", "Quiz", "Survey", "# Plain", //
                   "MessageIds", "Plain MessageIds", //
                   "DYFI IsExercise", "DYFI IsFelt", "DYFI Response", "DYFI Intensity", "DYFI Intensity > 5", //
+                  "DYFI Raw Comments", "DYFI Affiliation", "DYFI Organization", "DYFI Mode", "DYFI Band,",
+                  "DYFI Comments", //
                   "Quiz #Correct", "Quiz #Correct", "Quiz Answers", //
                   "Survey Basic Items", "Survey Additional Items", "Survey #Basic", "Survey #Additional" //
               }));
@@ -122,6 +131,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
                   mId(dyfiMessage), mId(quizMessage), mId(surveyMessage), s(plainMessageIds.size()), //
                   String.join(",", messageIds), String.join(",", plainMessageIds), //
                   s(dyfiIsExercise), s(dyfiIsFelt), dyfiResponse, dyfiIntensity, s(dyfiIntensityAbove5), //
+                  dyfiRawComments, dyfiAffiliation, dyfiOrganization, dyfiMode, dyfiBand, dyfiRemainingComments, //
                   s(quizNCorrect), s(quizNAnswered), quizAnswers, //
                   String.join(",", surveyBasicItems), String.join(",", surveyAdditionalItems), s(surveyNBasicItems),
                   s(surveyNAdditionalItems)//
@@ -380,6 +390,60 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
       summary.dyfiIntensityAbove5 = false;
     }
 
+    // comments
+    summary.dyfiRawComments = m.comments;
+    if (summary.dyfiRawComments != null) {
+      count(sts.test("DYFI comments should be present", true));
+      var fields = summary.dyfiRawComments.split(","); // AFFILIATION, ORGANIZATION, MODE, BAND, COMMENTS
+
+      if (fields.length >= 1) {
+        summary.dyfiAffiliation = fields[0].strip();
+        count(sts.testIfPresent("DYFI Comment field #1 (Affiliation) should be present", summary.dyfiAffiliation));
+        getCounter("DYFI Comment Affiliation").increment(summary.dyfiAffiliation);
+      } else {
+        count(sts.testIfPresent("DYFI Comment field #1 (Affiliation) should be present", null));
+      }
+
+      if (fields.length >= 2) {
+        summary.dyfiOrganization = fields[1].strip();
+        count(sts.testIfPresent("DYFI Comment field #2 (Organization) should be present", summary.dyfiOrganization));
+        getCounter("DYFI Comment Organization").increment(summary.dyfiOrganization);
+      } else {
+        count(sts.testIfPresent("DYFI Comment field #2 (Organization) should be present", null));
+      }
+
+      if (fields.length >= 3) {
+        summary.dyfiMode = fields[2].strip();
+        count(sts.testIfPresent("DYFI Comment field #3 (Mode) should be present", summary.dyfiMode));
+        getCounter("DYFI Comment Mode").increment(summary.dyfiMode);
+      } else {
+        count(sts.testIfPresent("DYFI Comment field #3 (Mode) should be present", null));
+      }
+
+      if (fields.length >= 4) {
+        summary.dyfiBand = fields[3].strip();
+        count(sts.testIfPresent("DYFI Comment field #4 (Bamd) should be present", summary.dyfiBand));
+        getCounter("DYFI Comment Band").increment(summary.dyfiBand);
+      } else {
+        count(sts.testIfPresent("DYFI Comment field #4 (Band) should be present", null));
+      }
+
+      if (fields.length >= 5) {
+        var newList = new ArrayList<String>();
+        for (var i = 4; i < fields.length; ++i) {
+          newList.add(fields[i]);
+        }
+        summary.dyfiRemainingComments = String.join(", ", newList);
+        count(sts.testIfPresent("DYFI Comment field #5 (Comments) should be present", summary.dyfiRemainingComments));
+        getCounter("DYFI Comment Affiliation").increment(summary.dyfiRemainingComments);
+      } else {
+        count(sts.testIfPresent("DYFI Comment field #5 (Comments) should be present", null));
+      }
+
+    } else {
+      count(sts.test("DYFI comments should be present", false));
+    }
+
     getCounter("DYFI Form Version").increment(m.formVersion);
 
     // #MM update summary
@@ -512,7 +576,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     content = content.replace("#BASIC_DATA#", basicData);
     content = content.replace("#ADDITIONAL_DATA#", additionalData);
 
-    WriteProcessor.writeString(content, Path.of(outputPathName, "survey-histograms.html"));
+    WriteProcessor.writeString(content, Path.of(publishedPathName, dateString + "-survey-histograms.html"));
   }
 
   private record QuizEntry(String[] values) implements IWritableTable {

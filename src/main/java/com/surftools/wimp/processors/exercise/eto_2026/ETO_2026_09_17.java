@@ -146,8 +146,6 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
     }
 
     // attachments
-    int nJpgs = 0;
-    int nCsvs = 0;
 
     var imageMap = imageService.getImageAttachments(m);
     count(sts.test("Number of JPG attachments should be #EV", "1", String.valueOf(imageMap.size())));
@@ -157,6 +155,7 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
           sts.test("JPG attachment size should be <= 50,000 bytes", (nBytes <= 1.05 * 50_000), String.valueOf(nBytes)));
     }
 
+    int nCsvs = 0;
     for (var attachmentName : m.attachments.keySet()) {
       var lcName = attachmentName.toLowerCase();
 
@@ -212,21 +211,15 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
     count(sts.test("Number of CSV attachments should be #EV", "1", String.valueOf(nCsvs)));
   }
 
-  public String toExcelCellName(int row, int col) {
-    // Convert column number to Excel letters
-    StringBuilder colLetters = new StringBuilder();
-
-    int c = col;
+  private String toExcelCellName(int row, int col) {
+    var sb = new StringBuilder(); // Convert column number to Excel letters
+    var c = col;
     while (c >= 0) {
-      int remainder = c % 26;
-      colLetters.insert(0, (char) ('A' + remainder));
+      sb.insert(0, (char) ('A' + c % 26));
       c = (c / 26) - 1;
     }
 
-    // Excel rows are 1-based
-    int excelRow = row + 1;
-
-    return colLetters.toString() + excelRow;
+    return sb.toString() + String.valueOf(row + 1); // Excel rows are 1-based
   }
 
 }
