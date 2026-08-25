@@ -219,8 +219,6 @@
 					<include>templates</include>
 					<include>**/*.csv</include>
 				</includes>
-				
-
 			</resource>
 		</resources>
 
