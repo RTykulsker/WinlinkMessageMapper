@@ -38,8 +38,8 @@ import com.surftools.wimp.core.MessageType;
 
 public class Hics251Message extends ExportedMessage {
 
-  public static final List<String> SYSTEM_NAMES = List.of("Power", "Lighting", "Water", "Sewer/Toilet", "Nurse Call",
-      "Medical Gas", "Communications/IT");
+  public static final List<String> SYSTEM_NAMES = List
+      .of("Power", "Lighting", "Water", "Sewer/Toilet", "Nurse Call", "Medical Gas", "Communications/IT");
 
   public enum StatusType {
     FULL("Fully functional", "Fully Functional"), //
@@ -160,12 +160,13 @@ public class Hics251Message extends ExportedMessage {
 
   public static String[] getStaticHeaders() {
 
-    var firstList = List.of("MessageId", "From", "To", "Subject", "Date", "Time", "Msg Location", //
-        "Incident Name", "Page #", "Page Total", //
-        "Op Period #", "Op From Date", "Op From Time", "Op To Date", "Op To Time", //
-        "Department Name", "Contact Number", //
-        "Street Addresss", "City", "State", "Zip" //
-    );
+    var firstList = List
+        .of("MessageId", "From", "To", "Subject", "Date", "Time", "Msg Location", //
+            "Incident Name", "Page #", "Page Total", //
+            "Op Period #", "Op From Date", "Op From Time", "Op To Date", "Op To Time", //
+            "Department Name", "Contact Number", //
+            "Street Address", "City", "State", "Zip" //
+        );
 
     var statusList = new ArrayList<String>();
     for (var systemName : SYSTEM_NAMES) {
@@ -173,10 +174,11 @@ public class Hics251Message extends ExportedMessage {
       statusList.add(systemName + " Comments");
     }
 
-    var lastList = List.of("Remarks", //
-        "Prepared By", "Form Date/Time", "Facility Name", //
-        "Radio Operator", "Form Latitude", "Form Longitude", //
-        "Form Version", "Express Version", "File Name");
+    var lastList = List
+        .of("Remarks", //
+            "Prepared By", "Form Date/Time", "Facility Name", //
+            "Radio Operator", "Form Latitude", "Form Longitude", //
+            "Form Version", "Express Version", "File Name");
 
     var resultList = new ArrayList<String>(firstList.size() + statusList.size() + lastList.size());
     resultList.addAll(firstList);
@@ -195,12 +197,13 @@ public class Hics251Message extends ExportedMessage {
     var date = sortDateTime == null ? "" : sortDateTime.toLocalDate().toString();
     var time = sortDateTime == null ? "" : sortDateTime.toLocalTime().toString();
 
-    var firstList = List.of(messageId, from, to, subject, date, time, msgLocation == null ? "" : msgLocation.toString(), //
-        incidentName, pageNumber, pageTotal, //
-        operationalPeriod, opFromDate, opFromTime, opToDate, opToTime, //
-        departmentName, contactNumber, //
-        streetAddress, city, state, zip //
-    );
+    var firstList = List
+        .of(messageId, from, to, subject, date, time, msgLocation == null ? "" : msgLocation.toString(), //
+            incidentName, pageNumber, pageTotal, //
+            operationalPeriod, opFromDate, opFromTime, opToDate, opToTime, //
+            departmentName, contactNumber, //
+            streetAddress, city, state, zip //
+        );
 
     var statusList = new ArrayList<String>();
     for (var statusEntry : statusEntries) {
@@ -208,10 +211,11 @@ public class Hics251Message extends ExportedMessage {
       statusList.add(statusEntry.comments);
     }
 
-    var lastList = List.of(remarks, //
-        preparedBy, formDateTime, facilityName, //
-        radioOperator, formLocation.getLatitude(), formLocation.getLongitude(), //
-        formVersion, expressVersion, fileName);
+    var lastList = List
+        .of(remarks, //
+            preparedBy, formDateTime, facilityName, //
+            radioOperator, formLocation.getLatitude(), formLocation.getLongitude(), //
+            formVersion, expressVersion, fileName);
 
     var resultList = new ArrayList<String>(firstList.size() + statusList.size() + lastList.size());
     resultList.addAll(firstList);

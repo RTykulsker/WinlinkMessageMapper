@@ -57,7 +57,7 @@ public class Hics251Parser extends AbstractBaseParser {
       var departmentName = getStringFromXml("department");
       var contactNumber = getStringFromXml("contactnumber");
 
-      var streetAddress = getStringFromXml("streetAddress");
+      var streetAddress = getStringFromXml("streetaddress");
       var city = getStringFromXml("city");
       var state = getStringFromXml("state");
       var zip = getStringFromXml("zipcode");
