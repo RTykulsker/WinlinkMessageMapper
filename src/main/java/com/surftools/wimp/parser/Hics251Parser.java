@@ -54,6 +54,14 @@ public class Hics251Parser extends AbstractBaseParser {
       var opToDate = getStringFromXml("dateto");
       var opToTime = getStringFromXml("timeto");
 
+      var departmentName = getStringFromXml("department");
+      var contactNumber = getStringFromXml("contactnumber");
+
+      var streetAddress = getStringFromXml("streetAddress");
+      var city = getStringFromXml("city");
+      var state = getStringFromXml("state");
+      var zip = getStringFromXml("zipcode");
+
       var statusEntries = new ArrayList<StatusEntry>();
 
       var keys = Hics251Message.SYSTEM_NAMES;
@@ -92,6 +100,8 @@ public class Hics251Parser extends AbstractBaseParser {
       var m = new Hics251Message(message, //
           incidentName, pageNumber, pageTotal, //
           operationalPeriod, opFromDate, opFromTime, opToDate, opToTime, //
+          departmentName, contactNumber, //
+          streetAddress, city, state, zip, //
           statusEntries, //
           preparedBy, formDateTime, facilityName, //
           remarks, //
