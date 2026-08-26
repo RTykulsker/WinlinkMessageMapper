@@ -56,7 +56,8 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
   private static Logger logger = LoggerFactory.getLogger(ETO_2026_09_17.class);
 
   private String[] referenceHeaders;
-  private String referenceHeadersString;
+  private String referenceHeadersMilesString;
+  private String referenceHeadersKilosString;
   private Map<String, String[]> referenceMap = new LinkedHashMap<>();
   private ImageService imageService;
 
@@ -71,7 +72,9 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
     try {
       var refList = ReadProcessor.readCsvFileIntoFieldsArray(refCsvPath, ',', false, 0);
       referenceHeaders = trim(refList.get(0));
-      referenceHeadersString = String.join(",", referenceHeaders);
+      referenceHeadersMilesString = String.join(",", referenceHeaders);
+      referenceHeadersKilosString = referenceHeadersMilesString.replace("(mi)", "(km)");
+
       for (var i = 1; i < refList.size(); ++i) {
         var values = refList.get(i);
         var messageId = values[0];
@@ -166,7 +169,13 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
 
         var headers = listOfValues.get(0);
         var headersString = String.join(",", headers);
-        count(sts.test("CSV attachment headers should match #EV", referenceHeadersString, headersString));
+
+        if (headersString.contains("(mi)")) {
+          count(sts
+              .test_2line("CSV attachment headers (mi) should match #EV", referenceHeadersMilesString, headersString));
+        } else {
+          sts.test_2line("CSV attachment headers (km) should match #EV", referenceHeadersKilosString, headersString);
+        }
 
         var localMap = new HashMap<String, String[]>();
         for (var i = 1; i < listOfValues.size(); ++i) {
@@ -186,7 +195,8 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
                   String.valueOf(values.length)));
 
           // range, bearing: ignore cuz all will be different
-          var ignoreColumns = Set.of(9, 10);
+          // date 4, col e, cuz too many ways to parse
+          var ignoreColumns = Set.of(4, 9, 10);
           for (var iCol = 0; iCol < refValues.length; ++iCol) {
             if (ignoreColumns.contains(iCol)) {
               continue;
