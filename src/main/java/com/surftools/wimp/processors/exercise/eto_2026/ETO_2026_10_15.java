@@ -30,12 +30,21 @@ package com.surftools.wimp.processors.exercise.eto_2026;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.surftools.utils.RenewableBag;
+import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IMessageManager;
 import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
@@ -45,6 +54,11 @@ import com.surftools.wimp.message.PlainMessage;
 import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.MultiMessageFeedbackProcessor;
+import com.surftools.wimp.service.map.IMapService;
+import com.surftools.wimp.service.map.MapContext;
+import com.surftools.wimp.service.map.MapEntry;
+import com.surftools.wimp.service.map.MapLayer;
+import com.surftools.wimp.service.map.MapService;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 /**
@@ -139,6 +153,46 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
 
       return list.toArray(new String[0]);
     };
+
+    public int getMessageCount() {
+      var messageCount = dyfiMessage != null ? 1 : 0;
+      messageCount += quizMessage != null ? 1 : 0;
+      messageCount += surveyMessage != null ? 1 : 0;
+
+      return messageCount;
+    }
+
+    public String getMessageSummary() {
+      if (getMessageCount() == 3) {
+        return "<b>" + from + "</b><hr>\n" + "All messages received!";
+      } else {
+        var messages = new ArrayList<ExportedMessage>();
+        messages.add(dyfiMessage);
+        messages.add(quizMessage);
+        messages.add(surveyMessage);
+
+        final var labels = List.of("dyfi", "quiz", "survey");
+
+        var rList = new ArrayList<String>();
+        var mList = new ArrayList<String>();
+        for (var i = 0; i < messages.size(); ++i) {
+          var message = messages.get(i);
+          var label = labels.get(i);
+          if (message == null) {
+            mList.add(label);
+          } else {
+            rList.add(label);
+          }
+        }
+
+        var sb = new StringBuilder();
+        sb.append("<b>" + from + "</b><hr>\n");
+        sb.append("received: " + String.join(",", rList) + "\n");
+        sb.append("missing:  " + String.join(",", mList));
+        var ret = sb.toString();
+        return ret;
+      }
+    }
   }
 
   @Override
@@ -480,6 +534,10 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     writeTable("surveys.csv", surveys);
 
     makeCharts();
+
+    @SuppressWarnings("unchecked")
+    var summaries = new ArrayList<Summary>((Collection<Summary>) (Object) summaryMap.values());
+    makeMaps(summaries);
   }
 
   private void makeCharts() {
@@ -617,5 +675,311 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
       return values;
     }
 
+  }
+
+  private void makeMaps(List<Summary> summaries) {
+    makeDyfiGroupCountMap(summaries, true);
+    makeSqueezedDyfiGroupCountMap(summaries, true);
+
+    final var green = IMapService.rgbMap.get("green");
+    final var yellow = IMapService.rgbMap.get("yellow");
+    final var red = IMapService.rgbMap.get("red");
+    final var black = IMapService.rgbMap.get("black");
+
+    Function<Summary, String> popup = (s -> s.getMessageSummary());
+
+    makeMakeViaLegends(summaries, "Message Counts", "messageCount", publishedPath, List
+        .of(//
+            new Legend("messages: 3", green, (s -> s.getMessageCount() == 3), popup), //
+            new Legend("messages: 2", yellow, (s -> s.getMessageCount() == 2), popup), //
+            new Legend("messages: 1", red, (s -> s.getMessageCount() == 1), popup) //
+        ));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>"
+        + ((s.dyfiMessage == null) ? "no DYFI message" : "DYFI Is Exercise: " + s.dyfiIsExercise));
+    makeMakeViaLegends(summaries, "DYFI Is Exercise Counts", "DYFI_IsExercise", publishedPath, List
+        .of(//
+            new Legend("Is Exercise", green, (s -> s.dyfiMessage != null && s.dyfiIsExercise), popup), //
+            new Legend("Real Event", red, (s -> s.dyfiMessage != null && !s.dyfiIsExercise), popup), //
+            new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>"
+        + ((s.dyfiMessage == null) ? "no DYFI message" : "DYFI Is Felt: " + s.dyfiIsFelt));
+    makeMakeViaLegends(summaries, "DYFI Is Felt Counts", "DYFI_IsFelt", publishedPath, List
+        .of(//
+            new Legend("Is Felt", green, (s -> s.dyfiMessage != null && s.dyfiIsFelt), popup), //
+            new Legend("Not Felt", red, (s -> s.dyfiMessage != null && !s.dyfiIsFelt), popup), //
+            new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
+
+    popup = (s -> "<b>" + s.from + "</b><hr>" + "DYFI Intensity: " + ((s.dyfiMessage == null) ? "no DYFI message"
+        : ((s.dyfiMessage.intensity == null) ? "unknown" : s.dyfiMessage.intensity)));
+    makeMakeViaLegends(summaries, "DYFI Intensity >= 5 Counts", "DYFI_IntensityIsEnough", publishedPath, List
+        .of(//
+            new Legend("Intensity >= 5", green,
+                (s -> s.dyfiMessage != null && s.dyfiMessage.intensity != null
+                    && Integer.valueOf(s.dyfiMessage.intensity) >= 5),
+                popup), //
+            new Legend("Intensity unknown", yellow, (s -> s.dyfiMessage != null && s.dyfiMessage.intensity == null),
+                popup), //
+            new Legend("Intensity < 5", red,
+                (s -> s.dyfiMessage != null && s.dyfiMessage.intensity != null
+                    && Integer.valueOf(s.dyfiMessage.intensity) < 5),
+                popup), //
+            new Legend("No DYFI Message", black, (s -> s.dyfiMessage == null), popup)));
+
+  }
+
+  private void makeDyfiGroupCountMap(List<Summary> summaries, boolean doPublish) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+    var desiredLayers = 10;
+    var minimumGroupSize = 2;
+
+    var groupCallListMap = new HashMap<String, List<String>>();
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiAffiliation == null) {
+        continue;
+      }
+      var group = summary.dyfiAffiliation;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
+      var list = groupCallListMap.getOrDefault(group, new ArrayList<String>());
+      var call = summary.from;
+      list.add(call);
+      groupCallListMap.put(group, list);
+    }
+
+    var groupSizeGroupListMap = new TreeMap<Integer, List<String>>();
+    var groups = new ArrayList<String>(groupCallListMap.keySet());
+    for (var group : groups) {
+      var callList = groupCallListMap.get(group);
+      var groupSize = callList.size();
+      if (groupSize < minimumGroupSize) {
+        continue;
+      }
+      var groupList = groupSizeGroupListMap.getOrDefault(groupSize, new ArrayList<String>());
+      groupList.add(group);
+      groupSizeGroupListMap.put(groupSize, groupList);
+    }
+
+    groups.clear();
+    for (var groupSize : groupSizeGroupListMap.descendingKeySet()) {
+      var groupList = groupSizeGroupListMap.get(groupSize);
+      groups.addAll(groupList);
+      if (groups.size() >= desiredLayers) {
+        break;
+      }
+    }
+
+    var rng = new Random(2025);
+    var colorBag = new RenewableBag<>(IMapService.etoColorMap.values(), rng);
+    var groupColorMap = new HashMap<String, String>();
+    for (var group : groups) {
+      var color = colorBag.next();
+      groupColorMap.put(group, color);
+    }
+
+    var mapEntries = new ArrayList<MapEntry>(summaries.size());
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiAffiliation == null) {
+        continue;
+      }
+      var group = summary.dyfiAffiliation;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
+      var callList = groupCallListMap.get(group);
+      if (callList == null || callList.size() < minimumGroupSize) {
+        continue;
+      }
+      var location = summary.location;
+      var color = groupColorMap.get(group);
+      var prefix = "<b>" + summary.from + "</b><hr>";
+      var content = prefix //
+          + "Group Name: " + group + "\n" //
+          + "Group Size: " + callList.size() + "\n";
+      var mapEntry = new MapEntry(summary.from, null, location, content, color);
+      mapEntries.add(mapEntry);
+    }
+
+    var layers = new ArrayList<MapLayer>(groups.size());
+    for (var group : groups) {
+      var callList = groupCallListMap.get(group);
+      if (callList == null) {
+        continue;
+      }
+      var count = callList.size();
+      var layerName = "group: " + group + ", size: " + count;
+      var color = groupColorMap.get(group);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    if (layers.size() == 0) {
+      logger.warn("### DYFI Group Count layers: size 0. No map produced");
+      return;
+    }
+
+    var legendTitle = "DYFI Group Counts (" + mapEntries.size() + " messages, min group size: " + minimumGroupSize
+        + ")";
+    var path = doPublish ? publishedPath : outputPath;
+    var context = new MapContext(path, //
+        dateString + "-map-DYFI GroupCounts", // file name
+        dateString + " Group Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+  }
+
+  /**
+   * any group smaller than minGroupSize gets lumped into Other
+   *
+   * @param summaries
+   */
+  private void makeSqueezedDyfiGroupCountMap(List<Summary> summaries, boolean doPublish) {
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+    var mapService = new MapService(cm, mm);
+    var desiredLayers = 10;
+    var minimumGroupSize = 2;
+
+    var groupCallListMap = new HashMap<String, List<String>>();
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiAffiliation == null) {
+        continue;
+      }
+      var group = summary.dyfiAffiliation;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
+      var list = groupCallListMap.getOrDefault(group, new ArrayList<String>());
+      var call = summary.from;
+      list.add(call);
+      groupCallListMap.put(group, list);
+    }
+
+    final var otherGroup = "other";
+    if (groupCallListMap.containsKey(otherGroup)) {
+      throw new RuntimeException("Need a new squeezed name");
+    }
+
+    var squeezedCallList = new ArrayList<String>();
+    var groupSizeGroupListMap = new TreeMap<Integer, List<String>>();
+    var groups = new ArrayList<String>(groupCallListMap.keySet());
+    for (var group : groups) {
+      var callList = groupCallListMap.get(group);
+      var groupSize = callList.size();
+      if (groupSize < minimumGroupSize) {
+        squeezedCallList.addAll(callList);
+        groupCallListMap.remove(group);
+        continue;
+      }
+      var groupList = groupSizeGroupListMap.getOrDefault(groupSize, new ArrayList<String>());
+      groupList.add(group);
+      groupSizeGroupListMap.put(groupSize, groupList);
+    }
+    groupCallListMap.put(otherGroup, squeezedCallList);
+    groupSizeGroupListMap.put(squeezedCallList.size(), squeezedCallList);
+
+    groups.clear();
+    for (var groupSize : groupSizeGroupListMap.descendingKeySet()) {
+      var groupList = groupSizeGroupListMap.get(groupSize);
+      groups.addAll(groupList);
+      if (groups.size() >= desiredLayers) {
+        break;
+      }
+    }
+
+    var rng = new Random(2025);
+    var colorBag = new RenewableBag<>(IMapService.etoColorMap.values(), rng);
+    var groupColorMap = new HashMap<String, String>();
+    for (var group : groupCallListMap.keySet()) {
+      var color = colorBag.next();
+      groupColorMap.put(group, color);
+    }
+
+    var mapEntries = new ArrayList<MapEntry>(summaries.size());
+    for (var summary : summaries) {
+      if (summary.dyfiMessage == null || summary.dyfiAffiliation == null) {
+        continue;
+      }
+      var group = summary.dyfiAffiliation;
+      group = group.trim().replaceAll("\n", "").replaceAll("\"", "");
+      var callList = groupCallListMap.get(group);
+      var groupForColor = group;
+      if (callList == null || callList.size() < minimumGroupSize) {
+        groupForColor = otherGroup;
+      }
+
+      var location = summary.location;
+      var color = groupColorMap.get(groupForColor);
+      var prefix = "<b>" + summary.from + "</b><hr>";
+
+      var groupSize = callList == null ? 1 : callList.size();
+      var content = prefix //
+          + "Group Name: " + group + "\n" //
+          + "Group Size: " + groupSize + "\n";
+      var mapEntry = new MapEntry(summary.from, null, location, content, color);
+      mapEntries.add(mapEntry);
+    }
+
+    var xgroups = new ArrayList<String>(
+        groupCallListMap.keySet().stream().filter(g -> groupCallListMap.get(g) != null).toList());
+    Collections.sort(xgroups, (g1, g2) -> groupCallListMap.get(g2).size() - groupCallListMap.get(g1).size());
+    var layers = new ArrayList<MapLayer>(groups.size());
+    for (var group : xgroups) {
+      var callList = groupCallListMap.get(group);
+      var count = callList.size();
+      var layerName = "group: " + group + ", size: " + count;
+      var color = groupColorMap.get(group);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var legendTitle = "DYFI Group Counts (" + mapEntries.size() + " messages, min group size: " + minimumGroupSize
+        + ")";
+
+    var path = doPublish ? publishedPath : outputPath;
+    var context = new MapContext(path, //
+        dateString + "-map-DYFI Squeezed GroupCounts", // file name
+        dateString + " Group Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+  }
+
+  record Legend(String label, String color, Predicate<Summary> predicate, Function<Summary, String> popupGenerator) {
+  };
+
+  private void makeMakeViaLegends(List<Summary> summaries, String legendTitle, String fileName, Path path,
+      List<Legend> legends) {
+    var colorCountMap = new HashMap<String, Integer>();
+
+    var mapEntries = new ArrayList<MapEntry>(summaries.size());
+    for (var s : summaries) {
+      var found = false;
+      for (var legend : legends) {
+        if (legend.predicate.test(s)) {
+          var count = colorCountMap.getOrDefault(legend.color, Integer.valueOf(0));
+          ++count;
+          colorCountMap.put(legend.color, count);
+          var mapEntry = new MapEntry(s.from, s.to, s.location, legend.popupGenerator.apply(s), legend.color);
+          mapEntries.add(mapEntry);
+          found = true;
+          break;
+        } // endif predicate matches
+      } // end loop over legend entries
+      if (!found) {
+        logger.debug("not found");
+      }
+    } // end loop of mapEntries
+
+    var layers = new ArrayList<MapLayer>();
+    for (var legend : legends) {
+      var color = legend.color;
+      var label = legend.label;
+      var count = colorCountMap.getOrDefault(color, Integer.valueOf(0));
+      layers.add(new MapLayer(label + ", count: " + count, color));
+    }
+
+    legendTitle = "ShakeOut 2026 " + legendTitle + " (" + summaries.size() + " total)";
+    var context = new MapContext(path, //
+        dateString + "-map-" + fileName, // file name
+        dateString + legendTitle, // map title
+        null, legendTitle, layers, mapEntries);
+    var mapService = new MapService(cm, mm);
+    mapService.makeMap(context);
   }
 }

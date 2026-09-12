@@ -113,9 +113,8 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
   protected void specificProcessing(ExportedMessage message) {
     var m = (Ics213Message) message;
     // the usual stuff
-    count(sts
-        .testStartsWith("Message Subject should start with #EV", "ICS-213: ETO Winlink Thursday Participant",
-            m.subject));
+    count(
+        sts.testStartsWith("Message Subject should start with #EV", "ICS-213: ETO Exercise Sept 17, 2026", m.subject));
     count(sts.test("Message Location should be valid", m.msgLocation.isValid(), m.msgLocation.toString()));
     count(sts.test("Form Location should be valid", m.formLocation.isValid(), m.formLocation.toString()));
     count(sts.test("Organization Name should be #EV", "EmComm Training Organization", m.organization));
