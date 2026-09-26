@@ -120,13 +120,25 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
     count(sts.test("Organization Name should be #EV", "EmComm Training Organization", m.organization));
     count(sts.test("Is Exercise should be checked", m.isExercise));
     count(sts.test("Incident Name should be #EV", "ETO Blood Availability", m.incidentName));
-    count(sts.test("Form To should be #EV", m.to, m.formTo));
-    count(sts.test("Form From should be #EV", m.from + " / ETO Winlink Thursday Participant", m.formFrom));
+    getCounter("Incident Name").increment(m.incidentName);
+
+    var isExpectedDestination = expectedDestinations.contains(m.formTo);
+    count(sts.test("Form To should be a Clearinghouse", isExpectedDestination, m.formTo));
+    getCounter("Form To").increment(m.formTo);
+    // count(sts.test("Form To should be #EV", m.to, m.formTo));
+
+    count(sts.testEndsWith("Form From should end with #EV", " / ETO Winlink Thursday Participant", m.formFrom));
+    // count(sts.test("Form From should be #EV", m.from + " / ETO Winlink Thursday Participant", m.formFrom));
+
     count(sts.test("Form Subject should be #EV", "ETO Exercise Sept 17, 2026", m.formSubject));
     count(sts.testIfPresent("Form Date should be present", m.formDate));
     count(sts.testIfPresent("Form Time should be present", m.formTime));
     count(sts.testIfPresent("Message body should be present", m.formMessage));
-    count(sts.testEndsWith("Approved by should end with #EV", " / " + m.from, m.approvedBy));
+
+    var approvedByEndsWithCall = m.approvedBy.toLowerCase().endsWith(m.from.toLowerCase());
+    count(sts.test("Approved by should end with sender's call sign", approvedByEndsWithCall));
+    // count(sts.testEndsWith("Approved by should end with #EV", " / " + m.from, m.approvedBy));
+
     count(sts.test("Position/Title should be #EV", "ETO participant", m.position));
 
     // message body
@@ -136,19 +148,20 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
 
       if (lines.length >= 1) {
         count(sts.test("Form Message body line 1 should be #EV", "3", lines[0]));
+        getCounter("Message Body line 1").increment(lines[0]);
       } else {
         count(sts.test("Form Message body line 1 should be 3", false));
       }
 
       if (lines.length >= 2) {
         count(sts.test("Form Message body line 2 should be #EV", "225", lines[1]));
+        getCounter("Message Body line 2").increment(lines[1]);
       } else {
         count(sts.test("Form Message body line 2 should be 225", false));
       }
     }
 
     // attachments
-
     var imageMap = imageService.getImageAttachments(m);
     count(sts.test("Number of JPG attachments should be #EV", "1", String.valueOf(imageMap.size())));
     for (var attachmentName : imageMap.keySet()) {
@@ -156,6 +169,7 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
       count(
           sts.test("JPG attachment size should be <= 50,000 bytes", (nBytes <= 1.05 * 50_000), String.valueOf(nBytes)));
     }
+    getCounter("Number of Image attachments").increment(imageMap.size());
 
     int nCsvs = 0;
     for (var attachmentName : m.attachments.keySet()) {
@@ -189,33 +203,37 @@ public class ETO_2026_09_17 extends SingleMessageFeedbackProcessor implements IE
           var refValues = trim(referenceMap.get(key));
           var values = trim(localMap.get(key));
 
-          count(sts
-              .test("CSV row " + csvRowNumber + " should have #EV columns", String.valueOf(refValues.length),
-                  String.valueOf(values.length)));
+          if (values == null) {
+            sts.test("CSV row " + csvRowNumber + " should have #EV columns", String.valueOf(refValues.length), "0");
+          } else {
+            sts
+                .test("CSV row " + csvRowNumber + " should have #EV columns", String.valueOf(refValues.length),
+                    String.valueOf(values.length));
 
-          // range, bearing: ignore cuz all will be different
-          // date 4, col e, cuz too many ways to parse
-          var ignoreColumns = Set.of(4, 9, 10);
-          for (var iCol = 0; iCol < refValues.length; ++iCol) {
-            if (ignoreColumns.contains(iCol)) {
-              continue;
-            }
+            // range, bearing: ignore cuz all will be different
+            // date 4, col e, cuz too many ways to parse
+            var ignoreColumns = Set.of(4, 9, 10);
+            for (var iCol = 0; iCol < refValues.length; ++iCol) {
+              if (ignoreColumns.contains(iCol)) {
+                continue;
+              }
 
-            // latitude, longitude
-            if (iCol == 5 || iCol == 6) {
-              count(sts
-                  .testDouble("CSV cell " + toExcelCellName(csvRowNumber, iCol) + " should be #EV", refValues[iCol],
-                      values[iCol]));
-            } else {
-              count(sts
-                  .test("CSV cell " + toExcelCellName(csvRowNumber, iCol) + " should be #EV", refValues[iCol],
-                      values[iCol]));
-            }
-          }
-
+              // latitude, longitude
+              if (iCol == 5 || iCol == 6) {
+                sts
+                    .testDouble("CSV cell " + toExcelCellName(csvRowNumber, iCol) + " should be #EV", refValues[iCol],
+                        values[iCol]);
+              } else {
+                sts
+                    .test("CSV cell " + toExcelCellName(csvRowNumber, iCol) + " should be #EV", refValues[iCol],
+                        values[iCol]);
+              }
+            } // end loop over columns
+          } // end if values != null
         } // end loop over keys in referenceMap
       } // end if CSV attachment
     } // end loop over attachments
+    getCounter("Number of CSV attachments").increment(nCsvs);
 
     count(sts.test("Number of CSV attachments should be #EV", "1", String.valueOf(nCsvs)));
   }

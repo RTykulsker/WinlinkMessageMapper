@@ -143,7 +143,7 @@ public class ReadProcessor extends BaseReadProcessor {
       logger.error("Exception processing " + inputString + ", row " + rowCount + ", " + e.getLocalizedMessage());
     }
 
-    logger.info("returning: " + list.size() + " records from " + inputString);
+    logger.debug("returning: " + list.size() + " records from " + inputString);
     return list;
   }
 
