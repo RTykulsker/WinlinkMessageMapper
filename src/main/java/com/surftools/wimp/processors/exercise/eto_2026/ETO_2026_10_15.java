@@ -33,9 +33,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -228,6 +230,11 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     summaryMap.put(sender, iSummary);
   }
 
+  final Set<String> clearinghouseSet = new HashSet<String>(Arrays
+      .asList(
+          "ETO-01@winlink.org,ETO-02@winlink.org,ETO-03@winlink.org,ETO-04@winlink.org,ETO-05@winlink.org,ETO-06@winlink.org,ETO-07@winlink.org,ETO-08@winlink.org,ETO-09@winlink.org,ETO-10@winlink.org,ETO-CAN@winlink.org,ETO-DX@winlink.org"
+              .split(",")));
+
   @Override
   protected void specificProcessing(ExportedMessage message) {
     var summary = (Summary) iSummary;
@@ -240,6 +247,23 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     }
 
     summaryMap.put(sender, iSummary);
+
+    var addressSet = new HashSet<String>(Arrays.asList((message.toList + "," + message.ccList).split(",")));
+    var intersection = new HashSet<String>(clearinghouseSet);
+    intersection.retainAll(addressSet);
+    var hasClearinghouseAddress = intersection.size() > 0;
+    var hasDrill = addressSet.contains("ETO-DRILL@winlink.org");
+    var hasClearinghouseOnly = hasClearinghouseAddress && !hasDrill;
+    var hasDrillOnly = hasDrill && !hasClearinghouseAddress;
+    var etoAddressTypeName = "Both clearinghouse and ETO-DRILL";
+    if (hasClearinghouseOnly) {
+      etoAddressTypeName = "clearinghouse only";
+    } else if (hasDrillOnly) {
+      etoAddressTypeName = "ETO-DRILL only";
+    } else {
+      ;
+    }
+    getCounter("ETO Address type").increment(etoAddressTypeName);
   }
 
   private void handle_PlainMessage(Summary summary, PlainMessage m) {
@@ -325,6 +349,8 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     summary.quizAnswers = String.join(",", answers);
   }
 
+  static boolean countersInitialized = false;
+
   private void handle_survey(Summary summary, PlainMessage m, String attachmentName, String value) {
     sts.setExplanationPrefix("(survey) ");
     var fields = getFields(value, PlainType.Survey);
@@ -336,11 +362,22 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     summary.surveyMessage = m;
 
     final var basicList = List
-        .of("water-food", "cell-charger", "weather-radio", "flashlight", "first-aid", "whistle", "dust-mask",
-            "sanitation", "wrench", "can-opener", "maps");
+        .of("water and food", "cell charger/battery", "weather radio", "flashlight", "first aid", "whistle",
+            "dust mask", "basic sanitation", "wrench", "can opener", "maps");
     final var additionalList = List
-        .of("medications", "infant", "pet", "documents", "cash", "reference", "sleeping-bag", "clothing", "fire-ext",
-            "matches", "feminine", "mess-kit", "paper-pencil", "books-games");
+        .of("medications", "infant", "pet supplies", "documents", "cash", "reference", "sleeping bag", "clothing",
+            "fire extinquisher", "matches", "hygiene/feminine", "mess kit", "paper and pencil", "books and games");
+
+    // initialize all names with zero count, so that we display in right ordr
+    if (!countersInitialized) {
+      for (var name : basicList.reversed()) {
+        getCounter("Survey Basic Items").increment(name, 0);
+      }
+      for (var name : additionalList.reversed()) {
+        getCounter("Survey Additional Items").increment(name, 0);
+      }
+      countersInitialized = true;
+    }
 
     if (fields != null) {
       surveys.add(new SurveyEntry(fields));
@@ -431,8 +468,9 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     final var responseMap = Map
         .of("", "Not specified", "no_action", "Took no action", "doorway", "Moved to doorway", "duck",
             "Dropped and covered", "ran_outside", "Ran Outside", "other", "Other");
-    count(sts.test("DYFI Response should be #EV", responseMap.get("duck"), responseMap.get(m.response)));
-    getCounter("DYFI Repsonse").increment(responseMap.get(m.response));
+    var response = m.response == null ? "" : m.response;
+    count(sts.test("DYFI Response should be #EV", responseMap.get("duck"), responseMap.get(response)));
+    getCounter("DYFI Repsonse").increment(responseMap.get(response));
 
     try {
       var intensity = Integer.parseInt(m.intensity);
@@ -454,6 +492,9 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
         summary.dyfiAffiliation = fields[0].strip();
         count(sts.testIfPresent("DYFI Comment field #1 (Affiliation) should be present", summary.dyfiAffiliation));
         getCounter("DYFI Comment Affiliation").increment(summary.dyfiAffiliation);
+
+        var affiliationFirstWord = summary.dyfiAffiliation.split(" ")[0].strip();
+        getCounter("DYFI Comment Affiliation 1st Word").increment(affiliationFirstWord);
       } else {
         count(sts.testIfPresent("DYFI Comment field #1 (Affiliation) should be present", null));
       }
@@ -570,9 +611,9 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
 
         <h1>Shakeout 2026 Survey Results</h1>
 
-        <div id="basicPlot" style="width:800px;height:450px;"></div>
+        <div id="basicPlot" style="width:1200px;height:450px;"></div>
         <hr>
-        <div id="additionalPlot" style="width:800px;height:450px;margin-top:40px;"></div>
+        <div id="additionalPlot" style="width:1200px;height:450px;margin-top:40px;"></div>
 
         <script>
         const basicData = [

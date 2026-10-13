@@ -310,15 +310,17 @@ public abstract class MultiMessageFeedbackProcessor extends AbstractBaseFeedback
 
     }
 
-    var msgLocation = message.msgLocation;
-    if (msgLocation == null || msgLocation.equals(LatLongPair.ZERO_ZERO)) {
-      sts.test("Message LAT/LON should be provided", false, "missing");
-    } else if (!msgLocation.isValid()) {
-      sts.test("Message LAT/LON should be provided", false, "invalid " + msgLocation.toString());
-    } else {
-      sts.test("Message LAT/LON should be provided", true, null);
+    final var ignoreSet = Set.of(MessageType.DYFI);
+    if (!ignoreSet.contains(message.getMessageType())) {
+      var msgLocation = message.msgLocation;
+      if (msgLocation == null || msgLocation.equals(LatLongPair.ZERO_ZERO)) {
+        sts.test("Message LAT/LON should be provided", false, "missing");
+      } else if (!msgLocation.isValid()) {
+        sts.test("Message LAT/LON should be provided", false, "invalid " + msgLocation.toString());
+      } else {
+        sts.test("Message LAT/LON should be provided", true, null);
+      }
     }
-
   }
 
   @Override

@@ -345,13 +345,13 @@ public class LeafletMapEngine extends MapService {
               attribution: "© OpenTopoMap (CC-BY-SA)"
           });
 
-          const cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",{
+          const cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=cb1_4bgq_1_5f98569ae840389ead3a3e16",{
             maxZoom: 20,
             attribution: "© CARTO © OpenStreetMap contributors"
           });
 
 
-          const cartoDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",{
+          const cartoDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?key=cb1_4bgq_1_5f98569ae840389ead3a3e16",{
             maxZoom: 20,
             attribution: "© CARTO © OpenStreetMap contributors"
           });
@@ -737,13 +737,13 @@ public class LeafletMapEngine extends MapService {
               attribution: "© OpenTopoMap (CC-BY-SA)"
           });
 
-          const cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",{
+          const cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=cb1_4bgq_1_5f98569ae840389ead3a3e16",{
             maxZoom: 20,
             attribution: "© CARTO © OpenStreetMap contributors"
           });
 
 
-          const cartoDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",{
+          const cartoDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?key=cb1_4bgq_1_5f98569ae840389ead3a3e16",{
             maxZoom: 20,
             attribution: "© CARTO © OpenStreetMap contributors"
           });
