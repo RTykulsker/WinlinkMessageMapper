@@ -517,7 +517,7 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
 
       if (fields.length >= 4) {
         summary.dyfiBand = fields[3].strip();
-        count(sts.testIfPresent("DYFI Comment field #4 (Bamd) should be present", summary.dyfiBand));
+        count(sts.testIfPresent("DYFI Comment field #4 (Band) should be present", summary.dyfiBand));
         getCounter("DYFI Comment Band").increment(summary.dyfiBand);
       } else {
         count(sts.testIfPresent("DYFI Comment field #4 (Band) should be present", null));

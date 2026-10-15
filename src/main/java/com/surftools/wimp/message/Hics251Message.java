@@ -39,13 +39,35 @@ import com.surftools.wimp.core.MessageType;
 public class Hics251Message extends ExportedMessage {
 
   public static final List<String> SYSTEM_NAMES = List
-      .of("Power", "Lighting", "Water", "Sewer/Toilet", "Nurse Call", "Medical Gas", "Communications/IT");
+      .of(SystemType.POWER.toString(), SystemType.LIGHT.toString(), SystemType.WATER.label.toString(),
+          SystemType.SEWER.toString(), SystemType.NURSE.toString(), SystemType.GAS.toString(),
+          SystemType.COMMS.toString());
+
+  public enum SystemType {
+    POWER("Power"), //
+    LIGHT("Lighting"), //
+    WATER("Water"), //
+    SEWER("Sewer/Toilet"), //
+    NURSE("Nurse Call"), //
+    GAS("Medical Gas"), //
+    COMMS("Communications/IT");
+
+    private String label;
+
+    SystemType(String label) {
+      this.label = label;
+    }
+
+    @Override
+    public String toString() {
+      return label;
+    }
+  }
 
   public enum StatusType {
     FULL("Fully functional", "Fully Functional"), //
     PART("Partially functional", "Partially Functional"), //
-    NON("Nonfunctional", "Non Functional"), //
-    NA("N/A", "N/A");
+    NON("Nonfunctional", "Non Functional"), NA("N/A", "N/A");
 
     private String input; // what we parse from exported messages
     private String output; // what we present to output
