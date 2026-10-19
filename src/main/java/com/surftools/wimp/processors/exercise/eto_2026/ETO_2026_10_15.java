@@ -459,6 +459,18 @@ public class ETO_2026_10_15 extends MultiMessageFeedbackProcessor {
     sts.setExplanationPrefix("(dyfi) ");
 
     var hasUSGSAddress = (m.toList + "," + m.ccList).toUpperCase().contains(REQUIRED_USGS_ADDRESS.toUpperCase());
+    count(sts.test("DYFI Exercise ID should be #EV", "SHAKEOUT", m.exerciseId));
+    getCounter("DYFI Exercise ID").increment(m.exerciseId);
+
+    if (m.formDateTime != null) {
+      getCounter("DYFI Event Date").increment(m.formDateTime.toLocalDate());
+      getCounter("DYFI Event Time").increment(m.formDateTime.toLocalTime());
+      count(sts.test("DYFI Event Date should be #EV", "2026-10-15", m.formDateTime.toLocalDate().toString()));
+      count(sts.test("DYFI Event Time should be #EV", "10:15", m.formDateTime.toLocalTime().toString()));
+    } else {
+      count(sts.test("DYFI Event Date should be #EV", "10/15/2026", "(empty)"));
+      count(sts.test("DYFI Event Date Time be #EV", "10:15", "(empty)"));
+    }
     count(sts.test("DYFI To and/or CC addresses must contain " + REQUIRED_USGS_ADDRESS, hasUSGSAddress));
     count(sts.test("DYFI Event Type must be: EXERCISE", !m.isRealEvent));
     count(sts

@@ -125,7 +125,7 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
     count(sts.testIfPresent("Form Date/Time should be present", m.formDateTime));
     count(sts.test("Facility Name should be #EV", "Midwest Medical Center", m.facilityName));
 
-    count(sts.test("Radio Operator should be present", "Rob Lowe", m.radioOperator));
+    count(sts.testIfPresent("Radio Operator should be present", m.radioOperator));
     count(sts.test("Form Latitude should be #EV", "42.449085", m.formLocation.getLatitude()));
     count(sts.test("Form Longitude should be #EV", " -90.457806", m.formLocation.getLongitude()));
 
