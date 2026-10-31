@@ -27,18 +27,22 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2026;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.io.Files;
 import com.surftools.wimp.configuration.Key;
 import com.surftools.wimp.core.IExportedMessageEditor;
 import com.surftools.wimp.core.IMessageManager;
@@ -68,8 +72,8 @@ import com.surftools.wimp.utils.config.IConfigurationManager;
 public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IExportedMessageEditor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2026_12_17.class);
 
-  record RecipeRecord(String contributor, String recipeName, String reason, String ingredients, String instructions)
-      implements IWritableTable {
+  record RecipeRecord(String contributor, String recipeName, String reason, String ingredients, String instructions,
+      String callsign, String submitDate) implements IWritableTable {
 
     @Override
     public int compareTo(IWritableTable other) {
@@ -79,7 +83,8 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
 
     @Override
     public String[] getHeaders() {
-      return new String[] { "Contributor", "RecipeName", "Reason", "Ingredients", "Instructions" };
+      return new String[] { "Contributor", "RecipeName", "Reason", "Ingredients", "Instructions", "Callsign",
+          "Submit Date" };
     }
 
     @Override
@@ -88,7 +93,15 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
     }
 
     public static RecipeRecord from(String[] values) {
-      return new RecipeRecord(values[0], values[1], values[2], values[3], values[4]);
+      if (values.length == 7) {
+        return new RecipeRecord(values[0], values[1], values[2], values[3], values[4], values[5], values[6]);
+      } else {
+        return new RecipeRecord(values[0], values[1], values[2], values[3], values[4], "n/a", "n/a");
+      }
+    }
+
+    public static RecipeRecord from(String[] values, String callsign, String exerciseDateString) {
+      return new RecipeRecord(values[0], values[1], values[2], values[3], values[4], callsign, exerciseDateString);
     }
   }
 
@@ -114,7 +127,15 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
     var extraOutboundMessageText = getNextExerciseInstructions();
     outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
 
+    // load historic/reference recipes
     recipeMap = new HashMap<>();
+    var referenceRecipeMapPath = Path.of(inputPathName, "reference-recipes.csv");
+    var referenceRecipeList = ReadProcessor.readCsvFileIntoFieldsArray(referenceRecipeMapPath, ',', false, 1);
+    for (var recipeFields : referenceRecipeList) {
+      var recipe = RecipeRecord.from(recipeFields);
+      recipeMap.put(recipe.contributor, recipe);
+    }
+
     reportedExerciseCountMap = new HashMap<>();
     actualExerciseCountMap = new HashMap<>();
 
@@ -150,7 +171,10 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
     count(sts.test("Incident Name should be #EV", "ETO Recipe Cookbook", m.incidentName));
     getCounter("Incident Name").increment(m.incidentName);
 
-    var isExpectedDestination = expectedDestinations.contains(m.formTo);
+    // TODO fixme: ETO-10;ETO-BK comes in as one word, must be split, etc. just test for presence?
+    var formToSet = new HashSet<String>(Arrays.asList(m.formTo.split(";")));
+    formToSet.retainAll(expectedDestinations);
+    var isExpectedDestination = formToSet.size() > 0;
     count(sts.test("Form To should be a Clearinghouse", isExpectedDestination, m.formTo));
     getCounter("Form To").increment(m.formTo);
     // count(sts.test("Form To should be #EV", m.to, m.formTo));
@@ -175,9 +199,9 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
       count(sts.test("Form Message body should contain exactly #EV lines", "1", String.valueOf(lines.length)));
 
       var fields = lines[0].split(" ");
-      count(sts.test("Form Message body line 1 should contain #EV fields", "2", String.valueOf(fields.length)));
+      count(sts.test("Form Message body line 1 should contain #EV fields", "3", String.valueOf(fields.length)));
 
-      if (fields.length >= 2) {
+      if (fields.length >= 1) {
         var countString = fields[0];
 
         try {
@@ -190,14 +214,26 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
           var actualCount = (historyEntry == null) ? 1 : historyEntry.getCount() + 1;
           getCounter("2026 Exercise Counts (actual)").increment(actualCount);
           actualExerciseCountMap.put(m.from, actualCount);
-          getCounter("2026 Exercise Counts (actual)").increment(actualCount);
 
-          var exercisesString = fields[1];
-          count(sts
-              .testStartsWith("Form Message body line 1 field 2 should start with #EV", "exercise", exercisesString));
         } catch (Exception e) {
           count(sts.test("Form Message body line 1 field 1 should be a number", false, countString));
         }
+      } else {
+        count(sts.test("Form Message body line 1 field 1 should be a number", false));
+      }
+
+      if (fields.length >= 2) {
+        var etoString = fields[1];
+        count(sts.test("Form Message body line 1 field 2 should be #EV", "ETO", etoString));
+      } else {
+        count(sts.test("Form Message body line 1 field 2 should be ETO", false));
+      }
+
+      if (fields.length >= 3) {
+        var exerciseString = fields[2];
+        count(sts.testStartsWith("Form Message body line 1 field 3 should start with #EV", "exercise", exerciseString));
+      } else {
+        count(sts.test("Form Message body line 1 field 3 should start with exercise", false));
 
       }
     }
@@ -205,22 +241,26 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
     // attachments
     var nCsvs = 0;
     var maxDateTime = LocalDateTime.MIN;
-    var recipeFileName = (String) null;
+    String recipeFileName = null;
     final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
     for (var attachmentName : m.attachments.keySet()) {
       var lcName = attachmentName.toLowerCase();
       try {
-        if (lcName.startsWith("holiday-recipe-") && lcName.endsWith("csv") && lcName.length() >= 19) {
+        if (lcName.contains("holiday-recipe-") && lcName.endsWith("csv") && lcName.length() >= 19) {
           ++nCsvs;
           var index = lcName.indexOf(".csv");
           if (index >= 0) {
             var dtString = lcName.substring(0, index);
             var sb = new StringBuilder(dtString).reverse().toString().substring(0, 19);
             dtString = new StringBuilder(sb).reverse().toString();
-
-            var dt = LocalDateTime.parse(dtString, dtf);
-            if (dt.isAfter(maxDateTime)) {
-              maxDateTime = dt;
+            LocalDateTime dt = null;
+            try {
+              dt = LocalDateTime.parse(dtString, dtf);
+              if (dt.isAfter(maxDateTime) || recipeFileName == null) {
+                maxDateTime = dt;
+                recipeFileName = attachmentName;
+              }
+            } catch (Exception e) {
               recipeFileName = attachmentName;
             }
           }
@@ -236,7 +276,7 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
       getCounter("Number of holiday recipe attachments").increment(nCsvs);
       var value = new String(m.attachments.get(recipeFileName));
       var recipeValues = ReadProcessor.readCsvStringIntoFieldsArray(value, ',', false, 1);
-      var recipeRecord = RecipeRecord.from(recipeValues.get(0));
+      var recipeRecord = RecipeRecord.from(recipeValues.get(0), m.from, dateString);
       recipeMap.put(m.from, recipeRecord);
     } else {
       count(sts.test("valid recipe attachments found", false));
@@ -256,14 +296,24 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
     WriteProcessor.writeTable(recipeList, recipePath);
 
     makeMaps();
+
+    var browserName = "eto-holiday-recipe-browser.html";
+    var fromFile = Path.of(inputPathName, browserName).toFile();
+    var toFile = Path.of(publishedPathName, browserName).toFile();
+    try {
+
+      Files.copy(fromFile, toFile);
+    } catch (IOException e) {
+      logger.error("### Error copying browser file: " + toFile.getAbsolutePath() + ", " + e.getLocalizedMessage());
+    }
   }
 
   public void makeMaps() {
-    // TODO maps: actual count, reported count, difference buckets
     makeNutMap();
     makeChocolateMap();
     makeParticipationCountMap(true);
     makeParticipationCountMap(false);
+    makeCountDifferenceMap();
   }
 
   private void makeNutMap() {
@@ -495,4 +545,92 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
 
   }
 
+  private void makeCountDifferenceMap() {
+    // var participationMap = isActual ? actualExerciseCountMap : reportedExerciseCountMap;
+
+    var mapService = new MapService(cm, mm);
+
+    final var deltaCountMap = new HashMap<Integer, Integer>();
+    final var legendNames = Map
+        .of(0, "Actual - Reported >= 10", //
+            1, "Actual - Reported >= 5", //
+            2, "Actual - Reported >= 1", //
+            3, "Actual - Reported == 0", //
+            4, "Actual - Reported <= -1", //
+            5, "Actual - Reported <= -5", //
+            6, "Actual - Reported <= -10");
+
+    final var legendColors = Map
+        .of(0, MapService.rgbToHex(0, 0, 255), // blue
+            1, MapService.rgbToHex(0, 128, 128), //
+            2, MapService.rgbToHex(0, 255, 128), //
+            3, MapService.rgbToHex(0, 255, 0), // green
+            4, MapService.rgbToHex(85, 170, 0), //
+            5, MapService.rgbToHex(170, 85, 0), //
+            6, MapService.rgbToHex(255, 0, 0)); // red
+
+    final var mapEntries = new ArrayList<MapEntry>(recipeMap.size());
+    for (var messageId : mIdFeedbackMap.keySet()) {
+      var feedbackMessage = (FeedbackMessage) mIdFeedbackMap.get(messageId);
+      var m = feedbackMessage.message();
+
+      var recipe = recipeMap.get(m.from);
+      if (recipe == null) {
+        continue;
+      }
+
+      var actualCount = actualExerciseCountMap.get(m.from);
+      var reportedCount = reportedExerciseCountMap.get(m.from);
+      var deltaCount = actualCount - reportedCount;
+      var deltaIndex = -1;
+      if (deltaCount >= 10) {
+        deltaIndex = 0;
+      } else if (deltaCount >= 5) {
+        deltaIndex = 1;
+      } else if (deltaCount > 0) {
+        deltaIndex = 2;
+      } else if (deltaCount == 0) {
+        deltaIndex = 3;
+      } else if (deltaCount <= -10) {
+        deltaIndex = 6;
+      } else if (deltaCount <= -5) {
+        deltaIndex = 5;
+      } else if (deltaCount < 0) {
+        deltaIndex = 4;
+      }
+
+      var mapCount = deltaCountMap.getOrDefault(deltaIndex, Integer.valueOf(0));
+      ++mapCount;
+      deltaCountMap.put(deltaIndex, mapCount);
+
+      var location = m.mapLocation;
+      var color = legendColors.get(deltaIndex);
+      var prefix = "<b>" + m.from + "</b><hr>";
+      var content = prefix //
+          + "actual exercise count: " + actualCount + "\n" //
+          + "reported exercise count: " + reportedCount + "\n" //
+          + "difference: " + deltaCount + "\n";
+      var mapEntry = new MapEntry(m.from, null, location, content, color);
+      mapEntries.add(mapEntry);
+    }
+
+    var layers = new ArrayList<MapLayer>();
+    for (var deltaIndex = 0; deltaIndex <= 6; ++deltaIndex) {
+      var count = deltaCountMap.getOrDefault(deltaIndex, Integer.valueOf(0));
+      var layerName = legendNames.get(deltaIndex) + ", count: " + count;
+      var color = legendColors.get(deltaIndex);
+      var layer = new MapLayer(layerName, color);
+      layers.add(layer);
+    }
+
+    var dateString = cm.getAsString(Key.EXERCISE_DATE);
+
+    var legendTitle = "Actual vs Reported 2026 Participation Counts (" + mapEntries.size() + " messages)";
+    var context = new MapContext(outputPath, //
+        dateString + "-map-actual-vs-reported-Counts", // file name
+        dateString + "Actual vs Reported Counts", // map title
+        null, legendTitle, layers, mapEntries);
+    mapService.makeMap(context);
+
+  }
 }

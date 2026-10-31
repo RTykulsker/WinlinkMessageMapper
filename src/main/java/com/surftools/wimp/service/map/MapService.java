@@ -106,12 +106,16 @@ public class MapService implements IMapService {
     return new int[] { r, g, b };
   }
 
-  protected String rgbToHex(int[] rgb) {
+  public static String rgbToHex(int[] rgb) {
     if (rgb == null || rgb.length != 3) {
       throw new IllegalArgumentException("rgb must have exactly 3 values");
     }
 
     return String.format("#%02x%02x%02x", rgb[0], rgb[1], rgb[2]);
+  }
+
+  public static String rgbToHex(int red, int green, int blue) {
+    return String.format("#%02x%02x%02x", red, green, blue);
   }
 
   @Override
