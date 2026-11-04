@@ -171,7 +171,7 @@ public class ETO_2026_12_17 extends SingleMessageFeedbackProcessor implements IE
     count(sts.test("Incident Name should be #EV", "ETO Recipe Cookbook", m.incidentName));
     getCounter("Incident Name").increment(m.incidentName);
 
-    // TODO fixme: ETO-10;ETO-BK comes in as one word, must be split, etc. just test for presence?
+    // ETO-10;ETO-BK comes in as one word, must be split, etc. just test for presence?
     var formToSet = new HashSet<String>(Arrays.asList(m.formTo.split(";")));
     formToSet.retainAll(expectedDestinations);
     var isExpectedDestination = formToSet.size() > 0;
