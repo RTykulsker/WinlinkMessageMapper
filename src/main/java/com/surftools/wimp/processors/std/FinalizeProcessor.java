@@ -388,7 +388,14 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
         emailMessage.setFrom(new InternetAddress(emailContext.from));
         emailMessage.setRecipients(Message.RecipientType.TO, emailContext.recipientAddresses);
         emailMessage.setSubject(emailContext.subject);
-        emailMessage.setText(emailContext.body);
+
+        var body = emailContext.body;
+        var lastWord = (String) mm.getContextObject(IMessageManager.LAST_WORD);
+        if (lastWord != null && !lastWord.strip().isEmpty()) {
+          body += "\n\n" + lastWord;
+        }
+
+        emailMessage.setText(body);
 
         Transport.send(emailMessage);
 
