@@ -29,6 +29,7 @@ package com.surftools.wimp.processors.std.baseExercise;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -58,6 +59,7 @@ import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.formField.FormFieldManager;
 import com.surftools.wimp.message.ExportedMessage;
+import com.surftools.wimp.schedule.ScheduleManager;
 import com.surftools.wimp.service.outboundMessage.OutboundMessage;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -96,6 +98,8 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected static String outboundMessageSubject;
   protected static boolean doOutboundMessaging;
 
+  protected static String nextInstructions;
+
   protected static boolean isInitialized = false;
 
   @Override
@@ -106,7 +110,11 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   public void initialize(IConfigurationManager cm, IMessageManager mm, Logger _logger) {
     logger = _logger;
     if (!isInitialized) {
-      doInitialization(cm, mm);
+      try {
+        doInitialization(cm, mm);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
       isInitialized = true;
     }
   }
@@ -115,7 +123,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     isInitialized = false;
   }
 
-  protected void doInitialization(IConfigurationManager _cm, IMessageManager _mm) {
+  protected void doInitialization(IConfigurationManager _cm, IMessageManager _mm) throws Exception {
     cm = _cm;
     mm = _mm;
 
@@ -158,6 +166,51 @@ public abstract class AbstractBaseProcessor implements IProcessor {
     doOutboundMessaging = outboundMessageSender != null && outboundMessageSubject != null
         && !outboundMessageSender.isEmpty() && !outboundMessageSubject.isEmpty();
     outboundMessageList = new ArrayList<>();
+
+    var scheduleManager = new ScheduleManager(cm);
+    var scheduleCheckRecord = scheduleManager.check(date);
+    var next = scheduleCheckRecord.nextOutput();
+    if (next.isPractice()) {
+      var nextDate = next.date();
+
+      var nextExerciseYear = String.valueOf(nextDate.getYear());
+      final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+      var nextExerciseDateString = dtf.format(nextDate);
+      var referencePathString = cm.getAsString(Key.PATH_REFERENCE);
+      var instructionPath = Path
+          .of(referencePathString, nextExerciseYear, nextExerciseDateString,
+              nextExerciseDateString + "-instructions.txt");
+      nextInstructions = Files.readString(instructionPath);
+
+      checkSourceOfTruth(nextExerciseDateString, nextInstructions);
+    }
+  }
+
+  private void checkSourceOfTruth(String nextExerciseDateString, String instructionText) throws IOException {
+    if (!cm.getAsBoolean(Key.ENABLE_FINALIZE)) {
+      logger.info("sourceOfTruth: skipping because not finalizing");
+      return;
+    }
+
+    var sotRootString = cm.getAsString(Key.PATH_SOURCE_OF_TRUTH);
+    if (sotRootString == null || sotRootString.isBlank()) {
+      logger.info("sourceOfTruth: skipping because" + Key.PATH_SOURCE_OF_TRUTH.toString() + " not defined");
+      return;
+    }
+
+    var exerciseYear = nextExerciseDateString.substring(0, 4);
+    var sotPath = Path
+        .of(sotRootString, exerciseYear, nextExerciseDateString, nextExerciseDateString + "-instructions.txt");
+    var sotInstructionText = Files.readString(sotPath);
+
+    if (sotInstructionText.equals(instructionText)) {
+      logger.info("sourceOfTruth: comparison perfect");
+      return;
+    }
+
+    logger.error("sourceOfTruth does not match local instructions, exiting");
+    System.exit(1);
+
   }
 
   @Override

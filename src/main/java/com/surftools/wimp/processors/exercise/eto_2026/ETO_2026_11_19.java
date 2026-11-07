@@ -60,6 +60,9 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
     super.initialize(cm, mm, logger);
     messageType = MessageType.HICS_251;
 
+    var extraOutboundMessageText = getNextExerciseInstructions();
+    outboundMessageExtraContent = extraOutboundMessageText + OB_DISCLAIMER;
+
     var refList = List
         .of(//
             new StatusEntry(SystemType.POWER.toString(), StatusType.PART,

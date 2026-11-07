@@ -28,6 +28,7 @@ package com.surftools.wimp.processors.std;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -37,13 +38,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import javax.activation.DataHandler;
 import javax.mail.Authenticator;
 import javax.mail.Message;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -395,8 +400,30 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
           body += "\n\n" + lastWord;
         }
 
-        emailMessage.setText(body);
+        var instructions = nextInstructions;
+        if (instructions == null || instructions.length() == 0) {
+          var sourceOfTruthText = "No instructions on GDrive://ETO Exercises/ETO-PRACTICE/instructions/ for next exercise. Possibly 3rd Thursday training exercise.";
+          body += "\n" + sourceOfTruthText;
 
+          emailMessage.setText(body);
+        } else {
+          var yearString = dateString.substring(0, 4);
+          var sourceOfTruthText = "\n\nBe sure to compare attached instructions against GDrive://ETO Exercises/ETO-PRACTICE/instructions/"
+              + yearString + "/" + dateString;
+          body += "\n" + sourceOfTruthText;
+
+          var multipart = new MimeMultipart();
+          var bodyPart = new MimeBodyPart();
+          bodyPart.setText(body);
+          multipart.addBodyPart(bodyPart);
+
+          var attachmentPart = new MimeBodyPart();
+          var dataSource = new ByteArrayDataSource(instructions.getBytes(StandardCharsets.UTF_8), "text/plain");
+          attachmentPart.setDataHandler(new DataHandler(dataSource));
+          attachmentPart.setFileName(dateString + "-instructions.txt");
+          multipart.addBodyPart(attachmentPart);
+          emailMessage.setContent(multipart);
+        }
         Transport.send(emailMessage);
 
         logger.info("email sent via Internet");

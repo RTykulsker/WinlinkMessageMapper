@@ -43,6 +43,8 @@ public enum Key implements IConfigurationKey {
   PATH_REFERENCE("path.reference"), // path to reference, where instructions are
   NEW_DATABASE_PATH("newDatabasePath"), // path to input database summary files
   LOG_PATH("log.path"), // where log files are placed
+  PATH_SCHEDULE("path.schedule"), // path to the expanded schedule.csv
+  PATH_SOURCE_OF_TRUTH("path.sourceOfTruth"), // path to a single folder
 
   DATABASE_PATH("databasePath"), // path to input database summary files
   DATABASE_ENGINE_TYPE("databaseEngineType"), // what implements the database

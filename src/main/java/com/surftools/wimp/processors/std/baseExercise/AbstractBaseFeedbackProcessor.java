@@ -29,8 +29,6 @@ package com.surftools.wimp.processors.std.baseExercise;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -305,28 +303,13 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
   }
 
   protected String getNextExerciseInstructions() {
-    final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    var exerciseDateString = cm.getAsString(Key.EXERCISE_DATE);
-    var exerciseDate = LocalDate.parse(exerciseDateString, dtf);
-    var nextExerciseDate = exerciseDate.plusDays(7);
-    var nextExerciseYear = String.valueOf(nextExerciseDate.getYear());
-    var nextExerciseDateString = dtf.format(nextExerciseDate);
-    var referencePathString = cm.getAsString(Key.PATH_REFERENCE);
-    var instructionPath = Path
-        .of(referencePathString, nextExerciseYear, nextExerciseDateString,
-            nextExerciseDateString + "-instructions.txt");
-    try {
-      var text = Files.readString(instructionPath);
-      var ret = "\n\n"
-          + "-----------------------------------------------------------------------------------------------------"
-          + "\n\n" + text + "\n";
-      return ret;
-    } catch (IOException e) {
-      logger.error("Error reading instruction file: " + instructionPath.toString() + ", " + e.getMessage());
-      e.printStackTrace();
-      return "";
-    }
+    var text = (nextInstructions != null) ? nextInstructions
+        : "No instructions for next exercise are currently available\"";
 
+    var ret = "\n"
+        + "-----------------------------------------------------------------------------------------------------"
+        + "\n\n" + text + "\n";
+    return ret;
   }
 
   protected LocalDate parseDate(String s, List<DateTimeFormatter> formatters) {
