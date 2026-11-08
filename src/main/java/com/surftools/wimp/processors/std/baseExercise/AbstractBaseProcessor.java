@@ -176,11 +176,11 @@ public abstract class AbstractBaseProcessor implements IProcessor {
       var nextExerciseYear = String.valueOf(nextDate.getYear());
       final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
       var nextExerciseDateString = dtf.format(nextDate);
-      var referencePathString = cm.getAsString(Key.PATH_REFERENCE);
-      var instructionPath = Path
-          .of(referencePathString, nextExerciseYear, nextExerciseDateString,
+      var instructionsPathString = cm.getAsString(Key.PATH_INSTRUCTIONS);
+      var instructiosPath = Path
+          .of(instructionsPathString, nextExerciseYear, nextExerciseDateString,
               nextExerciseDateString + "-instructions.txt");
-      nextInstructions = Files.readString(instructionPath);
+      nextInstructions = Files.readString(instructiosPath);
 
       checkSourceOfTruth(nextExerciseDateString, nextInstructions);
     }
