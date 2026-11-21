@@ -407,9 +407,9 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
 
           emailMessage.setText(body);
         } else {
-          var yearString = dateString.substring(0, 4);
+          var yearString = nextExerciseDateString.substring(0, 4);
           var sourceOfTruthText = "\n\nBe sure to compare attached instructions against GDrive://ETO Exercises/ETO-PRACTICE/instructions/"
-              + yearString + "/" + dateString;
+              + yearString + "/" + nextExerciseDateString;
           body += "\n" + sourceOfTruthText;
 
           var multipart = new MimeMultipart();
@@ -420,7 +420,7 @@ public class FinalizeProcessor extends AbstractBaseProcessor {
           var attachmentPart = new MimeBodyPart();
           var dataSource = new ByteArrayDataSource(instructions.getBytes(StandardCharsets.UTF_8), "text/plain");
           attachmentPart.setDataHandler(new DataHandler(dataSource));
-          attachmentPart.setFileName(dateString + "-instructions.txt");
+          attachmentPart.setFileName(nextExerciseDateString + "-instructions.txt");
           multipart.addBodyPart(attachmentPart);
           emailMessage.setContent(multipart);
         }

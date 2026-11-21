@@ -99,6 +99,7 @@ public abstract class AbstractBaseProcessor implements IProcessor {
   protected static boolean doOutboundMessaging;
 
   protected static String nextInstructions;
+  protected static String nextExerciseDateString;
 
   protected static boolean isInitialized = false;
 
@@ -175,12 +176,12 @@ public abstract class AbstractBaseProcessor implements IProcessor {
 
       var nextExerciseYear = String.valueOf(nextDate.getYear());
       final var dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-      var nextExerciseDateString = dtf.format(nextDate);
+      nextExerciseDateString = dtf.format(nextDate);
       var instructionsPathString = cm.getAsString(Key.PATH_INSTRUCTIONS);
-      var instructiosPath = Path
+      var instructionsPath = Path
           .of(instructionsPathString, nextExerciseYear, nextExerciseDateString,
               nextExerciseDateString + "-instructions.txt");
-      nextInstructions = Files.readString(instructiosPath);
+      nextInstructions = Files.readString(instructionsPath);
 
       checkSourceOfTruth(nextExerciseDateString, nextInstructions);
     }
