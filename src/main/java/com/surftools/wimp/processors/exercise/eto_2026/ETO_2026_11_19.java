@@ -27,6 +27,9 @@ SOFTWARE.
 
 package com.surftools.wimp.processors.exercise.eto_2026;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +38,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.surftools.wimp.core.IMessageManager;
+import com.surftools.wimp.core.IWritableTable;
 import com.surftools.wimp.core.MessageType;
 import com.surftools.wimp.message.ExportedMessage;
 import com.surftools.wimp.message.Hics251Message;
 import com.surftools.wimp.message.Hics251Message.StatusEntry;
 import com.surftools.wimp.message.Hics251Message.StatusType;
 import com.surftools.wimp.message.Hics251Message.SystemType;
+import com.surftools.wimp.processors.std.WriteProcessor;
 import com.surftools.wimp.processors.std.baseExercise.SingleMessageFeedbackProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
@@ -54,6 +59,30 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
   private static Logger logger = LoggerFactory.getLogger(ETO_2026_11_19.class);
 
   Map<String, StatusEntry> refStatusEntryMap;
+  List<IWritableTable> remarksList;
+
+  record RemarksEntry(String from, String remarks) implements IWritableTable {
+
+    @Override
+    public int compareTo(IWritableTable o) {
+      var other = (RemarksEntry) o;
+      var cmp = remarks.compareTo(other.remarks);
+      if (cmp != 0) {
+        return cmp;
+      }
+      return from.compareTo(other.from);
+    }
+
+    @Override
+    public String[] getHeaders() {
+      return new String[] { "From", "Remarks" };
+    }
+
+    @Override
+    public String[] getValues() {
+      return new String[] { from, remarks };
+    }
+  }
 
   @Override
   public void initialize(IConfigurationManager cm, IMessageManager mm) {
@@ -80,6 +109,8 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
     for (var entry : refList) {
       refStatusEntryMap.put(entry.system(), entry);
     }
+
+    remarksList = new ArrayList<>();
   }
 
   @Override
@@ -119,10 +150,26 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
       }
     }
 
-    count(sts
-        .test_2line("Remarks should be #EV",
-            "The facility management team discovered all outages including exhaust fan and duct work damage on the roof.",
-            m.remarks));
+    // inconsistent instructions in
+    // https://emcomm-training.org/2026-11-19%20ETO%20HICS%20251%20Facility%20Systems%20Status%20Report.pdf
+    // first instance doesn't have "exhaust" before "fan". second and third (image) does
+    var remarksEntry = new RemarksEntry(m.from, m.remarks);
+    remarksList.add(remarksEntry);
+
+    var hasExhaust = m.remarks.contains("exhaust");
+    if (hasExhaust) {
+      count(sts
+          .test_2line("Remarks should be #EV",
+              "The facility management team discovered all outages including exhaust fan and duct work damage on the roof.",
+              m.remarks));
+      getCounter("remarks has exhaust fan").increment(true);
+    } else {
+      count(sts
+          .test_2line("Remarks should be #EV",
+              "The facility management team discovered all outages including fan and duct work damage on the roof.",
+              m.remarks));
+      getCounter("remarks has exhaust fan").increment(false);
+    }
 
     count(sts.test("Prepared By should be #EV", "Mathew Monker", m.preparedBy));
     count(sts.testIfPresent("Form Date/Time should be present", m.formDateTime));
@@ -141,11 +188,11 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
         var bytes = attachments.get(attachmentName);
         var string = new String(bytes);
         var lines = string.split("\n");
-        count(sts.test("attachment: " + attachmentName + " should have #EV lines", 2, lines.length));
+        count(sts.test("attachment should have #EV lines", 2, lines.length));
         if (lines.length >= 1) {
           var header = lines[0];
           var fields = header.split(",");
-          count(sts.test("attachments: " + attachmentName + " number of fields should be #EV", 30, fields.length));
+          count(sts.test("attachment number of fields should be #EV", 30, fields.length));
         }
       }
     }
@@ -155,6 +202,9 @@ public class ETO_2026_11_19 extends SingleMessageFeedbackProcessor {
   @Override
   public void postProcess() {
     super.postProcess();
+
+    Collections.sort(remarksList);
+    WriteProcessor.writeTable(remarksList, Path.of(outputPathName, "remarks.csv"));
   }
 
 }

@@ -41,72 +41,72 @@ import com.surftools.wimp.processors.std.ReadProcessor;
 import com.surftools.wimp.utils.config.IConfigurationManager;
 
 public class ScheduleManager {
-	private static final Logger logger = LoggerFactory.getLogger(ScheduleManager.class);
+  private static final Logger logger = LoggerFactory.getLogger(ScheduleManager.class);
 
-	protected TreeMap<LocalDate, ScheduleRecord> dateScheduleMap;
-	protected List<ScheduleRecord> schedules;
+  protected TreeMap<LocalDate, ScheduleRecord> dateScheduleMap;
+  protected List<ScheduleRecord> schedules;
 
-	public ScheduleManager(IConfigurationManager cm) {
+  public ScheduleManager(IConfigurationManager cm) {
 
-		dateScheduleMap = new TreeMap<LocalDate, ScheduleRecord>();
-		schedules = readSchedule(cm);
-		for (var schedule : schedules) {
-			dateScheduleMap.put(schedule.date(), schedule);
-		}
-	}
+    dateScheduleMap = new TreeMap<LocalDate, ScheduleRecord>();
+    schedules = readSchedule(cm);
+    for (var schedule : schedules) {
+      dateScheduleMap.put(schedule.date(), schedule);
+    }
+  }
 
-	/**
-	 * return list of ScheduleRecord
-	 *
-	 * @param cm
-	 * @return
-	 */
-	protected List<ScheduleRecord> readSchedule(IConfigurationManager cm) {
-		var list = new ArrayList<ScheduleRecord>();
+  /**
+   * return list of ScheduleRecord
+   *
+   * @param cm
+   * @return
+   */
+  protected List<ScheduleRecord> readSchedule(IConfigurationManager cm) {
+    var list = new ArrayList<ScheduleRecord>();
 
-		var schedulePathName = cm.getAsString(Key.PATH_SCHEDULE);
-		var schedulePath = Path.of(schedulePathName);
-		var fieldsList = ReadProcessor.readCsvFileIntoFieldsArray(schedulePath, ',', true, 1);
-		for (var fields : fieldsList) {
-			var scheduleRecord = ScheduleRecord.from(fields);
-			list.add(scheduleRecord);
-		}
+    var schedulePathName = cm.getAsString(Key.PATH_SCHEDULE);
+    var schedulePath = Path.of(schedulePathName);
+    var fieldsList = ReadProcessor.readCsvFileIntoFieldsArray(schedulePath, ',', true, 1);
+    for (var fields : fieldsList) {
+      var scheduleRecord = ScheduleRecord.from(fields);
+      list.add(scheduleRecord);
+    }
 
-		logger.info("read: " + list.size() + " entries from: " + schedulePathName);
-		Collections.sort(list);
+    Collections.sort(list);
+    logger.info("read: " + list.size() + " entries from: " + schedulePathName);
 
-		return list;
-	}
+    return list;
+  }
 
-	/**
-	 * return a list of previously read ScheduleRecords
-	 *
-	 * @return
-	 */
-	public List<ScheduleRecord> getSchedules() {
-		return schedules;
-	}
+  /**
+   * return a list of previously read ScheduleRecords
+   *
+   * @return
+   */
+  public List<ScheduleRecord> getSchedules() {
+    return schedules;
+  }
 
-	/**
-	 * check if given date has a valid schedule
-	 *
-	 * @param date
-	 * @return
-	 */
-	public ScheduleCheckResult check(LocalDate date) {
-		var thisOutput = dateScheduleMap.get(date);
+  /**
+   * check if given date has a valid schedule
+   *
+   * @param date
+   * @return
+   */
+  public ScheduleCheckResult check(LocalDate date) {
+    var thisOutput = dateScheduleMap.get(date);
 
-		var lowerEntry = dateScheduleMap.lowerEntry(date);
-		var lastOutput = lowerEntry == null ? null : dateScheduleMap.lowerEntry(date).getValue();
+    var lowerEntry = dateScheduleMap.lowerEntry(date);
+    var lastOutput = lowerEntry == null ? null : dateScheduleMap.lowerEntry(date).getValue();
 
-		var higherEntry = dateScheduleMap.higherEntry(date);
-		var nextOutput = higherEntry == null ? null : dateScheduleMap.higherEntry(date).getValue();
+    var higherEntry = dateScheduleMap.higherEntry(date);
+    var nextOutput = higherEntry == null ? null : dateScheduleMap.higherEntry(date).getValue();
 
-		ScheduleRecord nextNextOutput = null;
-		if (nextOutput != null) {
-			var nextHigherEntry = dateScheduleMap.higherEntry(nextOutput.date());
-			nextNextOutput = nextHigherEntry == null ? null : dateScheduleMap.higherEntry(nextOutput.date()).getValue();
-		}
-		return new ScheduleCheckResult(lastOutput, thisOutput, nextOutput, nextNextOutput);
-	}
+    ScheduleRecord nextNextOutput = null;
+    if (nextOutput != null) {
+      var nextHigherEntry = dateScheduleMap.higherEntry(nextOutput.date());
+      nextNextOutput = nextHigherEntry == null ? null : dateScheduleMap.higherEntry(nextOutput.date()).getValue();
+    }
+    return new ScheduleCheckResult(lastOutput, thisOutput, nextOutput, nextNextOutput);
+  }
 }

@@ -67,7 +67,8 @@ public class Hics251Message extends ExportedMessage {
   public enum StatusType {
     FULL("Fully functional", "Fully Functional"), //
     PART("Partially functional", "Partially Functional"), //
-    NON("Nonfunctional", "Non Functional"), NA("N/A", "N/A");
+    NON("Nonfunctional", "Non Functional"), //
+    NA("N/A", "N/A");
 
     private String input; // what we parse from exported messages
     private String output; // what we present to output
@@ -94,7 +95,7 @@ public class Hics251Message extends ExportedMessage {
           return key;
         }
       }
-      return null;
+      return StatusType.NA;
     }
   };
 

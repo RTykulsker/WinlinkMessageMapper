@@ -221,10 +221,11 @@ public abstract class AbstractBaseFeedbackProcessor extends AbstractBaseProcesso
    *
    * @param testResult
    */
-  protected void count(TestResult testResult) {
+  protected TestResult count(TestResult testResult) {
     var label = testResult.key();
     var result = testResult.ok();
     getCounter(label).increment(result ? "correct" : "incorrect");
+    return testResult;
   }
 
   /**
