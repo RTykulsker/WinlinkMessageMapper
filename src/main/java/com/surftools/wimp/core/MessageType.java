@@ -76,6 +76,7 @@ public enum MessageType {
 
   DAMAGE_ASSESSMENT("RMS_Express_Form_Damage_Assessment_Viewer.xml"), //
   QUICK("RMS_Express_Form_Quick Message Viewer.xml"), //
+  AFTER_ACTION("RMS_Express_Form_After Action Review Viewer.xml"), //
 
   HICS_251("RMS_Express_Form_HICS 251 Facility Status Report_viewer.xml"), //
   HICS_259("RMS_Express_Form_HICS 259_viewer.xml"), //
